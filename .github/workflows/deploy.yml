@@ -36,9 +36,10 @@ jobs:
           # თუ ვერ დაუკავშირდა, შეცვალე: ftp
           protocol: ftps
           port: 21
-          # საიტის საქაღალდე სერვერზე. ჩვეულებრივ public_html/.
-          # თუ FTP ანგარიში უკვე public_html-შია, დატოვე მხოლოდ: ./
-          server-dir: public_html/
+          # FTP ანგარიში scoped-ია public_html-ზე (Directory=public_html),
+          # ამიტომ საიტის ძირი უკვე ესაა → server-dir: ./
+          # (თუ იყენებ მთავარ cPanel ანგარიშს home-იდან, შეცვალე: public_html/)
+          server-dir: ./
           # exclude — რაც სერვერზე არ უნდა წავიდეს (არსებულ PHP/სურათებს არ ეხება):
           exclude: |
             **/.git*
