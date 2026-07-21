@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌾 კრეფის მოდული</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:920px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.98rem;margin:0 0 10px;color:#334155}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.8rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select{width:100%;padding:10px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:.95rem;background:#fff}
+  input:focus,select:focus{outline:none;border-color:#0ea5e9}
+  button{background:#0ea5e9;color:#fff;border:none;padding:10px 15px;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:#0ea5e9;border:1.5px solid #0ea5e9}
+  button.g{background:#059669}button.o{background:#ea580c}button.r{background:#dc2626}
+  button:active{transform:scale(.98)}
+  .row2{display:flex;gap:10px;flex-wrap:wrap}.row2>*{flex:1;min-width:140px}
+  table{width:100%;border-collapse:collapse;font-size:.83rem;margin-top:8px}
+  th,td{padding:8px 7px;text-align:left;border-top:1px solid #f1f5f9;vertical-align:middle}
+  th{color:#64748b;font-size:.74rem;text-transform:uppercase;letter-spacing:.02em}
+  .muted{font-size:.8rem;color:#64748b}
+  .ok{color:#16a34a;font-weight:700}.warn{color:#dc2626;font-weight:700}
+  .x{color:#dc2626;cursor:pointer;font-weight:800;padding:0 5px}
+  .edit{color:#0369a1;cursor:pointer;padding:0 5px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.72rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:11px}
+  .stat{border-radius:14px;padding:14px 15px;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);min-width:0;display:flex;flex-direction:column;justify-content:center}
+  .stat .lbl{font-size:.74rem;opacity:.92;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+  .stat .val{font-size:1.5rem;font-weight:800;margin-top:3px;line-height:1.15;word-break:break-word;overflow-wrap:anywhere}
+  .stat.money .val{font-size:1.25rem}
+  .stat .sub{font-size:.68rem;opacity:.9;margin-top:3px;line-height:1.3;white-space:normal;word-break:break-word}
+  .s-blue{background:linear-gradient(135deg,#0ea5e9,#0369a1)}
+  .s-green{background:linear-gradient(135deg,#10b981,#059669)}
+  .s-orange{background:linear-gradient(135deg,#f59e0b,#ea580c)}
+  .s-purple{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}
+  @media(max-width:480px){.stats{grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px}.stat{padding:11px 12px}.stat .val{font-size:1.28rem}.stat.money .val{font-size:1.06rem}.stat .lbl{font-size:.7rem}}
+  .tabs{display:flex;gap:4px;margin-bottom:12px;background:#e2e8f0;padding:4px;border-radius:12px;flex-wrap:wrap}
+  .tab{flex:1;min-width:90px;background:transparent;color:#475569;border:none;padding:10px 6px;border-radius:9px;font-size:.82rem;font-weight:700;margin:0;cursor:pointer}
+  .tab.active{background:#fff;color:#0369a1;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .panel{display:none}.panel.active{display:block}
+  .badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:.7rem;font-weight:700}
+  .b-pick{background:#dcfce7;color:#16a34a}.b-carry{background:#fef3c7;color:#b45309}
+  .b-num{background:#dbeafe;color:#1d4ed8;font-weight:800}
+  .soon{text-align:center;padding:30px 14px;color:#475569}
+  .soon .ico{width:56px;height:56px;border-radius:50%;background:#fef3c7;color:#b45309;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 12px}
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  .toolbar input{width:auto;flex:1;min-width:160px}
+</style></head>
+<body>
+
+<div id="loginCard" class="card" style="max-width:420px;margin:40px auto">
+  <h1>🌾 კრეფის მოდული — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+    <h1>🌾 კრეფის მოდული <span style="font-size:.6rem;background:#0ea5e9;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v28</span></h1>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
+    <a href="./dafa.html" target="_blank" style="display:inline-block;text-decoration:none;background:linear-gradient(135deg,#22c55e,#0ea5e9);color:#fff;padding:5px 11px;border-radius:8px;font-size:.72rem;font-weight:700;margin:3px 6px 0 0">📺 TV დაფა</a>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <div style="font-size:.8rem;font-weight:800;color:#334155;margin:2px 0 7px">📊 საერთო</div>
+  <div class="stats" id="dashTotal" style="margin-bottom:12px"></div>
+  <div style="font-size:.8rem;font-weight:800;color:#334155;margin:4px 0 7px">📅 დღეს — <span id="dashDate"></span></div>
+  <div class="stats" id="dashToday" style="margin-bottom:12px"></div>
+  <div class="card" style="margin-bottom:14px">
+    <details ontoggle="if(this.open)renderAnalysis()">
+      <summary style="cursor:pointer;font-weight:800;color:#7c3aed;font-size:.92rem">🔍 დეშბორდი / ანალიზი (საეჭვო + სტატისტიკა)</summary>
+      <div id="analysisBox" style="margin-top:10px"><div class="muted">იხსნება…</div></div>
+    </details>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <details>
+      <summary style="cursor:pointer;font-weight:800;color:#0369a1;font-size:.92rem">📊 სრული სტატისტიკა — დღეების მიხედვით</summary>
+      <div id="dailyStats" style="margin-top:10px"><div class="muted">იტვირთება…</div></div>
+    </details>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-t="pickers" onclick="switchTab('pickers')">👤 მკრეფავები</button>
+    <button class="tab" data-t="qr" onclick="switchTab('qr')">🏷️ QR კოდები</button>
+    <button class="tab" data-t="report" onclick="switchTab('report')">📊 ანგარიში</button>
+    <button class="tab" data-t="reg" onclick="switchTab('reg')">📋 რეგისტრაცია</button>
+  </div>
+
+  <div class="panel active" id="p-pickers">
+    <div class="card">
+      <h2>➕ მკრეფავის დამატება</h2>
+      <div class="row2">
+        <div><label>როლი</label><select id="fRole"><option value="picker">🧺 მკრეფავი</option><option value="carrier">🚚 გამომტანი</option></select></div>
+        <div><label>სახელი *</label><input id="fFirst" placeholder="გიორგი"></div>
+        <div><label>გვარი *</label><input id="fLast" placeholder="მელაძე"></div>
+      </div>
+      <div class="row2">
+        <div><label>პირადი № (9-11 ციფრი)</label><input id="fId" inputmode="numeric" placeholder="01001000001"></div>
+        <div><label>ტელეფონი (9 ციფრი)</label><input id="fPhone" inputmode="numeric" placeholder="555123456"></div>
+      </div>
+      <div class="row2">
+        <div><label>საცხოვრებელი</label><input id="fAddr" placeholder="თბილისი"></div>
+        <div><label>ბანკი (IBAN)</label><input id="fBank" placeholder="GE00XX..."></div>
+      </div>
+      <button class="g" onclick="registerPicker()">✅ დამატება</button>
+      <div class="row2" style="margin-top:8px">
+        <button class="sec" onclick="downloadPickerTemplate()">📥 Excel შაბლონი</button>
+        <button class="sec" onclick="document.getElementById('impFile').click()">📤 ატვირთვა Excel-იდან</button>
+      </div>
+      <input type="file" id="impFile" accept=".xlsx,.xls" style="display:none" onchange="importPickersExcel(this)">
+      <div id="regMsg" style="font-size:.85rem;margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="margin:0">👥 მკრეფავები: <span id="pkCount" style="color:#0369a1">0</span></h2>
+        <input id="pkSearch" placeholder="🔎 ძებნა — სახელი, ნომერი, პ/ნ, ტელ…" oninput="renderPickers()">
+        <button class="sec" style="width:auto;padding:8px 12px" onclick="exportPickersExcel()">📊 Excel</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table><thead><tr><th>№</th><th>სახელი / გვარი</th><th>როლი</th><th>პ/ნ</th><th>ტელეფონი</th><th>სულ კგ</th><th>ყუთი</th><th></th></tr></thead>
+        <tbody id="pkBody"><tr><td colspan="8" class="muted">იტვირთება…</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-qr">
+    <div class="tabs" style="background:#eef2ff">
+      <button class="tab active" data-q="box" onclick="qrSub('box')">🧺 ყუთის სტიკერები</button>
+      <button class="tab" data-q="pal" onclick="qrSub('pal')">📦 პალეტი</button>
+      <button class="tab" data-q="row" onclick="qrSub('row')">🗺️ რიგები/ბლოკი</button>
+    </div>
+    <div class="card qrsub" id="q-box">
+      <h2>🧺 მკრეფავის სტიკერები (A4)</h2>
+      <div class="muted" style="font-size:.82rem;margin-bottom:8px">QR = მკრეფავის ვინაობა (ეკვრება ყუთს). სტიკერზე: სახელი, გვარი, ტელეფონი, პ/ნ. რიგი ცალკე QR-ია (🗺️ ტაბი).</div>
+      <div class="row2">
+        <div><label>მკრეფავი</label><input id="qbPicker" placeholder="🔎 სახელი ან №…" list="qbList"><datalist id="qbList"></datalist></div>
+        <div><label>რაოდენობა (ცალი)</label><input id="qbCount" inputmode="numeric" value="24"></div>
+        <div><label>A4 ფორმატი</label><select id="qbFmt"><option value="24">24/გვერდი (70×35მმ)</option><option value="40">40/გვერდი (48×27მმ)</option></select></div>
+      </div>
+      <button class="g" onclick="genBoxStickers()">🏷️ გენერაცია + ბეჭდვა (A4)</button>
+      <div id="qbMsg" style="font-size:.83rem;margin-top:8px"></div>
+    </div>
+    <div class="card qrsub" id="q-pal" style="display:none">
+      <h2>📦 პალეტის QR</h2>
+      <div class="muted" style="font-size:.82rem;margin-bottom:8px">მიუთითე მხოლოდ რაოდენობა — ნომრები ავტომატურად გაგრძელდება არსებულიდან.</div>
+      <div class="row2">
+        <div><label>პრეფიქსი</label><input id="qpPrefix" value="PAL"></div>
+        <div><label>რამდენი პალეტი</label><input id="qpCount" inputmode="numeric" value="10"></div>
+        <div><label>A4 ფორმატი</label><select id="qpFmt"><option value="24">24/გვერდი (70×35მმ)</option><option value="40">40/გვერდი (48×27მმ)</option></select></div>
+      </div>
+      <div id="qpNext" class="muted" style="font-size:.78rem;margin-top:4px"></div>
+      <button class="g" style="background:#7c3aed" onclick="genPalletQr()">🏷️ ავტო-გენერაცია + ბეჭდვა</button>
+      <div id="qpMsg" style="font-size:.83rem;margin-top:8px"></div>
+    </div>
+    <div class="card qrsub" id="q-row" style="display:none">
+      <h2>🗺️ რიგების / ბლოკის QR</h2>
+      <div class="muted" style="font-size:.82rem;margin-bottom:8px">რიგები შენი პლანტაციის მოდულიდან. QR = <code>ROW:რიგის_id</code> — awonva სკანირებით ცნობს სად მოიკრიფა ყუთი.</div>
+      <label>ბლოკი</label><select id="qrBlockSel" onchange="qrShowRows()"><option value="">— იტვირთება —</option></select>
+      <div class="row2">
+        <div><label style="margin-top:8px">A4 ფორმატი</label><select id="qrFmt"><option value="24">24/გვერდი (70×35მმ)</option><option value="40">40/გვერდი (48×27მმ)</option></select></div>
+        <div><label style="margin-top:8px">თითო რიგზე რამდენი</label><input id="qrPer" inputmode="numeric" value="1"></div>
+      </div>
+      <div id="qrRowsList" style="margin-top:10px"><div class="muted" style="font-size:.8rem">აირჩიე ბლოკი.</div></div>
+      <button class="g" style="background:#0f766e;margin-top:10px" onclick="genRowQr()">🏷️ არჩეულის გენერაცია + ბეჭდვა</button>
+      <div id="qrMsg" style="font-size:.83rem;margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-report">
+    <div class="card">
+      <div class="toolbar">
+        <div><label style="margin:0 0 3px">დან</label><input type="date" id="rFrom" style="width:auto"></div>
+        <div><label style="margin:0 0 3px">მდე</label><input type="date" id="rTo" style="width:auto"></div>
+        <div><label style="margin:0 0 3px">როლი</label><select id="rRole" style="width:auto" onchange="renderReport()"><option value="">ყველა</option><option value="picker">🧺 მკრეფავი</option><option value="carrier">🚚 გამომტანი</option></select></div>
+        <div style="flex:1;min-width:150px"><label style="margin:0 0 3px">მკრეფავი</label><input id="rPicker" placeholder="🔎 სახელი…" oninput="renderReport()"></div>
+        <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end" onclick="renderReport()">🔄 ჩვენება</button>
+        <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end" onclick="exportReportExcel()">📊 Excel</button>
+        <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end" onclick="printReport()">🖨️ ბეჭდვა</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:9px 12px;margin-bottom:10px">
+        <b style="color:#6d28d9;font-size:.85rem">🎁 მასობრივი ბონუსი:</b>
+        <input id="rBonusDate" type="date" style="width:auto;padding:7px" title="თარიღი">
+        <input id="rBonusAmt" inputmode="decimal" placeholder="თანხა ₾" style="width:110px;padding:7px">
+        <button style="width:auto;padding:8px 13px;background:#7c3aed" onclick="applyBulkBonus()">✅ მიანიჭე არჩეულებზე</button>
+        <button style="width:auto;padding:8px 13px;background:#059669" onclick="openKgBonus()">🎁 ავტო-ბონუსი (კგ)</button>
+        <button style="width:auto;padding:8px 13px;background:#b45309" onclick="openCarrierBonus()">🚚 გამომტანის ბონუსი</button>
+        <span class="muted" id="rSelCount" style="font-size:.78rem">0 არჩეული</span>
+      </div>
+      <div id="reportBody"><div class="muted">აირჩიე პერიოდი და დააჭირე „🔄 ჩვენება".</div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-reg">
+    <div class="card" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff">
+      <div style="font-size:1.1rem;font-weight:800">📋 დასწრების რეგისტრაცია</div>
+      <div style="font-size:.82rem;opacity:.92;margin-top:3px">აირჩიე მოსვლა/წასვლა → ასკანერე QR (ან ჩაწერე ნომერი/კოდი)</div>
+    </div>
+    <div class="card">
+      <div class="row2" style="margin-bottom:10px">
+        <button id="attIn" onclick="attSetMode('in')" style="background:#16a34a">🟢 მოსვლა</button>
+        <button id="attOut" onclick="attSetMode('out')" class="sec" style="border-color:#dc2626;color:#dc2626">🔴 წასვლა</button>
+      </div>
+      <label>📷 დააწკაპუნე აქ და ასკანერე QR ბარათი:</label>
+      <input id="attScan" placeholder="ასკანერე QR ან აკრიფე ნომერი…" autocomplete="off" onkeydown="if(event.key==='Enter'){attRecord(this.value);this.value='';}">
+      <div id="attFlash" style="font-size:.85rem;margin-top:6px;min-height:20px;color:#16a34a"></div>
+      <div class="row2" style="margin-top:6px;align-items:flex-end">
+        <div><label>თარიღი</label><input type="date" id="attDate" style="width:auto" onchange="renderAttendance()"></div>
+        <button class="sec" style="width:auto;padding:9px 13px" onclick="document.getElementById('attDate').value='';renderAttendance()">დღეს</button>
+      </div>
+      <div class="stats" id="attStats" style="margin-top:12px"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+        <button class="sec" style="width:auto;padding:8px 13px" onclick="exportAttExcel()">📊 Excel</button>
+        <button class="sec" style="width:auto;padding:8px 13px" onclick="printAtt()">🖨️ ბეჭდვა</button>
+      </div>
+      <div style="overflow-x:auto;margin-top:6px"><table><thead><tr><th>#</th><th>სახელი</th><th>როლი</th><th>🟢 მოსვ.</th><th>🔴 წასვ.</th><th></th></tr></thead><tbody id="attBody"><tr><td colspan="6" class="muted">ჯერ არავინ დარეგისტრირდა</td></tr></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+let sb=null, uid=null, PICKERS=[], KGMAP={}, BOXMAP={}, EARNMAP={}, SESSIONS=[], PAYMAP={}, SMSMAP={}, BONUSMAP={}, BONUSBYDATE={}, ATT=[], BLOCKS=[], ROWS=[], attMode='in', editingUid=null, activeTab='pickers';
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+function _today(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function _uid(){ return 'P'+Date.now()+'_'+Math.random().toString(36).slice(2,7); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function pName(p){ return (p.name || ((p.firstName||'')+' '+(p.lastName||''))).trim() || '—'; }
+function fmtKg(n){ return (Math.round((+n||0)*10)/10).toLocaleString('en-US'); }
+
+async function doLogin(){
+  var e=document.getElementById('email').value.trim(), p=document.getElementById('pass').value, err=document.getElementById('loginErr'); err.textContent='';
+  var c=getSb(); if(!c){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await c.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+
+async function showApp(email){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('whoami').textContent=email||'—';
+  updateNet();
+  window.addEventListener('online',updateNet); window.addEventListener('offline',updateNet);
+  await loadSessions();
+  await loadPickers();
+  await loadPayroll();
+  await loadBonuses();
+  await loadSmsMap();
+  await loadAttendance();
+  await loadPlantation();
+  renderDash(); renderPickers();
+}
+function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+function switchTab(t){ activeTab=t;
+  document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-t')===t); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.toggle('active', p.id==='p-'+t); });
+  if(t==='report'){ var f=document.getElementById('rFrom'), to=document.getElementById('rTo');
+    if(f && !f.value){ var ds=SESSIONS.map(function(s){return s.date||'';}).filter(Boolean).sort(); if(ds.length){ f.value=ds[0]; if(to)to.value=ds[ds.length-1]; } }
+    renderReport();
+  }
+  if(t==='reg'){ renderAttendance(); var inp=document.getElementById('attScan'); if(inp) setTimeout(function(){inp.focus();},100); }
+  if(t==='qr'){ var dl=document.getElementById('qbList'); if(dl) dl.innerHTML=PICKERS.map(function(p){ return '<option value="'+esc(pName(p))+'">'; }).join(''); }
+}
+
+// ── მკრეფავები + num ──
+async function loadPickers(){
+  var arr=[];
+  try{ var r=await sb.from('krepa_pickers').select('*').eq('user_id',uid); if(!r.error && r.data) arr=r.data; }catch(e){}
+  var maxn=0; arr.forEach(function(p){ var n=parseInt(p.num,10); if(!isNaN(n)&&n>maxn) maxn=n; });
+  var toUp=[];
+  // num-ის მინიჭება დეტერმინისტული — uid-ით დალაგებული, რომ ორმა ტაბმა/მოწყობილობამ
+  // ერთი და იგივე ნომერი პარალელურად არ მიანიჭოს (race-ის შემცირება).
+  arr.filter(function(p){ return isNaN(parseInt(p.num,10)); })
+     .sort(function(a,b){ return String(a.uid).localeCompare(String(b.uid)); })
+     .forEach(function(p){ maxn++; p.num=maxn; toUp.push({uid:p.uid,user_id:uid,num:maxn}); });
+  if(toUp.length && sb){ try{ await sb.from('krepa_pickers').upsert(toUp,{onConflict:'uid'}); }catch(e){ console.warn('[loadPickers] num upsert', e); } }
+  PICKERS=arr;
+}
+
+// ── ჩანაწერები (დღეს + თითო მკრეფავზე ჯამი) ──
+let TODAY_KG=0, TODAY_BOX=0, TOTAL_KG=0, TOTAL_BOX=0;
+async function loadSessions(){
+  KGMAP={}; BOXMAP={}; EARNMAP={}; SESSIONS=[]; TODAY_KG=0; TODAY_BOX=0; TOTAL_KG=0; TOTAL_BOX=0;
+  var rows=[], from=0, STEP=1000, td=_today();
+  try{
+    while(true){
+      var r=await sb.from('harvest_sessions').select('id,picker_id,picker_name,weight,kg,earned,price,date,time,pallet_code,quarter,row_num,entry_mode').eq('user_id',uid).range(from,from+STEP-1);
+      if(r.error){ console.warn('[loadSessions]', r.error); break; } var d=r.data||[]; rows=rows.concat(d);
+      if(d.length<STEP) break; from+=STEP; if(from>100000) break;
+    }
+  }catch(e){ console.warn('[loadSessions]', e); }
+  SESSIONS=rows; TOTAL_BOX=rows.length;
+  rows.forEach(function(x){ var k=x.picker_id||('n:'+(x.picker_name||'')); var w=+x.weight||0, e=+x.earned||0;
+    KGMAP[k]=(KGMAP[k]||0)+w; BOXMAP[k]=(BOXMAP[k]||0)+1; EARNMAP[k]=(EARNMAP[k]||0)+e; TOTAL_KG+=w;
+    if(x.date===td){ TODAY_KG+=w; TODAY_BOX++; }
+  });
+}
+async function loadBonuses(){ BONUSMAP={}; BONUSBYDATE={}; try{ var r=await sb.from('krepa_bonuses').select('picker_uid,bonus_date,amount').eq('user_id',uid); if(!r.error){ (r.data||[]).forEach(function(x){ var k=String(x.picker_uid); BONUSMAP[k]=(BONUSMAP[k]||0)+(+x.amount||0); BONUSBYDATE[k+'|'+(x.bonus_date||'')]=(BONUSBYDATE[k+'|'+(x.bonus_date||'')]||0)+(+x.amount||0); }); } }catch(e){} }
+async function loadPayroll(){ PAYMAP={}; try{ var r=await sb.from('krepa_payroll').select('picker_uid,amount').eq('user_id',uid); if(!r.error){ (r.data||[]).forEach(function(x){ PAYMAP[String(x.picker_uid)]=(+x.amount||0); }); } }catch(e){} }
+async function loadSmsMap(){ SMSMAP={}; var from=0,STEP=1000; try{ while(true){ var r=await sb.from('sms_log').select('picker_id,picker_name,status').eq('user_id',uid).range(from,from+STEP-1); if(r.error)break; var d=r.data||[]; d.forEach(function(x){ var k=x.picker_id||('n:'+(x.picker_name||'')); if(!SMSMAP[k])SMSMAP[k]={sent:0,deliv:0,fail:0}; var s=SMSMAP[k]; if(x.status==='failed')s.fail++; else s.sent++; if(x.status==='delivered')s.deliv++; }); if(d.length<STEP)break; from+=STEP; if(from>100000)break; } }catch(e){} }
+function pkKg(p){ return KGMAP[p.uid] || KGMAP['n:'+pName(p)] || 0; }
+function pkBox(p){ return BOXMAP[p.uid] || BOXMAP['n:'+pName(p)] || 0; }
+function pkEarn(p){ return EARNMAP[p.uid] || EARNMAP['n:'+pName(p)] || 0; }
+function pkBonus(p){ return BONUSMAP[p.uid] || 0; }
+function pkOwed(p){ return pkEarn(p)+pkBonus(p); }
+function pkPaid(p){ return PAYMAP[p.uid] || 0; }
+function pkSms(p){ return SMSMAP[p.uid] || SMSMAP['n:'+pName(p)] || {sent:0,deliv:0,fail:0}; }
+function pkSessions(p){ return SESSIONS.filter(function(s){ return (p.uid && s.picker_id===p.uid) || (s.picker_name===pName(p)); }); }
+
+function renderDash(){
+  var total=PICKERS.length;
+  var active=PICKERS.filter(function(p){ return pkBox(p)>0; }).length;
+  var td=_today();
+  var todaySet={}; SESSIONS.forEach(function(s){ if(s.date===td){ var k=s.picker_id||('n:'+(s.picker_name||'')); if(k) todaySet[k]=1; } });
+  var todayWorkers=Object.keys(todaySet).length;
+  var dd=document.getElementById('dashDate'); if(dd) dd.textContent=td;
+  var totEarn=0; Object.keys(EARNMAP).forEach(function(k){ totEarn+=EARNMAP[k]||0; });
+  var totBonus=0; Object.keys(BONUSMAP).forEach(function(k){ totBonus+=BONUSMAP[k]||0; });
+  var grand=totEarn+totBonus;
+  document.getElementById('dashTotal').innerHTML=
+    stat('s-blue','👥 სულ მკრეფავი',total,'რეგისტრირებული')
+   +stat('s-orange','📦 სულ ყუთი',TOTAL_BOX.toLocaleString('en-US'),'ჩაწონვა')
+   +stat('s-green','🌾 სულ კგ',fmtKg(TOTAL_KG),'მოკრეფილი')
+   +stat('s-purple','✅ აქტიური',active,'ვინც აწონა')
+   +stat('s-green money','💰 კგ×ფასი',(Math.round(totEarn*100)/100).toLocaleString('en-US')+' ₾','ხელფასი')
+   +stat('s-purple money','🎁 ბონუსი','+'+(Math.round(totBonus*100)/100).toLocaleString('en-US')+' ₾','დარიცხული')
+   +stat('s-blue money','💵 სულ გადასახდელი',(Math.round(grand*100)/100).toLocaleString('en-US')+' ₾','ხელფასი+ბონუსი');
+  // სამუშაო დღეები + საშუალო
+  var dset={}, pdSet={};
+  SESSIONS.forEach(function(s){ if(s.date){ dset[s.date]=1; var pk=s.picker_id||('n:'+(s.picker_name||'')); if(pk) pdSet[pk+'|'+s.date]=1; } });
+  var workDays=Object.keys(dset).length||1;
+  var pickerDays=Object.keys(pdSet).length||1;   // უნიკალური (მკრეფავი × დღე) წყვილები
+  var avgDay=TOTAL_KG/workDays;                    // საშ. კგ დღეში (ყველა მკრეფავი ერთად)
+  var avgPerPickerDay=TOTAL_KG/pickerDays;         // საშ. კგ ერთ მკრეფავზე, ერთ სამუშაო დღეში
+  var avgWageDay=totEarn/workDays;                 // საშ. ხელფასი (კგ×ფასი) დღეში
+  document.getElementById('dashToday').innerHTML=
+    stat('s-green','🌾 დღეს კრეფა',fmtKg(TODAY_KG)+' კგ',TODAY_BOX+' ყუთი')
+   +stat('s-orange','📦 დღეს ყუთი',TODAY_BOX,'ჩაწონვა')
+   +stat('s-blue','👷 დღეს მუშახელი',todayWorkers,'მკრეფავი')
+   +stat('s-purple','📈 დღეში საშ. (სულ)',fmtKg(avgDay)+' კგ',workDays+' სამუშაო დღე')
+   +stat('s-green','🧺 მკრეფავზე დღეში',fmtKg(avgPerPickerDay)+' კგ','საშ. ერთ მკრეფავზე / დღეში')
+   +stat('s-blue money','💵 დღეში ხელფასი',(Math.round(avgWageDay*100)/100).toLocaleString('en-US')+' ₾','საშ. '+workDays+' სამუშაო დღეზე');
+  renderDailyStats();
+}
+function renderAnalysis(){
+  var box=document.getElementById('analysisBox'); if(!box) return;
+  // ── საცხოვრებელი (მუნიციპალიტეტები) ──
+  var muni={}; PICKERS.forEach(function(p){ var a=(p.address||'').trim(); var k=a?a.split(/[,·]/)[0].trim():'(უცნობი)'; muni[k]=(muni[k]||0)+1; });
+  var muniArr=Object.keys(muni).map(function(k){ return {k:k,n:muni[k]}; }).sort(function(a,b){ return b.n-a.n; });
+  var muniMax=muniArr.reduce(function(m,x){ return Math.max(m,x.n); },0)||1;
+  var muniTop=muniArr.slice(0,8);
+  var cols=['#16a34a','#0ea5e9','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#ef4444','#6366f1'];
+  // ── საეჭვო ჩანაწერები (მკრეფავი) ──
+  function pnBad(v){ v=String(v||'').replace(/\D/g,''); return (!v)?'პ/ნ ცარიელი':((v.length<9||v.length>11)?'პ/ნ არასწორი':''); }
+  function phBad(v){ v=String(v||'').replace(/\D/g,''); return (!v)?'ტელ. ცარიელი':((v.length!==9)?'ტელ. არასწორი':''); }
+  var suspP=[]; PICKERS.forEach(function(p){ var r=[]; var a=pnBad(p.id||p.personal_id); if(a)r.push(a); var b=phBad(p.phone); if(b)r.push(b); if(!(p.address||'').trim())r.push('მისამართი ცარიელი'); if(r.length) suspP.push({p:p,why:r.join(' · ')}); });
+  // ── საეჭვო ჩაწონვები ──
+  var suspW=SESSIONS.filter(function(s){ var w=+s.weight||0; return w>8 || w<=0; });
+  // ── დუბლი/მსგავსი სახელები ──
+  var nameMap={}; PICKERS.forEach(function(p){ var n=pName(p).toLowerCase().replace(/\s+/g,' ').trim(); if(!nameMap[n])nameMap[n]=[]; nameMap[n].push(p); });
+  var dups=Object.keys(nameMap).filter(function(n){ return nameMap[n].length>1; }).map(function(n){ return {n:n,list:nameMap[n]}; });
+
+  var h='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">';
+  // მუნიციპალიტეტები
+  h+='<div style="border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px"><div style="font-weight:800;color:#0f766e;margin-bottom:8px">🗺️ ტოპ საცხოვრებელი</div>';
+  muniTop.forEach(function(x,i){ var c=cols[i%cols.length]; var pct=Math.round(x.n/muniMax*100);
+    h+='<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:.78rem"><span>'+esc(x.k)+'</span><b style="color:'+c+'">'+x.n+'</b></div><div style="height:8px;background:#eef2f7;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+c+'"></div></div></div>'; });
+  h+='<div class="muted" style="font-size:.72rem;margin-top:6px">სულ: '+PICKERS.length+' მკრეფავი · '+muniArr.length+' ადგილი</div></div>';
+  // საეჭვო ჩანაწერები
+  h+='<div style="border:1px solid #fee2e2;border-radius:12px;padding:12px 14px;background:#fef2f2"><div style="font-weight:800;color:#dc2626;margin-bottom:6px">⚠️ საეჭვო ჩანაწერები — '+suspP.length+'</div>';
+  h+='<div class="muted" style="font-size:.72rem;margin-bottom:6px">ცარიელი/არასწორი პ/ნ, ტელ. ან მისამართი</div>';
+  h+='<div style="max-height:190px;overflow:auto">'+ (suspP.length?suspP.slice(0,50).map(function(x){ return '<div style="font-size:.76rem;padding:4px 0;border-bottom:1px dashed #fecaca;cursor:pointer" onclick="openPicker(\''+esc(x.p.uid)+'\')"><b>#'+(x.p.num||'')+' '+esc(pName(x.p))+'</b> — <span style="color:#b91c1c">'+esc(x.why)+'</span></div>'; }).join(''):'<div class="ok" style="font-size:.8rem">✅ ყველაფერი წესრიგშია</div>') +'</div></div>';
+  // საეჭვო ჩაწონვები
+  h+='<div style="border:1px solid #fed7aa;border-radius:12px;padding:12px 14px;background:#fff7ed"><div style="font-weight:800;color:#c2410c;margin-bottom:6px">⚠️ საეჭვო ჩაწონვები — '+suspW.length+'</div>';
+  h+='<div class="muted" style="font-size:.72rem;margin-bottom:6px">წონა &gt; 8 კგ ან ≤ 0</div>';
+  h+='<div style="max-height:190px;overflow:auto">'+ (suspW.length?suspW.slice(0,50).map(function(s){ return '<div style="font-size:.76rem;padding:4px 0;border-bottom:1px dashed #fed7aa">'+esc(s.date||'')+' · '+esc(s.picker_name||'')+' — <b style="color:#c2410c">'+(Math.round((+s.weight||0)*100)/100)+' კგ</b></div>'; }).join(''):'<div class="ok" style="font-size:.8rem">✅ საეჭვო არ არის</div>') +'</div></div>';
+  // დუბლი სახელები
+  h+='<div style="border:1px solid #ddd6fe;border-radius:12px;padding:12px 14px;background:#f5f3ff"><div style="font-weight:800;color:#6d28d9;margin-bottom:6px">👥 მსგავსი/დუბლი სახელები — '+dups.length+'</div>';
+  h+='<div style="max-height:190px;overflow:auto">'+ (dups.length?dups.slice(0,50).map(function(d){ return '<div style="font-size:.76rem;padding:4px 0;border-bottom:1px dashed #ddd6fe">'+esc(d.list.map(function(p){return '#'+(p.num||'');}).join(', '))+' · <b>'+esc(pName(d.list[0]))+'</b> ('+d.list.length+'×)</div>'; }).join(''):'<div class="ok" style="font-size:.8rem">✅ დუბლი არ არის</div>') +'</div></div>';
+  h+='</div>';
+  box.innerHTML=h;
+}
+function renderDailyStats(){
+  var box=document.getElementById('dailyStats'); if(!box) return;
+  var byDate={}, dord=[];
+  SESSIONS.forEach(function(s){ var d=s.date||''; if(!d)return; if(!byDate[d]){ byDate[d]={kg:0,box:0,earn:0,pickers:{}}; dord.push(d); } var b=byDate[d]; b.kg+=(+s.weight||0); b.box++; b.earn+=(+s.earned||0); var k=s.picker_id||('n:'+(s.picker_name||'')); if(k) b.pickers[k]=1; });
+  dord.sort(function(a,b){ return a<b?1:-1; });
+  if(!dord.length){ box.innerHTML='<div class="muted">ჩანაწერი არ არის</div>'; return; }
+  var h='<div style="overflow-x:auto"><table><thead><tr><th>თარიღი</th><th>მუშახელი</th><th>ყუთი</th><th>კგ</th><th>₾</th></tr></thead><tbody>';
+  var tW=0,tB=0,tK=0,tE=0;
+  dord.forEach(function(d){ var b=byDate[d]; var w=Object.keys(b.pickers).length; tW+=w; tB+=b.box; tK+=b.kg; tE+=b.earn;
+    h+='<tr><td><b>'+esc(d)+'</b></td><td>'+w+'</td><td>'+b.box+'</td><td><b>'+fmtKg(b.kg)+'</b></td><td><b style="color:#16a34a">'+(Math.round(b.earn*100)/100)+' ₾</b></td></tr>'; });
+  h+='</tbody><tfoot><tr style="background:#f1f5f9;font-weight:800"><td>ჯამი ('+dord.length+' დღე)</td><td>—</td><td>'+tB+'</td><td>'+fmtKg(tK)+'</td><td>'+(Math.round(tE*100)/100)+' ₾</td></tr></tfoot></table></div>';
+  box.innerHTML=h;
+}
+function stat(cls,lbl,val,sub){ return '<div class="stat '+cls+'"><div class="lbl">'+lbl+'</div><div class="val">'+val+'</div><div class="sub">'+sub+'</div></div>'; }
+
+// ── რეგისტრაცია (ავტო-num) ──
+async function registerPicker(){
+  var msg=document.getElementById('regMsg');
+  var fn=document.getElementById('fFirst').value.trim(), ln=document.getElementById('fLast').value.trim();
+  if(!fn||!ln){ msg.innerHTML='<span class="warn">სახელი და გვარი აუცილებელია</span>'; return; }
+  var maxn=0; PICKERS.forEach(function(p){ var n=parseInt(p.num,10); if(!isNaN(n)&&n>maxn)maxn=n; });
+  var np={ uid:_uid(), user_id:uid, firstName:fn, lastName:ln, name:fn+' '+ln,
+    id:document.getElementById('fId').value.trim(), personal_id:document.getElementById('fId').value.trim(),
+    phone:document.getElementById('fPhone').value.trim(), address:document.getElementById('fAddr').value.trim(),
+    bank:document.getElementById('fBank').value.trim(), short_code:'', role:document.getElementById('fRole').value, num:maxn+1 };
+  np.short_code=np.uid;
+  try{ var r=await sb.from('krepa_pickers').insert(np); if(r.error){ msg.innerHTML='<span class="warn">❌ '+r.error.message+'</span>'; return; } }
+  catch(e){ msg.innerHTML='<span class="warn">❌ '+(e.message||e)+'</span>'; return; }
+  PICKERS.push(np);
+  msg.innerHTML='<span class="ok">✅ დაemატა: #'+np.num+' '+esc(pName(np))+'</span>';
+  ['fFirst','fLast','fId','fPhone','fAddr','fBank'].forEach(function(id){ document.getElementById(id).value=''; });
+  renderDash(); renderPickers();
+}
+
+function renderPickers(){
+  var q=(document.getElementById('pkSearch').value||'').trim().toLowerCase();
+  var list=PICKERS.slice().sort(function(a,b){ return (a.num||9999)-(b.num||9999); });
+  if(q) list=list.filter(function(p){ return (pName(p).toLowerCase().indexOf(q)>=0)||String(p.num||'').indexOf(q)===0||String(p.id||'').indexOf(q)>=0||String(p.phone||'').indexOf(q)>=0; });
+  document.getElementById('pkCount').textContent=PICKERS.length;
+  var b=document.getElementById('pkBody');
+  if(!list.length){ b.innerHTML='<tr><td colspan="8" class="muted">'+(q?'ვერ მოიძებნა':'ჯერ არავინ')+'</td></tr>'; return; }
+  b.innerHTML=list.map(function(p){
+    var role=p.role==='carrier'?'<span class="badge b-carry">🚚 გამომტანი</span>':'<span class="badge b-pick">🧺 მკრეფავი</span>';
+    return '<tr><td><span class="badge b-num">#'+(p.num!=null?p.num:'—')+'</span></td>'
+      +'<td><strong style="color:#0369a1;cursor:pointer" onclick="openPicker(\''+esc(p.uid)+'\')">'+esc(pName(p))+'</strong> <span style="cursor:pointer" onclick="openPicker(\''+esc(p.uid)+'\')">👁️</span></td>'
+      +'<td>'+role+'</td>'
+      +'<td class="muted">'+esc(p.id||p.personal_id||'—')+'</td>'
+      +'<td>'+esc(p.phone||'—')+'</td>'
+      +'<td><strong>'+fmtKg(pkKg(p))+'</strong></td>'
+      +'<td>'+pkBox(p)+'</td>'
+      +'<td style="white-space:nowrap"><span class="x" onclick="deletePicker(\''+esc(p.uid)+'\')">🗑️</span></td></tr>';
+  }).join('');
+}
+
+function editPicker(u){
+  var p=PICKERS.find(function(x){ return x.uid===u; }); if(!p) return;
+  document.getElementById('fRole').value=p.role||'picker';
+  document.getElementById('fFirst').value=p.firstName||''; document.getElementById('fLast').value=p.lastName||'';
+  document.getElementById('fId').value=p.id||p.personal_id||''; document.getElementById('fPhone').value=p.phone||'';
+  document.getElementById('fAddr').value=p.address||''; document.getElementById('fBank').value=p.bank||'';
+  editingUid=u;
+  var msg=document.getElementById('regMsg'); msg.innerHTML='<span style="color:#0369a1">✏️ რედაქტირება: '+esc(pName(p))+' — შეცვალე და დააჭირე „განახლება"</span>';
+  var btn=document.querySelector('#p-pickers .card .g'); if(btn){ btn.textContent='💾 განახლება'; btn.setAttribute('onclick','updatePicker()'); }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+async function updatePicker(){
+  if(!editingUid) return registerPicker();
+  var p=PICKERS.find(function(x){ return x.uid===editingUid; }); if(!p) return;
+  var upd={ firstName:document.getElementById('fFirst').value.trim(), lastName:document.getElementById('fLast').value.trim(),
+    name:(document.getElementById('fFirst').value.trim()+' '+document.getElementById('fLast').value.trim()).trim(),
+    id:document.getElementById('fId').value.trim(), personal_id:document.getElementById('fId').value.trim(),
+    phone:document.getElementById('fPhone').value.trim(), address:document.getElementById('fAddr').value.trim(),
+    bank:document.getElementById('fBank').value.trim(), role:document.getElementById('fRole').value };
+  try{ var r=await sb.from('krepa_pickers').update(upd).eq('user_id',uid).eq('uid',editingUid);
+    if(r.error){ document.getElementById('regMsg').innerHTML='<span class="warn">❌ '+r.error.message+'</span>'; return; } }
+  catch(e){ document.getElementById('regMsg').innerHTML='<span class="warn">❌ '+(e.message||e)+'</span>'; return; }
+  Object.keys(upd).forEach(function(k){ p[k]=upd[k]; });
+  document.getElementById('regMsg').innerHTML='<span class="ok">✅ განახლდა: '+esc(pName(p))+'</span>';
+  ['fFirst','fLast','fId','fPhone','fAddr','fBank'].forEach(function(id){ document.getElementById(id).value=''; });
+  editingUid=null;
+  var btn=document.querySelector('#p-pickers .card .g'); if(btn){ btn.textContent='✅ დამატება'; btn.setAttribute('onclick','registerPicker()'); }
+  renderPickers();
+}
+async function deletePicker(u){
+  var p=PICKERS.find(function(x){ return x.uid===u; }); if(!p) return;
+  if(!confirm('წავშალო მკრეფავი #'+(p.num||'')+' '+pName(p)+'?\n\n(ჩანაწერები ბაზაში რჩება — მხოლოდ მკრეფავი იშლება სიიდან.)')) return;
+  try{ var r=await sb.from('krepa_pickers').delete().eq('user_id',uid).eq('uid',u); if(r.error){ alert('❌ '+r.error.message); return; } }
+  catch(e){ alert('❌ '+(e.message||e)); return; }
+  PICKERS=PICKERS.filter(function(x){ return x.uid!==u; });
+  renderDash(); renderPickers();
+}
+
+// ── ფერადი Excel ──
+function exportPickersExcel(){
+  if(typeof XLSX==='undefined'){ alert('Excel ბიბლიოთეკა ვერ ჩაიტვირთა'); return; }
+  var head={fill:{fgColor:{rgb:'0369A1'}},font:{color:{rgb:'FFFFFF'},bold:true},alignment:{horizontal:'center'},border:bd()};
+  var tot={fill:{fgColor:{rgb:'E2E8F0'}},font:{bold:true},border:bd()};
+  var pick={fill:{fgColor:{rgb:'DCFCE7'}},font:{color:{rgb:'166534'}},border:bd()};
+  var carry={fill:{fgColor:{rgb:'FEF3C7'}},font:{color:{rgb:'B45309'}},border:bd()};
+  var cell={border:bd()};
+  function bd(){ var s={style:'thin',color:{rgb:'D9D9D9'}}; return {top:s,bottom:s,left:s,right:s}; }
+  var list=PICKERS.slice().sort(function(a,b){ return (a.num||9999)-(b.num||9999); });
+  var aoa=[['🌾 მკრეფავები — '+_today()],['№','სახელი / გვარი','როლი','პ/ნ','ტელეფონი','საცხოვრებელი','ბანკი','სულ კგ','ყუთი']];
+  var tKg=0,tBox=0;
+  list.forEach(function(p){ var kg=pkKg(p),bx=pkBox(p); tKg+=kg; tBox+=bx; aoa.push([p.num!=null?p.num:'',pName(p),p.role==='carrier'?'გამომტანი':'მკრეფავი',p.id||p.personal_id||'',p.phone||'',p.address||'',p.bank||'',Math.round(kg*10)/10,bx]); });
+  aoa.push(['','ჯამი — '+list.length+' მკრეფავი','','','','','',Math.round(tKg*10)/10,tBox]);
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  for(var R=0;R<aoa.length;R++){ for(var C=0;C<aoa[R].length;C++){ var ref=XLSX.utils.encode_cell({r:R,c:C}); if(!ws[ref]) ws[ref]={t:'s',v:''};
+    var s=cell; if(R<=1) s=head; else if(R===aoa.length-1) s=tot; else if(C===2){ s=(aoa[R][2]==='გამომტანი')?carry:pick; }
+    ws[ref].s=s; } }
+  ws['!cols']=[{wch:5},{wch:22},{wch:11},{wch:13},{wch:12},{wch:16},{wch:22},{wch:9},{wch:7}];
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:8}}];
+  var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'მკრეფავები');
+  try{ XLSX.writeFile(wb,'mkrepavebi_'+_today()+'.xlsx'); }catch(e){ alert('❌ '+(e.message||e)); }
+}
+
+function _histByDate(p){
+  var byDate={}, dord=[];
+  pkSessions(p).forEach(function(s){ var d=s.date||''; if(!byDate[d]){ byDate[d]={kg:0,box:0,earn:0,pallets:{},pSum:0,pN:0,bonus:0,price:0}; dord.push(d); } var b=byDate[d]; b.kg+=(+s.weight||0); b.box++; b.earn+=(+s.earned||0); if(s.pallet_code) b.pallets[s.pallet_code]=1; var pr=+s.price||0; if(pr>0){ b.pSum+=pr; b.pN++; } });
+  dord.forEach(function(d){ var b=byDate[d]; b.price=b.pN?(b.pSum/b.pN):0; b.bonus=BONUSBYDATE[(p.uid)+'|'+d]||0; });
+  dord.sort(function(a,b){ return a<b?1:-1; });
+  return {byDate:byDate,dord:dord};
+}
+function openPicker(u){
+  var old=document.getElementById('pkModal'); if(old) old.remove();
+  var p=PICKERS.find(function(x){ return x.uid===u; }); if(!p) return;
+  var kg=pkKg(p), box=pkBox(p), earn=Math.round(pkEarn(p)*100)/100, bonus=Math.round(pkBonus(p)*100)/100, paid=Math.round(pkPaid(p)*100)/100, remain=Math.round((pkOwed(p)-pkPaid(p))*100)/100, sms=pkSms(p);
+  var H=_histByDate(p);
+  var hist=H.dord.map(function(d){ var b=H.byDate[d];
+    var dayId='day_'+String(u).replace(/[^a-z0-9]/gi,'')+'_'+String(d).replace(/[^0-9]/g,'');
+    var sess=pkSessions(p).filter(function(s){ return s.date===d; }).sort(function(a,c){ return (''+(a.time||'')).localeCompare(''+(c.time||'')); });
+    var det=sess.map(function(s){ return '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;padding:5px 2px;border-bottom:1px dashed #e5e7eb;font-size:.75rem">'
+      +'<span class="muted">'+(s.time?('🕐 '+esc(String(s.time).slice(0,5))+' · '):'')+'ბლ: '+esc(s.quarter||'—')+' · რიგი: '+esc(s.row_num||'—')+(s.pallet_code?(' · 📦 '+esc(s.pallet_code)):'')+'</span>'
+      +'<span style="white-space:nowrap"><b>'+(Math.round((+s.weight||0)*100)/100)+'</b> კგ · <b style="color:#16a34a">'+(Math.round((+s.earned||0)*100)/100)+'</b> ₾'
+      +(s.id?(' <span style="cursor:pointer;color:#0369a1" onclick="editSession(\''+esc(String(s.id))+'\',\''+esc(u)+'\')">✏️</span> <span style="cursor:pointer;color:#dc2626" onclick="delSession(\''+esc(String(s.id))+'\',\''+esc(u)+'\')">🗑️</span>'):'')
+      +'</span></div>'; }).join('') || '<div class="muted">—</div>';
+    return '<tr style="cursor:pointer" onclick="var e=document.getElementById(\''+dayId+'\');if(e)e.style.display=(e.style.display===\'none\'?\'\':\'none\')"><td>▸ '+esc(d)+'</td><td>'+b.box+'</td><td>'+Object.keys(b.pallets).length+'</td><td><b>'+fmtKg(b.kg)+'</b></td><td>'+(b.price?b.price.toFixed(2):'—')+'</td><td><b style="color:#16a34a">'+(Math.round(b.earn*100)/100)+'</b></td><td>'+(b.bonus?('<b style="color:#7c3aed">+'+(Math.round(b.bonus*100)/100)+'</b>'):'—')+'</td></tr>'
+      +'<tr id="'+dayId+'" style="display:none;background:#f8fafc"><td colspan="7" style="padding:6px 12px">'+det+'</td></tr>';
+  }).join('');
+  if(!hist) hist='<tr><td colspan="7" class="muted">ჩანაწერი არ არის</td></tr>';
+  var role=p.role==='carrier'?'🚚 გამომტანი':'🧺 მკრეფავი';
+  var ov=document.createElement('div'); ov.id='pkModal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:700px;width:100%;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.25)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">'
+      +'<div><div style="font-size:1.15rem;font-weight:800">'+(p.num!=null?('<span class="badge b-num">#'+p.num+'</span> '):'')+esc(pName(p))+'</div>'
+      +'<div class="muted" style="margin-top:3px">'+role+' · 📞 '+esc(p.phone||'—')+' · პ/ნ '+esc(p.id||p.personal_id||'—')+(p.bank?(' · 🏦 '+esc(p.bank)):'')+'</div></div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="sec" style="width:auto;padding:7px 12px" onclick="makeIdCard(\''+esc(p.uid)+'\')">🪪 ID ბარათი</button><button class="sec" style="width:auto;padding:7px 12px" onclick="exportPickerExcel(\''+esc(p.uid)+'\')">📊 Excel</button><button class="sec" style="width:auto;padding:7px 12px" onclick="printPicker(\''+esc(p.uid)+'\')">🖨️ ბეჭდვა</button><button class="sec" style="width:auto;padding:7px 12px" onclick="document.getElementById(\'pkModal\').remove()">✕</button></div>'
+    +'</div>'
+    +'<div class="stats" style="margin:14px 0">'
+      +stat('s-green','🌾 სულ კრეფა',fmtKg(kg)+' კგ',box+' ყუთი')
+      +stat('s-blue','💰 გამომუშავებული',earn+' ₾','კგ×ფასი')
+      +stat('s-purple','🎁 ბონუსი',bonus+' ₾','დარიცხული')
+      +stat('s-orange','✅ ჩაერიცხა',paid+' ₾','გადახდილი')
+      +stat(remain>0?'s-purple':'s-green','⏳ დარჩა',remain+' ₾',remain>0?'გადასახდელი':'სრულად')
+    +'</div>'
+    +'<div style="background:#f8fafc;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:.84rem">📲 SMS: <b class="ok">'+sms.sent+' გაიგზავნა</b>'+(sms.deliv?(' · <b class="ok">'+sms.deliv+' მიუვიდა</b>'):'')+(sms.fail?(' · <b class="warn">'+sms.fail+' ვერ</b>'):'')+'</div>'
+    +'<details style="margin-bottom:12px;border:1px solid #ddd6fe;border-radius:10px;padding:10px 12px"><summary style="cursor:pointer;font-weight:700;color:#7c3aed">🎁 ბონუსის მინიჭება (სულ: '+bonus+' ₾)</summary>'
+      +'<div class="row2" style="margin-top:8px"><div><label>თარიღი</label><input type="date" id="bn_date" value="'+_today()+'"></div><div><label>ბონუსი ₾</label><input id="bn_amt" inputmode="decimal" placeholder="მაგ. 20"></div></div>'
+      +'<button class="g" style="margin-top:8px;background:#7c3aed" onclick="addBonus(\''+esc(p.uid)+'\')">🎁 მიანიჭე ბონუსი</button>'
+      +(function(){ var bk=Object.keys(BONUSBYDATE).filter(function(k){ return k.indexOf(p.uid+'|')===0 && BONUSBYDATE[k]>0; }).map(function(k){return k.split('|')[1];}).sort().reverse();
+         if(!bk.length) return '<div class="muted" style="margin-top:8px;font-size:.78rem">ჯერ ბონუსი არ არის</div>';
+         return '<div style="margin-top:8px">'+bk.map(function(d){ return '<div style="display:flex;justify-content:space-between;font-size:.78rem;padding:3px 0;border-bottom:1px dashed #e2e8f0"><span>'+esc(d)+'</span><span><b style="color:#7c3aed">+'+(BONUSBYDATE[p.uid+'|'+d])+' ₾</b> <span style="cursor:pointer;color:#dc2626" onclick="delBonus(\''+esc(p.uid)+'\',\''+esc(d)+'\')">🗑️</span></span></div>'; }).join('')+'</div>'; })()
+    +'</details>'
+    +'<details style="margin-bottom:12px;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px"><summary style="cursor:pointer;font-weight:700;color:#0369a1">✏️ მონაცემების რედაქტირება</summary>'
+      +'<div class="row2" style="margin-top:8px"><div><label>სახელი</label><input id="ep_fn" value="'+esc(p.firstName||'')+'"></div><div><label>გვარი</label><input id="ep_ln" value="'+esc(p.lastName||'')+'"></div></div>'
+      +'<div class="row2"><div><label>პირადი №</label><input id="ep_id" value="'+esc(p.id||p.personal_id||'')+'"></div><div><label>ტელეფონი</label><input id="ep_ph" value="'+esc(p.phone||'')+'"></div></div>'
+      +'<div class="row2"><div><label>საცხოვრებელი</label><input id="ep_addr" value="'+esc(p.address||'')+'"></div><div><label>ბანკი (IBAN)</label><input id="ep_bank" value="'+esc(p.bank||'')+'"></div></div>'
+      +'<div><label>როლი</label><select id="ep_role"><option value="picker"'+(p.role!=='carrier'?' selected':'')+'>🧺 მკრეფავი</option><option value="carrier"'+(p.role==='carrier'?' selected':'')+'>🚚 გამომტანი</option></select></div>'
+      +'<button class="g" style="margin-top:10px" onclick="savePickerInline(\''+esc(p.uid)+'\')">💾 შენახვა</button>'
+      +'<div id="ep_msg" style="font-size:.82rem;margin-top:6px"></div>'
+    +'</details>'
+    +'<h2 style="margin:6px 0">📅 ისტორია დღეების მიხედვით <span class="muted" style="font-weight:400;font-size:.75rem">(დააჭირე დღეს — გაიშლება ჩაწონვები, ✏️/🗑️)</span></h2>'
+    +'<div style="overflow-x:auto"><table><thead><tr><th>თარიღი</th><th>ყუთი</th><th>პალეტი</th><th>კგ</th><th>₾/კგ</th><th>თანხა ₾</th><th>ბონუსი</th></tr></thead><tbody>'+hist+'</tbody></table></div>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
+function exportPickerExcel(u){
+  if(typeof XLSX==='undefined'){ alert('Excel ბიბლიოთეკა ვერ ჩაიტვირთა'); return; }
+  var p=PICKERS.find(function(x){ return x.uid===u; }); if(!p) return;
+  var kg=pkKg(p), box=pkBox(p), earn=Math.round(pkEarn(p)*100)/100, bonus=Math.round(pkBonus(p)*100)/100, paid=Math.round(pkPaid(p)*100)/100, remain=Math.round((pkOwed(p)-pkPaid(p))*100)/100, sms=pkSms(p);
+  var H=_histByDate(p);
+  function bd(){ var s={style:'thin',color:{rgb:'D9D9D9'}}; return {top:s,bottom:s,left:s,right:s}; }
+  var head={fill:{fgColor:{rgb:'0369A1'}},font:{color:{rgb:'FFFFFF'},bold:true},alignment:{horizontal:'center'},border:bd()};
+  var tot={fill:{fgColor:{rgb:'E2E8F0'}},font:{bold:true},border:bd()};
+  var lbl={font:{bold:true,color:{rgb:'334155'}},border:bd()};
+  var cell={border:bd()};
+  var bon={fill:{fgColor:{rgb:'F3E8FF'}},font:{color:{rgb:'7C3AED'}},border:bd()};
+  var aoa=[
+    ['👤 მკრეფავის პროფილი — '+pName(p)+(p.num!=null?(' (#'+p.num+')'):'')],
+    ['როლი',p.role==='carrier'?'გამომტანი':'მკრეფავი','ტელეფონი',p.phone||'','პ/ნ',p.id||p.personal_id||''],
+    ['ბანკი (IBAN)',p.bank||'','','','',''],
+    [],
+    ['სულ კგ',Math.round(kg*10)/10,'ყუთი',box,'SMS გაიგზ.',sms.sent],
+    ['გამომუშავებული ₾',earn,'ბონუსი ₾',bonus,'SMS მიუვ.',sms.deliv||0],
+    ['ჩაერიცხა ₾',paid,'დარჩა ₾',remain,'',''],
+    [],
+    ['📅 ისტორია დღეების მიხედვით'],
+    ['თარიღი','ყუთი','პალეტი','კგ','₾/კგ','თანხა ₾','ბონუსი ₾']
+  ];
+  var hStart=aoa.length; var tB=0,tK=0,tBox=0,tBon=0;
+  H.dord.forEach(function(d){ var b=H.byDate[d]; tB+=b.earn; tK+=b.kg; tBox+=b.box; tBon+=b.bonus;
+    aoa.push([d,b.box,Object.keys(b.pallets).length,Math.round(b.kg*100)/100,b.price?Math.round(b.price*100)/100:'',Math.round(b.earn*100)/100,b.bonus?Math.round(b.bonus*100)/100:'']); });
+  aoa.push(['ჯამი',tBox,'',Math.round(tK*100)/100,'',Math.round(tB*100)/100,tBon?Math.round(tBon*100)/100:'']);
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  for(var R=0;R<aoa.length;R++){ for(var C=0;C<(aoa[R]||[]).length;C++){ var ref=XLSX.utils.encode_cell({r:R,c:C}); if(!ws[ref]) ws[ref]={t:'s',v:''};
+    var s=cell;
+    if(R===0) s=head;
+    else if(R>=1 && R<=6 && (C===0||C===2||C===4)) s=lbl;
+    else if(R===hStart-1) s=head;               // ისტორიის სათაური სტრიქონი
+    else if(R===aoa.length-1) s=tot;            // ჯამი
+    else if(R>=hStart && C===6 && aoa[R][6]) s=bon;
+    ws[ref].s=s; } }
+  ws['!cols']=[{wch:16},{wch:10},{wch:9},{wch:10},{wch:9},{wch:11},{wch:11}];
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:6}},{s:{r:hStart-2,c:0},e:{r:hStart-2,c:6}}];
+  var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'პროფილი');
+  try{ XLSX.writeFile(wb,'mkrepavi_'+pName(p).replace(/\s+/g,'_')+'.xlsx'); }catch(e){ alert('❌ '+(e.message||e)); }
+}
+async function savePickerInline(u){
+  var p=PICKERS.find(function(x){ return x.uid===u; }); if(!p) return;
+  var msg=document.getElementById('ep_msg'); if(msg) msg.innerHTML='<span class="muted">ინახება…</span>';
+  var g=function(id){ var el=document.getElementById(id); return el?el.value.trim():''; };
+  var upd={ firstName:g('ep_fn'), lastName:g('ep_ln'), name:(g('ep_fn')+' '+g('ep_ln')).trim(),
+    id:g('ep_id'), personal_id:g('ep_id'), phone:g('ep_ph'), address:g('ep_addr'), bank:g('ep_bank'), role:g('ep_role')||'picker' };
+  try{ var r=await sb.from('krepa_pickers').update(upd).eq('user_id',uid).eq('uid',u); if(r.error){ if(msg) msg.innerHTML='<span class="warn">❌ '+r.error.message+'</span>'; return; } }
+  catch(e){ if(msg) msg.innerHTML='<span class="warn">❌ '+(e.message||e)+'</span>'; return; }
+  Object.keys(upd).forEach(function(k){ p[k]=upd[k]; });
+  if(msg) msg.innerHTML='<span class="ok">✅ შენახულია</span>';
+  renderPickers();
+  setTimeout(function(){ openPicker(u); },500); // პროფილის განახლება ახალი მონაცემებით
+}
+async function editSession(id,pu){
+  var s=SESSIONS.find(function(x){ return String(x.id)===String(id); }); if(!s){ alert('ჩანაწერი ვერ მოიძებნა'); return; }
+  var cur=Math.round((+s.weight||0)*100)/100;
+  var v=prompt('ჩაწონვის სუფთა წონა (კგ):', cur);
+  if(v==null) return;
+  v=parseFloat(String(v).replace(',','.')); if(isNaN(v)||v<0){ alert('არასწორი რიცხვი'); return; }
+  var pr=(+s.price||0), earned=Math.round(v*pr*100)/100;
+  try{ var r=await sb.from('harvest_sessions').update({weight:v,kg:v,earned:earned}).eq('user_id',uid).eq('id',id); if(r.error){ alert('❌ '+r.error.message); return; } }
+  catch(e){ alert('❌ '+(e.message||e)); return; }
+  await loadSessions(); renderDash(); renderPickers(); if(pu){ openPicker(pu); } else { renderReport(); }
+}
+async function delSession(id,pu){
+  if(!confirm('წავშალო ეს ჩაწონვა? (ღრუბლიდანაც წაიშლება)')) return;
+  try{ var r=await sb.from('harvest_sessions').delete().eq('user_id',uid).eq('id',id); if(r.error){ alert('❌ '+r.error.message); return; } }
+  catch(e){ alert('❌ '+(e.message||e)); return; }
+  await loadSessions(); renderDash(); renderPickers(); if(pu){ openPicker(pu); } else { renderReport(); }
+}
+// ── ანგარიში ──
+function roleOf(puid,name){ var p=PICKERS.find(function(x){ return (puid&&x.uid===puid)||pName(x)===name; }); return p?(p.role||'picker'):'picker'; }
+function _reportRows(){
+  var from=(document.getElementById('rFrom')||{}).value||'', to=(document.getElementById('rTo')||{}).value||'', q=((document.getElementById('rPicker')||{}).value||'').trim().toLowerCase(), role=(document.getElementById('rRole')||{}).value||'';
+  var out=[];
+  SESSIONS.forEach(function(s){ if(from&&(s.date||'')<from)return; if(to&&(s.date||'')>to)return; if(q&&(s.picker_name||'').toLowerCase().indexOf(q)<0)return; if(role&&roleOf(s.picker_id,s.picker_name)!==role)return; out.push(s); });
+  // + დასწრებული ხალხი (ვისაც ჩაწონვა არ აქვს იმ დღეს — მაგ. გამომტანი)
+  var seen={}; out.forEach(function(s){ seen[(s.picker_id||s.picker_name)+'|'+(s.date||'')]=1; });
+  ATT.forEach(function(a){ if(a.type!=='in')return; if(from&&(a.date||'')<from)return; if(to&&(a.date||'')>to)return; var nm=a.picker_name||''; if(roleOf(a.picker_uid,nm)!=='carrier') return; if(q&&nm.toLowerCase().indexOf(q)<0)return; if(role&&roleOf(a.picker_uid,nm)!==role)return; var key=(a.picker_uid||nm)+'|'+(a.date||''); if(seen[key])return; seen[key]=1; out.push({picker_id:a.picker_uid,picker_name:nm,date:a.date,weight:0,earned:0,_att:true}); });
+  return out;
+}
+function _reportDaily(rows){
+  var g={}, ord=[];
+  rows.forEach(function(s){ var k=(s.picker_name||'—')+'||'+(s.date||''); if(!g[k]){ g[k]={name:s.picker_name||'—',puid:s.picker_id||'',date:s.date||'',box:0,kg:0,earn:0,pallets:{},items:[]}; ord.push(k); } var b=g[k]; if(!b.puid&&s.picker_id)b.puid=s.picker_id; if(!s._att){ b.box++; b.kg+=(+s.weight||0); b.earn+=(+s.earned||0); if(s.pallet_code)b.pallets[s.pallet_code]=1; b.items.push(s); } });
+  return ord.map(function(k){ var b=g[k]; b.bonus=BONUSBYDATE[(b.puid||'')+'|'+b.date]||0; return b; }).sort(function(a,b){ return (b.date+'|'+a.name)<(a.date+'|'+b.name)?-1:1; });
+}
+function _reportByPicker(rows){
+  var g={}, ord=[];
+  rows.forEach(function(s){ var puid=s.picker_id||('n:'+(s.picker_name||'')); if(!g[puid]){ g[puid]={name:s.picker_name||'—',puid:s.picker_id||'',box:0,kg:0,earn:0,pallets:{},dmap:{},dord:[]}; ord.push(puid); } var b=g[puid]; if(!b.puid&&s.picker_id)b.puid=s.picker_id;
+    if(!s._att){ b.box++; b.kg+=(+s.weight||0); b.earn+=(+s.earned||0); if(s.pallet_code)b.pallets[s.pallet_code]=1; }
+    var d=s.date||''; if(!b.dmap[d]){ b.dmap[d]={date:d,box:0,kg:0,earn:0,pallets:{},items:[]}; b.dord.push(d); } var dd=b.dmap[d]; if(!s._att){ dd.box++; dd.kg+=(+s.weight||0); dd.earn+=(+s.earned||0); if(s.pallet_code)dd.pallets[s.pallet_code]=1; dd.items.push(s); } });
+  return ord.map(function(u){ var b=g[u]; b.bonus=0; b.dord.sort().reverse(); b.dord.forEach(function(d){ var bn=BONUSBYDATE[(b.puid||'')+'|'+d]||0; b.dmap[d].bonus=bn; b.bonus+=bn; }); return b; }).sort(function(a,b){ return b.kg-a.kg; });
+}
+function toggleRp(ix){ document.querySelectorAll('.rp'+ix).forEach(function(e){ e.style.display=(e.style.display==='none'?'':'none'); }); }
+function _reportSectors(rows){
+  var m={}; rows.forEach(function(s){ var k=(''+(s.quarter||'—')).trim()||'—'; if(!m[k])m[k]={sec:k,kg:0,n:0,earn:0,pal:{}}; var x=m[k]; x.kg+=(+s.weight||0); x.n++; x.earn+=(+s.earned||0); if(s.pallet_code)x.pal[s.pallet_code]=1; });
+  return Object.keys(m).map(function(k){ var x=m[k]; x.palCount=Object.keys(x.pal).length; return x; }).sort(function(a,b){ return b.kg-a.kg; });
+}
+function renderReport(){
+  var body=document.getElementById('reportBody'); if(!body) return;
+  var rows=_reportRows();
+  if(!rows.length){ body.innerHTML='<div class="muted">ამ ფილტრით ჩანაწერი არ არის.</div>'; return; }
+  var daily=_reportDaily(rows);
+  var tBox=0,tKg=0,tE=0,palSet={},pickSet={};
+  rows.forEach(function(s){ tBox++; tKg+=(+s.weight||0); tE+=(+s.earned||0); if(s.pallet_code)palSet[s.pallet_code]=1; var k=s.picker_id||s.picker_name; if(k)pickSet[k]=1; });
+  // ── ანალიტიკა ──
+  var bonusTot=0; daily.forEach(function(m){ bonusTot+=(m.bonus||0); });
+  var pkAgg={}; rows.forEach(function(s){ var k=s.picker_id||('n:'+(s.picker_name||'')); if(!pkAgg[k])pkAgg[k]={kg:0,name:s.picker_name||'',puid:s.picker_id||''}; pkAgg[k].kg+=(+s.weight||0); });
+  var pkList=Object.keys(pkAgg).map(function(k){return pkAgg[k];});
+  var nPick=0,nCarr=0; pkList.forEach(function(x){ if(roleOf(x.puid,x.name)==='carrier')nCarr++; else nPick++; });
+  var nP=pkList.length||1, avgKg=tKg/nP, avgLari=(tE+bonusTot)/nP;
+  var top=pkList.slice().sort(function(a,b){return b.kg-a.kg;})[0];
+  function anaCard(c,lbl,val,sub){ return '<div style="background:'+c+';color:#fff;border-radius:11px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.08);min-width:0"><div style="font-size:.7rem;opacity:.92;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+lbl+'</div><div style="font-size:1.12rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+val+'</div>'+(sub?'<div style="font-size:.63rem;opacity:.9;margin-top:2px;line-height:1.25">'+sub+'</div>':'')+'</div>'; }
+  var h='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px">'
+    +anaCard('#0ea5e9','🧺 მკრეფავი',nPick,'')
+    +anaCard('#b45309','🚚 გამომტანი',nCarr,'')
+    +anaCard('#ea580c','📦 ყუთი',tBox.toLocaleString('en-US'),Object.keys(palSet).length+' პალეტი')
+    +anaCard('#059669','⚖️ კგ სულ',fmtKg(tKg),'საშ. '+(Math.round(avgKg*10)/10)+' კგ/მკრ.')
+    +anaCard('#16a34a','💰 კგ×ფასი',(Math.round(tE*100)/100).toLocaleString('en-US')+' ₾','')
+    +anaCard('#7c3aed','🎁 ბონუსი','+'+(Math.round(bonusTot*100)/100).toLocaleString('en-US')+' ₾','საშ. '+(Math.round(avgLari*100)/100)+' ₾/კაცი')
+    +(top?anaCard('#d97706','🏆 ტოპ',esc(top.name),fmtKg(top.kg)+' კგ'):'')
+    +'</div>';
+  var byP=_reportByPicker(rows);
+  var tBon=0; byP.forEach(function(m){ tBon+=m.bonus; });
+  h+='<div style="overflow-x:auto"><table><thead><tr><th><input type="checkbox" id="rSelAll" onclick="toggleAllSel(this)"></th><th>მკრეფავი</th><th>დღე</th><th>ყუთი</th><th>კგ</th><th>₾/კგ</th><th>₾</th><th>🎁 ბონ.</th><th>ჯამი ₾</th></tr></thead><tbody>';
+  byP.forEach(function(m,ix){
+    var rl=roleOf(m.puid,m.name); var rb=rl==='carrier'?'<span class="badge b-carry" style="font-size:.6rem">🚚</span>':'';
+    var ppk=m.kg>0?(m.earn/m.kg):0;
+    var totLari=Math.round((m.earn+m.bonus)*100)/100;
+    h+='<tr style="cursor:pointer;font-weight:600" onclick="toggleRp('+ix+')"><td onclick="event.stopPropagation()"><input type="checkbox" class="rsel" data-puid="'+esc(m.puid||'')+'" onchange="updateSelCount()"></td><td>▸ '+esc(m.name)+' '+rb+'</td><td class="muted">'+m.dord.length+' დღე</td><td>'+m.box+'</td><td><b>'+fmtKg(m.kg)+'</b></td><td>'+(ppk?ppk.toFixed(2):'—')+'</td><td>'+(Math.round(m.earn*100)/100)+'</td><td>'+(m.bonus?('<b style="color:#7c3aed">+'+(Math.round(m.bonus*100)/100)+'</b>'):'—')+'</td><td><b style="color:#16a34a">'+totLari+'</b></td></tr>';
+    m.dord.forEach(function(d){ var dd=m.dmap[d]; var pk=dd.kg>0?(dd.earn/dd.kg):0;
+      var det=dd.items.slice().sort(function(a,b){return(''+(a.time||'')).localeCompare(''+(b.time||''));}).map(function(s){ return '<div style="display:flex;justify-content:space-between;font-size:.72rem;padding:3px 0;border-bottom:1px dashed #e5e7eb"><span class="muted">'+(s.time?('🕐 '+esc(String(s.time).slice(0,5))+' · '):'')+'ბლ '+esc(s.quarter||'—')+' · რიგ '+esc(s.row_num||'—')+(s.pallet_code?(' · 📦 '+esc(s.pallet_code)):'')+'</span><span style="white-space:nowrap"><b>'+(Math.round((+s.weight||0)*100)/100)+'</b>კგ · <b style="color:#16a34a">'+(Math.round((+s.earned||0)*100)/100)+'</b>₾'+(s.id?(' <span style="cursor:pointer;color:#0369a1" onclick="editSession(\''+esc(String(s.id))+'\',null)">✏️</span> <span style="cursor:pointer;color:#dc2626" onclick="delSession(\''+esc(String(s.id))+'\',null)">🗑️</span>'):'')+'</span></div>'; }).join('');
+      h+='<tr class="rp'+ix+'" style="display:none;background:#f8fafc;font-size:.82rem"><td></td><td class="muted" style="cursor:pointer" onclick="var e=this.parentNode.nextElementSibling;if(e&&e.className===\'rpdet'+ix+'-'+esc(d)+'\')e.style.display=(e.style.display===\'none\'?\'\':\'none\')">📅 '+esc(d)+'</td><td>'+Object.keys(dd.pallets).length+' პალ.</td><td>'+dd.box+'</td><td>'+fmtKg(dd.kg)+'</td><td>'+(pk?pk.toFixed(2):'—')+'</td><td>'+(Math.round(dd.earn*100)/100)+'</td><td>'+(dd.bonus?('+'+(Math.round(dd.bonus*100)/100)):'—')+'</td><td>'+(Math.round((dd.earn+dd.bonus)*100)/100)+'</td></tr>'
+        +'<tr class="rp'+ix+' rpdet'+ix+'-'+esc(d)+'" style="display:none;background:#fff"><td></td><td colspan="8" style="padding:5px 10px">'+det+'</td></tr>';
+    });
+  });
+  h+='</tbody><tfoot><tr style="background:#f1f5f9;font-weight:800"><td></td><td>ჯამი</td><td>'+byP.length+' მკრ.</td><td>'+tBox+'</td><td>'+fmtKg(tKg)+'</td><td></td><td>'+(Math.round(tE*100)/100)+'</td><td>'+(tBon?('+'+(Math.round(tBon*100)/100)):'—')+'</td><td>'+(Math.round((tE+tBon)*100)/100)+'</td></tr></tfoot></table></div>';
+  var secs=_reportSectors(rows), secMax=secs.reduce(function(m,x){return Math.max(m,x.kg);},0)||1, secTot=secs.reduce(function(s,x){return s+x.kg;},0)||1;
+  var cols=['#16a34a','#0ea5e9','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#ef4444','#6366f1','#84cc16','#f97316'];
+  h+='<div style="margin-top:16px;border:1px solid #d1fae5;border-radius:12px;padding:12px 14px;background:linear-gradient(135deg,#f0fdf4,#ecfeff)"><div style="font-weight:800;color:#0f766e;margin-bottom:10px">📍 კრეფა ბლოკის (სექტორის) მიხედვით — '+secs.length+' ბლოკი</div>';
+  secs.forEach(function(x,i){ var c=cols[i%cols.length], pct=Math.round(x.kg/secMax*100), share=Math.round(x.kg/secTot*100);
+    h+='<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:.76rem;margin-bottom:3px"><span>📦 '+esc(x.sec)+' <span class="muted" style="font-size:.68rem">· '+x.n+' ჩაწონვა · '+x.palCount+' პალეტი</span></span><b style="color:'+c+'">'+fmtKg(x.kg)+' კგ · '+(Math.round(x.earn*100)/100)+' ₾</b></div><div style="height:10px;background:#eef2f7;border-radius:5px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+c+'"></div></div><div class="muted" style="font-size:.64rem;margin-top:1px">'+share+'% სულ კგ-დან</div></div>'; });
+  h+='</div>';
+  body.innerHTML=h;
+}
+function exportReportExcel(){
+  if(typeof XLSX==='undefined'){ alert('Excel ვერ ჩაიტვირთა'); return; }
+  var rows=_reportRows(); if(!rows.length){ alert('ჩანაწერი არ არის'); return; }
+  var daily=_reportDaily(rows), secs=_reportSectors(rows);
+  function bd(){ var s={style:'thin',color:{rgb:'D9D9D9'}}; return {top:s,bottom:s,left:s,right:s}; }
+  var head={fill:{fgColor:{rgb:'0369A1'}},font:{color:{rgb:'FFFFFF'},bold:true},alignment:{horizontal:'center'},border:bd()};
+  var tot={fill:{fgColor:{rgb:'E2E8F0'}},font:{bold:true},border:bd()}, cell={border:bd()};
+  var wb=XLSX.utils.book_new();
+  // ფურცელი 1: მკრეფავი×დღე
+  var a1=[['მკრეფავი','თარიღი','პალეტი','ყუთი','კგ','₾/კგ','₾','🎁 ბონუსი','ჯამი ₾']]; var tB=0,tK=0,tE=0,tBn=0;
+  daily.forEach(function(m){ tB+=m.box; tK+=m.kg; tE+=m.earn; tBn+=(m.bonus||0); var ppk=m.kg>0?(m.earn/m.kg):0; a1.push([m.name,m.date,Object.keys(m.pallets).length,m.box,Math.round(m.kg*100)/100,Math.round(ppk*100)/100,Math.round(m.earn*100)/100,Math.round((m.bonus||0)*100)/100,Math.round((m.earn+(m.bonus||0))*100)/100]); });
+  a1.push(['ჯამი','','',tB,Math.round(tK*100)/100,'',Math.round(tE*100)/100,Math.round(tBn*100)/100,Math.round((tE+tBn)*100)/100]);
+  var ws1=XLSX.utils.aoa_to_sheet(a1);
+  for(var R=0;R<a1.length;R++)for(var C=0;C<a1[R].length;C++){ var rf=XLSX.utils.encode_cell({r:R,c:C}); if(!ws1[rf])ws1[rf]={t:'s',v:''}; ws1[rf].s=(R===0?head:(R===a1.length-1?tot:cell)); }
+  ws1['!cols']=[{wch:22},{wch:12},{wch:8},{wch:7},{wch:10},{wch:8},{wch:11},{wch:11},{wch:11}];
+  XLSX.utils.book_append_sheet(wb,ws1,'მკრეფავი×დღე');
+  // ფურცელი 2: ბლოკები
+  var a2=[['ბლოკი/სექტორი','ჩაწონვა','პალეტი','კგ','₾']];
+  secs.forEach(function(x){ a2.push([x.sec,x.n,x.palCount,Math.round(x.kg*100)/100,Math.round(x.earn*100)/100]); });
+  var ws2=XLSX.utils.aoa_to_sheet(a2);
+  for(var R2=0;R2<a2.length;R2++)for(var C2=0;C2<a2[R2].length;C2++){ var rf2=XLSX.utils.encode_cell({r:R2,c:C2}); if(!ws2[rf2])ws2[rf2]={t:'s',v:''}; ws2[rf2].s=(R2===0?head:cell); }
+  ws2['!cols']=[{wch:20},{wch:9},{wch:8},{wch:11},{wch:11}];
+  XLSX.utils.book_append_sheet(wb,ws2,'ბლოკების მიხედვით');
+  try{ XLSX.writeFile(wb,'krefa_angarishi_'+_today()+'.xlsx'); }catch(e){ alert('❌ '+(e.message||e)); }
+}
+function printReport(){
+  var rows=_reportRows(); if(!rows.length){ alert('ჩანაწერი არ არის'); return; }
+  var daily=_reportDaily(rows), secs=_reportSectors(rows);
+  var w=window.open('','_blank'); if(!w){ alert('popup დაბლოკილია'); return; }
+  var tB=0,tK=0,tE=0; daily.forEach(function(m){ tB+=m.box; tK+=m.kg; tE+=m.earn; });
+  var css='body{font-family:system-ui,sans-serif;color:#0f172a;padding:20px;max-width:820px;margin:0 auto}h1{font-size:1.2rem}table{width:100%;border-collapse:collapse;font-size:.82rem;margin:8px 0}th,td{border:1px solid #e2e8f0;padding:5px 8px;text-align:left}th{background:#f8fafc}h2{font-size:1rem;background:#f1f5f9;padding:6px 10px;border-radius:6px;margin:14px 0 6px}';
+  var h='<html><head><meta charset="utf-8"><title>კრეფის ანგარიში</title><style>'+css+'</style></head><body><h1>🌾 კრეფის ანგარიში</h1>';
+  h+='<table><thead><tr><th>მკრეფავი</th><th>თარიღი</th><th>პალეტი</th><th>ყუთი</th><th>კგ</th><th>₾</th></tr></thead><tbody>';
+  daily.forEach(function(m){ h+='<tr><td>'+esc(m.name)+'</td><td>'+esc(m.date)+'</td><td>'+Object.keys(m.pallets).length+'</td><td>'+m.box+'</td><td>'+fmtKg(m.kg)+'</td><td>'+(Math.round(m.earn*100)/100)+'</td></tr>'; });
+  h+='<tr style="font-weight:800;background:#f1f5f9"><td colspan="3">ჯამი</td><td>'+tB+'</td><td>'+fmtKg(tK)+'</td><td>'+(Math.round(tE*100)/100)+'</td></tr></tbody></table>';
+  h+='<h2>ბლოკის (სექტორის) მიხედვით</h2><table><thead><tr><th>ბლოკი</th><th>ჩაწონვა</th><th>პალეტი</th><th>კგ</th><th>₾</th></tr></thead><tbody>';
+  secs.forEach(function(x){ h+='<tr><td>'+esc(x.sec)+'</td><td>'+x.n+'</td><td>'+x.palCount+'</td><td>'+fmtKg(x.kg)+'</td><td>'+(Math.round(x.earn*100)/100)+'</td></tr>'; });
+  h+='</tbody></table><div style="margin-top:16px;font-size:.75rem;color:#64748b">AgroInTechSol · '+new Date().toLocaleString('ka-GE')+'</div></body></html>';
+  w.document.write(h); w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} },400);
+}
+async function setBonus(date, pickerUid, amount){
+  var v=parseFloat(String(amount).replace(',','.'));
+  try{
+    if(!v || isNaN(v)){ await sb.from('krepa_bonuses').delete().eq('user_id',uid).eq('bonus_date',date).eq('picker_uid',String(pickerUid)); }
+    else { await sb.from('krepa_bonuses').upsert({user_id:uid,bonus_date:date,picker_uid:String(pickerUid),amount:v,updated_at:new Date().toISOString()},{onConflict:'user_id,bonus_date,picker_uid'}); }
+    return true;
+  }catch(e){ alert('❌ '+(e.message||e)); return false; }
+}
+async function addBonus(pu){
+  var date=(document.getElementById('bn_date')||{}).value||_today();
+  var amt=(document.getElementById('bn_amt')||{}).value;
+  if(amt===''||isNaN(parseFloat(amt))){ alert('ჩაწერე ბონუსის თანხა'); return; }
+  var ok=await setBonus(date,pu,amt); if(!ok) return;
+  await loadBonuses(); renderDash(); renderPickers(); openPicker(pu);
+}
+async function delBonus(pu,date){
+  if(!confirm(date+'-ის ბონუსი წავშალო?')) return;
+  var ok=await setBonus(date,pu,''); if(!ok) return;
+  await loadBonuses(); renderDash(); renderPickers(); openPicker(pu);
+}
+function toggleAllSel(cb){ document.querySelectorAll('.rsel').forEach(function(x){ x.checked=cb.checked; }); updateSelCount(); }
+function updateSelCount(){ var n=document.querySelectorAll('.rsel:checked').length; var el=document.getElementById('rSelCount'); if(el) el.textContent=n+' არჩეული'; }
+async function applyBulkBonus(){
+  var amt=(document.getElementById('rBonusAmt')||{}).value;
+  if(amt===''||isNaN(parseFloat(amt))){ alert('ჩაწერე ბონუსის თანხა'); return; }
+  var date=(document.getElementById('rBonusDate')||{}).value;
+  if(!date){ alert('აირჩიე ბონუსის თარიღი (მასობრივი ბონუსის ზოლში)'); return; }
+  var boxes=Array.prototype.slice.call(document.querySelectorAll('.rsel:checked'));
+  if(!boxes.length){ alert('ჯერ მონიშნე მკრეფავები (☑)'); return; }
+  if(!confirm(boxes.length+' მკრეფავს ბონუსი '+amt+' ₾ ('+date+') მივანიჭო?')) return;
+  for(var i=0;i<boxes.length;i++){ var puid=boxes[i].getAttribute('data-puid'); if(puid) await setBonus(date,puid,amt); }
+  await loadBonuses(); renderDash(); renderPickers(); renderReport();
+  alert('✅ ბონუსი მიენიჭა '+boxes.length+' მკრეფავს');
+}
+function openKgBonus(){
+  var old=document.getElementById('kgbModal'); if(old) old.remove();
+  var td=(document.getElementById('rTo')||{}).value||_today();
+  var ov=document.createElement('div'); ov.id='kgbModal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:560px;width:100%;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.25)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-size:1.1rem;font-weight:800;color:#059669">🎁 ავტო-ბონუსი — მკრეფავები (კგ)</div><button class="sec" style="width:auto;padding:6px 11px" onclick="document.getElementById(\'kgbModal\').remove()">✕</button></div>'
+    +'<div class="muted" style="font-size:.82rem;margin-bottom:10px">არჩეულ პერიოდში თითო მკრეფავის სულ კგ-ის მიხედვით (დიაპაზონი). გამომტანებს — „🚚 გამომტანის ბონუსი".</div>'
+    +'<div id="kgbTiers">'
+      +kgbRow(45,54.9,10)+kgbRow(55,64.9,20)+kgbRow(65,74.9,30)+kgbRow(75,84.9,40)+kgbRow(85,'',50)
+    +'</div>'
+    +'<button class="sec" style="margin-top:6px;padding:6px;width:auto" onclick="document.getElementById(\'kgbTiers\').insertAdjacentHTML(\'beforeend\', window._kgbRowHtml(0,\'\',0))">➕ საფეხური</button>'
+    +'<div style="margin-top:12px"><label>ბონუსის თარიღი</label><input type="date" id="kgbDate" value="'+td+'"></div>'
+    +'<button class="sec" style="margin-top:10px;background:#0369a1;color:#fff;border:none" onclick="kgbPreview()">🔄 წინასწარი გადათვლა (ვის რამდენი)</button>'
+    +'<div id="kgbPrev" style="margin-top:10px"></div>'
+    +'<button class="g" style="margin-top:10px;background:#059669" onclick="applyKgBonus()">✅ დაადასტურე და მიანიჭე</button>'
+    +'<div id="kgbMsg" style="font-size:.82rem;margin-top:8px"></div>'
+    +'</div>';
+  document.body.appendChild(ov);
+  kgbPreview();
+}
+function kgbRow(from,to,amt){ return '<div class="kgbTier" style="display:grid;grid-template-columns:auto 1fr auto 1fr auto 1fr auto;gap:6px;align-items:center;margin-bottom:6px"><span class="muted" style="font-size:.72rem">დან</span><input class="kgbFrom" inputmode="decimal" value="'+from+'" style="padding:7px"><span class="muted" style="font-size:.72rem">მდე</span><input class="kgbTo" inputmode="decimal" value="'+to+'" placeholder="▲" style="padding:7px"><span class="muted" style="font-size:.72rem">₾</span><input class="kgbAmt" inputmode="decimal" value="'+amt+'" style="padding:7px"><button class="sec" style="width:auto;padding:5px 9px" onclick="this.parentNode.remove();kgbPreview()">✕</button></div>'; }
+window._kgbRowHtml=kgbRow;
+function _kgbTiers(){ var t=[]; document.querySelectorAll('#kgbTiers .kgbTier').forEach(function(r){ var from=parseFloat(r.querySelector('.kgbFrom').value); var toV=r.querySelector('.kgbTo').value; var to=(toV===''||toV==null)?Infinity:parseFloat(toV); var amt=parseFloat(r.querySelector('.kgbAmt').value); if(!isNaN(from)&&!isNaN(amt)) t.push({from:from,to:isNaN(to)?Infinity:to,amt:amt}); }); return t.sort(function(a,b){return a.from-b.from;}); }
+function _kgbCompute(){
+  var tiers=_kgbTiers(), rows=_reportRows(), agg={};
+  rows.forEach(function(s){ var puid=s.picker_id||''; if(!puid||roleOf(puid,s.picker_name)==='carrier') return; if(!agg[puid])agg[puid]={kg:0,name:s.picker_name||''}; agg[puid].kg+=(+s.weight||0); });
+  var list=Object.keys(agg).map(function(u){ var kg=agg[u].kg, bonus=0; for(var i=0;i<tiers.length;i++){ if(kg>=tiers[i].from && kg<=tiers[i].to){ bonus=tiers[i].amt; break; } } return {uid:u,name:agg[u].name,kg:kg,bonus:bonus}; });
+  return list.sort(function(a,b){return b.kg-a.kg;});
+}
+function kgbPreview(){
+  var box=document.getElementById('kgbPrev'); if(!box) return;
+  var list=_kgbCompute(); var tot=0,cnt=0; list.forEach(function(x){ if(x.bonus>0){tot+=x.bonus;cnt++;} });
+  var h='<div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden"><div style="max-height:220px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem"><thead><tr style="background:#f8fafc"><th style="text-align:left;padding:6px 9px">მკრეფავი</th><th style="text-align:right;padding:6px 9px">კგ</th><th style="text-align:right;padding:6px 9px">ბონუსი</th></tr></thead><tbody>';
+  list.forEach(function(x){ h+='<tr style="border-top:1px solid #f1f5f9"><td style="padding:5px 9px">'+esc(x.name)+'</td><td style="text-align:right;padding:5px 9px">'+fmtKg(x.kg)+'</td><td style="text-align:right;padding:5px 9px">'+(x.bonus>0?('<b style="color:#059669">+'+x.bonus+'</b>'):'—')+'</td></tr>'; });
+  h+='</tbody></table></div><div style="background:#f0fdf4;padding:8px 10px;font-weight:800;color:#166534;font-size:.82rem">🎁 '+cnt+' მკრეფავი → სულ +'+(Math.round(tot*100)/100)+' ₾</div></div>';
+  box.innerHTML=h;
+}
+async function applyKgBonus(){
+  var msg=document.getElementById('kgbMsg'); msg.innerHTML='<span class="muted">ვრიცხავ…</span>';
+  var date=(document.getElementById('kgbDate')||{}).value||_today();
+  var list=_kgbCompute().filter(function(x){ return x.bonus>0; });
+  if(!list.length){ msg.innerHTML='<span class="warn">ვერავინ მოხვდა საფეხურში</span>'; return; }
+  if(!confirm(list.length+' მკრეფავს დაერიცხოს ბონუსი '+date+'-ზე?')) { msg.innerHTML=''; return; }
+  for(var i=0;i<list.length;i++){ await setBonus(date,list[i].uid,list[i].bonus); }
+  await loadBonuses(); renderDash(); renderPickers(); renderReport();
+  msg.innerHTML='<span class="ok">✅ დაერიცხა '+list.length+' მკრეფავს ('+date+')</span>';
+}
+function openCarrierBonus(){
+  var old=document.getElementById('cbModal'); if(old) old.remove();
+  var td=(document.getElementById('rTo')||{}).value||_today();
+  var ov=document.createElement('div'); ov.id='cbModal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:520px;width:100%;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.25)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-size:1.1rem;font-weight:800;color:#b45309">🚚 გამომტანის ბონუსი</div><button class="sec" style="width:auto;padding:6px 11px" onclick="document.getElementById(\'cbModal\').remove()">✕</button></div>'
+    +'<div class="muted" style="font-size:.82rem;margin-bottom:10px">აირჩიე თარიღი → იმ დღეს დამსწრე გამომტანები (QR-რეგისტრაციიდან) → თითო დღეზე ფიქსირებული თანხა.</div>'
+    +'<div class="row2"><div><label>თარიღი</label><input type="date" id="cbDate" value="'+td+'" onchange="cbDateCarriers()"></div><div><label>ბონუსი დღეზე ₾</label><input id="cbAmt" inputmode="decimal" value="60" style="padding:8px"></div></div>'
+    +'<div id="cbDays" style="margin-top:12px"></div>'
+    +'<button class="g" style="margin-top:12px;background:#b45309" onclick="applyCarrierBonus()">✅ დარიცხვა</button>'
+    +'<div id="cbMsg" style="font-size:.82rem;margin-top:8px"></div>'
+    +'</div>';
+  document.body.appendChild(ov); cbDateCarriers();
+}
+function cbDateCarriers(){
+  var date=(document.getElementById('cbDate')||{}).value||_today(), box=document.getElementById('cbDays');
+  var carriers=PICKERS.filter(function(p){ return p.role==='carrier'; });
+  var present={};
+  ATT.forEach(function(r){ if(r.type==='in' && r.date===date && r.picker_uid) present[r.picker_uid]=1; });
+  SESSIONS.forEach(function(s){ if(s.date===date && s.picker_id) present[s.picker_id]=1; });
+  var list=carriers.filter(function(c){ return present[c.uid]; }).sort(function(a,b){ return (a.num||9999)-(b.num||9999); });
+  if(!list.length){ box.innerHTML='<div class="muted">'+date+'-ს დამსწრე გამომტანი არ არის.<br>ჯერ „📋 რეგისტრაცია"-ში ჩაარეგისტრირე QR-ით.</div>'; return; }
+  box.innerHTML='<div style="font-size:.8rem;font-weight:700;color:#334155;margin-bottom:6px">'+date+' — დამსწრე გამომტანები ('+list.length+') · მოხსენი ვინც არ მუშაობდა:</div>'
+    +'<div style="max-height:220px;overflow:auto">'+list.map(function(c){ return '<label style="display:flex;align-items:center;gap:10px;font-size:.9rem;padding:8px 6px;cursor:pointer;border-bottom:1px solid #f1f5f9"><input type="checkbox" class="cbCar" data-uid="'+esc(c.uid)+'" checked style="width:18px;height:18px;flex:0 0 auto"> <span>🚚 '+(c.num!=null?('#'+c.num+' '):'')+esc(pName(c))+'</span></label>'; }).join('')+'</div>';
+}
+async function applyCarrierBonus(){
+  var msg=document.getElementById('cbMsg');
+  var date=(document.getElementById('cbDate')||{}).value||_today();
+  var amt=parseFloat((document.getElementById('cbAmt')||{}).value); if(isNaN(amt)){ alert('ჩაწერე თანხა'); return; }
+  var cars=Array.prototype.slice.call(document.querySelectorAll('.cbCar:checked'));
+  if(!cars.length){ alert('მონიშნე გამომტანები'); return; }
+  msg.innerHTML='<span class="muted">ვრიცხავ…</span>';
+  for(var i=0;i<cars.length;i++){ await setBonus(date, cars[i].getAttribute('data-uid'), amt); }
+  await loadBonuses(); renderDash(); renderPickers(); renderReport();
+  msg.innerHTML='<span class="ok">✅ '+cars.length+' გამომტანს დაერიცხა '+amt+' ₾ ('+date+')</span>';
+}
+// ── დასწრება (რეგისტრაცია) ──
+// ── პლანტაცია (ბლოკები/რიგები) ──
+async function loadPlantation(){
+  BLOCKS=[]; ROWS=[];
+  try{ var b=await sb.from('agro_blocks').select('*').eq('user_id',uid); if(!b.error) BLOCKS=b.data||[]; }catch(e){}
+  try{ var r=await sb.from('agro_rows').select('*').eq('user_id',uid); if(!r.error) ROWS=r.data||[]; }catch(e){}
+}
+function _natSort(a,b){ return String(a==null?'':a).localeCompare(String(b==null?'':b),undefined,{numeric:true,sensitivity:'base'}); }
+function qrFillBlocks(){
+  var sel=document.getElementById('qrBlockSel'); if(!sel) return;
+  if(!BLOCKS.length){ sel.innerHTML='<option value="">— ბლოკი არ არის (პლანტაცია ცარიელია) —</option>'; return; }
+  var bs=BLOCKS.slice().sort(function(a,b){ return _natSort(a.name||a.id,b.name||b.id); });
+  sel.innerHTML='<option value="">— აირჩიე ბლოკი —</option>'+bs.map(function(b){ var rc=ROWS.filter(function(r){ return String(r.block_id)===String(b.id); }).length; return '<option value="'+esc(b.id)+'">'+esc(b.name||b.id)+' ('+rc+' რიგი)</option>'; }).join('');
+  qrShowRows();
+}
+function qrShowRows(){
+  var bid=(document.getElementById('qrBlockSel')||{}).value||'', box=document.getElementById('qrRowsList'); if(!box) return;
+  if(!bid){ box.innerHTML='<div class="muted" style="font-size:.8rem">აირჩიე ბლოკი, რომ რიგები გამოჩნდეს.</div>'; return; }
+  var rs=ROWS.filter(function(r){ return String(r.block_id)===String(bid); }).sort(function(a,b){ return _natSort(a.name||a.id,b.name||b.id); });
+  if(!rs.length){ box.innerHTML='<div class="muted" style="font-size:.8rem">ამ ბლოკს რიგები არ აქვს.</div>'; return; }
+  box.innerHTML='<div style="display:flex;gap:8px;margin-bottom:6px"><button class="sec" style="width:auto;padding:5px 10px;font-size:.78rem" onclick="document.querySelectorAll(\'.qrRowChk\').forEach(function(c){c.checked=true})">ყველა</button><button class="sec" style="width:auto;padding:5px 10px;font-size:.78rem" onclick="document.querySelectorAll(\'.qrRowChk\').forEach(function(c){c.checked=false})">არცერთი</button></div>'
+    +'<div style="max-height:220px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:4px">'
+    +rs.map(function(r){ return '<label style="display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer"><input type="checkbox" class="qrRowChk" data-rid="'+esc(r.id)+'" data-name="'+esc(r.name||r.id)+'" checked> '+esc(r.name||r.id)+'</label>'; }).join('')+'</div>';
+}
+async function loadAttendance(){ ATT=[]; try{ var r=await sb.from('attendance').select('*').eq('user_id',uid); if(!r.error) ATT=r.data||[]; }catch(e){} }
+function resolvePicker(raw){
+  var v=String(raw||'').trim(); if(!v) return null;
+  if(/^\d+$/.test(v)){ var byNum=PICKERS.find(function(p){ return String(p.num)===v; }); if(byNum) return byNum; }
+  var parts=v.split('|'), qUid=parts[0], sh=parts[parts.length-1];
+  function nm(x){ return String(x||'').replace(/^P/i,'').replace(/_/g,'').trim().toUpperCase(); }
+  return PICKERS.find(function(p){ return nm(p.uid)===nm(qUid) || nm(p.uid)===nm(v) || (p.short_code&&nm(p.short_code)===nm(sh)); }) || null;
+}
+function attSetMode(m){ attMode=m; var i=document.getElementById('attIn'), o=document.getElementById('attOut');
+  if(i&&o){ if(m==='in'){ i.className=''; i.style.cssText='background:#16a34a'; o.className='sec'; o.style.cssText='border-color:#dc2626;color:#dc2626'; } else { o.className=''; o.style.cssText='background:#dc2626;color:#fff'; i.className='sec'; i.style.cssText='border-color:#16a34a;color:#16a34a'; } }
+  var inp=document.getElementById('attScan'); if(inp) inp.focus();
+}
+async function attRecord(raw){
+  var fl=document.getElementById('attFlash');
+  var p=resolvePicker(raw);
+  if(!p){ if(fl){ fl.textContent='❌ ვერ მოიძებნა: '+raw; fl.style.color='#dc2626'; } return; }
+  var date=(document.getElementById('attDate')||{}).value||_today();
+  var now=new Date(), time=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
+  var ex=ATT.find(function(r){ return r.picker_uid===p.uid && r.type===attMode && r.date===date; });
+  try{
+    if(ex){ ex.time=time; ex.ts=now.toISOString(); await sb.from('attendance').update({time:time,ts:ex.ts}).eq('user_id',uid).eq('id',ex.id); }
+    else { var rec={ id:'att_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), user_id:uid, picker_uid:p.uid, picker_name:pName(p), role:p.role||'picker', type:attMode, date:date, time:time, ts:now.toISOString() }; ATT.push(rec); await sb.from('attendance').upsert(rec,{onConflict:'id'}); }
+  }catch(e){ if(fl){ fl.textContent='❌ '+(e.message||e); fl.style.color='#dc2626'; } return; }
+  if(fl){ fl.textContent=(attMode==='in'?'🟢 მოსვლა':'🔴 წასვლა')+': '+(p.role==='carrier'?'🚚':'🧺')+' '+pName(p)+' · '+time; fl.style.color='#16a34a'; }
+  renderAttendance();
+}
+function renderAttendance(){
+  var date=(document.getElementById('attDate')||{}).value||_today();
+  var dayRows=ATT.filter(function(r){ return r.date===date; });
+  var g={}, ord=[];
+  dayRows.forEach(function(r){ if(!g[r.picker_uid]){ g[r.picker_uid]={name:r.picker_name,role:r.role,tin:'',tout:''}; ord.push(r.picker_uid); } if(r.type==='in')g[r.picker_uid].tin=r.time; else g[r.picker_uid].tout=r.time; });
+  var list=ord.map(function(u){ return g[u]; });
+  var nIn=list.filter(function(x){return x.tin;}).length, nOut=list.filter(function(x){return x.tout;}).length;
+  var nPick=list.filter(function(x){return x.role!=='carrier';}).length, nCarr=list.filter(function(x){return x.role==='carrier';}).length;
+  var st=document.getElementById('attStats'); if(st) st.innerHTML=stat('s-green','🟢 მოსული',nIn,date)+stat('s-orange','🔴 წასული',nOut,'')+stat('s-blue','🧺 მკრეფავი',nPick,'')+stat('s-purple','🚚 გამომტანი',nCarr,'');
+  var b=document.getElementById('attBody'); if(!b) return;
+  if(!list.length){ b.innerHTML='<tr><td colspan="6" class="muted">ამ დღეს არავინ დარეგისტრირდა</td></tr>'; return; }
+  b.innerHTML=list.map(function(x,i){ return '<tr><td>'+(i+1)+'</td><td><b>'+esc(x.name)+'</b></td><td>'+(x.role==='carrier'?'<span class="badge b-carry">🚚 გამომტანი</span>':'<span class="badge b-pick">🧺 მკრეფავი</span>')+'</td><td class="ok">'+(x.tin||'—')+'</td><td class="warn">'+(x.tout||'—')+'</td><td></td></tr>'; }).join('');
+}
+function _attDayList(date){
+  var dayRows=ATT.filter(function(r){ return r.date===date; });
+  var g={}, ord=[];
+  dayRows.forEach(function(r){ if(!g[r.picker_uid]){ g[r.picker_uid]={name:r.picker_name,role:r.role,tin:'',tout:''}; ord.push(r.picker_uid); } if(r.type==='in')g[r.picker_uid].tin=r.time; else g[r.picker_uid].tout=r.time; });
+  return ord.map(function(u){ return g[u]; });
+}
+function exportAttExcel(){
+  if(typeof XLSX==='undefined'){ alert('Excel ვერ ჩაიტვირთა'); return; }
+  var date=(document.getElementById('attDate')||{}).value||_today();
+  var list=_attDayList(date); if(!list.length){ alert('ამ დღეს არავინ დარეგისტრირდა'); return; }
+  function bd(){ var s={style:'thin',color:{rgb:'D9D9D9'}}; return {top:s,bottom:s,left:s,right:s}; }
+  var head={fill:{fgColor:{rgb:'0369A1'}},font:{color:{rgb:'FFFFFF'},bold:true},alignment:{horizontal:'center'},border:bd()};
+  var pick={fill:{fgColor:{rgb:'DCFCE7'}},font:{color:{rgb:'166534'}},border:bd()};
+  var carry={fill:{fgColor:{rgb:'FEF3C7'}},font:{color:{rgb:'B45309'}},border:bd()};
+  var aoa=[['📋 დასწრება — '+date],['#','სახელი','როლი','მოსვლა','წასვლა']];
+  list.forEach(function(x,i){ aoa.push([i+1,x.name,x.role==='carrier'?'გამომტანი':'მკრეფავი',x.tin||'',x.tout||'']); });
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  for(var R=0;R<aoa.length;R++)for(var C=0;C<aoa[R].length;C++){ var rf=XLSX.utils.encode_cell({r:R,c:C}); if(!ws[rf])ws[rf]={t:'s',v:''}; var s=(R<=1?head:(C===2?(aoa[R][2]==='გამომტანი'?carry:pick):{border:bd()})); ws[rf].s=s; }
+  ws['!cols']=[{wch:5},{wch:24},{wch:12},{wch:9},{wch:9}]; ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:4}}];
+  var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'დასწრება');
+  try{ XLSX.writeFile(wb,'daswreba_'+date+'.xlsx'); }catch(e){ alert('❌ '+(e.message||e)); }
+}
+function printAtt(){
+  var date=(document.getElementById('attDate')||{}).value||_today();
+  var list=_attDayList(date); if(!list.length){ alert('ამ დღეს არავინ დარეგისტრირდა'); return; }
+  var w=window.open('','_blank'); if(!w){ alert('popup დაბლოკილია'); return; }
+  var css='body{font-family:system-ui,sans-serif;padding:20px;max-width:640px;margin:0 auto}h1{font-size:1.2rem}table{width:100%;border-collapse:collapse;font-size:.85rem}th,td{border:1px solid #e2e8f0;padding:6px 9px;text-align:left}th{background:#f8fafc}';
+  var h='<html><head><meta charset="utf-8"><title>დასწრება '+date+'</title><style>'+css+'</style></head><body><h1>📋 დასწრება — '+date+'</h1><table><thead><tr><th>#</th><th>სახელი</th><th>როლი</th><th>მოსვლა</th><th>წასვლა</th></tr></thead><tbody>';
+  list.forEach(function(x,i){ h+='<tr><td>'+(i+1)+'</td><td>'+esc(x.name)+'</td><td>'+(x.role==='carrier'?'გამომტანი':'მკრეფავი')+'</td><td>'+(x.tin||'—')+'</td><td>'+(x.tout||'—')+'</td></tr>'; });
+  h+='</tbody></table><div style="margin-top:16px;font-size:.75rem;color:#64748b">AgroInTechSol · '+new Date().toLocaleString('ka-GE')+'</div></body></html>';
+  w.document.write(h); w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} },400);
+}
+// ── QR კოდები ──
+function qrSub(s){ document.querySelectorAll('#p-qr .tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-q')===s); }); document.querySelectorAll('.qrsub').forEach(function(d){ d.style.display=(d.id==='q-'+s)?'':'none'; }); if(s==='row') qrFillBlocks(); if(s==='pal') qpShowNext(); }
+function qrDataUrl(text,size){ return new Promise(function(res){ if(typeof QRCode==='undefined'){ res(''); return; } var d=document.createElement('div'); d.style.cssText='position:absolute;left:-9999px'; document.body.appendChild(d); try{ new QRCode(d,{text:String(text),width:size||150,height:size||150,correctLevel:QRCode.CorrectLevel.M}); }catch(e){ d.remove(); res(''); return; } setTimeout(function(){ var img=d.querySelector('img'), cv=d.querySelector('canvas'); var src=img?img.src:(cv?cv.toDataURL('image/png'):''); d.remove(); res(src); },180); }); }
+function _qrPrintGrid(title,cells){
+  var w=window.open('','_blank'); if(!w){ alert('popup დაბლოკილია'); return; }
+  var css='@page{margin:8mm}body{font-family:system-ui,sans-serif;margin:0;padding:6mm;color:#0f172a}h1{font-size:15px;margin:0 0 5mm}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm}.cell{border:1px solid #cbd5e1;border-radius:6px;padding:6px;text-align:center;page-break-inside:avoid}.cell img{width:100%;max-width:150px;height:auto}.lbl{font-size:11px;font-weight:700;margin-top:3px;word-break:break-word}.sub{font-size:9px;color:#555;margin-top:1px}';
+  var h='<html><head><meta charset="utf-8"><title>'+title+'</title><style>'+css+'</style></head><body><h1>'+title+' · '+cells.length+' ცალი</h1><div class="grid">';
+  cells.forEach(function(c){ h+='<div class="cell">'+(c.img?('<img src="'+c.img+'">'):'QR')+'<div class="lbl">'+esc(c.lbl)+'</div>'+(c.sub?('<div class="sub">'+esc(c.sub)+'</div>'):'')+'</div>'; });
+  h+='</div></body></html>';
+  w.document.write(h); w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} },700);
+}
+async function genBoxStickers(){
+  var msg=document.getElementById('qbMsg');
+  var q=(document.getElementById('qbPicker').value||'').trim();
+  var p=PICKERS.find(function(x){ return pName(x).toLowerCase()===q.toLowerCase(); }) || PICKERS.find(function(x){ return String(x.num)===q; }) || PICKERS.find(function(x){ return pName(x).toLowerCase().indexOf(q.toLowerCase())>=0; });
+  if(!q||!p){ msg.innerHTML='<span class="warn">მკრეფავი ვერ მოიძებნა</span>'; return; }
+  var n=parseInt(document.getElementById('qbCount').value,10)||0; if(n<1){ msg.innerHTML='<span class="warn">რაოდენობა?</span>'; return; }
+  if(n>240 && !confirm(n+' სტიკერი — დიდი რაოდენობაა. გავაგრძელო?')) return;
+  var fmt=(document.getElementById('qbFmt')||{}).value||'24';
+  var cfg = (fmt==='40') ? {cols:4,w:48,h:27,qr:22,name:8,info:6,pg:'6mm 3mm'} : {cols:3,w:70,h:35,qr:30,name:11,info:8,pg:'8.5mm 0'};
+  msg.innerHTML='<span class="muted">ვქმნი QR-ს…</span>';
+  var img=await qrDataUrl(p.uid,150);
+  var w=window.open('','_blank'); if(!w){ msg.innerHTML='<span class="warn">popup დაბლოკილია</span>'; return; }
+  var css='@page{size:A4 portrait;margin:'+cfg.pg+'}*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif}'
+    +'.sheet{width:210mm;display:grid;grid-template-columns:repeat('+cfg.cols+','+cfg.w+'mm);justify-content:center}'
+    +'.qr-sticker{width:'+cfg.w+'mm;height:'+cfg.h+'mm;background:#fff;border:0.3mm dashed #bbb;padding:1.5mm;display:flex;flex-direction:row;align-items:center;gap:1.5mm;overflow:hidden;break-inside:avoid;page-break-inside:avoid}'
+    +'.qr-side{flex:0 0 '+cfg.qr+'mm;width:'+cfg.qr+'mm;height:'+cfg.qr+'mm;display:flex;align-items:center;justify-content:center}'
+    +'.qr-side img{width:'+cfg.qr+'mm;height:'+cfg.qr+'mm;display:block}'
+    +'.info-side{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4mm;text-align:center;height:100%}'
+    +'.sn{font-size:'+cfg.name+'pt;font-weight:800;color:#000;line-height:1.05;margin:0;word-break:break-word}'
+    +'.si{font-size:'+cfg.info+'pt;color:#000;margin:0;font-weight:600}'
+    +'.snum{font-size:'+cfg.info+'pt;font-weight:800;color:#0369a1;margin:0}';
+  var cell='<div class="qr-sticker"><div class="qr-side">'+(img?('<img src="'+img+'">'):'QR')+'</div>'
+    +'<div class="info-side">'+(p.num!=null?('<div class="snum">#'+p.num+'</div>'):'')
+    +'<div class="sn">'+esc(pName(p))+'</div>'
+    +'<div class="si">📞 '+esc(p.phone||'—')+'</div>'
+    +'<div class="si">პ/ნ: '+esc(p.id||p.personal_id||'—')+'</div>'
+    +'</div></div>';
+  var cells=''; for(var i=0;i<n;i++) cells+=cell;
+  w.document.write('<html><head><meta charset="utf-8"><title>სტიკერები — '+esc(pName(p))+'</title><style>'+css+'</style></head><body><div class="sheet">'+cells+'</div></body></html>');
+  w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} },500);
+  msg.innerHTML='<span class="ok">✅ '+n+' სტიკერი (A4 · '+fmt+'/გვერდი)</span>';
+}
+function _printStickerSheet(title,fmt,cells){
+  var cfg = (fmt==='40') ? {cols:4,w:48,h:27,qr:22,big:9,small:7,pg:'6mm 3mm'} : {cols:3,w:70,h:35,qr:30,big:13,small:9,pg:'8.5mm 0'};
+  var w=window.open('','_blank'); if(!w){ alert('popup დაბლოკილია'); return; }
+  var css='@page{size:A4 portrait;margin:'+cfg.pg+'}*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif}'
+    +'.sheet{width:210mm;display:grid;grid-template-columns:repeat('+cfg.cols+','+cfg.w+'mm);justify-content:center}'
+    +'.st{width:'+cfg.w+'mm;height:'+cfg.h+'mm;background:#fff;border:0.3mm dashed #bbb;padding:1.5mm;display:flex;flex-direction:row;align-items:center;gap:1.5mm;overflow:hidden;break-inside:avoid;page-break-inside:avoid}'
+    +'.qs{flex:0 0 '+cfg.qr+'mm;width:'+cfg.qr+'mm;height:'+cfg.qr+'mm;display:flex;align-items:center;justify-content:center}'
+    +'.qs img{width:'+cfg.qr+'mm;height:'+cfg.qr+'mm;display:block}'
+    +'.is{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5mm;text-align:center;height:100%}'
+    +'.big{font-size:'+cfg.big+'pt;font-weight:800;color:#000;line-height:1.05;margin:0;word-break:break-word}'
+    +'.small{font-size:'+cfg.small+'pt;color:#000;margin:0;font-weight:600}';
+  var body=cells.map(function(c){ return '<div class="st"><div class="qs">'+(c.img?('<img src="'+c.img+'">'):'QR')+'</div><div class="is"><div class="big">'+esc(c.big||'')+'</div>'+(c.small?('<div class="small">'+esc(c.small)+'</div>'):'')+'</div></div>'; }).join('');
+  w.document.write('<html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+css+'</style></head><body><div class="sheet">'+body+'</div></body></html>');
+  w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} },500);
+}
+function _nextPalletStart(pref){
+  var max=0; var re=new RegExp('^'+String(pref).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(\\d+)$');
+  SESSIONS.forEach(function(s){ var pc=s.pallet_code||''; var m=re.exec(pc); if(m){ var num=parseInt(m[1],10); if(num>max)max=num; } });
+  return max+1;
+}
+function qpShowNext(){ var pref=((document.getElementById('qpPrefix')||{}).value||'PAL').trim(); var el=document.getElementById('qpNext'); if(el){ var s=_nextPalletStart(pref); el.textContent='მომდევნო ნომერი: '+pref+('00'+s).slice(-3); } }
+async function genPalletQr(){
+  var msg=document.getElementById('qpMsg');
+  var pref=((document.getElementById('qpPrefix')||{}).value||'PAL').trim(), cnt=parseInt((document.getElementById('qpCount')||{}).value,10)||0, fmt=(document.getElementById('qpFmt')||{}).value||'24';
+  if(cnt<1){ msg.innerHTML='<span class="warn">რაოდენობა?</span>'; return; }
+  var start=_nextPalletStart(pref);
+  msg.innerHTML='<span class="muted">ვქმნი…</span>'; var cells=[];
+  for(var i=0;i<cnt;i++){ var num=start+i; var code=pref+('00'+num).slice(-3); var img=await qrDataUrl(code,160); cells.push({img:img,big:'📦 '+code,small:''}); }
+  _printStickerSheet('პალეტის QR',fmt,cells);
+  msg.innerHTML='<span class="ok">✅ '+cnt+' პალეტი ('+pref+('00'+start).slice(-3)+' → '+pref+('00'+(start+cnt-1)).slice(-3)+')</span>';
+  qpShowNext();
+}
+async function genRowQr(){
+  var msg=document.getElementById('qrMsg');
+  var chks=Array.prototype.slice.call(document.querySelectorAll('.qrRowChk:checked'));
+  if(!chks.length){ msg.innerHTML='<span class="warn">მონიშნე რიგები</span>'; return; }
+  var fmt=(document.getElementById('qrFmt')||{}).value||'24';
+  var per=parseInt((document.getElementById('qrPer')||{}).value,10)||1; if(per<1)per=1;
+  if(chks.length*per>400 && !confirm((chks.length*per)+' სტიკერი — ბევრია. გავაგრძელო?')) return;
+  var bsel=document.getElementById('qrBlockSel'); var bname=(bsel&&bsel.selectedIndex>0)?bsel.options[bsel.selectedIndex].text.replace(/\s*\(\d+ რიგი\)$/,''):'';
+  msg.innerHTML='<span class="muted">ვქმნი…</span>'; var cells=[];
+  for(var i=0;i<chks.length;i++){ var rid=chks[i].getAttribute('data-rid'), rn=chks[i].getAttribute('data-name'); var img=await qrDataUrl('ROW:'+rid,160); for(var k=0;k<per;k++) cells.push({img:img,big:'რიგი '+rn,small:bname?('ბლოკი '+bname):''}); }
+  _printStickerSheet('რიგების QR'+(bname?(' — '+bname):''),fmt,cells);
+  msg.innerHTML='<span class="ok">✅ '+chks.length+' რიგი × '+per+' = '+cells.length+' სტიკერი</span>';
+}
+function makeIdCard(u){
+  var p=PICKERS.find(function(x){ return x.uid===u; }); if(!p) return;
+  if(typeof QRCode==='undefined'){ alert('QR ბიბლიოთეკა ვერ ჩაიტვირთა (ინტერნეტი?)'); return; }
+  var tmp=document.createElement('div'); tmp.style.cssText='position:absolute;left:-9999px'; document.body.appendChild(tmp);
+  try{ new QRCode(tmp,{text:String(p.uid),width:240,height:240,correctLevel:QRCode.CorrectLevel.M}); }catch(e){ tmp.remove(); alert('QR ვერ შეიქმნა'); return; }
+  setTimeout(function(){
+    var img=tmp.querySelector('img'), cv=tmp.querySelector('canvas');
+    var src=img?img.src:(cv?cv.toDataURL('image/png'):'');
+    tmp.remove();
+    var w=window.open('','_blank'); if(!w){ alert('popup დაბლოკილია'); return; }
+    var role=p.role==='carrier'?'გამომტანი':'მკრეფავი';
+    var css='body{font-family:system-ui,sans-serif;margin:0;padding:20px;display:flex;justify-content:center}'
+      +'.card{width:340px;border:2px solid #0369a1;border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.12)}'
+      +'.hd{background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px}'
+      +'.hd .t{font-weight:800;font-size:1rem}.hd .s{font-size:.68rem;opacity:.9}'
+      +'.bd{padding:16px;text-align:center}'
+      +'.num{display:inline-block;background:#dbeafe;color:#1d4ed8;font-weight:800;border-radius:10px;padding:3px 12px;font-size:1rem;margin-bottom:6px}'
+      +'.nm{font-size:1.25rem;font-weight:800;margin:4px 0}'
+      +'.role{color:#64748b;font-size:.82rem;margin-bottom:10px}'
+      +'.qr img{width:200px;height:200px}'
+      +'.info{text-align:left;font-size:.8rem;color:#334155;margin-top:12px;border-top:1px dashed #cbd5e1;padding-top:10px;line-height:1.7}'
+      +'@media print{body{padding:0}.card{box-shadow:none}}';
+    var html='<html><head><meta charset="utf-8"><title>ID — '+esc(pName(p))+'</title><style>'+css+'</style></head><body>'
+      +'<div class="card"><div class="hd"><div style="font-size:1.5rem">🌾</div><div><div class="t">AgroInTechSol</div><div class="s">კრეფის ID ბარათი</div></div></div>'
+      +'<div class="bd">'
+        +(p.num!=null?('<div class="num">#'+p.num+'</div><br>'):'')
+        +'<div class="nm">'+esc(pName(p))+'</div>'
+        +'<div class="role">'+role+'</div>'
+        +'<div class="qr">'+(src?('<img src="'+src+'">'):'QR')+'</div>'
+        +'<div class="info">📞 ტელეფონი: '+esc(p.phone||'—')+'<br>🆔 პ/ნ: '+esc(p.id||p.personal_id||'—')+(p.address?('<br>📍 '+esc(p.address)):'')+'</div>'
+      +'</div></div>'
+      +'</body></html>';
+    w.document.write(html); w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} },500);
+  },350);
+}
+function printPicker(u){
+  var p=PICKERS.find(function(x){ return x.uid===u; }); if(!p) return;
+  var kg=pkKg(p), box=pkBox(p), earn=Math.round(pkEarn(p)*100)/100, bonus=Math.round(pkBonus(p)*100)/100, paid=Math.round(pkPaid(p)*100)/100, remain=Math.round((pkOwed(p)-pkPaid(p))*100)/100, sms=pkSms(p);
+  var H=_histByDate(p);
+  var w=window.open('','_blank'); if(!w){ alert('popup დაბლოკილია'); return; }
+  var css='body{font-family:system-ui,sans-serif;color:#0f172a;padding:22px;max-width:780px;margin:0 auto}h1{font-size:1.3rem;margin:0}h2{font-size:1rem;background:#f1f5f9;padding:6px 10px;border-radius:6px;margin:16px 0 6px}table{width:100%;border-collapse:collapse;font-size:.85rem}th,td{border:1px solid #e2e8f0;padding:6px 9px;text-align:left}th{background:#f8fafc}.st{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.b{flex:1;min-width:110px;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px}.b .l{font-size:.7rem;color:#64748b}.b .v{font-size:1.05rem;font-weight:800}';
+  var h='<html><head><meta charset="utf-8"><title>'+esc(pName(p))+' — პროფილი</title><style>'+css+'</style></head><body>';
+  h+='<h1>'+(p.num!=null?('#'+p.num+' '):'')+esc(pName(p))+'</h1>';
+  h+='<div style="color:#64748b;font-size:.85rem;margin-top:4px">'+(p.role==='carrier'?'გამომტანი':'მკრეფავი')+' · 📞 '+esc(p.phone||'—')+' · პ/ნ '+esc(p.id||p.personal_id||'—')+(p.bank?(' · IBAN '+esc(p.bank)):'')+'</div>';
+  h+='<div class="st"><div class="b"><div class="l">სულ კრეფა</div><div class="v">'+fmtKg(kg)+' კგ</div></div>'
+    +'<div class="b"><div class="l">ყუთი</div><div class="v">'+box+'</div></div>'
+    +'<div class="b"><div class="l">გამომუშავებული</div><div class="v">'+earn+' ₾</div></div>'
+    +'<div class="b"><div class="l">ბონუსი</div><div class="v">'+bonus+' ₾</div></div>'
+    +'<div class="b"><div class="l">ჩაერიცხა</div><div class="v">'+paid+' ₾</div></div>'
+    +'<div class="b"><div class="l">დარჩა</div><div class="v">'+remain+' ₾</div></div></div>';
+  h+='<div style="font-size:.85rem">📲 SMS: '+sms.sent+' გაიგზავნა'+(sms.deliv?(' · '+sms.deliv+' მიუვიდა'):'')+(sms.fail?(' · '+sms.fail+' ვერ'):'')+'</div>';
+  h+='<h2>ისტორია დღეების მიხედვით</h2><table><thead><tr><th>თარიღი</th><th>ყუთი</th><th>პალეტი</th><th>კგ</th><th>₾/კგ</th><th>თანხა ₾</th><th>ბონუსი</th></tr></thead><tbody>';
+  var tB=0,tBon=0; H.dord.forEach(function(d){ var b=H.byDate[d]; tB+=b.earn; tBon+=b.bonus; h+='<tr><td>'+esc(d)+'</td><td>'+b.box+'</td><td>'+Object.keys(b.pallets).length+'</td><td>'+fmtKg(b.kg)+'</td><td>'+(b.price?b.price.toFixed(2):'—')+'</td><td>'+(Math.round(b.earn*100)/100)+'</td><td>'+(b.bonus?('+'+(Math.round(b.bonus*100)/100)):'—')+'</td></tr>'; });
+  h+='<tr style="font-weight:800;background:#f1f5f9"><td>ჯამი</td><td>'+box+'</td><td></td><td>'+fmtKg(kg)+'</td><td></td><td>'+(Math.round(tB*100)/100)+'</td><td>'+(tBon?('+'+(Math.round(tBon*100)/100)):'—')+'</td></tr>';
+  h+='</tbody></table><div style="margin-top:20px;font-size:.75rem;color:#64748b">AgroInTechSol · '+new Date().toLocaleString('ka-GE')+'</div></body></html>';
+  w.document.write(h); w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} },400);
+}
+
+// ── Excel შაბლონი + მასობრივი ატვირთვა ──
+function downloadPickerTemplate(){
+  if(typeof XLSX==='undefined'){ alert('Excel ბიბლიოთეკა ვერ ჩაიტვირთა'); return; }
+  var head={fill:{fgColor:{rgb:'0369A1'}},font:{color:{rgb:'FFFFFF'},bold:true}};
+  var aoa=[['სახელი','გვარი','პ/ნ','ტელეფონი','საცხოვრებელი','ბანკი (IBAN)','როლი (picker/carrier)'],
+           ['გიორგი','მელაძე','01001000001','555123456','თბილისი','GE00XX0000000000000000','picker']];
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  for(var C=0;C<aoa[0].length;C++){ var ref=XLSX.utils.encode_cell({r:0,c:C}); if(ws[ref]) ws[ref].s=head; }
+  ws['!cols']=[{wch:14},{wch:14},{wch:14},{wch:13},{wch:18},{wch:24},{wch:20}];
+  var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'შაბლონი');
+  try{ XLSX.writeFile(wb,'mkrepavebi_shabloni.xlsx'); }catch(e){ alert('❌ '+(e.message||e)); }
+}
+async function importPickersExcel(inp){
+  var f=inp.files&&inp.files[0]; if(!f) return;
+  var msg=document.getElementById('regMsg'); msg.innerHTML='<span class="muted">იტვირთება…</span>';
+  try{
+    var buf=await f.arrayBuffer();
+    var wb=XLSX.read(buf,{type:'array'});
+    var ws=wb.Sheets[wb.SheetNames[0]];
+    var rows=XLSX.utils.sheet_to_json(ws,{header:1});
+    if(!rows.length){ msg.innerHTML='<span class="warn">ცარიელი ფაილი</span>'; inp.value=''; return; }
+    var start=0; if(String(rows[0][0]||'').indexOf('სახელ')>=0) start=1;
+    var maxn=0; PICKERS.forEach(function(p){ var n=parseInt(p.num,10); if(!isNaN(n)&&n>maxn)maxn=n; });
+    var toAdd=[], added=0, skip=0;
+    for(var i=start;i<rows.length;i++){ var r=rows[i]||[]; var fn=String(r[0]||'').trim(), ln=String(r[1]||'').trim();
+      if(!fn && !ln){ continue; }
+      maxn++;
+      var np={ uid:_uid(), user_id:uid, firstName:fn, lastName:ln, name:(fn+' '+ln).trim(),
+        id:String(r[2]||'').trim(), personal_id:String(r[2]||'').trim(), phone:String(r[3]||'').trim(),
+        address:String(r[4]||'').trim(), bank:String(r[5]||'').trim(),
+        role:(String(r[6]||'').toLowerCase().indexOf('carr')>=0||String(r[6]||'').indexOf('გამომ')>=0)?'carrier':'picker', num:maxn };
+      np.short_code=np.uid; toAdd.push(np);
+    }
+    if(!toAdd.length){ msg.innerHTML='<span class="warn">ვერ ვიპოვე მკრეფავები ფაილში</span>'; inp.value=''; return; }
+    for(var b=0;b<toAdd.length;b+=200){ var chunk=toAdd.slice(b,b+200);
+      try{ var res=await sb.from('krepa_pickers').insert(chunk); if(!res.error){ added+=chunk.length; PICKERS=PICKERS.concat(chunk); } else { skip+=chunk.length; } }catch(e){ skip+=chunk.length; }
+    }
+    msg.innerHTML='<span class="ok">✅ დაემატა '+added+' მკრეფავი'+(skip?(' · ⚠️ '+skip+' ვერ'):'')+'</span>';
+    renderDash(); renderPickers();
+  }catch(e){ msg.innerHTML='<span class="warn">❌ '+(e.message||e)+'</span>'; }
+  inp.value='';
+}
+
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; showApp(s.data.session.user.email); } }catch(e){} })();
+</script>
+</body></html>

@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚖️ აწონვა</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<style>
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:700px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.95rem;margin:0 0 8px;color:#334155}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff}
+  input:focus,select:focus{outline:none;border-color:#0369a1}
+  button{background:#0369a1;color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:#0369a1;border:1.5px solid #0369a1}
+  button.g{background:#059669}button.o{background:#ea580c}button.r{background:#dc2626}
+  button:active{transform:scale(.98)}
+  .row2{display:flex;gap:8px}.row2>*{flex:1}
+  table{width:100%;border-collapse:collapse;font-size:.83rem;margin-top:8px}
+  th,td{padding:7px 6px;text-align:left;border-top:1px solid #f1f5f9}
+  th{color:#64748b;font-size:.76rem}
+  .sum{font-weight:800;background:#f8fafc}
+  .muted{font-size:.8rem;color:#64748b}
+  .ok{color:#16a34a;font-weight:700}.warn{color:#dc2626;font-weight:700}
+  .x{color:#dc2626;cursor:pointer;font-weight:800;padding:0 6px}
+  .key{font-family:monospace;font-size:.78rem;background:#f1f5f9;padding:2px 6px;border-radius:5px}
+  .sres{margin-top:6px}
+  .sres-row{padding:9px 11px;border:1px solid #e2e8f0;border-radius:9px;margin-top:6px;background:#fff;cursor:pointer;font-size:.88rem}
+  .sres-row:hover{background:#f8fafc}
+  .pill{display:inline-block;background:#eff6ff;color:#0369a1;border-radius:20px;padding:2px 10px;font-size:.78rem;font-weight:700}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  .switch{display:flex;align-items:center;gap:8px;font-size:.85rem;font-weight:700}
+  .qbar{background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:9px;font-size:.82rem;color:#92400e;margin-bottom:10px;display:none}
+  .cfgbar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .cfgbar .fld{flex:1;min-width:90px}
+  .cfgbar .fld label{margin:0 0 3px}
+  .cfgbar input{padding:9px;font-weight:700}
+  .tabs{display:flex;gap:4px;margin-bottom:12px;background:#e2e8f0;padding:4px;border-radius:12px}
+  .tab{flex:1;background:transparent;color:#475569;border:none;padding:9px 4px;border-radius:9px;font-size:.78rem;font-weight:700;margin:0;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.1}
+  .tab .ic{font-size:1.05rem}
+  .tab.active{background:#fff;color:#0369a1;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .panel{display:none}.panel.active{display:block}
+  .bignum{padding:14px;font-size:1.4rem;font-weight:800;text-align:center;border-color:#0369a1;border-width:2px}
+  .pkbox{display:flex;align-items:center;gap:9px;padding:10px 12px;background:#eff6ff;border-radius:11px;margin-top:10px}
+  .pkbox .no{font-weight:800;font-size:.85rem;color:#fff;background:#0369a1;padding:2px 9px;border-radius:7px}
+  .pkbox .nm{font-size:1.02rem;font-weight:700;color:#0369a1}
+  .cnt{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#eff6ff;border-radius:12px;margin:12px 0}
+  .cnt .n{font-size:1.7rem;font-weight:800;color:#0369a1}
+  .soon{text-align:center;padding:26px 14px;color:#475569}
+  .soon .ico{width:56px;height:56px;border-radius:50%;background:#fef3c7;color:#b45309;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 12px}
+  .srcbadge{font-size:.66rem;color:#64748b}  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:11px}
+  .stat{border-radius:14px;padding:14px 15px;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);min-width:0;display:flex;flex-direction:column;justify-content:center}
+  .stat .lbl{font-size:.74rem;opacity:.92;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+  .stat .val{font-size:1.5rem;font-weight:800;margin-top:3px;line-height:1.15;word-break:break-word;overflow-wrap:anywhere}
+  .stat.money .val{font-size:1.25rem}
+  .stat .sub{font-size:.68rem;opacity:.9;margin-top:3px;line-height:1.3;white-space:normal;word-break:break-word}
+  .s-blue{background:linear-gradient(135deg,#0ea5e9,#0369a1)}
+  .s-green{background:linear-gradient(135deg,#10b981,#059669)}
+  .s-orange{background:linear-gradient(135deg,#f59e0b,#ea580c)}
+  .s-purple{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}
+  @media(max-width:480px){.stats{grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px}.stat{padding:11px 12px}.stat .val{font-size:1.28rem}.stat.money .val{font-size:1.06rem}.stat .lbl{font-size:.7rem}}
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>⚖️ აწონვა — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+  <div class="qbar" id="qbar"></div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v25</span></h1>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <div style="font-size:.8rem;font-weight:800;color:#334155;margin:2px 0 7px">📊 სეზონის ჯამი <span class="muted" id="dsSub" style="font-weight:400;font-size:.75rem"></span></div>
+  <div class="stats" id="awSeasonStats" style="margin-bottom:12px"><div class="muted">იტვირთება…</div></div>
+  <div style="font-size:.8rem;font-weight:800;color:#334155;margin:4px 0 7px">📅 დღეს — <span id="dtDate"></span></div>
+  <div class="stats" id="awTodayStats" style="margin-bottom:6px"></div>
+  <div class="muted" id="dtPending" style="font-size:.74rem;margin-bottom:12px"></div>
+
+  <div class="card">
+    <div class="cfgbar">
+      <div class="fld"><label>ფასი, ₾/კგ</label><input id="cfgPrice" type="number" step="0.01" onchange="saveSetting('its_price',this.value);prevAll()"></div>
+      <div class="fld"><label>ტარა, კგ</label><input id="cfgTare" type="number" step="0.01" onchange="saveSetting('its_box_w',this.value);prevAll()"></div>
+      <div class="fld" style="max-width:120px">
+        <label>SMS</label>
+        <label class="switch" style="padding:9px 6px;border:1.5px solid #cbd5e1;border-radius:10px;justify-content:center">
+          <input type="checkbox" id="smsToggle" style="width:auto"> <span id="smsLbl" style="font-size:.8rem">გამორთ.</span>
+        </label>
+      </div>
+    </div>
+    <div class="muted" style="margin-top:6px">ფასი/ტარა ღრუბელშივე ინახება — მთავარ გვერდზეც იგივე ჩანს. SMS გამორთულით გატესტე.</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab" data-t="hand"   onclick="switchTab('hand')"><span class="ic">✋</span>ხელით</button>
+    <button class="tab" data-t="pallet" onclick="switchTab('pallet')"><span class="ic">📦</span>პალეტით</button>
+    <button class="tab" data-t="num"    onclick="switchTab('num')"><span class="ic">#️⃣</span>ნუმერაცია</button>
+    <button class="tab" data-t="auto"   onclick="switchTab('auto')"><span class="ic">⚡</span>ავტომატ.</button>
+  </div>
+
+  <div class="panel" id="p-hand">
+    <div class="card">
+      <h2>✋ ხელით / სკანერით</h2>
+      <label>📷 სკანი — მკრეფავი / პალეტი / რიგი</label>
+      <input id="hScan" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="დაასკანერე ან აკრიფე კოდი…" onkeydown="if(event.key==='Enter')handScan()">
+      <div id="hScanMsg" class="muted" style="margin-top:4px"></div>
+
+      <label style="margin-top:12px">მკრეფავი</label>
+      <input id="hSearch" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ან ძებნა სახელით…" oninput="handSearch()">
+      <div id="hRes" class="sres"></div>
+      <div id="hChosen" style="margin-top:6px"></div>
+
+      <div class="row2" style="margin-top:12px">
+        <div><label>ზონა / ბლოკი</label><select id="hZone" onchange="fillRows()"><option value="">—</option></select></div>
+        <div><label>რიგი / სექტორი</label><select id="hRow"><option value="">—</option></select></div>
+      </div>
+      <div id="hZoneNote" class="muted" style="margin-top:4px"></div>
+
+      <label style="margin-top:12px">📦 პალეტი (არასავალდებულო)</label>
+      <input id="hPal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="PAL-XXXXXX-XXXX — სკანი ან ხელით" oninput="hValPal()">
+      <div id="hPalVal" style="font-size:.8rem;margin-top:3px"></div>
+
+      <label style="margin-top:12px">წონა (კგ)</label>
+      <input id="hWeight" type="number" step="0.01" placeholder="მაგ. 5.4" oninput="prevHand()">
+      <div id="hPrev" class="muted" style="margin-top:6px">სუფთა: — · — ₾</div>
+      <button onclick="handAdd()" style="margin-top:10px">➕ დამატება</button>
+      <div id="hMsg" style="font-size:.85rem;margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-pallet">
+    <div class="card">
+      <h2>📦 პალეტი</h2>
+      <label>პალეტი (სკანერი აკრეფს)</label>
+      <input id="palIn" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="PAL-XXXXXX-XXXX" oninput="valPal()">
+      <div id="palVal" style="font-size:.8rem;margin-top:4px"></div>
+    </div>
+    <div class="card">
+      <h2>ყუთის დამატება</h2>
+      <div class="muted" style="margin-bottom:6px">1️⃣ ასკანერე/აირჩიე რიგი · 2️⃣ ასკანერე მკრეფავები — <b>თითო სკანი = ერთი ყუთი</b> (მიმდინარე რიგით). ახალ ROW-ს ასკანერებ — რიგი იცვლება.</div>
+      <label style="margin:0 0 3px">📷 სკანი — რიგი (ROW:…) ან მკრეფავი</label>
+      <input id="palAdd" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ასკანერე რიგი, მერე მკრეფავები…" onkeydown="if(event.key==='Enter')palScanInput()">
+      <label style="margin:8px 0 3px">🔎 ან იპოვე მკრეფავი სახელით</label>
+      <input id="palSearch" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="აკრიფე სახელი…" oninput="palSearchFn()">
+      <div id="palRes" class="sres"></div>
+      <div class="row2" style="margin-top:6px">
+        <div><label style="margin:0 0 3px">ზონა / ბლოკი</label><select id="palZone" onchange="palFillRows()"><option value="">—</option></select></div>
+        <div><label style="margin:0 0 3px">რიგი / სექტორი</label><select id="palRow" onchange="palRowScan()"><option value="">—</option></select></div>
+      </div>
+      <div id="palPendLbl" style="background:#eff6ff;border-radius:9px;padding:8px 11px;font-size:.84rem;margin:8px 0">📍 მიმდინარე რიგი: <b style="color:#0369a1">— ყველა</b></div>
+      <div class="row2">
+        <button class="sec" onclick="palAddBox()">➕ დამატება (ხელით)</button>
+        <button class="o" style="max-width:150px" onclick="palAddUnid()">🚫 ვერ იდენტ.</button>
+      </div>
+      <div id="palMsg" style="font-size:.85rem;margin-top:8px"></div>
+      <div class="cnt"><span style="font-weight:700;color:#0369a1">ამ პალეტზე ყუთები</span><span class="n" id="palCount">0</span></div>
+      <table><thead><tr><th>#</th><th>მკრეფავი</th><th>ზონა/რიგი</th><th></th></tr></thead>
+      <tbody id="palBody"><tr><td colspan="4" class="muted">ჯერ არცერთი</td></tr></tbody></table>
+    </div>
+    <div class="card">
+      <h2>⚖️ წონა</h2>
+      <div class="row2">
+        <div><label>საერთო წონა (კგ)</label><input id="palTotal" type="number" step="0.1" placeholder="მაგ. 450"></div>
+        <div><label>პალეტის წონა (კგ)</label><input id="palW" type="number" step="0.1" value="23"></div>
+      </div>
+      <div class="muted" style="margin-top:6px">ტარა: <b id="tareShow">0.70</b> კგ/ყუთი — საერთო ზოლიდან.</div>
+      <button onclick="palDistribute()" style="margin-top:10px">🧮 დაარიგე წონა</button>
+    </div>
+    <div class="card" id="palResultCard" style="display:none">
+      <h2>📊 შედეგი</h2>
+      <div id="palSummary"></div><div id="palByPicker"></div><div id="palByBox"></div>
+      <button class="g" onclick="palCommit()" style="margin-top:12px">✅ დაადასტურე და ჩაწერე</button>
+      <div id="palConf" style="font-size:.85rem;margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-num">
+    <div class="card">
+      <h2>#️⃣ ნუმერაციით</h2>
+      <label>მკრეფავის ნომერი</label>
+      <input id="nNum" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="bignum" inputmode="numeric" placeholder="მაგ. 17" oninput="numResolve()" onkeydown="if(event.key==='Enter')document.getElementById('nWeight').focus()">
+      <div id="nPicker"></div>
+      <label style="margin-top:12px">წონა (კგ)</label>
+      <input id="nWeight" class="bignum" type="number" step="0.01" placeholder="მაგ. 5.4" oninput="prevNum()" onkeydown="if(event.key==='Enter')numAdd()">
+      <div id="nPrev" class="muted" style="margin-top:8px">სუფთა: — · — ₾</div>
+      <button onclick="numAdd()" style="margin-top:10px">➕ დამატება</button>
+      <div id="nMsg" style="font-size:.85rem;margin-top:8px"></div>
+      <div class="muted" style="margin-top:8px;text-align:center">ℹ️ ზონა/რიგი აქ არ საჭიროა — მხოლოდ ნომერი და წონა.</div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-auto">
+    <div class="card">
+      <div class="soon">
+        <div class="ico">⚡</div>
+        <div style="font-size:1.05rem;font-weight:800;margin-bottom:6px">ავტომატური <span style="font-size:.7rem;background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px">მალე</span></div>
+        <div class="muted" style="line-height:1.6">სასწორი წონას თავად ჩაწერს, სკანერი კოდს წაიკითხავს — ხელით ჩაწერის გარეშე. დაემატება მოწყობილობის მიერთების შემდეგ.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="feedCard">
+    <h2>📋 დღეს დამატებული: <span id="feedCount" style="color:#0369a1">0</span></h2>
+    <table><thead><tr><th>კოდი</th><th>მკრეფავი</th><th>წონა</th><th>რეჟიმი</th></tr></thead>
+    <tbody id="feedBody"><tr><td colspan="4" class="muted">ჯერ არცერთი</td></tr></tbody></table>
+  </div>
+
+  <div class="card" id="archiveCard">
+    <h2>📊 პალეტების არქივი (ღრუბელში)</h2>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <span style="font-weight:600">📅</span>
+      <input type="date" id="archiveDate" style="width:auto;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px">
+      <button class="sec" style="width:auto;padding:8px 12px" onclick="loadArchive()">🔄 ჩვენება</button>
+      <button class="sec" style="width:auto;padding:8px 12px" onclick="var a=document.getElementById('archiveDate');if(a)a.value=_today();loadArchive()">დღეს</button>
+      <button class="sec" style="width:auto;padding:8px 12px;background:#fef2f2;color:#dc2626;border-color:#fecaca" onclick="deletePallet()">🗑️ პალეტის წაშლა</button>
+    </div>
+    <div id="archiveBody" style="margin-top:10px"><div class="muted">აირჩიე თარიღი და დააჭირე „🔄 ჩვენება".</div></div>
+  </div>
+
+  <div class="card" id="dsmsCard">
+    <h2>📲 დღის შეჯამების SMS</h2>
+    <div class="muted" style="margin-bottom:8px">აირჩიე დღე → ჩატვირთე → მონიშნე ვის გაეგზავნოს → გაუგზავნე. თითო მკრეფავს <b>ერთი</b> შემაჯამებელი SMS (მთელი დღის კგ + ₾).</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <input type="date" id="dsmsDate" style="width:auto;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px">
+      <button class="sec" style="width:auto;padding:8px 12px" onclick="dsmsLoad()">🔄 ჩატვირთე მკრეფავები</button>
+      <button class="sec" style="width:auto;padding:8px 12px" onclick="var a=document.getElementById('dsmsDate');if(a)a.value=_today();dsmsLoad()">დღეს</button>
+    </div>
+    <div id="dsmsTools" style="display:none;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="dsmsAll" onclick="dsmsToggleAll(this)" style="width:auto"> მონიშნე ყველა</label>
+      <span class="muted" id="dsmsCountLbl" style="font-size:.8rem">0 არჩეული</span>
+      <button class="g" style="width:auto;padding:9px 16px" onclick="dsmsSend()">📲 არჩეულებს დღის შეჯამება</button>
+    </div>
+    <div id="dsmsBody"><div class="muted">აირჩიე დღე და დააჭირე „🔄 ჩატვირთე მკრეფავები".</div></div>
+  </div>
+
+  <div class="card" id="smsCard">
+    <h2>📲 SMS ისტორია (გაგზავნის დამტკიცება)</h2>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <input type="date" id="smsDate" style="width:auto;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px">
+      <button class="sec" style="width:auto;padding:8px 12px" onclick="loadSmsLog()">🔄 ჩვენება</button>
+      <button class="sec" style="width:auto;padding:8px 12px" onclick="var a=document.getElementById('smsDate');if(a)a.value=_today();loadSmsLog()">დღეს</button>
+    </div>
+    <div id="smsBody"><div class="muted">აირჩიე თარიღი და დააჭირე „🔄 ჩვენება".</div></div>
+  </div>
+</div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+let sb=null, uid=null, PICKERS=[], NUMMAP={}, activeTab='num';
+let boxes=[], lastW=[], queue=[], syncing=false, feed=[], numSeq={}, dedup={}, BLOCKS=[], ROWS=[], committedPallets={}, palCommitting=false;
+let smsSentBoxes={};
+let palPend={picker:null,quarter:'',row:'',_label:'',_isScan:false,_raw:''};
+let hChosen=null;
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+function _uuid(){ return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);}); }
+function _today(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function _time(){ var d=new Date(); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2); }
+function genCode(){ var cs='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',c=''; for(var i=0;i<6;i++) c+=cs[Math.floor(Math.random()*cs.length)]; return c; }
+function normPhone(p){ var d=String(p||'').replace(/\D/g,''); if(!d) return ''; if(d.indexOf('995')===0) return d; if(d.length===9) return '995'+d; return d; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function stat(cls,lbl,val,sub){ return '<div class="stat '+cls+'"><div class="lbl">'+lbl+'</div><div class="val">'+val+'</div><div class="sub">'+(sub||'')+'</div></div>'; }
+function price(){ var p=parseFloat((document.getElementById('cfgPrice')||{}).value || localStorage.getItem('its_price') || '1.2'); return isNaN(p)?1.2:p; }
+function tare(){ var t=parseFloat((document.getElementById('cfgTare')||{}).value || localStorage.getItem('its_box_w') || '0.7'); return isNaN(t)?0.7:t; }
+function pName(p){ return (p.name || ((p.firstName||p.firstname||'')+' '+(p.lastName||p.lastname||''))).trim() || '—'; }
+
+function idbOpen(){ return new Promise(function(res,rej){ var r=indexedDB.open('awonvaStore',1); r.onupgradeneeded=function(){ try{ r.result.createObjectStore('kv'); }catch(e){} }; r.onsuccess=function(){ res(r.result); }; r.onerror=function(){ rej(r.error); }; }); }
+function idbSet(k,v){ return idbOpen().then(function(db){ return new Promise(function(res,rej){ var tx=db.transaction('kv','readwrite'); tx.objectStore('kv').put(v,k); tx.oncomplete=function(){ db.close(); res(1); }; tx.onerror=function(){ db.close(); rej(tx.error); }; }); }); }
+function idbGet(k){ return idbOpen().then(function(db){ return new Promise(function(res,rej){ var tx=db.transaction('kv','readonly'), g=tx.objectStore('kv').get(k); g.onsuccess=function(){ db.close(); res(g.result); }; g.onerror=function(){ db.close(); rej(g.error); }; }); }); }
+
+async function doLogin(){
+  var e=document.getElementById('email').value.trim(), p=document.getElementById('pass').value, err=document.getElementById('loginErr');
+  err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+
+async function showApp(email){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('whoami').textContent=email||'—';
+  var a=document.getElementById('archiveDate'); if(a && !a.value) a.value=_today();
+  var sd=document.getElementById('smsDate'); if(sd && !sd.value) sd.value=_today();
+  var dm=document.getElementById('dsmsDate'); if(dm && !dm.value) dm.value=_today();
+  updateNet();
+  document.getElementById('smsToggle').addEventListener('change',function(){ document.getElementById('smsLbl').textContent=this.checked?'ჩართ.✅':'გამორთ.'; });
+  window.addEventListener('online',function(){ updateNet(); syncQueue(); });
+  window.addEventListener('offline',updateNet);
+  try{ queue=(await idbGet('queue'))||[]; }catch(e){ queue=[]; }
+  await loadSettings();
+  await loadPickers();
+  await loadZones();
+  switchTab('num');
+  renderQueue(); renderFeed(); refreshDayTotal(); fetchSeason(true);
+  showStartCheck();
+  if(navigator.onLine) syncQueue();
+}
+
+function showStartCheck(){
+  var old=document.getElementById('startCheck'); if(old) old.remove();
+  var p=price().toFixed(2), t=tare().toFixed(2);
+  var ov=document.createElement('div'); ov.id='startCheck';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:340px;width:100%;padding:22px;box-shadow:0 10px 40px rgba(0,0,0,.25)">'
+    +'<div style="font-size:1.6rem;text-align:center;margin-bottom:2px">⚠️</div>'
+    +'<h2 style="text-align:center;margin:0 0 4px;font-size:1.05rem;color:#0f172a">გადაამოწმე პარამეტრები</h2>'
+    +'<p style="text-align:center;color:#64748b;font-size:.85rem;margin:0 0 16px">დაიწყე მუშაობა ამ ფასითა და ტარით?</p>'
+    +'<div style="display:flex;gap:10px;margin-bottom:16px">'
+      +'<div style="flex:1;background:#eff6ff;border-radius:12px;padding:12px;text-align:center"><div style="font-size:.72rem;color:#64748b">ფასი</div><div style="font-size:1.4rem;font-weight:800;color:#0369a1">'+p+' ₾</div><div style="font-size:.7rem;color:#94a3b8">/კგ</div></div>'
+      +'<div style="flex:1;background:#eff6ff;border-radius:12px;padding:12px;text-align:center"><div style="font-size:.72rem;color:#64748b">ტარა</div><div style="font-size:1.4rem;font-weight:800;color:#0369a1">'+t+'</div><div style="font-size:.7rem;color:#94a3b8">კგ/ყუთი</div></div>'
+    +'</div>'
+    +'<button class="g" onclick="document.getElementById(\'startCheck\').remove()" style="margin-top:0">✅ კი, გავაგრძელო</button>'
+    +'<button class="sec" onclick="startCheckEdit()" style="margin-top:8px">✏️ შევცვალო</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
+function startCheckEdit(){
+  var ov=document.getElementById('startCheck'); if(ov) ov.remove();
+  var el=document.getElementById('cfgPrice'); if(el){ try{ el.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){} el.focus(); }
+}
+
+function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ — რიგში ჩაიწერება, ინტერნეტზე გაიგზავნება'; } }
+
+async function loadSettings(){
+  try{ var r=await sb.from('user_settings').select('skey,sval').eq('user_id',uid).in('skey',['its_price','its_box_w']);
+    if(!r.error){ (r.data||[]).forEach(function(x){ try{ localStorage.setItem(x.skey,x.sval); }catch(e){} }); } }catch(e){}
+  document.getElementById('cfgPrice').value=localStorage.getItem('its_price')||'1.2';
+  document.getElementById('cfgTare').value =localStorage.getItem('its_box_w')||'0.7';
+  var ts=document.getElementById('tareShow'); if(ts) ts.textContent=tare().toFixed(2);
+}
+function saveSetting(key,val){
+  try{ localStorage.setItem(key,val); }catch(e){}
+  if(key==='its_box_w'){
+    var ts=document.getElementById('tareShow'); if(ts) ts.textContent=tare().toFixed(2);
+    try{ localStorage.setItem('its_punnet_n','0'); localStorage.setItem('its_punnet_w','0'); }catch(e){}
+    if(sb && uid){ try{ var now=new Date().toISOString(); sb.from('user_settings').upsert([{user_id:uid,skey:'its_punnet_n',sval:'0',updated_at:now},{user_id:uid,skey:'its_punnet_w',sval:'0',updated_at:now}],{onConflict:'user_id,skey'}); }catch(e){} }
+  }
+  if(sb && uid){ try{ sb.from('user_settings').upsert({user_id:uid,skey:key,sval:String(val),updated_at:new Date().toISOString()},{onConflict:'user_id,skey'}); }catch(e){} }
+}
+
+async function loadPickers(){
+  var arr=[];
+  try{ var r=await sb.from('krepa_pickers').select('*').eq('user_id',uid); if(!r.error && r.data) arr=r.data; }catch(e){}
+  if(!arr.length){ try{ arr=JSON.parse(localStorage.getItem('its_p')||localStorage.getItem('its_pickers')||'[]')||[]; }catch(e){} }
+  var maxn=0; arr.forEach(function(p){ var n=parseInt(p.num,10); if(!isNaN(n)&&n>maxn) maxn=n; });
+  var toUp=[];
+  // num-ის მინიჭება დეტერმინისტული — uid-ით დალაგებული, რომ ორმა ტაბმა/მოწყობილობამ
+  // ერთი და იგივე ნომერი პარალელურად არ მიანიჭოს (race-ის შემცირება).
+  arr.filter(function(p){ return isNaN(parseInt(p.num,10)); })
+     .sort(function(a,b){ return String(a.uid).localeCompare(String(b.uid)); })
+     .forEach(function(p){ maxn++; p.num=maxn; toUp.push({uid:p.uid,user_id:uid,num:maxn}); });
+  if(toUp.length && sb){ try{ await sb.from('krepa_pickers').upsert(toUp,{onConflict:'uid'}); }catch(e){ console.warn('[loadPickers] num upsert', e); } }
+  PICKERS=arr;
+  NUMMAP={}; arr.forEach(function(p){ if(p.num!=null && p.num!=='') NUMMAP[String(p.num)]=p; });
+}
+
+function switchTab(t){
+  activeTab=t;
+  document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-t')===t); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.toggle('active', p.id==='p-'+t); });
+  document.getElementById('feedCard').style.display=(t==='hand'||t==='num')?'block':'none';
+}
+
+function handSearch(){
+  var q=document.getElementById('hSearch').value.trim().toLowerCase(), el=document.getElementById('hRes');
+  if(!q){ el.innerHTML=''; return; }
+  var hits=PICKERS.filter(function(p){ return pName(p).toLowerCase().indexOf(q)>=0 || String(p.num||'').indexOf(q)===0; }).slice(0,8);
+  if(!hits.length){ el.innerHTML='<div class="muted">ვერ მოიძებნა</div>'; return; }
+  el.innerHTML=hits.map(function(p){ return '<div class="sres-row" onclick="handPick('+PICKERS.indexOf(p)+')"><b>'+(p.num!=null?('#'+p.num+' '):'')+'</b>'+esc(pName(p))+'</div>'; }).join('');
+}
+function handPick(idx){ handPickObj(PICKERS[idx]); }
+function handPickObj(p){
+  if(!p) return; hChosen=p; document.getElementById('hRes').innerHTML=''; document.getElementById('hSearch').value='';
+  document.getElementById('hChosen').innerHTML='<div class="pkbox"><span class="no">'+(p.num!=null?('#'+p.num):'—')+'</span><span class="nm">'+esc(pName(p))+'</span><span class="x" onclick="hChosen=null;document.getElementById(\'hChosen\').innerHTML=\'\'">✕</span></div>';
+}
+function hValPal(){ var v=document.getElementById('hPal').value.trim(), el=document.getElementById('hPalVal'); if(!v){ el.innerHTML=''; return; } el.innerHTML=palOk(v)?'<span class="ok">✅ სწორი პალეტი</span>':'<span class="warn">❌ ფორმატი: PAL-XXXXXX-XXXX</span>'; }
+function handScan(){
+  var raw=document.getElementById('hScan').value.trim(), msg=document.getElementById('hScanMsg');
+  if(!raw) return; document.getElementById('hScan').value='';
+  if(/^PAL-\d{6}-\d{4}$/i.test(raw)){ document.getElementById('hPal').value=raw.toUpperCase(); hValPal(); msg.innerHTML='<span class="ok">📦 პალეტი: '+esc(raw.toUpperCase())+'</span>'; return; }
+  if(/^ROW:/i.test(raw)){ var rid=raw.slice(4); var rw=ROWS.find(function(x){ return String(x.id)===String(rid); });
+    if(rw){ document.getElementById('hZone').value=rw.block_id; fillRows(); document.getElementById('hRow').value=rw.name;
+      var bn=(BLOCKS.find(function(b){return String(b.id)===String(rw.block_id);})||{}).name||'';
+      msg.innerHTML='<span class="ok">📍 '+esc(bn)+' / '+esc(rw.name)+'</span>'; }
+    else msg.innerHTML='<span class="warn">რიგი ვერ მოიძებნა</span>'; return; }
+  var res=resolveByAny(raw);
+  if(res){ handPickObj(res.p); msg.innerHTML='<span class="ok">👤 '+(res.p.num!=null?('#'+res.p.num+' '):'')+esc(pName(res.p))+'</span>'; }
+  else msg.innerHTML='<span class="warn">ვერ მოიძებნა: '+esc(raw)+'</span>';
+}
+function prevHand(){ _prev('hWeight','hPrev'); }
+// ── ზონა/რიგი რეესტრიდან (agro_blocks / agro_rows) ──
+async function loadZones(){
+  var bl=[], rw=[];
+  try{ var rb=await sb.from('agro_blocks').select('id,name').eq('user_id',uid); if(!rb.error && rb.data) bl=rb.data; }catch(e){ console.warn('[loadZones] agro_blocks', e); }
+  // agro_rows — pagination (ადრე range(0,9999) ჩუმად ჭრიდა 10k-ზე მეტს)
+  try{
+    var from=0, STEP=1000;
+    while(true){
+      var rr=await sb.from('agro_rows').select('id,name,block_id').eq('user_id',uid).range(from,from+STEP-1);
+      if(rr.error){ console.warn('[loadZones] agro_rows', rr.error); break; }
+      var d=rr.data||[]; rw=rw.concat(d);
+      if(d.length<STEP) break; from+=STEP; if(from>100000) break;
+    }
+  }catch(e){ console.warn('[loadZones] agro_rows fetch', e); }
+  BLOCKS=bl; ROWS=rw;
+  var z=document.getElementById('hZone');
+  if(z){ z.innerHTML='<option value="">—</option>'+bl.map(function(b){ return '<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>'; }).join(''); }
+  var pz=document.getElementById('palZone');
+  if(pz){ pz.innerHTML='<option value="">—</option>'+bl.map(function(b){ return '<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>'; }).join(''); }
+  var note=document.getElementById('hZoneNote');
+  if(note) note.innerHTML = bl.length ? '' : '⚠️ ბლოკები არ არის რეგისტრირებული — დაამატე მთავარ გვერდზე (ზონირება).';
+  fillRows();
+}
+function fillRows(){
+  var bid=(document.getElementById('hZone')||{}).value||'', r=document.getElementById('hRow'); if(!r) return;
+  var list=ROWS.filter(function(x){ return String(x.block_id)===String(bid); });
+  r.innerHTML='<option value="">—</option>'+list.map(function(x){ return '<option value="'+esc(x.name)+'">'+esc(x.name)+'</option>'; }).join('');
+}
+function handAdd(){
+  var msg=document.getElementById('hMsg');
+  if(!hChosen){ msg.innerHTML='<span class="warn">ჯერ აირჩიე მკრეფავი</span>'; return; }
+  var w=parseFloat(document.getElementById('hWeight').value)||0;
+  if(w<=0){ msg.innerHTML='<span class="warn">ჩაწერე წონა</span>'; return; }
+  var pal=document.getElementById('hPal').value.trim();
+  if(pal && !palOk(pal)){ msg.innerHTML='<span class="warn">❌ პალეტი არასწორია (PAL-XXXXXX-XXXX) — ან დატოვე ცარიელი</span>'; return; }
+  var zid=document.getElementById('hZone').value, row=document.getElementById('hRow').value;
+  var zb=BLOCKS.find(function(b){ return String(b.id)===String(zid); }), zone=zb?zb.name:'';
+  var c=genCode();
+  pushRecord({ code:c, short_code:c, picker:hChosen, weight:w, row_num:row, quarter:zone, pallet:pal, entry_mode:'ხელით' });
+  var _net=Math.max(0,Math.round((w-tare())*100)/100);
+  msg.innerHTML='<span class="ok">✅ დაემატა: '+esc(pName(hChosen))+' · ბრუტო '+w.toFixed(2)+' → სუფთა '+_net.toFixed(2)+' კგ'+(pal?(' · '+esc(pal)):'')+(zone?(' · '+esc(zone)+(row?('/'+esc(row)):'')):'')+'</span>';
+  document.getElementById('hWeight').value=''; prevHand();
+}
+
+function numResolve(){
+  var n=document.getElementById('nNum').value.trim(), el=document.getElementById('nPicker');
+  if(!n){ el.innerHTML=''; return; }
+  var p=NUMMAP[n];
+  if(p){ el.innerHTML='<div class="pkbox"><span class="no">#'+n+'</span><span class="nm">'+esc(pName(p))+'</span></div>'; }
+  else{ el.innerHTML='<div class="pkbox" style="background:#fef3c7"><span style="color:#92400e">#'+esc(n)+' — ვერ მოიძებნა</span></div>'; }
+  prevNum();
+}
+function prevNum(){ _prev('nWeight','nPrev'); }
+function numAdd(){
+  var n=document.getElementById('nNum').value.trim(), msg=document.getElementById('nMsg');
+  var p=NUMMAP[n]; if(!p){ msg.innerHTML='<span class="warn">ნომერი ვერ მოიძებნა</span>'; return; }
+  var w=parseFloat(document.getElementById('nWeight').value)||0;
+  if(w<=0){ msg.innerHTML='<span class="warn">ჩაწერე წონა</span>'; return; }
+  var d=_today().replace(/-/g,''); numSeq[n]=(numSeq[n]||0)+1;
+  var code=n+'-'+d+'-'+numSeq[n], short=n+'-'+numSeq[n];
+  pushRecord({ code:code, short_code:short, picker:p, weight:w, row_num:'', quarter:'', entry_mode:'ნუმერაცია' });
+  var _net=Math.max(0,Math.round((w-tare())*100)/100);
+  msg.innerHTML='<span class="ok">✅ #'+n+' '+esc(pName(p))+' · ბრუტო '+w.toFixed(2)+' → სუფთა '+_net.toFixed(2)+' კგ ('+short+')</span>';
+  document.getElementById('nNum').value=''; document.getElementById('nWeight').value='';
+  document.getElementById('nPicker').innerHTML=''; prevNum(); document.getElementById('nNum').focus();
+}
+
+function pushRecord(o){
+  var p=o.picker, pr=price(), t=tare();
+  var net=Math.max(0, Math.round((o.weight - t)*100)/100); // ტარა გამოკლებული — სუფთა (2 ნიშანი)
+  queue.push({ id:_uuid(), code:o.code, short_code:o.short_code, picker_name:pName(p), picker_id:p.uid||'', phone:p.phone||'',
+    pallet_code:o.pallet||'', weight:net, kg:net, price:pr, date:_today(), time:_time(),
+    row_num:o.row_num||'', quarter:o.quarter||'', earned:Math.round(net*pr*100)/100,
+    sms:document.getElementById('smsToggle').checked && !!p.phone, entry_mode:o.entry_mode });
+  feed.unshift({ code:o.short_code, name:pName(p), w:net, mode:o.entry_mode });
+  saveQueue(); renderQueue(); renderFeed(); renderDayTotal();
+  if(navigator.onLine) syncQueue();
+}
+function renderFeed(){
+  document.getElementById('feedCount').textContent=feed.length;
+  var b=document.getElementById('feedBody');
+  if(!feed.length){ b.innerHTML='<tr><td colspan="4" class="muted">ჯერ არცერთი</td></tr>'; return; }
+  b.innerHTML=feed.slice(0,40).map(function(x){ return '<tr><td><span class="key">'+esc(x.code)+'</span></td><td>'+esc(x.name)+'</td><td><b>'+x.w.toFixed(2)+'</b></td><td class="srcbadge">'+esc(x.mode)+'</td></tr>'; }).join('');
+}
+
+// ── დღის ჯამი: ღრუბლის დღევანდელი ჩანაწერები + ჯერ ასატვირთი queue (id-ით დუბლის გარეშე) ──
+var dayCloud={kg:0,box:0,gel:0,pickers:{},ids:{}};
+async function fetchDayCloud(){
+  if(!sb||!uid||!navigator.onLine) return;
+  try{
+    var r=await sb.from('harvest_sessions').select('id,weight,earned,picker_name').eq('user_id',uid).eq('date',_today());
+    if(r.error) return;
+    var kg=0,box=0,gel=0,pk={},ids={};
+    (r.data||[]).forEach(function(x){ kg+=(+x.weight||0); box++; gel+=(+x.earned||0); if(x.picker_name)pk[x.picker_name]=1; if(x.id)ids[x.id]=1; });
+    dayCloud={kg:kg,box:box,gel:gel,pickers:pk,ids:ids};
+  }catch(e){ console.warn('[fetchDayCloud]', e); }
+}
+function renderDayTotal(){
+  var kg=dayCloud.kg, box=dayCloud.box, gel=dayCloud.gel, pk=Object.assign({},dayCloud.pickers), td=_today(), pend=0;
+  queue.forEach(function(q){
+    if((q.date||'')!==td) return;
+    if(q.id && dayCloud.ids[q.id]) return;   // უკვე ღრუბელშია — არ გავაორმაგოთ
+    kg+=(+q.weight||0); box++; gel+=(+q.earned||0); if(q.picker_name)pk[q.picker_name]=1; pend++;
+  });
+  var g=function(id){ return document.getElementById(id); };
+  if(g('dtDate')) g('dtDate').textContent=td;
+  var el=g('awTodayStats');
+  if(el) el.innerHTML=
+     stat('s-green','🌾 დღეს კგ',(Math.round(kg*10)/10).toLocaleString('en-US'),box+' ყუთი')
+    +stat('s-orange','📦 დღეს ყუთი',box.toLocaleString('en-US'),'ჩაწონვა')
+    +stat('s-blue','👷 მკრეფავი',Object.keys(pk).length,'დღეს აწონა')
+    +stat('s-purple money','💰 დღეს ₾',(Math.round(gel*100)/100).toLocaleString('en-US')+' ₾','კგ×ფასი');
+  if(g('dtPending')) g('dtPending').textContent=pend?('⏳ '+pend+' ჩანაწერი ჯერ ასატვირთია (ჯამში უკვე ჩათვლილია)'):'☁️ ყველა დღევანდელი ჩანაწერი ღრუბელშია';
+}
+function refreshDayTotal(){ return fetchDayCloud().then(renderDayTotal); }
+
+// ── სეზონის ჯამი: მთელი harvest_sessions (throttled — 30წმ-ში მაქს. ერთხელ) ──
+var season={kg:0,box:0,gel:0,pickers:0,days:0}, _seasonTs=0;
+async function fetchSeason(force){
+  if(!sb||!uid||!navigator.onLine) return;
+  if(!force && (Date.now()-_seasonTs)<30000) return;   // ხშირ სინქრონზე ბაზას არ ვტვირთავთ
+  _seasonTs=Date.now();
+  // ── ჯერ სწრაფი server-side RPC (season_totals). თუ ფუნქცია ჯერ არ არსებობს
+  //    ბაზაში — ჩუმად ვბრუნდებით ძველ loop-ზე (იგივე ციფრები). ──
+  try{
+    var rp=await sb.rpc('season_totals');
+    if(!rp.error && rp.data && rp.data.length){
+      var s=rp.data[0];
+      season={ kg:+s.kg||0, box:+s.box||0, gel:+s.gel||0, pickers:+s.pickers||0, days:+s.days||0 };
+      renderSeason(); return;
+    }
+  }catch(e){ console.warn('[fetchSeason] RPC ვერ შესრულდა — fallback', e); }
+  try{
+    var rows=[], from=0, STEP=1000;
+    while(true){
+      var r=await sb.from('harvest_sessions').select('weight,earned,picker_name,date').eq('user_id',uid).range(from,from+STEP-1);
+      if(r.error) break; var d=r.data||[]; rows=rows.concat(d);
+      if(d.length<STEP) break; from+=STEP; if(from>200000) break;
+    }
+    var kg=0,box=0,gel=0,pk={},dd={};
+    rows.forEach(function(x){ kg+=(+x.weight||0); box++; gel+=(+x.earned||0); if(x.picker_name)pk[x.picker_name]=1; if(x.date)dd[x.date]=1; });
+    season={kg:kg,box:box,gel:gel,pickers:Object.keys(pk).length,days:Object.keys(dd).length};
+  }catch(e){ console.warn('[fetchSeason] fallback loop error', e); }
+  renderSeason();
+}
+function renderSeason(){
+  var sub=document.getElementById('dsSub'); if(sub) sub.textContent=season.days?('· '+season.days+' სამუშაო დღე'):'';
+  var el=document.getElementById('awSeasonStats'); if(!el) return;
+  el.innerHTML=
+     stat('s-green','🌾 სულ კგ',(Math.round(season.kg*10)/10).toLocaleString('en-US'),(season.days||0)+' სამუშაო დღე')
+    +stat('s-orange','📦 სულ ყუთი',season.box.toLocaleString('en-US'),'ჩაწონვა')
+    +stat('s-blue','👷 მკრეფავი',season.pickers.toLocaleString('en-US'),'ვინც აწონა')
+    +stat('s-purple money','💰 ₾ სულ',(Math.round(season.gel*100)/100).toLocaleString('en-US')+' ₾','კგ×ფასი');
+}
+
+function palOk(v){ return /^PAL-\d{6}-\d{4}$/i.test((v||'').trim()); }
+function valPal(){ var v=document.getElementById('palIn').value.trim(), el=document.getElementById('palVal'); if(!v){ el.innerHTML=''; return; } el.innerHTML=palOk(v)?'<span class="ok">✅ სწორი პალეტი</span>':'<span class="warn">❌ ფორმატი: PAL-XXXXXX-XXXX</span>'; }
+function resolveByAny(raw){
+  var v=String(raw||'').trim(); if(!v) return null;
+  if(/^\d+$/.test(v) && NUMMAP[v]) return {p:NUMMAP[v], label:''};
+  var parts=v.split('|'), qUid=parts[0], sh=parts[parts.length-1];
+  function nm(x){ return String(x||'').replace(/^P/i,'').replace(/_/g,'').trim().toUpperCase(); }
+  var p=PICKERS.find(function(x){ return nm(x.uid)===nm(qUid) || (x.short_code&&nm(x.short_code)===nm(sh)) || (x.shortCode&&nm(x.shortCode)===nm(sh)); });
+  return p?{p:p,label:(v.indexOf('|')>=0?v:'')}:null;
+}
+function palPendShow(){ var el=document.getElementById('palPendLbl'); if(!el) return;
+  var rw=(palPend.quarter||palPend.row)?(esc(palPend.quarter||'')+(palPend.row?(' / '+esc(palPend.row)):'')):'— ყველა';
+  el.innerHTML='📍 მიმდინარე რიგი: <b style="color:#0369a1">'+rw+'</b> <span class="muted" style="font-size:.75rem">(ასკანერე მკრეფავი — ყუთი დაემატება ამ რიგით)</span>';
+}
+function palSetPendRow(q,r){ palPend.quarter=q||''; palPend.row=r||''; palPendShow(); }
+function palRowScan(){ var bid=(document.getElementById('palZone')||{}).value||'', rname=(document.getElementById('palRow')||{}).value||''; var zb=BLOCKS.find(function(b){ return String(b.id)===String(bid); }); palSetPendRow(zb?zb.name:'', rname); }
+function palFillRows(){ var bid=(document.getElementById('palZone')||{}).value||'', r=document.getElementById('palRow'); if(!r) return; var list=ROWS.filter(function(x){ return String(x.block_id)===String(bid); }); r.innerHTML='<option value="">—</option>'+list.map(function(x){ return '<option value="'+esc(x.name)+'">'+esc(x.name)+'</option>'; }).join(''); palRowScan(); }
+// სახელით ხელით ძებნა პალეტში
+function palSearchFn(){
+  var q=document.getElementById('palSearch').value.trim().toLowerCase(), el=document.getElementById('palRes');
+  if(!q){ el.innerHTML=''; return; }
+  var hits=PICKERS.filter(function(p){ return pName(p).toLowerCase().indexOf(q)>=0 || String(p.num||'').indexOf(q)===0; }).slice(0,8);
+  if(!hits.length){ el.innerHTML='<div class="muted">ვერ მოიძებნა</div>'; return; }
+  el.innerHTML=hits.map(function(p){ return '<div class="sres-row" onclick="palPickName('+PICKERS.indexOf(p)+')"><b>'+(p.num!=null?('#'+p.num+' '):'')+'</b>'+esc(pName(p))+'</div>'; }).join('');
+}
+function palPickName(idx){
+  var p=PICKERS[idx]; if(!p) return;
+  boxes.push({ picker:pName(p), phone:p.phone||'', uid:p.uid||'', num:p.num, row:palPend.row||'—', quarter:palPend.quarter||'', labelCode:'' });
+  document.getElementById('palMsg').innerHTML='<span class="ok">➕ '+(p.num!=null?('#'+p.num+' '):'')+esc(pName(p))+(palPend.row?(' · '+esc(palPend.quarter||'')+'/'+esc(palPend.row)):'')+'</span>';
+  document.getElementById('palSearch').value=''; document.getElementById('palRes').innerHTML='';
+  renderPalBoxes();
+}
+// სკან-ველი: რიგს აყენებს (იმახსოვრებს), მკრეფავს კი ეგრევე ამატებს ყუთად
+function palScanInput(){
+  var raw=document.getElementById('palAdd').value.trim(), msg=document.getElementById('palMsg');
+  if(!raw){ return; }
+  document.getElementById('palAdd').value='';
+  if(/^ROW:/i.test(raw)){ var rid=raw.slice(4); var rw=ROWS.find(function(x){ return String(x.id)===String(rid); });
+    if(rw){ var bn=(BLOCKS.find(function(b){return String(b.id)===String(rw.block_id);})||{}).name||'';
+      var z=document.getElementById('palZone'); if(z){ z.value=rw.block_id; palFillRows(); var rr=document.getElementById('palRow'); if(rr) rr.value=rw.name; }
+      palSetPendRow(bn,rw.name); msg.innerHTML='<span class="ok">📍 რიგი: '+esc(bn)+' / '+esc(rw.name)+' — ახლა ასკანერე მკრეფავები</span>'; }
+    else msg.innerHTML='<span class="warn">რიგი ვერ მოიძებნა</span>';
+    return; }
+  var res=resolveByAny(raw);
+  if(!res){ msg.innerHTML='<span class="warn">ვერ მოიძებნა: '+esc(raw)+'</span>'; return; }
+  var isScan=raw.indexOf('|')>=0;
+  if(isScan && dedup[raw]){ msg.innerHTML='<span class="warn">🚫 ეს კოდი უკვე გატარებულია</span>'; return; }
+  if(isScan) dedup[raw]=1;
+  boxes.push({ picker:pName(res.p), phone:res.p.phone||'', uid:res.p.uid||'', num:res.p.num, row:palPend.row||'—', quarter:palPend.quarter||'', labelCode:res.label||'' });
+  msg.innerHTML='<span class="ok">➕ '+(res.p.num!=null?('#'+res.p.num+' '):'')+esc(pName(res.p))+(palPend.row?(' · '+esc(palPend.quarter||'')+'/'+esc(palPend.row)):'')+'</span>';
+  renderPalBoxes(); var pa=document.getElementById('palAdd'); if(pa) pa.focus();
+}
+// „ყუთის დამატება" ღილაკი — სათადარიგო (ხელით): ბოლო აკრეფილ მკრეფავს ამატებს pending რიგით
+function palAddBox(){
+  var msg=document.getElementById('palMsg'), raw=(document.getElementById('palAdd').value||'').trim();
+  if(raw){ palScanInput(); return; }
+  if(!palPend.picker){ msg.innerHTML='<span class="warn">ასკანერე ან აკრიფე მკრეფავი</span>'; return; }
+  var p=palPend.picker;
+  boxes.push({ picker:pName(p), phone:p.phone||'', uid:p.uid||'', num:p.num, row:palPend.row||'—', quarter:palPend.quarter||'', labelCode:'' });
+  msg.innerHTML='<span class="ok">➕ დაემატა: '+(p.num!=null?('#'+p.num+' '):'')+esc(pName(p))+'</span>';
+  palPend.picker=null; palPendShow(); renderPalBoxes();
+}
+function palAddUnid(){ boxes.push({picker:'ვერ იდენტიფიცირდა',phone:'',uid:'',row:(palPend.row||'—'),quarter:(palPend.quarter||''),unid:true,labelCode:''}); document.getElementById('palMsg').innerHTML='<span style="color:#ea580c">🚫 დაემატა ვერ-იდენტიფიცირებული</span>'; renderPalBoxes(); }
+function rmPalBox(i){ var b=boxes[i]; if(b && b.labelCode && dedup[b.labelCode]) delete dedup[b.labelCode]; boxes.splice(i,1); renderPalBoxes(); }
+function renderPalBoxes(){
+  document.getElementById('palCount').textContent=boxes.length;
+  var b=document.getElementById('palBody');
+  if(!boxes.length){ b.innerHTML='<tr><td colspan="4" class="muted">ჯერ არცერთი</td></tr>'; return; }
+  b.innerHTML=boxes.map(function(x,i){ var rw=(x.quarter||x.row&&x.row!=='—')?((x.quarter?esc(x.quarter):'')+((x.row&&x.row!=='—')?((x.quarter?' / ':'')+esc(x.row)):'')):'—'; return '<tr><td>'+(i+1)+'</td><td>'+(x.unid?'<span style="color:#ea580c">':'')+(x.num!=null?('#'+x.num+' '):'')+esc(x.picker)+(x.unid?'</span>':'')+'</td><td class="muted">'+rw+'</td><td><span class="x" onclick="rmPalBox('+i+')">✕</span></td></tr>'; }).join('');
+}
+function palDistribute(){
+  var n=boxes.length, total=parseFloat(document.getElementById('palTotal').value)||0, palw=parseFloat(document.getElementById('palW').value)||0, t=tare();
+  var card=document.getElementById('palResultCard'), sm=document.getElementById('palSummary'); card.style.display='block';
+  if(n<=0){ sm.innerHTML='<span class="warn">ჯერ დაამატე ყუთები</span>'; document.getElementById('palByPicker').innerHTML=''; document.getElementById('palByBox').innerHTML=''; return; }
+  if(total<=0){ sm.innerHTML='<span class="warn">ჩაწერე საერთო წონა</span>'; return; }
+  var net=Math.round((total-palw-t*n)*10)/10, avg=net/n;
+  if(net<=0){ sm.innerHTML='<span class="warn">სუფთა წონა უარყოფითია</span>'; return; }
+  var w=[],i; for(i=0;i<n;i++) w.push(Math.round((avg+(Math.random()*0.6-0.3))*10)/10);
+  var s=0; for(i=0;i<n;i++) s+=w[i]; s=Math.round(s*10)/10;
+  var diff=Math.round((net-s)*10)/10, steps=Math.round(Math.abs(diff)*10), sign=diff>0?0.1:-0.1;
+  for(i=0;i<steps;i++){ var idx=Math.floor(Math.random()*n); w[idx]=Math.round((w[idx]+sign)*10)/10; }
+  var fin=0,mn=Infinity,mx=-Infinity; for(i=0;i<n;i++){ fin+=w[i]; if(w[i]<mn)mn=w[i]; if(w[i]>mx)mx=w[i]; } fin=Math.round(fin*10)/10; lastW=w;
+  var pal=document.getElementById('palIn').value.trim();
+  sm.innerHTML='<div style="font-size:.9rem;line-height:1.9">📦 პალეტი: <b>'+(pal||'—')+'</b>'+(pal&&!palOk(pal)?' <span class="warn">(არასწორი!)</span>':'')+'<br>ყუთები: <b>'+n+'</b> · სუფთა ჯამი: <b>'+net.toFixed(1)+' კგ</b> · საშ.: <b>'+avg.toFixed(2)+'</b><br>დიაპაზონი: <b>'+mn.toFixed(1)+'–'+mx.toFixed(1)+'</b><br>დარიგებული: <b class="'+(Math.abs(fin-net)<0.05?'ok':'warn')+'">'+fin.toFixed(1)+' კგ</b> '+(Math.abs(fin-net)<0.05?'✅':'⚠️')+'</div>';
+  var agg={}; for(i=0;i<n;i++){ var k=boxes[i].picker; if(!agg[k])agg[k]={c:0,kg:0}; agg[k].c++; agg[k].kg+=w[i]; }
+  var pr='<h2 style="margin-top:14px">👥 მკრეფავების მიხედვით</h2><table><thead><tr><th>მკრეფავი</th><th>ყუთი</th><th>სუფთა კგ</th></tr></thead><tbody>';
+  Object.keys(agg).forEach(function(k){ pr+='<tr><td>'+esc(k)+'</td><td>'+agg[k].c+'</td><td>'+(Math.round(agg[k].kg*10)/10).toFixed(1)+'</td></tr>'; }); pr+='</tbody></table>';
+  document.getElementById('palByPicker').innerHTML=pr;
+  var bx='<h2 style="margin-top:14px">📦 ყუთების მიხედვით</h2><table><thead><tr><th>#</th><th>მკრეფავი</th><th>სუფთა</th></tr></thead><tbody>';
+  for(i=0;i<n;i++) bx+='<tr><td>'+(i+1)+'</td><td>'+esc(boxes[i].picker)+'</td><td><b>'+w[i].toFixed(1)+'</b></td></tr>';
+  bx+='<tr class="sum"><td colspan="2">ჯამი</td><td>'+fin.toFixed(1)+'</td></tr></tbody></table>';
+  document.getElementById('palByBox').innerHTML=bx; document.getElementById('palConf').innerHTML='';
+}
+async function palCommit(){
+  var msg=document.getElementById('palConf');
+  if(palCommitting) return; // ორმაგი დაჭერის დაცვა
+  if(!boxes.length || !lastW.length){ msg.innerHTML='<span class="warn">ჯერ დაარიგე წონა</span>'; return; }
+  var pal=document.getElementById('palIn').value.trim();
+  if(!palOk(pal)){ msg.innerHTML='<span class="warn">❌ პალეტი არასწორია (PAL-XXXXXX-XXXX)</span>'; return; }
+  if(lastW.length!==boxes.length){ msg.innerHTML='<span class="warn">წონა და ყუთები არ ემთხვევა — თავიდან დაარიგე</span>'; return; }
+  // ── დუბლი პალეტის ბლოკი ──
+  if(committedPallets[pal]){ if(!confirm('⚠️ პალეტი '+pal+' ამ სესიაში უკვე გატარდა.\nხელახლა ჩაწერა წონას გააორმაგებს. მაინც გავაგრძელო?')) return; }
+  if(navigator.onLine && sb){
+    msg.innerHTML='<span class="muted">🔎 ვამოწმებ პალეტს…</span>';
+    try{ var chk=await sb.from('harvest_sessions').select('id').eq('user_id',uid).eq('pallet_code',pal).limit(1);
+      if(!chk.error && chk.data && chk.data.length){
+        if(!confirm('🚫 პალეტი '+pal+' უკვე ჩაწერილია ბაზაში!\nხელახლა ჩაწერა წონას გააორმაგებს.\n\nდარწმუნებული ხარ, რომ მაინც გავაგრძელო?')){ msg.innerHTML='<span class="warn">🚫 შეჩერდა — პალეტი უკვე არსებობს</span>'; return; }
+      }
+    }catch(e){}
+  }
+  var smsOn=document.getElementById('smsToggle').checked;
+  if(!confirm(boxes.length+' ყუთი ჩაიწერება პალეტზე '+pal+(smsOn?'\n\n⚠️ SMS ჩართულია!':'\n\nSMS გამორთულია.')+'\n\nგავაგრძელო?')) return;
+  palCommitting=true;
+  var d=_today(), tm=_time(), pr=price();
+  for(var i=0;i<boxes.length;i++){ var b=boxes[i], w=lastW[i];
+    var _lc=b.labelCode||'', code, shortc;
+    if(_lc){ code=_lc; var seg=_lc.split('|'); shortc=seg[seg.length-1]; } else { code=genCode(); shortc=code; }
+    queue.push({ id:_uuid(), code:code, short_code:shortc, picker_name:b.picker, picker_id:b.uid||'', phone:b.phone||'',
+      pallet_code:pal, weight:w, kg:w, price:pr, date:d, time:tm, row_num:(b.row&&b.row!=='—'?b.row:''), quarter:b.quarter||'',
+      earned:Math.round(w*pr*100)/100, sms:smsOn&&!!b.phone, entry_mode:'პალეტი' });
+  }
+  committedPallets[pal]=1;
+  await saveQueue();
+  msg.innerHTML='<span class="ok">✅ '+boxes.length+' ყუთი ჩაიდო რიგში → '+pal+(navigator.onLine?'. ვასინქრონებ...':' (ოფლაინ).')+'</span>';
+  boxes=[]; lastW=[]; renderPalBoxes(); document.getElementById('palResultCard').style.display='none';
+  document.getElementById('palTotal').value=''; document.getElementById('palIn').value=''; document.getElementById('palVal').innerHTML='';
+  dedup={}; // ახალი პალეტისთვის სკან-დუბლის ცხრილი იწმინდება
+  palCommitting=false;
+  renderQueue(); renderDayTotal(); if(navigator.onLine) syncQueue();
+}
+
+function _prev(wId,outId){
+  var w=parseFloat(document.getElementById(wId).value)||0, t=tare(), p=price(), el=document.getElementById(outId);
+  if(w<=0){ el.textContent='სუფთა: — · — ₾'; return; }
+  var net=Math.max(0,w-t);
+  el.innerHTML='სუფთა: <b>'+net.toFixed(2)+' კგ</b> · <b class="ok">'+(net*p).toFixed(2)+' ₾</b>';
+}
+function prevAll(){ prevHand(); prevNum(); var ts=document.getElementById('tareShow'); if(ts) ts.textContent=tare().toFixed(2); }
+
+function saveQueue(){ return idbSet('queue',queue).catch(function(){}); }
+function renderQueue(){ var bar=document.getElementById('qbar'); if(!bar)return; if(queue.length){ bar.style.display='block'; bar.innerHTML='⏳ '+queue.length+' ჩანაწერი რიგშია'+(navigator.onLine?' — ვასინქრონებ...':' (ოფლაინ)'); } else bar.style.display='none'; }
+async function smsSend(phone,text,reference){
+  var cfg={}; try{ cfg=JSON.parse(localStorage.getItem('its_sms_config')||'{}')||{}; }catch(e){}
+  if(!cfg.proxyUrl) throw new Error('SMS კონფიგი არ არის');
+  var to=normPhone(phone); if(!to||to.length<11) throw new Error('არასწორი ნომერი');
+  var body=new URLSearchParams({ to:to, text:text, sender:cfg.sender||'agroits' });
+  if(reference) body.append('reference', String(reference).slice(0,20));
+  var resp=await fetch(cfg.proxyUrl,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});
+  var json=null; try{ json=await resp.json(); }catch(e){}
+  if(!resp.ok) throw new Error('SMS HTTP '+resp.status);
+  if(json && json.Success===false) throw new Error(json.Message||('ErrorCode '+(json.ErrorCode||'?')));
+  return json||{};
+}
+function smsMsgId(res){ if(!res) return ''; return String(res.msgId||res.MessageId||res.messageId||res.Output||res.output||res.id||res.ID||''); }
+function smsLog(rec){
+  if(!sb||!uid) return;
+  try{ sb.from('sms_log').insert({ user_id:uid, picker_name:rec.name||'', picker_id:rec.pid||'', phone:rec.phone||'', text:rec.text||'', kg:rec.kg||0, gel:rec.gel||0, box_code:rec.code||'', pallet_code:rec.pallet||'', status:rec.status||'', error:rec.error||'', msg_id:rec.msg_id||'', date:_today() }).then(function(){},function(){}); }catch(e){}
+}
+async function syncQueue(){
+  if(syncing || !queue.length || !navigator.onLine || !sb || !uid) return;
+  syncing=true; var done=0, fail=0, remain=[], lastErr='';
+  function toRow(q){ return { id:q.id, user_id:uid, picker_name:q.picker_name, picker_id:q.picker_id||'', kg:q.kg, price:q.price||0, date:q.date, weight:q.weight, earned:q.earned||0, phone:q.phone||'', row_num:q.row_num||null, quarter:q.quarter||'', short_code:q.short_code, box_num:'', time:q.time, code:q.code, pallet_code:q.pallet_code||'', source:'krepa_bulk', entry_mode:q.entry_mode||'' }; }
+  function sendSms(q){ if(!(q.sms && q.phone)) return;
+    var bc=q.short_code||q.code||''; if(!bc) bc='noc-'+(q.id||Math.random());
+    if(smsSentBoxes[bc]) return;            // ამ სესიაში უკვე გაიგზავნა — აღარ ვიმეორებთ
+    smsSentBoxes[bc]=1;
+    var msg='InTechSol \u2705\n'+q.picker_name+'\n\u10d0\u10ee\u10d0\u10da\u10d8: '+(+q.weight).toFixed(2)+' \u10d9\u10d2 = '+(+q.earned).toFixed(2)+' \u20be\n\u10d3\u10e0\u10dd: '+q.time;
+    function doSend(){ try{ smsSend(q.phone,msg,bc).then(function(res){ smsLog({name:q.picker_name,pid:q.picker_id,phone:q.phone,text:msg,kg:q.weight,gel:q.earned,code:bc,pallet:q.pallet_code||"",status:'sent',msg_id:smsMsgId(res)}); }).catch(function(e){ smsSentBoxes[bc]=0; smsLog({name:q.picker_name,pid:q.picker_id,phone:q.phone,text:msg,kg:q.weight,gel:q.earned,code:bc,pallet:q.pallet_code||"",status:'failed',error:(e&&e.message)||String(e)}); }); }catch(se){ smsSentBoxes[bc]=0; smsLog({name:q.picker_name,pid:q.picker_id,phone:q.phone,text:msg,kg:q.weight,gel:q.earned,code:bc,pallet:q.pallet_code||"",status:'failed',error:String(se)}); } }
+    // ბაზაშიც შევამოწმოთ — ხომ არ გაიგზავნა უკვე (სხვა სესიაზე/მოწყობილობაზე)
+    try{ sb.from('sms_log').select('id').eq('user_id',uid).eq('box_code',bc).in('status',['sent','delivered']).limit(1).then(function(r){ if(!r.error && r.data && r.data.length){ return; } doSend(); }, function(){ doSend(); }); }catch(e){ doSend(); }
+  }
+  var all=queue.slice(), BATCH=200;
+  for(var b=0;b<all.length;b+=BATCH){
+    var chunk=all.slice(b,b+BATCH), r;
+    try{ r=await sb.from('harvest_sessions').upsert(chunk.map(toRow),{onConflict:'id'}); }catch(e){ r={error:{message:(e.message||e)}}; }
+    if(r.error){
+      for(var k=0;k<chunk.length;k++){ var q=chunk[k], rr;
+        try{ rr=await sb.from('harvest_sessions').upsert(toRow(q),{onConflict:'id'}); }catch(e2){ rr={error:{message:(e2.message||e2)}}; }
+        if(rr.error){ fail++; lastErr=rr.error.message||''; remain.push(q); } else { done++; sendSms(q); }
+      }
+    } else { done+=chunk.length; for(var m=0;m<chunk.length;m++) sendSms(chunk[m]); }
+  }
+  queue=remain; await saveQueue(); renderQueue(); syncing=false; if(done){ try{ loadArchive(); }catch(e){} try{ fetchDayCloud().then(renderDayTotal); }catch(e){} try{ fetchSeason(); }catch(e){} }
+  var bar=document.getElementById('qbar');
+  if(done){ bar.style.display='block'; bar.innerHTML='\u2705 '+done+' \u10e9\u10d0\u10d8\u10ec\u10d4\u10e0\u10d0'+(fail?(' \u00b7 \u274c '+fail+' \u2014 '+lastErr):''); if(!queue.length) setTimeout(function(){ bar.style.display='none'; },3000); }
+  else if(fail){ bar.style.display='block'; bar.innerHTML='\u274c \u10d5\u10d4\u10e0 \u10e9\u10d0\u10d8\u10ec\u10d4\u10e0\u10d0 ('+fail+') \u2014 '+(lastErr||''); }
+}
+
+var _smsLast={date:'',groups:[],sent:0,deliv:0,failed:0};
+async function exportSmsExcel(){
+  if(typeof XLSX==='undefined'){ alert('Excel ბიბლიოთეკა ვერ ჩაიტვირთა'); return; }
+  if(!sb||!uid){ alert('ჯერ შედი'); return; }
+  var btnMsg=document.getElementById('smsBody');
+  // ── ყველა sms_log (გვერდობრივად) ──
+  var rows=[], from=0, STEP=1000;
+  try{
+    while(true){
+      var r=await sb.from('sms_log').select('date,sent_at,picker_name,phone,pallet_code,box_code,kg,gel,status,error').eq('user_id',uid).order('sent_at',{ascending:true}).range(from,from+STEP-1);
+      if(r.error){ alert('❌ '+r.error.message); return; }
+      var d=r.data||[]; rows=rows.concat(d);
+      if(d.length<STEP) break; from+=STEP;
+      if(from>50000) break;
+    }
+  }catch(e){ alert('❌ '+(e.message||e)); return; }
+  if(!rows.length){ alert('SMS ისტორია ცარიელია'); return; }
+
+  function isSent(s){ return s!=='failed'; }               // პროვაიდერამდე მივიდა
+  function isDeliv(s){ return s==='delivered'; }
+  function isNotDeliv(s){ return s==='undelivered'||s==='expired'; }
+  function isFail(s){ return s==='failed'; }
+  function stKa(s){ return s==='delivered'?'მიუვიდა':s==='undelivered'?'არ მიუვიდა':s==='expired'?'ვადა ამოიწურა':s==='sent'?'გაიგზავნა':s==='failed'?'ვერ გაიგზავნა':(s||'—'); }
+  function tmOf(x){ try{ return new Date(x.sent_at).toLocaleTimeString('ka-GE',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+
+  // ── სტილები ──
+  var C={ head:{fill:{fgColor:{rgb:'0369A1'}},font:{color:{rgb:'FFFFFF'},bold:true},alignment:{horizontal:'center'},border:bd()},
+          tot:{fill:{fgColor:{rgb:'E2E8F0'}},font:{bold:true},border:bd()},
+          deliv:{fill:{fgColor:{rgb:'C6EFCE'}},font:{color:{rgb:'006100'}},border:bd()},
+          sent:{fill:{fgColor:{rgb:'E2EFDA'}},font:{color:{rgb:'375623'}},border:bd()},
+          bad:{fill:{fgColor:{rgb:'FFC7CE'}},font:{color:{rgb:'9C0006'}},border:bd()},
+          warn:{fill:{fgColor:{rgb:'FFEB9C'}},font:{color:{rgb:'9C6500'}},border:bd()},
+          cell:{border:bd()} };
+  function bd(){ var s={style:'thin',color:{rgb:'D9D9D9'}}; return {top:s,bottom:s,left:s,right:s}; }
+  function stFor(s){ return isDeliv(s)?C.deliv:isFail(s)||isNotDeliv(s)?C.bad:s==='sent'?C.sent:s==='Pending'?C.warn:C.cell; }
+  function mkSheet(aoa, styleFn, cols){
+    var ws=XLSX.utils.aoa_to_sheet(aoa);
+    for(var R=0;R<aoa.length;R++){ for(var Ci=0;Ci<aoa[R].length;Ci++){ var ref=XLSX.utils.encode_cell({r:R,c:Ci}); if(!ws[ref]) ws[ref]={t:'s',v:''}; ws[ref].s = styleFn(R,Ci); } }
+    if(cols) ws['!cols']=cols; return ws;
+  }
+  var wb=XLSX.utils.book_new();
+
+  // ── ფურცელი 1: დღეების ჯამი ──
+  var byDate={}, dord=[];
+  rows.forEach(function(x){ var d=x.date||''; if(!byDate[d]){ byDate[d]={n:0,sent:0,deliv:0,nd:0,fail:0,kg:0,gel:0}; dord.push(d); } var b=byDate[d]; b.n++; if(isSent(x.status))b.sent++; if(isDeliv(x.status))b.deliv++; if(isNotDeliv(x.status))b.nd++; if(isFail(x.status))b.fail++; b.kg+=(+x.kg||0); b.gel+=(+x.gel||0); });
+  dord.sort();
+  var a1=[['📲 SMS ანგარიში — დღეების ჯამი'],['თარიღი','სულ SMS','გაიგზავნა','მიუვიდა','არ მიუვიდა','ვერ','სულ კგ','სულ ₾']];
+  var T={n:0,sent:0,deliv:0,nd:0,fail:0,kg:0,gel:0};
+  dord.forEach(function(d){ var b=byDate[d]; a1.push([d,b.n,b.sent,b.deliv,b.nd,b.fail,Math.round(b.kg*100)/100,Math.round(b.gel*100)/100]); T.n+=b.n;T.sent+=b.sent;T.deliv+=b.deliv;T.nd+=b.nd;T.fail+=b.fail;T.kg+=b.kg;T.gel+=b.gel; });
+  a1.push(['ჯამი',T.n,T.sent,T.deliv,T.nd,T.fail,Math.round(T.kg*100)/100,Math.round(T.gel*100)/100]);
+  var ws1=mkSheet(a1,function(R,Ci){ if(R===0) return C.head; if(R===1) return C.head; if(R===a1.length-1) return C.tot; if(Ci===3) return C.deliv; if(Ci===4||Ci===5) return (a1[R][Ci]>0?C.bad:C.cell); return C.cell; },[{wch:12},{wch:9},{wch:10},{wch:9},{wch:11},{wch:7},{wch:9},{wch:10}]);
+  ws1['!merges']=[{s:{r:0,c:0},e:{r:0,c:7}}];
+  XLSX.utils.book_append_sheet(wb,ws1,'დღეების ჯამი');
+
+  // ── ფურცელი 2: პალეტების მიხედვით ──
+  var byPal={}, pord=[];
+  rows.forEach(function(x){ var k=(x.date||'')+' · '+(x.pallet_code||'(პალეტის გარეშე)'); if(!byPal[k]){ byPal[k]={date:x.date||'',pal:x.pallet_code||'(პალეტის გარეშე)',n:0,sent:0,deliv:0,nd:0,fail:0,kg:0,gel:0}; pord.push(k); } var b=byPal[k]; b.n++; if(isSent(x.status))b.sent++; if(isDeliv(x.status))b.deliv++; if(isNotDeliv(x.status))b.nd++; if(isFail(x.status))b.fail++; b.kg+=(+x.kg||0); b.gel+=(+x.gel||0); });
+  pord.sort();
+  var a2=[['📦 SMS პალეტების მიხედვით'],['თარიღი','პალეტი','SMS','გაიგზავნა','მიუვიდა','არ მიუვ.','ვერ','კგ','₾']];
+  pord.forEach(function(k){ var b=byPal[k]; a2.push([b.date,b.pal,b.n,b.sent,b.deliv,b.nd,b.fail,Math.round(b.kg*100)/100,Math.round(b.gel*100)/100]); });
+  var ws2=mkSheet(a2,function(R,Ci){ if(R<=1) return C.head; if(Ci===4) return C.deliv; if(Ci===5||Ci===6) return (a2[R][Ci]>0?C.bad:C.cell); return C.cell; },[{wch:12},{wch:20},{wch:6},{wch:10},{wch:9},{wch:9},{wch:6},{wch:9},{wch:10}]);
+  ws2['!merges']=[{s:{r:0,c:0},e:{r:0,c:8}}];
+  XLSX.utils.book_append_sheet(wb,ws2,'პალეტების მიხედვით');
+
+  // ── ფურცელი 3: მკრეფავების მიხედვით ──
+  var byPk={}, kord=[];
+  rows.forEach(function(x){ var k=(x.picker_name||'')+'|'+(x.phone||''); if(!byPk[k]){ byPk[k]={name:x.picker_name||'',phone:x.phone||'',n:0,deliv:0,fail:0,kg:0,gel:0}; kord.push(k); } var b=byPk[k]; b.n++; if(isDeliv(x.status))b.deliv++; if(isFail(x.status)||isNotDeliv(x.status))b.fail++; b.kg+=(+x.kg||0); b.gel+=(+x.gel||0); });
+  kord.sort(function(a,b){ return byPk[b].n-byPk[a].n; });
+  var a3=[['👥 SMS მკრეფავების მიხედვით'],['მკრეფავი','ტელეფონი','სულ SMS','მიუვიდა','ვერ/არ მიუვ.','სულ კგ','სულ ₾']];
+  kord.forEach(function(k){ var b=byPk[k]; a3.push([b.name,b.phone,b.n,b.deliv,b.fail,Math.round(b.kg*100)/100,Math.round(b.gel*100)/100]); });
+  var ws3=mkSheet(a3,function(R,Ci){ if(R<=1) return C.head; if(Ci===3) return C.deliv; if(Ci===4) return (a3[R][Ci]>0?C.bad:C.cell); return C.cell; },[{wch:20},{wch:12},{wch:9},{wch:9},{wch:12},{wch:9},{wch:10}]);
+  ws3['!merges']=[{s:{r:0,c:0},e:{r:0,c:6}}];
+  XLSX.utils.book_append_sheet(wb,ws3,'მკრეფავების მიხედვით');
+
+  // ── ფურცელი 4: სრული სია ──
+  var a4=[['📋 SMS სრული სია'],['თარიღი','დრო','მკრეფავი','ტელეფონი','პალეტი','ყუთის კოდი','კგ','₾','სტატუსი']];
+  rows.forEach(function(x){ a4.push([x.date||'',tmOf(x),x.picker_name||'',x.phone||'',x.pallet_code||'',x.box_code||'',Math.round((+x.kg||0)*100)/100,Math.round((+x.gel||0)*100)/100,stKa(x.status)+(isFail(x.status)&&x.error?(' — '+x.error):'')]); });
+  var ws4=mkSheet(a4,function(R,Ci){ if(R<=1) return C.head; if(Ci===8){ var s=rows[R-2]?rows[R-2].status:''; return stFor(s); } return C.cell; },[{wch:12},{wch:7},{wch:20},{wch:12},{wch:16},{wch:12},{wch:7},{wch:8},{wch:16}]);
+  ws4['!merges']=[{s:{r:0,c:0},e:{r:0,c:8}}];
+  XLSX.utils.book_append_sheet(wb,ws4,'სრული სია');
+
+  // ── ფურცელი 5: აწონვა vs SMS (გადამოწმება) ──
+  var hs=[], hf=0;
+  try{ while(true){ var hr=await sb.from('harvest_sessions').select('picker_name,phone,short_code').eq('user_id',uid).range(hf,hf+STEP-1); if(hr.error) break; var hd=hr.data||[]; hs=hs.concat(hd); if(hd.length<STEP) break; hf+=STEP; if(hf>100000) break; } }catch(e){}
+  var cmp={}, cord=[];
+  function ckey(nm,ph){ return (nm||'')+'|'+(ph||''); }
+  hs.forEach(function(x){ var k=ckey(x.picker_name,x.phone); if(!cmp[k]){ cmp[k]={name:x.picker_name||'',phone:x.phone||'',boxes:0,boxPh:0,sms:0,deliv:0}; cord.push(k); } var b=cmp[k]; b.boxes++; if(x.phone) b.boxPh++; });
+  Object.keys(byPk).forEach(function(k){ var s=byPk[k]; if(!cmp[k]){ cmp[k]={name:s.name,phone:s.phone,boxes:0,boxPh:0,sms:0,deliv:0}; cord.push(k); } cmp[k].sms=s.n; cmp[k].deliv=s.deliv; });
+  cord.sort(function(a,b){ return cmp[b].boxes-cmp[a].boxes; });
+  var a5=[['⚖️ აწონვა vs SMS — გადამოწმება'],['მკრეფავი','ტელეფონი','სულ ყუთი','ტელ-იანი ყუთი','SMS გაიგზ.','მიუვიდა','ემთხვევა?']];
+  var TB=0,TP=0,TS=0,TD=0;
+  cord.forEach(function(k){ var b=cmp[k]; var match=(b.boxPh===b.sms); a5.push([b.name,b.phone,b.boxes,b.boxPh,b.sms,b.deliv,(match?'✅ ემთხვევა':('⚠️ სხვაობა '+(b.boxPh-b.sms)))]); TB+=b.boxes;TP+=b.boxPh;TS+=b.sms;TD+=b.deliv; });
+  a5.push(['ჯამი','',TB,TP,TS,TD,(TP===TS?'✅ ემთხვევა':('⚠️ სხვაობა '+(TP-TS)))]);
+  var ws5=mkSheet(a5,function(R,Ci){ if(R<=1) return C.head; if(R===a5.length-1) return C.tot; if(Ci===6){ return (String(a5[R][6]).indexOf('✅')>=0?C.deliv:C.bad); } if(Ci===5) return C.deliv; return C.cell; },[{wch:20},{wch:12},{wch:9},{wch:12},{wch:11},{wch:9},{wch:16}]);
+  ws5['!merges']=[{s:{r:0,c:0},e:{r:0,c:6}}];
+  XLSX.utils.book_append_sheet(wb,ws5,'აწონვა vs SMS');
+
+  var fn='SMS-angarishi_'+_today()+'.xlsx';
+  try{ XLSX.writeFile(wb,fn); }catch(e){ alert('❌ ჩაწერა ვერ მოხერხდა: '+(e.message||e)); }
+}
+// ── დღის შეჯამების SMS (არჩევითი) ──
+var dsmsList=[];
+async function dsmsLoad(){
+  var _d=(document.getElementById('dsmsDate').value)||_today();
+  var body=document.getElementById('dsmsBody'), tools=document.getElementById('dsmsTools');
+  body.innerHTML='<div class="muted">იტვირთება…</div>'; if(tools) tools.style.display='none';
+  if(!sb||!uid){ body.innerHTML='<div class="muted">ჯერ შედი.</div>'; return; }
+  var rows=[], from=0, STEP=1000;
+  try{
+    while(true){
+      var r=await sb.from('harvest_sessions').select('picker_id,picker_name,phone,weight,earned').eq('user_id',uid).eq('date',_d).range(from,from+STEP-1);
+      if(r.error){ body.innerHTML='<div class="warn">❌ '+esc(r.error.message)+'</div>'; return; }
+      var d=r.data||[]; rows=rows.concat(d); if(d.length<STEP) break; from+=STEP; if(from>100000) break;
+    }
+  }catch(e){ body.innerHTML='<div class="warn">❌ '+esc(e.message||e)+'</div>'; return; }
+  var by={};
+  rows.forEach(function(x){ var k=x.picker_id||('n:'+(x.picker_name||'')); if(!by[k]) by[k]={pid:x.picker_id||'',name:x.picker_name||'—',phone:x.phone||'',box:0,kg:0,gel:0}; by[k].box++; by[k].kg+=(+x.weight||0); by[k].gel+=(+x.earned||0); if(!by[k].phone && x.phone) by[k].phone=x.phone; });
+  // ტელეფონი შევავსოთ მკრეფავების ბაზიდანაც (uid, მერე სახელით)
+  Object.keys(by).forEach(function(k){ if(by[k].phone) return; var p=(PICKERS||[]).find(function(x){ return x.uid===by[k].pid; }) || (PICKERS||[]).find(function(x){ return pName(x)===by[k].name; }); if(p&&p.phone) by[k].phone=p.phone; });
+  dsmsList=Object.keys(by).map(function(k){ return by[k]; }).filter(function(x){ return x.kg>0; }).sort(function(a,b){ return b.kg-a.kg; });
+  if(!dsmsList.length){ body.innerHTML='<div class="muted">'+esc(_d)+' — მკრეფავი ვერ მოიძებნა.</div>'; return; }
+  var noPhone=0;
+  var h='<table><thead><tr><th style="width:32px"></th><th>მკრეფავი</th><th>ყუთი</th><th>კგ</th><th>₾</th><th>ტელ.</th></tr></thead><tbody>';
+  dsmsList.forEach(function(x,i){
+    var okPh=!!(normPhone(x.phone)&&normPhone(x.phone).length>=11);
+    if(!okPh) noPhone++;
+    h+='<tr><td>'+(okPh?'<input type="checkbox" class="dsmsChk" data-i="'+i+'" checked onchange="dsmsCount()" style="width:auto">':'📵')+'</td>'
+      +'<td><b>'+esc(x.name)+'</b></td><td>'+x.box+'</td><td><b>'+(Math.round(x.kg*100)/100)+'</b></td><td style="color:#16a34a"><b>'+(Math.round(x.gel*100)/100)+'</b></td>'
+      +'<td class="muted" style="font-size:.8rem">'+(okPh?esc(x.phone):'ტელ. არ არის')+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  if(noPhone) h+='<div class="muted" style="margin-top:6px;font-size:.8rem">📵 '+noPhone+' მკრეფავს ტელეფონი არ აქვს — მათ ვერ გაეგზავნება.</div>';
+  body.innerHTML=h;
+  if(tools) tools.style.display='flex';
+  var all=document.getElementById('dsmsAll'); if(all) all.checked=true;
+  dsmsCount();
+}
+function dsmsToggleAll(cb){ document.querySelectorAll('.dsmsChk').forEach(function(c){ c.checked=cb.checked; }); dsmsCount(); }
+function dsmsCount(){ var n=document.querySelectorAll('.dsmsChk:checked').length; var el=document.getElementById('dsmsCountLbl'); if(el) el.textContent=n+' არჩეული'; }
+function dsmsMsg(name,box,kg,gel,date){ return 'InTechSol | '+date+'\n✅ '+name+'\n📦 ყუთი: '+box+'\n⚖️ კგ: '+(+kg).toFixed(2)+'\n💰 ₾: '+(+gel).toFixed(2)+'\nმადლობა! 🍇'; }
+var _dsmsPending=[], _dsmsDate='';
+function dsmsSend(){
+  var _d=(document.getElementById('dsmsDate').value)||_today();
+  var chks=Array.prototype.slice.call(document.querySelectorAll('.dsmsChk:checked'));
+  if(!chks.length){ alert('ჯერ მონიშნე მკრეფავები.'); return; }
+  var cfg={}; try{ cfg=JSON.parse(localStorage.getItem('its_sms_config')||'{}')||{}; }catch(e){}
+  if(!cfg.proxyUrl){ alert('⚠️ SMS კონფიგი (proxy) არ არის — ჯერ მთავარ აპში დააკონფიგურირე.'); return; }
+  _dsmsDate=_d; _dsmsPending=[];
+  chks.forEach(function(c){ var x=dsmsList[+c.getAttribute('data-i')]; if(x) _dsmsPending.push({x:x, msg:dsmsMsg(x.name,x.box,x.kg,x.gel,_d)}); });
+  if(!_dsmsPending.length){ alert('ვერ მოიძებნა.'); return; }
+  var ov=document.getElementById('dsmsPrevOv'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='dsmsPrevOv';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:16px;overflow:auto';
+  var items=_dsmsPending.map(function(p){
+    return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px;margin-bottom:8px;background:#f8fafc">'
+      +'<div style="font-size:.74rem;color:#64748b;margin-bottom:5px">📱 '+esc(p.x.phone)+'</div>'
+      +'<div style="white-space:pre-wrap;font-size:.86rem;line-height:1.5;color:#0f172a">'+esc(p.msg)+'</div></div>';
+  }).join('');
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:520px;width:100%;margin:auto;box-shadow:0 10px 40px rgba(0,0,0,.25);display:flex;flex-direction:column;max-height:92vh">'
+    +'<div style="padding:15px 18px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center"><b style="font-size:1.02rem;color:#0369a1">👀 გაგზავნის წინ ნახვა — '+_dsmsPending.length+' SMS ('+esc(_d)+')</b><button class="sec" style="width:auto;padding:6px 11px" onclick="dsmsCancelPrev()">✕</button></div>'
+    +'<div style="padding:14px 18px;overflow:auto;flex:1">'+items+'</div>'
+    +'<div style="padding:14px 18px;border-top:1px solid #eee;display:flex;gap:10px">'
+      +'<button class="g" id="dsmsGoBtn" style="flex:1;margin:0" onclick="dsmsDoSend()">✅ გაგზავნა ('+_dsmsPending.length+')</button>'
+      +'<button class="sec" style="width:auto;padding:11px 18px" onclick="dsmsCancelPrev()">გაუქმება</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+}
+function dsmsCancelPrev(){ var ov=document.getElementById('dsmsPrevOv'); if(ov) ov.remove(); }
+async function dsmsDoSend(){
+  var list=_dsmsPending.slice(), _d=_dsmsDate;
+  if(!list.length){ dsmsCancelPrev(); return; }
+  var goBtn=document.getElementById('dsmsGoBtn'); if(goBtn){ goBtn.disabled=true; goBtn.style.opacity=.7; goBtn.textContent='⏳ იგზავნება…'; }
+  var ok=0, fail=0;
+  for(var i=0;i<list.length;i++){
+    var x=list[i].x, msg=list[i].msg;
+    try{ var res=await smsSend(x.phone, msg, 'daily-'+_d); ok++; smsLog({name:x.name,pid:x.pid,phone:x.phone,text:msg,kg:x.kg,gel:x.gel,code:'',pallet:'',status:'sent',msg_id:smsMsgId(res)}); }
+    catch(e){ fail++; smsLog({name:x.name,pid:x.pid,phone:x.phone,text:msg,kg:x.kg,gel:x.gel,code:'',pallet:'',status:'failed',error:(e&&e.message)||String(e)}); }
+    if(goBtn){ goBtn.textContent='⏳ '+(ok+fail)+'/'+list.length; }
+  }
+  dsmsCancelPrev();
+  alert('✅ გაიგზავნა: '+ok+(fail?(' · ❌ ვერ: '+fail):''));
+  try{ if(document.getElementById('smsDate')){ document.getElementById('smsDate').value=_d; loadSmsLog(); } }catch(e){}
+}
+async function loadSmsLog(){
+  var _d=(document.getElementById('smsDate').value)||_today(), body=document.getElementById('smsBody');
+  body.innerHTML='<div class="muted">იტვირთება…</div>';
+  if(!sb||!uid){ body.innerHTML='<div class="muted">ჯერ შედი.</div>'; return; }
+  try{
+    var r=await sb.from('sms_log').select('id,picker_name,phone,kg,gel,status,error,box_code,pallet_code,sent_at').eq('user_id',uid).eq('date',_d).order('sent_at',{ascending:true});
+    if(r.error){ body.innerHTML='<div class="warn">❌ '+r.error.message+'</div>'; return; }
+    var rows=r.data||[]; if(!rows.length){ body.innerHTML='<div class="muted">'+_d+' — SMS არ არის.</div>'; _smsLast={date:_d,groups:[],sent:0,deliv:0,failed:0}; return; }
+    // პალეტის კოდი: ჯერ თვით ლოგიდან, თუ ცარიელია — harvest_sessions-იდან (box_code→pallet)
+    var map={};
+    try{ var hs=await sb.from('harvest_sessions').select('short_code,pallet_code,entry_mode').eq('user_id',uid).eq('date',_d); if(!hs.error){ (hs.data||[]).forEach(function(x){ if(x.short_code) map[x.short_code]={pal:x.pallet_code||'',mode:x.entry_mode||''}; }); } }catch(e){}
+    function grpKey(x){ var pal=x.pallet_code || (map[x.box_code]&&map[x.box_code].pal) || ''; if(pal) return pal; var mode=(map[x.box_code]&&map[x.box_code].mode)||''; return mode?('🔖 '+mode):'(პალეტის გარეშე)'; }
+    var G={}, order=[];
+    rows.forEach(function(x){ var k=grpKey(x); if(!G[k]){ G[k]={rows:[],sent:0,deliv:0,failed:0}; order.push(k); } var g=G[k]; g.rows.push(x); if(x.status==='delivered'){ g.deliv++; g.sent++; } else if(x.status==='sent'){ g.sent++; } else if(x.status==='failed'){ g.failed++; } });
+    order.sort();
+    var tSent=0,tDeliv=0,tFail=0; order.forEach(function(k){ tSent+=G[k].sent; tDeliv+=G[k].deliv; tFail+=G[k].failed; });
+    _smsLast={date:_d, groups:order.map(function(k){ return {name:k, g:G[k]}; }), sent:tSent, deliv:tDeliv, failed:tFail};
+    var h='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px">'
+      +'<div class="muted">✅ გაიგზავნა: <b>'+tSent+'</b>'+(tDeliv?(' · 📬 მიუვიდა: <b>'+tDeliv+'</b>'):'')+' · ❌ ვერ: <b>'+tFail+'</b></div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="sec" style="width:auto;padding:6px 12px" onclick="smsCheckDelivery()">🔄 შეამოწმე მიწოდება</button><button class="sec" style="width:auto;padding:6px 12px" onclick="exportSmsExcel()">📊 Excel (სრული)</button><button class="sec" style="width:auto;padding:6px 12px" onclick="printSmsLog()">🖨️ ბეჭდვა</button></div></div>';
+    order.forEach(function(k){ var g=G[k];
+      h+='<div style="margin-top:10px;border:1px solid #e2e8f0;border-radius:11px;overflow:hidden">';
+      h+='<div style="background:#f8fafc;padding:9px 12px;font-weight:800;color:#0369a1;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px"><span>'+esc(k)+'</span><span style="font-weight:600;font-size:.8rem;color:#475569">✅ '+g.sent+(g.deliv?(' · 📬 '+g.deliv):'')+(g.failed?(' · ❌ '+g.failed):'')+' · '+g.rows.length+' SMS</span></div>';
+      h+='<table style="margin:0"><thead><tr><th>მკრეფავი</th><th>კგ / ₾</th><th>დრო</th><th>სტატუსი</th></tr></thead><tbody>';
+      g.rows.forEach(function(x){ var st=x.status==='delivered'?'<span class="ok">📬 მიუვ.</span>':x.status==='undelivered'?'<span class="warn">📵 არ მიუვ.</span>':x.status==='expired'?'<span class="warn">⌛ ვადა</span>':x.status==='sent'?'<span class="ok">✅ გაიგზ.</span>':x.status==='failed'?('<span class="warn">❌ '+esc(x.error||'ვერ')+'</span>'):esc(x.status||'—'); var tm=''; try{ tm=new Date(x.sent_at).toLocaleTimeString('ka-GE',{hour:'2-digit',minute:'2-digit'}); }catch(e){}
+        h+='<tr><td>'+esc(x.picker_name||'')+'<div class="muted" style="font-size:.7rem">'+esc(x.phone||'')+'</div></td><td>'+(+x.kg||0).toFixed(2)+' / '+(+x.gel||0).toFixed(2)+'₾</td><td class="muted">'+tm+'</td><td>'+st+'</td></tr>'; });
+      h+='</tbody></table></div>';
+    });
+    body.innerHTML=h;
+  }catch(e){ body.innerHTML='<div class="warn">❌ '+(e.message||e)+'</div>'; }
+}
+async function smsCheckDelivery(){
+  if(!_smsLast.groups.length){ alert('ჯერ ჩატვირთე SMS ისტორია'); return; }
+  var cfg={}; try{ cfg=JSON.parse(localStorage.getItem('its_sms_config')||'{}')||{}; }catch(e){}
+  if(!cfg.proxyUrl){ alert('SMS proxy არ არის კონფიგში'); return; }
+  var base=cfg.proxyUrl + (cfg.proxyUrl.indexOf('?')>=0?'&':'?');
+  var todo=[];
+  _smsLast.groups.forEach(function(gr){ gr.g.rows.forEach(function(x){ if(x.status==='sent' && x.box_code && x.phone && x.id) todo.push(x); }); });
+  if(!todo.length){ alert('შესამოწმებელი არ არის (ან უკვე შემოწმებულია).\nშენიშვნა: reference მხოლოდ ახალ SMS-ებზეა — ძველებზე მიწოდება ვერ შემოწმდება.'); return; }
+  var body=document.getElementById('smsBody');
+  var prog=document.createElement('div'); prog.className='muted'; prog.style.cssText='margin:6px 0;font-weight:700;color:#0369a1';
+  body.insertBefore(prog, body.firstChild);
+  var deliv=0, undel=0, pend=0, err=0;
+  for(var i=0;i<todo.length;i++){ var x=todo[i];
+    prog.textContent='🔄 ვამოწმებ მიწოდებას… '+(i+1)+'/'+todo.length;
+    try{
+      var resp=await fetch(base+'action=status&destination='+encodeURIComponent(x.phone)+'&reference='+encodeURIComponent(x.box_code));
+      var j=null; try{ j=await resp.json(); }catch(e){}
+      var st=(j&&(j.Status||(j.Output&&j.Output.Status)))||'';
+      if(st==='Delivered'){ deliv++; try{ await sb.from('sms_log').update({status:'delivered',delivered_at:new Date().toISOString()}).eq('user_id',uid).eq('id',x.id); }catch(e){} }
+      else if(st==='Undelivered'){ undel++; try{ await sb.from('sms_log').update({status:'undelivered'}).eq('user_id',uid).eq('id',x.id); }catch(e){} }
+      else if(st==='Expired'){ undel++; try{ await sb.from('sms_log').update({status:'expired'}).eq('user_id',uid).eq('id',x.id); }catch(e){} }
+      else { pend++; } // Pending/Unknown — ვტოვებთ 'sent'-ად, მოგვიანებით თავიდან შემოწმდება
+    }catch(e){ err++; }
+    await new Promise(function(r){ setTimeout(r,120); });
+  }
+  prog.remove();
+  alert('✅ შემოწმდა '+todo.length+':\n📬 მიუვიდა: '+deliv+'\n📵 არ მიუვიდა: '+undel+'\n⏳ ჯერ მუშავდება: '+pend+(err?('\n❌ შეცდომა: '+err):''));
+  loadSmsLog();
+}
+function printSmsLog(){
+  if(!_smsLast.groups.length){ alert('ჯერ ჩატვირთე SMS ისტორია'); return; }
+  var w=window.open('','_blank'); if(!w){ alert('popup დაბლოკილია'); return; }
+  var css='body{font-family:system-ui,sans-serif;color:#0f172a;padding:20px;max-width:820px;margin:0 auto}h1{font-size:1.2rem}h2{font-size:1rem;background:#f1f5f9;padding:6px 10px;border-radius:6px;margin:16px 0 6px}table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:8px}th,td{border:1px solid #e2e8f0;padding:5px 8px;text-align:left}th{background:#f8fafc}.ok{color:#16a34a}.bad{color:#dc2626}.sum{font-weight:700;margin:4px 0 12px;font-size:1rem}.tot td{font-weight:800;background:#f8fafc}';
+  // საერთო + მკრეფავზე შეჯამება
+  var gKg=0,gGel=0, byPk={};
+  _smsLast.groups.forEach(function(gr){ gr.g.rows.forEach(function(x){ gKg+=(+x.kg||0); gGel+=(+x.gel||0); var key=(x.picker_name||'')+'|'+(x.phone||''); if(!byPk[key])byPk[key]={name:x.picker_name||'',phone:x.phone||'',n:0,kg:0,gel:0,fail:0}; var p=byPk[key]; p.n++; p.kg+=(+x.kg||0); p.gel+=(+x.gel||0); if(x.status==='failed')p.fail++; }); });
+  var html='<html><head><meta charset="utf-8"><title>SMS ისტორია '+esc(_smsLast.date)+'</title><style>'+css+'</style></head><body>';
+  html+='<h1>📲 SMS ისტორია — '+esc(_smsLast.date)+'</h1>';
+  html+='<div class="sum">სულ SMS: '+_smsLast.groups.reduce(function(s,gr){return s+gr.g.rows.length;},0)+' · ✅ გაიგზავნა: '+_smsLast.sent+(_smsLast.deliv?(' · 📬 მიუვიდა: '+_smsLast.deliv):'')+' · ❌ ვერ: '+_smsLast.failed+' · სულ '+gKg.toFixed(1)+' კგ = '+gGel.toFixed(2)+' ₾</div>';
+  // პალეტების მიხედვით
+  _smsLast.groups.forEach(function(gr){ var g=gr.g, kg=0,gel=0; g.rows.forEach(function(x){ kg+=(+x.kg||0); gel+=(+x.gel||0); });
+    html+='<h2>'+esc(gr.name)+' — '+g.rows.length+' SMS · ✅ '+g.sent+(g.deliv?(' · 📬 '+g.deliv):'')+(g.failed?(' · ❌ '+g.failed):'')+' · '+kg.toFixed(1)+' კგ = '+gel.toFixed(2)+' ₾</h2>';
+    html+='<table><thead><tr><th>#</th><th>მკრეფავი</th><th>ტელ.</th><th>კგ</th><th>₾</th><th>დრო</th><th>სტატუსი</th></tr></thead><tbody>';
+    g.rows.forEach(function(x,i){ var tm=''; try{ tm=new Date(x.sent_at).toLocaleTimeString('ka-GE',{hour:'2-digit',minute:'2-digit'}); }catch(e){} var st=x.status==='delivered'?'<span class="ok">მიუვიდა</span>':x.status==='undelivered'?'<span class="bad">არ მიუვიდა</span>':x.status==='expired'?'<span class="bad">ვადა ამოიწურა</span>':x.status==='sent'?'<span class="ok">გაიგზავნა</span>':x.status==='failed'?('<span class="bad">ვერ: '+esc(x.error||'')+'</span>'):esc(x.status||'');
+      html+='<tr><td>'+(i+1)+'</td><td>'+esc(x.picker_name||'')+'</td><td>'+esc(x.phone||'')+'</td><td>'+(+x.kg||0).toFixed(2)+'</td><td>'+(+x.gel||0).toFixed(2)+'</td><td>'+tm+'</td><td>'+st+'</td></tr>'; });
+    html+='<tr class="tot"><td colspan="3">ჯამი — '+g.rows.length+' SMS</td><td>'+kg.toFixed(2)+'</td><td>'+gel.toFixed(2)+'</td><td colspan="2"></td></tr>';
+    html+='</tbody></table>';
+  });
+  // მკრეფავზე ინდივიდუალური შეჯამება
+  var pkArr=Object.keys(byPk).map(function(k){return byPk[k];}).sort(function(a,b){return b.n-a.n;});
+  html+='<h2>👥 მკრეფავების მიხედვით — ვის რამდენი SMS</h2>';
+  html+='<table><thead><tr><th>#</th><th>მკრეფავი</th><th>ტელ.</th><th>SMS</th><th>ვერ</th><th>სულ კგ</th><th>სულ ₾</th></tr></thead><tbody>';
+  pkArr.forEach(function(p,i){ html+='<tr><td>'+(i+1)+'</td><td>'+esc(p.name)+'</td><td>'+esc(p.phone)+'</td><td>'+p.n+'</td><td>'+(p.fail||'')+'</td><td>'+p.kg.toFixed(2)+'</td><td>'+p.gel.toFixed(2)+'</td></tr>'; });
+  html+='<tr class="tot"><td colspan="3">ჯამი — '+pkArr.length+' მკრეფავი</td><td>'+_smsLast.groups.reduce(function(s,gr){return s+gr.g.rows.length;},0)+'</td><td>'+_smsLast.failed+'</td><td>'+gKg.toFixed(2)+'</td><td>'+gGel.toFixed(2)+'</td></tr>';
+  html+='</tbody></table>';
+  html+='<div style="margin-top:20px;font-size:.75rem;color:#64748b">AgroInTechSol · დაბეჭდილია '+new Date().toLocaleString('ka-GE')+'</div>';
+  html+='</body></html>';
+  w.document.write(html); w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} }, 400);
+}
+async function loadArchive(){
+  var _d=document.getElementById('archiveDate').value||_today(), body=document.getElementById('archiveBody');
+  body.innerHTML='<div class="muted">იტვირთება…</div>';
+  if(!sb||!uid){ body.innerHTML='<div class="muted">ჯერ შედი.</div>'; return; }
+  try{
+    var r=await sb.from('harvest_sessions').select('pallet_code,picker_name,weight,short_code,time,entry_mode').eq('user_id',uid).eq('date',_d).eq('source','krepa_bulk');
+    if(r.error){ body.innerHTML='<div class="warn">❌ '+r.error.message+'</div>'; return; }
+    var rows=r.data||[]; if(!rows.length){ body.innerHTML='<div class="muted">'+_d+' — ჩანაწერი არ არის.</div>'; return; }
+    var byPal={}; rows.forEach(function(x){ var k=x.pallet_code||(x.entry_mode?('🔖 '+x.entry_mode):'(პალეტის გარეშე)'); if(!byPal[k])byPal[k]={c:0,kg:0}; byPal[k].c++; byPal[k].kg+=(+x.weight||0); });
+    var h='<table><thead><tr><th>პალეტი / რეჟიმი</th><th>ყუთი</th><th>კგ</th></tr></thead><tbody>';
+    Object.keys(byPal).forEach(function(k){ h+='<tr><td><span class="key">'+esc(k)+'</span></td><td>'+byPal[k].c+'</td><td><b>'+byPal[k].kg.toFixed(1)+'</b></td></tr>'; });
+    h+='</tbody></table>'; body.innerHTML=h;
+  }catch(e){ body.innerHTML='<div class="warn">❌ '+(e.message||e)+'</div>'; }
+}
+async function deletePallet(){
+  var pal=prompt('წასაშლელი პალეტის კოდი (PAL-XXXXXX-XXXX):'); if(!pal) return;
+  pal=pal.trim(); if(!palOk(pal)){ alert('❌ არასწორი ფორმატი'); return; }
+  if(!sb||!uid){ alert('ჯერ შედი'); return; }
+  var rows=[]; try{ var r=await sb.from('harvest_sessions').select('id').eq('user_id',uid).eq('pallet_code',pal); if(!r.error) rows=r.data||[]; }catch(e){ alert('ბაზასთან კავშირი ვერ მოხერხდა'); return; }
+  if(!rows.length){ alert('ამ პალეტზე ჩანაწერი არ არის.'); return; }
+  if(!confirm(pal+' — '+rows.length+' ჩანაწერი წაიშლება. დარწმუნებული ხარ?')) return;
+  try{ var d=await sb.from('harvest_sessions').delete().eq('user_id',uid).eq('pallet_code',pal); if(d.error){ alert('❌ '+d.error.message); return; } alert('✅ წაიშალა'); loadArchive(); }catch(e){ alert('❌ '+(e.message||e)); }
+}
+
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; showApp(s.data.session.user.email); } }catch(e){} })();
+</script>
+</body></html>

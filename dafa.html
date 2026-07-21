@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>📺 დღის კრეფა — TV დაფა</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:radial-gradient(1100px 700px at 50% -8%,#f0fdf4 0%,#eef4fb 55%,#e8eef6 100%);color:#0f2942;overflow:hidden}
+  /* login */
+  #login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
+  #login .box{background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:28px;max-width:400px;width:100%;box-shadow:0 12px 40px rgba(15,41,66,.12)}
+  #login h1{font-size:1.3rem;margin-bottom:4px}#login p{color:#64748b;font-size:.85rem;margin-bottom:14px}
+  #login label{display:block;font-size:.8rem;font-weight:600;color:#475569;margin:10px 0 4px}
+  #login input{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:11px;font-size:.95rem}
+  #login button{width:100%;margin-top:16px;padding:12px;background:linear-gradient(135deg,#22c55e,#0ea5e9);color:#fff;border:none;border-radius:11px;font-size:1rem;font-weight:800;cursor:pointer}
+  #login .err{color:#dc2626;font-size:.82rem;margin-top:8px;min-height:18px}
+  /* live badge */
+  .live{position:fixed;top:2.4vh;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:.6vw;font-size:1.1vw;color:#ef4444;font-weight:700;letter-spacing:1px;z-index:6}
+  .live .dot{width:.9vw;height:.9vw;min-width:9px;min-height:9px;border-radius:50%;background:#ef4444;animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(239,68,68,.6)}50%{opacity:.5;box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+  #dash{height:100%;display:none;flex-direction:column}
+  #dash.on{display:flex}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:2.2vh 3vw 1vh}
+  .brand{display:flex;align-items:center;gap:1.2vw;font-weight:800;font-size:3vw}
+  .brand .logo{width:4.8vw;height:4.8vw;min-width:46px;min-height:46px;border-radius:14px;background:linear-gradient(135deg,#22c55e,#0ea5e9);display:flex;align-items:center;justify-content:center;font-size:2.4vw}
+  .brand small{display:block;font-size:1.25vw;font-weight:600;color:#0ea5e9;letter-spacing:2px;margin-top:.3vh}
+  .clock{text-align:right;font-variant-numeric:tabular-nums}.clock .t{font-size:3vw;font-weight:800;line-height:1;color:#0f2942}.clock .d{font-size:1.3vw;color:#64748b;margin-top:.4vh}
+  .modebar{position:fixed;top:2.4vh;right:3vw;display:flex;gap:.5vw;z-index:6}
+  .modebar button{background:#fff;border:1px solid #cbd5e1;color:#475569;font-family:inherit;font-size:1vw;font-weight:700;padding:.7vh 1.2vw;border-radius:10px;cursor:pointer}
+  .modebar button.act{background:linear-gradient(135deg,#22c55e,#0ea5e9);color:#fff;border-color:transparent}
+  .main{flex:1;display:flex;gap:2.4vw;padding:1vh 3vw 1.5vh;min-height:0}
+  .left{flex:0 0 34%;display:flex;flex-direction:column;gap:2vh}
+  .bigcard{flex:1;background:linear-gradient(160deg,#ffffff,#f3f9ff);border:1px solid #d9e6f2;border-radius:28px;padding:3.5vh 2.5vw;display:flex;flex-direction:column;justify-content:center;box-shadow:0 10px 30px rgba(15,41,66,.06)}
+  .bigcard .lbl{font-size:1.7vw;color:#16a34a;font-weight:700}
+  .bignum{font-size:9vw;font-weight:900;line-height:.95;margin:1vh 0;background:linear-gradient(180deg,#0f766e,#16a34a);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .bignum .u{font-size:3vw;-webkit-text-fill-color:#0ea5e9;color:#0ea5e9;margin-left:.5vw}
+  .sub{display:flex;gap:2vw;margin-top:1.5vh}.sub .b{flex:1;background:#f3f7fb;border:1px solid #e2eaf2;border-radius:16px;padding:1.6vh 1vw;text-align:center}
+  .sub .b .n{font-size:2.8vw;font-weight:800;line-height:1;color:#0f2942}.sub .b .x{font-size:1.05vw;color:#64748b;margin-top:.5vh}
+  .right{flex:1;background:#fff;border:1px solid #d9e6f2;border-radius:28px;padding:2.4vh 2vw;display:flex;flex-direction:column;min-width:0;box-shadow:0 10px 30px rgba(15,41,66,.06)}
+  .right h3{font-size:2vw;font-weight:800;margin-bottom:1.4vh;color:#0f2942}
+  .list{flex:1;display:flex;flex-direction:column;gap:1vh;overflow:hidden}
+  .row{display:flex;align-items:center;gap:.9vw;background:#f5f8fc;border:1px solid #e7eef6;border-radius:16px;padding:1.2vh 1.2vw;animation:rin .5s both}
+  .row .rk{flex:0 0 2.6vw;text-align:center;font-size:2vw;font-weight:900;color:#94a3b8}
+  .row .nm{flex:1 1 auto;min-width:0;font-size:1.7vw;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#0f2942}
+  .row .bar{flex:0 0 11%;height:1.4vh;background:#e2eaf2;border-radius:99px;overflow:hidden;margin:0 .6vw}
+  .row .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#22c55e,#7dd3fc);transition:width 1s cubic-bezier(.2,.7,.2,1)}
+  .row .kg{flex:0 0 8.5vw;text-align:right;font-size:1.9vw;font-weight:800;color:#0f2942}.row .kg small{display:block;font-size:.95vw;color:#94a3b8;margin-top:.2vh}
+  .row.t1{background:linear-gradient(90deg,#fff7db,#fffdf5);border:1px solid #f3d98a}.row.t1 .rk{color:#d4a017}
+  .row.t2{background:linear-gradient(90deg,#eef2f7,#fff)}.row.t2 .rk{color:#7c8aa0}
+  .row.t3{background:linear-gradient(90deg,#fdf0e4,#fff)}.row.t3 .rk{color:#d97706}
+  @keyframes rin{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .empty{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2vh;color:#64748b;font-size:2.2vw;text-align:center}.empty .em{font-size:6vw}
+  .bottom{flex:0 0 auto;display:flex;gap:2vw;margin:0 3vw 2.5vh}
+  .spot{flex:1;background:linear-gradient(90deg,#eafaf0,#eaf3fb);border:1px solid #d4e7da;border-radius:22px;padding:2vh 2.5vw;display:flex;align-items:center;gap:2vw;min-height:9vh;overflow:hidden}
+  .spot .lab{font-size:1.4vw;color:#16a34a;font-weight:700;flex:0 0 auto}.spot .who{font-size:3.6vw;font-weight:900;white-space:nowrap;color:#0f2942}.spot .who b{color:#d4a017}
+  @media (max-aspect-ratio:1/1){.brand,.clock .t,.bignum{font-size:6vw}.row .nm,.row .kg{font-size:2.7vw}.bignum{font-size:14vw}.spot .who{font-size:5vw}}
+</style></head>
+<body>
+
+<div id="login"><div class="box">
+  <h1>📺 TV დაფა — შესვლა</h1>
+  <p>დღის კრეფის ლიდერბორდი ტელევიზორისთვის. იგივე მონაცემები რითაც აპში შედიხარ.</p>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+  <button onclick="doLogin()">▶️ დაფის ჩართვა</button>
+  <div class="err" id="loginErr"></div>
+</div></div>
+
+<div class="live"><span class="dot"></span> LIVE</div>
+<div class="modebar" id="modebar" style="display:none">
+  <button id="mToday" class="act" onclick="setMode('today')">📅 დღეს</button>
+  <button id="mAll" onclick="setMode('all')">🌾 სულ</button>
+</div>
+
+<div id="dash">
+  <div class="top">
+    <div class="brand"><span class="logo">🍇</span><div id="brandTxt">დღის კრეფა<small>TV დაფა</small></div></div>
+    <div class="clock"><div class="t" id="clk">--:--</div><div class="d" id="cdate">—</div></div>
+  </div>
+  <div class="main">
+    <div class="left"><div class="bigcard"><div class="lbl" id="bigLbl">📦 დღეს მოწყვეტილია</div><div class="bignum"><span id="total">0</span><span class="u">კგ</span></div>
+      <div class="sub"><div class="b"><div class="n" id="boxes">0</div><div class="x">ყუთი / ჩანაწერი</div></div><div class="b"><div class="n" id="pcount">0</div><div class="x">აქტიური მკრეფავი</div></div></div></div></div>
+    <div class="right"><h3 id="listTitle">🏆 დღის ლიდერები — TOP 10</h3><div class="list" id="list"></div></div>
+  </div>
+  <div class="bottom"><div class="spot"><div class="lab">🥇 ლიდერი</div><div class="who" id="spot">—</div></div></div>
+</div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+let sb=null, uid=null, MODE='today', REFRESH=null, CLOCK=null;
+function getSb(){ if(sb) return sb; try{ if(window.supabase&&supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+function _today(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function fmtKg(n){ n=+n||0; return n.toLocaleString('en-US',{maximumFractionDigits:1}); }
+function esc(s){ return (''+(s==null?'':s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+async function doLogin(){
+  var em=document.getElementById('email').value.trim(), pw=document.getElementById('pass').value, err=document.getElementById('loginErr');
+  err.textContent=''; if(!em||!pw){ err.textContent='შეავსე ელ-ფოსტა და პაროლი'; return; }
+  getSb(); if(!sb){ err.textContent='კავშირი ვერ დამყარდა'; return; }
+  try{
+    var r=await sb.auth.signInWithPassword({email:em,password:pw});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; startBoard();
+  }catch(e){ err.textContent='❌ '+(e.message||e); }
+}
+function startBoard(){
+  document.getElementById('login').style.display='none';
+  document.getElementById('dash').classList.add('on');
+  document.getElementById('modebar').style.display='flex';
+  tickClock(); if(CLOCK) clearInterval(CLOCK); CLOCK=setInterval(tickClock,1000);
+  loadBoard(); if(REFRESH) clearInterval(REFRESH); REFRESH=setInterval(loadBoard,30000);
+}
+function tickClock(){
+  var d=new Date();
+  document.getElementById('clk').textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+  var days=['კვირა','ორშაბათი','სამშაბათი','ოთხშაბათი','ხუთშაბათი','პარასკევი','შაბათი'];
+  var mon=['იან','თებ','მარ','აპრ','მაი','ივნ','ივლ','აგვ','სექ','ოქტ','ნოე','დეკ'];
+  document.getElementById('cdate').textContent=d.getDate()+' '+mon[d.getMonth()]+' · '+days[d.getDay()];
+}
+function setMode(m){
+  MODE=m;
+  document.getElementById('mToday').classList.toggle('act',m==='today');
+  document.getElementById('mAll').classList.toggle('act',m==='all');
+  document.getElementById('bigLbl').textContent=(m==='today')?'📦 დღეს მოწყვეტილია':'🌾 სულ მოწყვეტილია';
+  document.getElementById('listTitle').textContent=(m==='today')?'🏆 დღის ლიდერები — TOP 10':'🏆 საერთო ლიდერები — TOP 10';
+  loadBoard();
+}
+async function loadBoard(){
+  if(!sb||!uid) return;
+  var agg={}, total=0, boxes=0, td=_today(), gotRpc=false;
+  // ── ჯერ სწრაფი server-side RPC (picker_leaderboard). თუ ფუნქცია ჯერ არ
+  //    არსებობს ბაზაში — ჩუმად ვბრუნდებით ძველ loop-ზე (იგივე ციფრები). ──
+  try{
+    var rp=await sb.rpc('picker_leaderboard', { p_date: (MODE==='today'? td : null) });
+    if(!rp.error && rp.data){
+      rp.data.forEach(function(s){ var w=+s.kg||0, b=+s.box||0, k=s.k||('n:'+(s.name||'')); agg[k]={name:s.name||'—',kg:w,box:b}; total+=w; boxes+=b; });
+      gotRpc=true;
+    }
+  }catch(e){ console.warn('[loadBoard] RPC ვერ შესრულდა — fallback', e); }
+  if(!gotRpc){
+    try{
+      var from=0, page=1000, done=false;
+      while(!done){
+        var q=sb.from('harvest_sessions').select('picker_name,picker_id,weight,date').eq('user_id',uid);
+        if(MODE==='today') q=q.eq('date',td);
+        var r=await q.range(from,from+page-1);
+        if(r.error){ break; }
+        var rows=r.data||[];
+        rows.forEach(function(s){ var w=+s.weight||0; var k=s.picker_id||('n:'+(s.picker_name||'')); if(!agg[k])agg[k]={name:s.picker_name||'—',kg:0,box:0}; agg[k].kg+=w; agg[k].box++; total+=w; boxes++; });
+        if(rows.length<page) done=true; else from+=page;
+        if(from>60000) done=true;
+      }
+    }catch(e){ console.warn('[loadBoard] fallback loop error', e); }
+  }
+  var list=Object.keys(agg).map(function(k){return agg[k];}).filter(function(x){return x.kg>0;}).sort(function(a,b){return b.kg-a.kg;});
+  document.getElementById('total').textContent=fmtKg(total);
+  document.getElementById('boxes').textContent=boxes.toLocaleString('en-US');
+  document.getElementById('pcount').textContent=list.length;
+  var max=list.length?list[0].kg:1;
+  var top10=list.slice(0,10);
+  var box=document.getElementById('list');
+  if(!top10.length){ box.innerHTML='<div class="empty"><div class="em">🍇</div><div>ჯერ არავის მოუკრეფავს '+(MODE==='today'?'დღეს':'')+'</div></div>'; document.getElementById('spot').textContent='—'; return; }
+  box.innerHTML=top10.map(function(x,i){ var cls=i===0?'row t1':i===1?'row t2':i===2?'row t3':'row'; var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1); var pct=Math.round(x.kg/max*100);
+    return '<div class="'+cls+'"><div class="rk">'+medal+'</div><div class="nm">'+esc(x.name)+'</div><div class="bar"><i style="width:'+pct+'%"></i></div><div class="kg">'+fmtKg(x.kg)+' <small>კგ · '+x.box+' ყუთი</small></div></div>';
+  }).join('');
+  document.getElementById('spot').innerHTML='<b>'+esc(list[0].name)+'</b> — '+fmtKg(list[0].kg)+' კგ';
+}
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; startBoard(); } }catch(e){} })();
+</script>
+</body></html>
