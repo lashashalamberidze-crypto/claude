@@ -260,7 +260,7 @@
 const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
 let sb=null, uid=null, PICKERS=[], NUMMAP={}, activeTab='num';
 let boxes=[], lastW=[], queue=[], syncing=false, feed=[], numSeq={}, dedup={}, BLOCKS=[], ROWS=[], committedPallets={}, palCommitting=false;
-let smsSentBoxes={};
+let smsSentBoxes={}, SMSCFG=null;
 let palPend={picker:null,quarter:'',row:'',_label:'',_isScan:false,_raw:''};
 let hChosen=null;
 
@@ -274,6 +274,8 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){retur
 function stat(cls,lbl,val,sub){ return '<div class="stat '+cls+'"><div class="lbl">'+lbl+'</div><div class="val">'+val+'</div><div class="sub">'+(sub||'')+'</div></div>'; }
 function price(){ var p=parseFloat((document.getElementById('cfgPrice')||{}).value || localStorage.getItem('its_price') || '1.2'); return isNaN(p)?1.2:p; }
 function tare(){ var t=parseFloat((document.getElementById('cfgTare')||{}).value || localStorage.getItem('its_box_w') || '0.7'); return isNaN(t)?0.7:t; }
+// SMS კონფიგი — წყარო ღრუბელი (user_settings→SMSCFG); localStorage მხოლოდ offline-fallback.
+function smsCfg(){ if(SMSCFG && typeof SMSCFG==='object') return SMSCFG; try{ return JSON.parse(localStorage.getItem('its_sms_config')||'{}')||{}; }catch(e){ return {}; } }
 function pName(p){ return (p.name || ((p.firstName||p.firstname||'')+' '+(p.lastName||p.lastname||''))).trim() || '—'; }
 
 function idbOpen(){ return new Promise(function(res,rej){ var r=indexedDB.open('awonvaStore',1); r.onupgradeneeded=function(){ try{ r.result.createObjectStore('kv'); }catch(e){} }; r.onsuccess=function(){ res(r.result); }; r.onerror=function(){ rej(r.error); }; }); }
@@ -338,10 +340,19 @@ function startCheckEdit(){
 function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ — რიგში ჩაიწერება, ინტერნეტზე გაიგზავნება'; } }
 
 async function loadSettings(){
-  try{ var r=await sb.from('user_settings').select('skey,sval').eq('user_id',uid).in('skey',['its_price','its_box_w']);
-    if(!r.error){ (r.data||[]).forEach(function(x){ try{ localStorage.setItem(x.skey,x.sval); }catch(e){} }); } }catch(e){}
-  document.getElementById('cfgPrice').value=localStorage.getItem('its_price')||'1.2';
-  document.getElementById('cfgTare').value =localStorage.getItem('its_box_w')||'0.7';
+  // წყარო = ღრუბელი (user_settings). localStorage მხოლოდ offline-fallback ქეშია,
+  // და მხოლოდ მაშინ იკითხება, თუ ღრუბელი მიუწვდომელია.
+  var cloud={};
+  try{ var r=await sb.from('user_settings').select('skey,sval').eq('user_id',uid).in('skey',['its_price','its_box_w','its_sms_config']);
+    if(!r.error && r.data){ r.data.forEach(function(x){ cloud[x.skey]=x.sval; try{ localStorage.setItem(x.skey,x.sval); }catch(e){} }); }
+    else if(r.error){ console.warn('[loadSettings]', r.error); }
+  }catch(e){ console.warn('[loadSettings]', e); }
+  // SMS კონფიგი ღრუბლიდან — awonva აღარაა დამოკიდებული imაზე, index.html-მა ჩაწერა თუ არა localStorage-ში
+  if(cloud.its_sms_config!=null){ try{ SMSCFG=JSON.parse(cloud.its_sms_config)||{}; }catch(e){ SMSCFG=null; } }
+  var pr = (cloud.its_price!=null) ? cloud.its_price : (localStorage.getItem('its_price')||'1.2');
+  var tr = (cloud.its_box_w!=null) ? cloud.its_box_w : (localStorage.getItem('its_box_w')||'0.7');
+  document.getElementById('cfgPrice').value=pr;
+  document.getElementById('cfgTare').value =tr;
   var ts=document.getElementById('tareShow'); if(ts) ts.textContent=tare().toFixed(2);
 }
 function saveSetting(key,val){
@@ -701,7 +712,7 @@ function prevAll(){ prevHand(); prevNum(); var ts=document.getElementById('tareS
 function saveQueue(){ return idbSet('queue',queue).catch(function(){}); }
 function renderQueue(){ var bar=document.getElementById('qbar'); if(!bar)return; if(queue.length){ bar.style.display='block'; bar.innerHTML='⏳ '+queue.length+' ჩანაწერი რიგშია'+(navigator.onLine?' — ვასინქრონებ...':' (ოფლაინ)'); } else bar.style.display='none'; }
 async function smsSend(phone,text,reference){
-  var cfg={}; try{ cfg=JSON.parse(localStorage.getItem('its_sms_config')||'{}')||{}; }catch(e){}
+  var cfg=smsCfg();
   if(!cfg.proxyUrl) throw new Error('SMS კონფიგი არ არის');
   var to=normPhone(phone); if(!to||to.length<11) throw new Error('არასწორი ნომერი');
   var body=new URLSearchParams({ to:to, text:text, sender:cfg.sender||'agroits' });
@@ -892,7 +903,7 @@ function dsmsSend(){
   var _d=(document.getElementById('dsmsDate').value)||_today();
   var chks=Array.prototype.slice.call(document.querySelectorAll('.dsmsChk:checked'));
   if(!chks.length){ alert('ჯერ მონიშნე მკრეფავები.'); return; }
-  var cfg={}; try{ cfg=JSON.parse(localStorage.getItem('its_sms_config')||'{}')||{}; }catch(e){}
+  var cfg=smsCfg();
   if(!cfg.proxyUrl){ alert('⚠️ SMS კონფიგი (proxy) არ არის — ჯერ მთავარ აპში დააკონფიგურირე.'); return; }
   _dsmsDate=_d; _dsmsPending=[];
   chks.forEach(function(c){ var x=dsmsList[+c.getAttribute('data-i')]; if(x) _dsmsPending.push({x:x, msg:dsmsMsg(x.name,x.box,x.kg,x.gel,_d)}); });
@@ -963,7 +974,7 @@ async function loadSmsLog(){
 }
 async function smsCheckDelivery(){
   if(!_smsLast.groups.length){ alert('ჯერ ჩატვირთე SMS ისტორია'); return; }
-  var cfg={}; try{ cfg=JSON.parse(localStorage.getItem('its_sms_config')||'{}')||{}; }catch(e){}
+  var cfg=smsCfg();
   if(!cfg.proxyUrl){ alert('SMS proxy არ არის კონფიგში'); return; }
   var base=cfg.proxyUrl + (cfg.proxyUrl.indexOf('?')>=0?'&':'?');
   var todo=[];
