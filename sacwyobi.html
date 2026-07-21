@@ -152,6 +152,7 @@
     <button class="sw-tab" onclick="swTab('temp',this)">🌡️ ტემპ.</button>
     <button class="sw-tab" onclick="swTab('history',this)">📋 ისტორია</button>
     <button class="sw-tab" onclick="swTab('sales',this)">💰 გაყიდვები</button>
+    <button class="sw-tab" onclick="swTab('purchases',this)">🛒 შესყიდვა</button>
   </div>
 
   <!-- ── TAB: STOCK ── -->
@@ -260,6 +261,27 @@
         <table class="sw-table">
           <thead><tr><th>თარიღი</th><th>მიმღები</th><th>პროდუქტი</th><th>კგ</th><th>ფასი ₾/კგ</th><th>სულ ₾</th><th>გადახდ.</th><th>დარჩა</th><th>სტატუსი</th><th></th></tr></thead>
           <tbody id="sw-sales-tbody"><tr><td colspan="10" class="sw-empty">— გაყიდვა არ არის —</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: PURCHASES ── -->
+  <div id="sw-page-purchases" class="sw-page">
+    <div class="sw-card">
+      <div class="sw-card-title" style="justify-content:space-between">
+        <span>🛒 შესყიდვა <span id="sw-pur-summary" class="muted" style="font-weight:400;letter-spacing:0;text-transform:none"></span></span>
+        <button class="sw-btn sw-btn-gold" style="padding:6px 14px;font-size:.78rem" onclick="swNewPurchase()">➕ ახალი შესყიდვა</button>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <input type="date" id="sw-pur-from" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
+        <input type="date" id="sw-pur-to" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
+        <button class="sw-btn sw-btn-outline" onclick="swRenderPurchases()">🔍 ფილტრი</button>
+      </div>
+      <div class="sw-table-wrap">
+        <table class="sw-table">
+          <thead><tr><th>თარიღი</th><th>მომწოდებელი</th><th>პროდუქტი</th><th>კგ</th><th>ფასი ₾/კგ</th><th>სულ ₾</th><th>გადახდ.</th><th>დარჩა</th><th>სტატუსი</th><th></th></tr></thead>
+          <tbody id="sw-pur-tbody"><tr><td colspan="10" class="sw-empty">— შესყიდვა არ არის —</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -394,6 +416,54 @@ function swBackfillFromSales(ops){
 }
 window.swBackfillFromSales = swBackfillFromSales;
 
+// ── gv_purchases map (for auto-filling old purchase costs onto warehouse in-ops) ──
+window.__swPurchMap = window.__swPurchMap || {};
+async function swLoadPurchasesMap(){
+  window.__swPurchMap = {};
+  if(!_sb || !uid) return window.__swPurchMap;
+  try{
+    var from=0, STEP=1000;
+    while(true){
+      var r = await _sb.from('gv_purchases').select('id,supName,product,kg,price,total,paid').eq('user_id', uid).range(from, from+STEP-1);
+      if(r.error){ console.warn('[swLoadPurchasesMap]', r.error); break; }
+      var d = r.data||[];
+      d.forEach(function(p){ if(p && p.id!=null) window.__swPurchMap[String(p.id)] = p; });
+      if(d.length < STEP) break;
+      from += STEP; if(from > 100000) break;
+    }
+  }catch(e){ console.warn('[swLoadPurchasesMap]', e); }
+  return window.__swPurchMap;
+}
+window.swLoadPurchasesMap = swLoadPurchasesMap;
+
+// derive purchase id from an in-op (gv_ref 'pur_<id>')
+function swPurIdOf(o){
+  if(!o) return '';
+  var ref = String(o.gv_ref||'');
+  if(ref.indexOf('pur_')===0) return ref.slice(4);
+  return '';
+}
+// non-destructive display backfill: fill amount/paid_amount from gv_purchases for purchase in-ops with no amount yet
+function swBackfillFromPurchases(ops){
+  var map = window.__swPurchMap||{};
+  (ops||[]).forEach(function(o){
+    if(!o || o.type!=='in') return;
+    if(o.amount!=null && +o.amount>0) return; // already priced — don't overwrite
+    var pid = swPurIdOf(o); if(!pid) return;
+    var p = map[String(pid)]; if(!p) return;
+    var amt = (+p.total) || ((+p.kg||0)*(+p.price||0)) || 0;
+    if(amt>0){
+      o.amount = +(+amt).toFixed(2);
+      o.paid_amount = +(+p.paid||0).toFixed(2);
+      if(o.paid_amount > o.amount) o.paid_amount = o.amount;
+      o.paid = o.amount>0 && o.paid_amount >= o.amount;
+      if(!o.buyer && p.supName) o.buyer = p.supName; // show supplier name
+    }
+  });
+  return ops;
+}
+window.swBackfillFromPurchases = swBackfillFromPurchases;
+
 // ══════════════════════════════════════════════════════
 //  AUTH / APP SHELL
 // ══════════════════════════════════════════════════════
@@ -479,9 +549,16 @@ async function initSacwyobiFromHub(){
   swUpdateStats(); swRenderStock(); swRenderTempLog(); swRenderHistory();
   // auto-fill old sale prices from gv_sales (non-destructive display backfill), then re-render
   if(_sb && uid){
-    swLoadSalesMap().then(function(){
-      try{ swBackfillFromSales(swOps); swUpdateStats(); swRenderHistory(); swRenderSales(); }catch(e){ console.warn('backfill', e); }
-    }).catch(function(e){ console.warn('swLoadSalesMap', e); });
+    Promise.all([
+      swLoadSalesMap().catch(function(e){ console.warn('swLoadSalesMap', e); }),
+      swLoadPurchasesMap().catch(function(e){ console.warn('swLoadPurchasesMap', e); })
+    ]).then(function(){
+      try{
+        swBackfillFromSales(swOps);
+        swBackfillFromPurchases(swOps);
+        swUpdateStats(); swRenderHistory(); swRenderSales(); swRenderPurchases(); swRenderStock();
+      }catch(e){ console.warn('backfill', e); }
+    });
   }
 }
 window.initSacwyobiFromHub = initSacwyobiFromHub;
@@ -495,13 +572,14 @@ function swTab(id, el){
   if(el) el.classList.add('active');
   else {
     const tabs = document.querySelectorAll('.sw-tab');
-    const map = {stock:0,income:1,temp:2,history:3,sales:4};
+    const map = {stock:0,income:1,temp:2,history:3,sales:4,purchases:5};
     if(map[id]!==undefined && tabs[map[id]]) tabs[map[id]].classList.add('active');
   }
-  if(id==='stock')   swRenderStock();
-  if(id==='history') swRenderHistory();
-  if(id==='temp')    swRenderTempLog();
-  if(id==='sales')   swRenderSales();
+  if(id==='stock')     swRenderStock();
+  if(id==='history')   swRenderHistory();
+  if(id==='temp')      swRenderTempLog();
+  if(id==='sales')     swRenderSales();
+  if(id==='purchases') swRenderPurchases();
 }
 window.swTab = swTab;
 
@@ -953,6 +1031,108 @@ function swConfirmNewSale(){
 }
 window.swConfirmNewSale = swConfirmNewSale;
 
+// ── PURCHASES (purchase-focused view of in-ops) ──
+// a purchase in-op = has amount>0 OR section 'შესყიდვა' OR a pur_ ref
+function swIsPurchase(o){
+  return o && o.type==='in' && ((o.amount!=null && +o.amount>0) || o.section==='შესყიდვა' || String(o.gv_ref||'').indexOf('pur_')===0);
+}
+function swRenderPurchases(){
+  const tbody = swEl('sw-pur-tbody'); if(!tbody) return;
+  const from = (swEl('sw-pur-from')||{}).value||'';
+  const to   = (swEl('sw-pur-to')||{}).value||'';
+  let purs = swOps.filter(swIsPurchase);
+  // small summary line
+  let tAmt=0, tOwed=0;
+  purs.forEach(o=>{ const amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0; tAmt+=amt; if(amt>0){ const rem=amt-pa; if(rem>0.0001) tOwed+=rem; } });
+  let list=[...purs].reverse();
+  if(from) list=list.filter(o=>(o.date||'')>=from);
+  if(to)   list=list.filter(o=>(o.date||'')<=to);
+  const sEl=swEl('sw-pur-summary');
+  if(sEl) sEl.textContent = '· ჩანაწერი: '+list.length+' · სულ '+swMoney(tAmt)+' ₾ · მომწოდებლებს ვმართებთ '+swMoney(tOwed)+' ₾';
+  if(!list.length){ tbody.innerHTML='<tr><td colspan="10" class="sw-empty">— შესყიდვა არ არის —</td></tr>'; return; }
+  tbody.innerHTML = list.slice(0,200).map(o=>{
+    const kgv=+o.kg||0, amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0;
+    const unit = (amt>0 && kgv>0) ? swMoney(amt/kgv) : '—';
+    const rem  = amt>0 ? swMoney(Math.max(0,amt-pa))+' ₾' : '—';
+    return `<tr>
+      <td class="muted" style="font-size:.72rem">${safeText(o.date||o.time||'—')}</td>
+      <td>${safeText(o.buyer||o.section||'—')}</td>
+      <td style="font-weight:400">${safeText(o.product||'—')}</td>
+      <td style="font-family:'Space Mono',monospace;color:#059669">${kgv.toFixed(1)}</td>
+      <td class="muted">${unit}</td>
+      <td style="font-family:'Space Mono',monospace">${amt>0?swMoney(amt)+' ₾':'—'}</td>
+      <td class="muted">${amt>0?swMoney(Math.min(pa,amt))+' ₾':'—'}</td>
+      <td style="color:${(amt>0&&amt-pa>0.0001)?'#dc2626':'#059669'}">${rem}</td>
+      <td>${swPayBadge(o)}</td>
+      <td><button onclick="swDeleteOp('${safeAttr(o.id)}')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:.95rem" title="წაშლა">🗑</button></td>
+    </tr>`;
+  }).join('');
+}
+window.swRenderPurchases = swRenderPurchases;
+
+// ── NEW PURCHASE (adds stock + records cost/payment to supplier) ──
+function swNpCalc(){
+  const kgE=document.getElementById('swnp-kg'), prE=document.getElementById('swnp-price'), amE=document.getElementById('swnp-amount');
+  if(!kgE||!prE||!amE) return;
+  const kg=parseFloat(kgE.value), pr=parseFloat(prE.value);
+  if(!isNaN(kg)&&kg>0&&!isNaN(pr)&&pr>=0){ amE.value=+(kg*pr).toFixed(2); }
+}
+window.swNpCalc = swNpCalc;
+function swNewPurchase(){
+  const existing=document.getElementById('sw-newpur-modal'); if(existing) existing.remove();
+  const bg=document.createElement('div'); bg.id='sw-newpur-modal'; bg.className='sw-modal-bg';
+  bg.innerHTML = `
+    <div class="sw-modal">
+      <button onclick="document.getElementById('sw-newpur-modal').remove()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer">✕</button>
+      <div style="font-size:1rem;font-weight:600;color:#1e3a5f;margin-bottom:16px">🛒 ახალი შესყიდვა</div>
+      <div class="sw-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">
+        <div class="sw-field full"><label>პროდუქტი *</label><input id="swnp-product" placeholder="მოცვი პრემიუმ"></div>
+        <div class="sw-field full"><label>მომწოდებელი</label><input id="swnp-supplier" placeholder="მომწოდებლის სახელი"></div>
+        <div class="sw-field"><label>კგ *</label><input type="number" id="swnp-kg" min="0.1" step="0.1" oninput="swNpCalc()"></div>
+        <div class="sw-field"><label>ფასი ₾/კგ</label><input type="number" id="swnp-price" min="0" step="0.01" placeholder="0.00" oninput="swNpCalc()"></div>
+        <div class="sw-field"><label>თანხა ₾ (სულ)</label><input type="number" id="swnp-amount" min="0" step="0.01" placeholder="0.00"></div>
+        <div class="sw-field"><label>გადახდილი ₾</label><input type="number" id="swnp-paidamt" min="0" step="0.01" placeholder="0.00"></div>
+        <div class="sw-field"><label>პარტია (ნ.ა.)</label><input id="swnp-lot" placeholder="ავტო"></div>
+        <div class="sw-field"><label>სეცია</label><input id="swnp-section" placeholder="A1"></div>
+        <div class="sw-field"><label>ვადა</label><input type="date" id="swnp-expire"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+        <button class="sw-btn sw-btn-outline" style="font-size:.72rem;padding:6px 12px" onclick="var a=document.getElementById('swnp-amount'),p=document.getElementById('swnp-paidamt');if(a&&p)p.value=a.value;">✓ სრულად გადახდილი</button>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="sw-btn sw-btn-gold" style="flex:1" onclick="swConfirmNewPurchase()">🛒 შესყიდვა</button>
+        <button class="sw-btn sw-btn-outline" style="flex:1" onclick="document.getElementById('sw-newpur-modal').remove()">გაუქმება</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+}
+window.swNewPurchase = swNewPurchase;
+function swConfirmNewPurchase(){
+  const product=(document.getElementById('swnp-product').value||'').trim();
+  const supplier=(document.getElementById('swnp-supplier').value||'').trim();
+  const kg=parseFloat(document.getElementById('swnp-kg').value||0);
+  let amount=parseFloat(document.getElementById('swnp-amount').value);
+  let paidAmt=parseFloat(document.getElementById('swnp-paidamt').value);
+  const lotIn=(document.getElementById('swnp-lot').value||'').trim();
+  const section=(document.getElementById('swnp-section').value||'').trim();
+  const expire=document.getElementById('swnp-expire').value||'';
+  if(!product||!kg||kg<=0){ swNotify('⚠️ პროდუქტი და კგ სავალდებულოა', true); return; }
+  if(isNaN(amount)) amount=null;
+  if(isNaN(paidAmt)||paidAmt<0) paidAmt=0;
+  if(amount!=null && amount<0) amount=null;
+  if(amount!=null && paidAmt>amount) paidAmt=amount;
+  const paid=(amount!=null && amount>0)?(paidAmt>=amount):false;
+  const now=Date.now();
+  const autoLot = lotIn || ('PUR-'+String(now).slice(-5));
+  swLots.push({ id:'sw_p_'+now, product, lot:autoLot, pallet_code:'', qty:kg, remaining:kg, section:'შესყიდვა', temp:'', expire, note:supplier, date:swDate() });
+  swOps.push({ id:'op_'+now, type:'in', lot:autoLot, product, kg, section:'შესყიდვა', buyer:supplier, note:'შესყიდვა', amount, paid_amount:paidAmt, paid, date:swDate(), time:swNow() });
+  swSave();
+  swUpdateStats(); swRenderStock(); swRenderHistory(); swRenderPurchases();
+  const m=document.getElementById('sw-newpur-modal'); if(m) m.remove();
+  swNotify('🛒 შესყიდვა: '+kg+'კგ '+product);
+}
+window.swConfirmNewPurchase = swConfirmNewPurchase;
+
 // live calc inside the edit-payment modal: total = kg × price/kg
 function swpCalc(){
   const kgv=+ (document.getElementById('swp-kgval')||{}).value || 0;
@@ -963,10 +1143,10 @@ function swpCalc(){
 }
 window.swpCalc = swpCalc;
 
-// set/edit price + payment on ANY out-op (works for unpriced old sales too)
+// set/edit price + payment on ANY op (out = sale, in = purchase; works for unpriced old ones too)
 function swEditPayment(id){
   const o = swOps.find(x=>x.id===id);
-  if(!o || o.type!=='out') return;
+  if(!o) return;
   const kgv = +o.kg||0;
   const curAmt = (o.amount!=null && +o.amount>0) ? +o.amount : null;
   const curPaid = +o.paid_amount||0;
@@ -1000,7 +1180,7 @@ window.swEditPayment = swEditPayment;
 
 function swSavePayment(id){
   const o = swOps.find(x=>x.id===id);
-  if(!o || o.type!=='out') return;
+  if(!o) return;
   let amount  = parseFloat(document.getElementById('swp-amount').value);
   let paidAmt = parseFloat(document.getElementById('swp-paidamt').value);
   if(isNaN(amount)) amount = null;
@@ -1011,7 +1191,7 @@ function swSavePayment(id){
   o.paid_amount = +paidAmt.toFixed(2);
   o.paid = (amount!=null && amount>0) ? (o.paid_amount >= amount) : false;
   swSave();
-  swRenderHistory();
+  swUpdateStats(); swRenderHistory(); swRenderSales(); swRenderPurchases();
   if(_sb && currentUser && currentUser.id){
     _sb.from('sacwyobi_ops').update({amount:o.amount, paid_amount:o.paid_amount, paid:o.paid}).eq('id', id).eq('user_id', currentUser.id)
       .then(function(){}).catch(function(e){ console.warn('swSavePayment', e); });
@@ -1026,7 +1206,7 @@ function swDeleteOp(id){
   const o = swOps.find(x=>x.id===id);
   if(!o || !confirm('წაშლა: '+(o.type==='in'?'მიღება':'გატანა')+' '+(+o.kg||0).toFixed(1)+'კგ?')) return;
   swOps = swOps.filter(x=>x.id!==id);
-  swSave(); swUpdateStats(); swRenderHistory();
+  swSave(); swUpdateStats(); swRenderHistory(); swRenderSales(); swRenderPurchases();
   if(_sb && currentUser && currentUser.id){
     _sb.from('sacwyobi_ops').delete().eq('id', id).eq('user_id', currentUser.id).then(function(){}).catch(function(e){ console.warn('swDeleteOp', e); });
   }
