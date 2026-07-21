@@ -271,7 +271,10 @@
     <div class="sw-card">
       <div class="sw-card-title" style="justify-content:space-between">
         <span>🛒 შესყიდვა <span id="sw-pur-summary" class="muted" style="font-weight:400;letter-spacing:0;text-transform:none"></span></span>
-        <button class="sw-btn sw-btn-gold" style="padding:6px 14px;font-size:.78rem" onclick="swNewPurchase()">➕ ახალი შესყიდვა</button>
+        <span style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="sw-btn sw-btn-outline" style="padding:6px 12px;font-size:.76rem" onclick="swActBatch()">📄 აქტი (ფილტრით)</button>
+          <button class="sw-btn sw-btn-gold" style="padding:6px 14px;font-size:.78rem" onclick="swNewPurchase()">➕ ახალი შესყიდვა</button>
+        </span>
       </div>
       <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
         <input type="date" id="sw-pur-from" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
@@ -469,14 +472,15 @@ window.swBackfillFromPurchases = swBackfillFromPurchases;
 // ── remembered contacts: gv_suppliers / gv_buyers name lists ──
 window.__swSupNames = window.__swSupNames || [];
 window.__swBuyNames = window.__swBuyNames || [];
+window.__swSupByName = window.__swSupByName || {}; // lowercased name → supplier record (idnum/phone)
 function _swPickName(r){ return String((r&&(r.name||r.supName||r.supplierName||r.buyerName))||'').trim(); }
 async function swLoadContacts(){
-  window.__swSupNames = []; window.__swBuyNames = [];
+  window.__swSupNames = []; window.__swBuyNames = []; window.__swSupByName = {};
   if(!_sb || !uid) return;
   try{
     var r = await _sb.from('gv_suppliers').select('*').eq('user_id', uid);
     if(r.error){ console.warn('[swLoadContacts suppliers]', r.error); }
-    else (r.data||[]).forEach(function(x){ var n=_swPickName(x); if(n) window.__swSupNames.push(n); });
+    else (r.data||[]).forEach(function(x){ var n=_swPickName(x); if(n){ window.__swSupNames.push(n); window.__swSupByName[n.toLowerCase()]=x; } });
   }catch(e){ console.warn('[swLoadContacts suppliers]', e); }
   try{
     var r2 = await _sb.from('gv_buyers').select('*').eq('user_id', uid);
@@ -485,6 +489,34 @@ async function swLoadContacts(){
   }catch(e){ console.warn('[swLoadContacts buyers]', e); }
 }
 window.swLoadContacts = swLoadContacts;
+
+// ── company (buyer) + act number from gv_settings ──
+window.__swCompany = window.__swCompany || null;
+window.__swActNum  = window.__swActNum  || 1;
+async function swLoadCompany(){
+  window.__swCompany = null; window.__swActNum = 1;
+  if(!_sb || !uid) return;
+  try{
+    var r = await _sb.from('gv_settings').select('company_cfg,act_num').eq('user_id', uid).maybeSingle();
+    if(r.error){ console.warn('[swLoadCompany]', r.error); return; }
+    var d = r.data||{};
+    if(d.company_cfg!=null){
+      try{ window.__swCompany = (typeof d.company_cfg==='string') ? JSON.parse(d.company_cfg) : d.company_cfg; }
+      catch(e){ window.__swCompany = (typeof d.company_cfg==='object') ? d.company_cfg : null; }
+    }
+    if(d.act_num!=null){ var n=parseInt(d.act_num,10); if(!isNaN(n)) window.__swActNum=n; }
+  }catch(e){ console.warn('[swLoadCompany]', e); }
+}
+window.swLoadCompany = swLoadCompany;
+// persist next act number (only touches act_num column — company_cfg preserved)
+async function swBumpActNum(by){
+  window.__swActNum = (parseInt(window.__swActNum,10)||1) + (by||1);
+  if(_sb && uid){
+    try{ await _sb.from('gv_settings').upsert({ user_id: uid, act_num: window.__swActNum }, { onConflict:'user_id' }); }
+    catch(e){ console.warn('[swBumpActNum]', e); }
+  }
+}
+window.swBumpActNum = swBumpActNum;
 
 // ══════════════════════════════════════════════════════
 //  AUTH / APP SHELL
@@ -574,7 +606,8 @@ async function initSacwyobiFromHub(){
     Promise.all([
       swLoadSalesMap().catch(function(e){ console.warn('swLoadSalesMap', e); }),
       swLoadPurchasesMap().catch(function(e){ console.warn('swLoadPurchasesMap', e); }),
-      swLoadContacts().catch(function(e){ console.warn('swLoadContacts', e); })
+      swLoadContacts().catch(function(e){ console.warn('swLoadContacts', e); }),
+      swLoadCompany().catch(function(e){ console.warn('swLoadCompany', e); })
     ]).then(function(){
       try{
         swBackfillFromSales(swOps);
@@ -1088,7 +1121,7 @@ function swRenderPurchases(){
       <td class="muted">${amt>0?swMoney(Math.min(pa,amt))+' ₾':'—'}</td>
       <td style="color:${(amt>0&&amt-pa>0.0001)?'#dc2626':'#059669'}">${rem}</td>
       <td>${swPayBadge(o)}</td>
-      <td><button onclick="swDeleteOp('${safeAttr(o.id)}')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:.95rem" title="წაშლა">🗑</button></td>
+      <td style="white-space:nowrap"><button class="sw-btn sw-btn-outline" style="padding:3px 9px;font-size:.7rem;margin-right:4px" onclick="swActForOp('${safeAttr(o.id)}')" title="შესყიდვის აქტი">📄</button><button onclick="swDeleteOp('${safeAttr(o.id)}')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:.95rem" title="წაშლა">🗑</button></td>
     </tr>`;
   }).join('');
 }
@@ -1176,6 +1209,116 @@ function swConfirmNewPurchase(){
   swNotify('🛒 შესყიდვა: '+kg+'კგ '+product);
 }
 window.swConfirmNewPurchase = swConfirmNewPurchase;
+
+// ══════════════════════════════════════════════════════
+//  PURCHASE ACT (შესყიდვის აქტი) — ported from reference, buyer = user's company
+// ══════════════════════════════════════════════════════
+const _akFmt  = n => (+n||0).toLocaleString('en-US',{maximumFractionDigits:1});
+const _akFmt2 = n => (+n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const AKT_MONTHS=["იანვარი","თებერვალი","მარტი","აპრილი","მაისი","ივნისი","ივლისი","აგვისტო","სექტემბერი","ოქტომბერი","ნოემბერი","დეკემბერი"];
+function aktDateGeo(ds){ if(!ds)return "«____» _____________ ____"; const p=String(ds).split("-"); if(p.length<3)return "«____» _____________ "+(p[0]||"____"); return "«"+(+p[2])+"» "+(AKT_MONTHS[(+p[1])-1]||"")+" "+p[0]; }
+function geoNumWords(n){
+  n=Math.floor(Math.abs(n)); if(n===0)return "ნული";
+  const u=["","ერთი","ორი","სამი","ოთხი","ხუთი","ექვსი","შვიდი","რვა","ცხრა","ათი","თერთმეტი","თორმეტი","ცამეტი","თოთხმეტი","თხუთმეტი","თექვსმეტი","ჩვიდმეტი","თვრამეტი","ცხრამეტი"];
+  const tF={20:"ოცი",40:"ორმოცი",60:"სამოცი",80:"ოთხმოცი"},tC={20:"ოცდა",40:"ორმოცდა",60:"სამოცდა",80:"ოთხმოცდა"};
+  const hF={1:"ასი",2:"ორასი",3:"სამასი",4:"ოთხასი",5:"ხუთასი",6:"ექვსასი",7:"შვიდასი",8:"რვაასი",9:"ცხრაასი"};
+  const hC={1:"ას",2:"ორას",3:"სამას",4:"ოთხას",5:"ხუთას",6:"ექვსას",7:"შვიდას",8:"რვაას",9:"ცხრაას"};
+  const tens=x=>{ if(x<20)return u[x]; const b=Math.floor(x/20)*20,r=x-b; return r===0?tF[b]:tC[b]+u[r]; };
+  const hund=x=>{ if(x<100)return tens(x); const h=Math.floor(x/100),r=x%100; return r===0?hF[h]:hC[h]+" "+tens(r); };
+  const thous=x=>{ if(x<1000)return hund(x); const t=Math.floor(x/1000),r=x%1000; const w=(t===1)?(r===0?"ათასი":"ათას"):(hund(t)+(r===0?" ათასი":" ათას")); return r===0?w:w+" "+hund(r); };
+  if(n<1000000)return thous(n);
+  const m=Math.floor(n/1000000),r=n%1000000; const w=(m===1)?(r===0?"მილიონი":"მილიონ"):(thous(m)+(r===0?" მილიონი":" მილიონ")); return r===0?w:w+" "+thous(r);
+}
+function geoLari(a){ a=Math.round(a*100)/100; const l=Math.floor(a+1e-9),t=Math.round((a-l)*100); let s=geoNumWords(l)+" ლარი"; if(t>0)s+=" და "+geoNumWords(t)+" თეთრი"; return s; }
+const _AD='border:1px solid #000;padding:9px 11px';
+function aktTh(t){return `<th style="border:1px solid #000;padding:9px 11px;font-size:14.5px;font-weight:700">${t}</th>`;}
+function _swCo(){ return window.__swCompany||{}; }
+function aktIntro(seller,idc,ph){
+  const co=_swCo();
+  const bName = co.name ? safeText(co.name) : '________________________________';
+  const bId   = (co.idnum!=null && String(co.idnum).trim()) ? safeText(co.idnum) : '____________';
+  const rep   = (co.rep!=null && String(co.rep).trim()) ? (' წარმომადგენელი '+safeText(co.rep)) : '';
+  return `<p style="text-align:justify;margin:0 0 15px;line-height:1.8">ჩვენ, ერთის მხრივ <b>${bName}</b> (ს/კ ${bId})${rep}, შემდგომში „მყიდველი" და მეორეს მხრივ <u>&nbsp;${seller}&nbsp;</u> (ს/კ პ/ნ <u>&nbsp;${idc}&nbsp;</u>), ტელ. <u>&nbsp;${ph}&nbsp;</u>, შემდგომში „გამყიდველი" ვადგენთ აღნიშნულ აქტს მასზედ, რომ „მყიდველმა" შეიძინა „გამყიდველის"-გან შემდეგი საქონელი:</p>`;
+}
+function aktTableHead(){
+  return `<table style="width:100%;border-collapse:collapse;font-size:15px;margin:0 0 15px"><thead><tr>${aktTh("N")}${aktTh("საქონლის დასახელება")}${aktTh("ერთეული")}${aktTh("რაოდენობა")}${aktTh("ერთეულის ფასი, (ლარი)")}${aktTh("ჯამი, (ლარი)")}</tr></thead><tbody>`;
+}
+function aktRow(n,name,qty,price,sum){
+  return `<tr><td style="${_AD};text-align:center">${n}</td><td style="${_AD}">${name}</td><td style="${_AD};text-align:center">კგ</td><td style="${_AD};text-align:right">${_akFmt(qty)}</td><td style="${_AD};text-align:right">${price?_akFmt2(price):""}</td><td style="${_AD};text-align:right">${_akFmt2(sum)}</td></tr>`;
+}
+function aktTotalRow(totQty,totSum){
+  return `<tr><td style="${_AD}"></td><td style="${_AD};font-weight:700">ჯამი</td><td style="${_AD}"></td><td style="${_AD};text-align:right;font-weight:700">${_akFmt(totQty)}</td><td style="${_AD}"></td><td style="${_AD};text-align:right;font-weight:700">${_akFmt2(totSum)}</td></tr></tbody></table>`;
+}
+function aktFoot(totSum,sellerName){
+  const co=_swCo();
+  const bName = co.name ? safeText(co.name) : '&nbsp;';
+  return `<p style="margin:0 0 12px;line-height:1.85">თანხა შეადგენს: <u>&nbsp;${geoLari(totSum)}&nbsp;</u> <span style="color:#333">(${_akFmt2(totSum)} ₾)</span></p>`
+    +`<p style="margin:0 0 28px;line-height:1.85">თანხის გაცემის თარიღი «_______» ____________________________ წ.</p>`
+    +`<div style="display:flex;justify-content:space-between;gap:60px;margin-top:4px;font-size:16px">`
+      +`<div style="flex:1">მყიდველი<br>${bName}<br><br><br>__________________________________</div>`
+      +`<div style="flex:1">გამყიდველი<br>${sellerName||"&nbsp;"}<br><br><br>__________________________________</div>`
+    +`</div>`;
+}
+function aktWrap(inner){return `<div class="akt" style="font-family:'Noto Sans Georgian','DejaVu Sans',sans-serif;color:#000;max-width:780px;margin:0 auto;font-size:16.5px;line-height:1.7;padding:6px 4px">${inner}</div>`;}
+// enrich supplier idnum/phone from gv_suppliers map (match by name)
+function _swSupInfo(name){
+  var rec = (window.__swSupByName||{})[String(name||'').trim().toLowerCase()];
+  return { idnum: (rec&&(rec.idnum||rec.idcode))||'', phone: (rec&&rec.phone)||'' };
+}
+// build the act HTML for one purchase op
+function aktSingleHtml(op, aktNo){
+  const co=_swCo();
+  const seller = op.buyer ? safeText(op.buyer) : '________________________________';
+  const info = _swSupInfo(op.buyer);
+  const idc = info.idnum ? safeText(info.idnum) : '______________________';
+  const ph  = info.phone ? safeText(info.phone) : '______________________';
+  const kg  = +op.kg||0;
+  const sum = (op.amount!=null?+op.amount:0)||0;
+  const price = (kg>0 && sum>0) ? (sum/kg) : 0;
+  const rows = aktRow(1, safeText(op.product||'პროდუქცია'), kg, price, sum);
+  const noStr = (aktNo!=null) ? String(aktNo).padStart(3,'0') : '____';
+  const city = co.addr ? safeText(co.addr) : 'ქ. ______';
+  const top = `<div style="display:flex;justify-content:space-between;align-items:baseline;margin:0 0 14px;font-size:16px"><span>${city}</span><span>${aktDateGeo(op.date)} წ</span></div>`
+    +`<div style="text-align:center;font-weight:700;font-size:20px;margin:0 0 16px">შესყიდვის აქტი № ${noStr}</div>`;
+  const warn = (!co.name && !co.idnum) ? `<div style="text-align:center;color:#b45309;font-size:13px;margin:0 0 12px">⚠️ ჯერ კომპანიის მონაცემები შეავსე (მთავარ აპში)</div>` : '';
+  return aktWrap(warn+top+aktIntro(seller,idc,ph)+aktTableHead()+rows+aktTotalRow(kg,sum)+aktFoot(sum, op.buyer?safeText(op.buyer):''));
+}
+// open a print window with the act(s)
+function swPrintAct(innerHtml, title){
+  var w = window.open('', '_blank');
+  if(!w){ swNotify('⚠️ popup დაბლოკილია — დართე ნებართვა', true); return; }
+  w.document.write('<!DOCTYPE html><html lang="ka"><head><meta charset="UTF-8"><title>'+(title||'შესყიდვის აქტი')+'</title>'
+    +'<style>@page{size:A4;margin:14mm}body{margin:0;background:#fff;font-family:"Noto Sans Georgian","DejaVu Sans",system-ui,sans-serif;color:#000}@media print{.noprint{display:none}}</style>'
+    +'</head><body>'+innerHtml
+    +'<div class="noprint" style="text-align:center;margin:24px 0"><button onclick="window.print()" style="padding:10px 22px;font-size:15px;border:none;border-radius:8px;background:#0369a1;color:#fff;cursor:pointer">🖨️ ბეჭდვა</button></div>'
+    +'<scr'+'ipt>window.onload=function(){setTimeout(function(){try{window.print();}catch(e){}},350);};</scr'+'ipt>'
+    +'</body></html>');
+  w.document.close();
+}
+// print one purchase op's act (uses current act number, then increments+persists)
+function swActForOp(id){
+  const o = swOps.find(x=>x.id===id);
+  if(!o){ swNotify('⚠️ ჩანაწერი ვ/მ', true); return; }
+  const no = parseInt(window.__swActNum,10)||1;
+  swPrintAct(aktSingleHtml(o, no), 'შესყიდვის აქტი № '+String(no).padStart(3,'0'));
+  swBumpActNum(1);
+}
+window.swActForOp = swActForOp;
+// print all currently-filtered purchases as separate acts (page-break between)
+function swActBatch(){
+  const from = (swEl('sw-pur-from')||{}).value||'';
+  const to   = (swEl('sw-pur-to')||{}).value||'';
+  let list = swOps.filter(swIsPurchase);
+  list = [...list].reverse();
+  if(from) list=list.filter(o=>(o.date||'')>=from);
+  if(to)   list=list.filter(o=>(o.date||'')<=to);
+  if(!list.length){ swNotify('⚠️ აქტისთვის ჩანაწერი არ არის', true); return; }
+  const start = parseInt(window.__swActNum,10)||1;
+  const parts = list.map((o,i)=>`<div${i<list.length-1?' style="page-break-after:always"':''}>${aktSingleHtml(o, start+i)}</div>`);
+  swPrintAct(parts.join(''), 'შესყიდვის აქტები');
+  swBumpActNum(list.length);
+}
+window.swActBatch = swActBatch;
 
 // live calc inside the edit-payment modal: total = kg × price/kg
 function swpCalc(){
