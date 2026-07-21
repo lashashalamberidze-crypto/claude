@@ -1,0 +1,49 @@
+# ============================================================================
+# agrointechsol.ge — ავტომატური deploy (GitHub → cPanel FTP)
+#
+# როგორ მუშაობს: ამ ბრანჩში push-ის შემდეგ GitHub თავად ატვირთავს
+# ცვლილებულ ფაილებს შენს ჰოსტინგზე FTP-ით. ხელით ატვირთვა აღარ სჭირდება.
+#
+# საჭიროა 3 secret (GitHub → Settings → Secrets and variables → Actions):
+#   FTP_SERVER    — მაგ. ftp.agrointechsol.ge  (ან შენი სერვერის ჰოსტი)
+#   FTP_USERNAME  — cPanel FTP მომხმარებელი
+#   FTP_PASSWORD  — იმ FTP ანგარიშის პაროლი
+# (FTP მონაცემები: cPanel → "FTP Accounts")
+# ============================================================================
+name: Deploy to agrointechsol.ge
+
+on:
+  push:
+    branches:
+      - main
+      - claude/gadakhedhe-o3b1ha
+  workflow_dispatch: {}   # Actions ტაბში ხელით გაშვების ღილაკი
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: FTP deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          # protocol: ftps → დაშიფრული (cPanel-ის უმეტესობა უჭერს მხარს).
+          # თუ ვერ დაუკავშირდა, შეცვალე: ftp
+          protocol: ftps
+          port: 21
+          # საიტის საქაღალდე სერვერზე. ჩვეულებრივ public_html/.
+          # თუ FTP ანგარიში უკვე public_html-შია, დატოვე მხოლოდ: ./
+          server-dir: public_html/
+          # exclude — რაც სერვერზე არ უნდა წავიდეს (არსებულ PHP/სურათებს არ ეხება):
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            sql/**
+            *.md
+            README*
