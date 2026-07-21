@@ -24,7 +24,7 @@
 .sw-wrap{max-width:1300px;margin:0 auto;padding:12px 24px 40px}
 .sw-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap}
 .sw-title{font-size:1.2rem;font-weight:600;color:#f59e0b;display:flex;align-items:center;gap:10px}
-.sw-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.sw-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
 @media(max-width:700px){.sw-stats{grid-template-columns:repeat(2,1fr)}}
 /* colorful gradient stat cards (from awonva.html) */
 .stat{border-radius:14px;padding:16px 18px;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);min-width:0;display:flex;flex-direction:column;justify-content:center}
@@ -34,6 +34,7 @@
 .s-green{background:linear-gradient(135deg,#10b981,#059669)}
 .s-orange{background:linear-gradient(135deg,#f59e0b,#ea580c)}
 .s-purple{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}
+.s-red{background:linear-gradient(135deg,#f87171,#dc2626)}
 .sw-tabs{display:flex;gap:2px;border-bottom:1px solid #dde8f5;margin-bottom:20px;overflow-x:auto}
 .sw-tab{padding:10px 18px;font-size:.8rem;font-weight:400;color:#2a5a8a;background:none;border:none;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
 .sw-tab.active{color:#f59e0b;border-bottom-color:#f59e0b}
@@ -133,6 +134,14 @@
       <div class="lbl">🌡️ ტემპ. ახლა</div>
       <div class="val" id="sw-temp-cur">—°C</div>
     </div>
+    <div class="stat s-blue">
+      <div class="lbl">💰 შემოსავალი (₾)</div>
+      <div class="val" id="sw-income-total">0</div>
+    </div>
+    <div class="stat s-red">
+      <div class="lbl">🔴 გადასახდელი დარჩა (₾)</div>
+      <div class="val" id="sw-owed-total">0</div>
+    </div>
   </div>
 
   <!-- TABS -->
@@ -141,6 +150,7 @@
     <button class="sw-tab" onclick="swTab('income',this)">📥 მიღება</button>
     <button class="sw-tab" onclick="swTab('temp',this)">🌡️ ტემპ.</button>
     <button class="sw-tab" onclick="swTab('history',this)">📋 ისტორია</button>
+    <button class="sw-tab" onclick="swTab('sales',this)">💰 გაყიდვები</button>
   </div>
 
   <!-- ── TAB: STOCK ── -->
@@ -228,6 +238,34 @@
         <table class="sw-table">
           <thead><tr><th>დრო</th><th>ოპ.</th><th>პარტია</th><th>პროდ.</th><th>კგ</th><th>მიმღ./სეც.</th><th>გადახდა</th><th>შენიშ.</th></tr></thead>
           <tbody id="sw-hist-tbody"><tr><td colspan="8" class="sw-empty">— ისტ. ცარიელია —</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: SALES ── -->
+  <div id="sw-page-sales" class="sw-page">
+    <!-- totals -->
+    <div class="sw-stats" style="margin-bottom:18px">
+      <div class="stat s-green"><div class="lbl">💰 სულ გაყიდვა (₾)</div><div class="val" id="sw-sales-total">0</div></div>
+      <div class="stat s-blue"><div class="lbl">✅ გადახდილი (₾)</div><div class="val" id="sw-sales-paid">0</div></div>
+      <div class="stat s-orange"><div class="lbl">🔴 დარჩა (₾)</div><div class="val" id="sw-sales-owed">0</div></div>
+      <div class="stat s-purple"><div class="lbl">📦 გაყიდული (კგ)</div><div class="val" id="sw-sales-kg">0</div></div>
+    </div>
+    <div class="sw-card">
+      <div class="sw-card-title" style="justify-content:space-between">
+        <span>💰 გაყიდვები</span>
+        <button class="sw-btn sw-btn-gold" style="padding:6px 14px;font-size:.78rem" onclick="swNewSale()">➕ ახალი გაყიდვა</button>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <input type="date" id="sw-sales-from" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
+        <input type="date" id="sw-sales-to" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
+        <button class="sw-btn sw-btn-outline" onclick="swRenderSales()">🔍 ფილტრი</button>
+      </div>
+      <div class="sw-table-wrap">
+        <table class="sw-table">
+          <thead><tr><th>თარიღი</th><th>მიმღები</th><th>პროდუქტი</th><th>კგ</th><th>ფასი ₾/კგ</th><th>სულ ₾</th><th>გადახდ.</th><th>დარჩა</th><th>სტატუსი</th><th></th></tr></thead>
+          <tbody id="sw-sales-tbody"><tr><td colspan="10" class="sw-empty">— გაყიდვა არ არის —</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -448,7 +486,7 @@ async function initSacwyobiFromHub(){
   // auto-fill old sale prices from gv_sales (non-destructive display backfill), then re-render
   if(_sb && uid){
     swLoadSalesMap().then(function(){
-      try{ swBackfillFromSales(swOps); swUpdateStats(); swRenderHistory(); }catch(e){ console.warn('backfill', e); }
+      try{ swBackfillFromSales(swOps); swUpdateStats(); swRenderHistory(); swRenderSales(); }catch(e){ console.warn('backfill', e); }
     }).catch(function(e){ console.warn('swLoadSalesMap', e); });
   }
 }
@@ -463,12 +501,13 @@ function swTab(id, el){
   if(el) el.classList.add('active');
   else {
     const tabs = document.querySelectorAll('.sw-tab');
-    const map = {stock:0,income:1,temp:2,history:3};
+    const map = {stock:0,income:1,temp:2,history:3,sales:4};
     if(map[id]!==undefined && tabs[map[id]]) tabs[map[id]].classList.add('active');
   }
   if(id==='stock')   swRenderStock();
   if(id==='history') swRenderHistory();
   if(id==='temp')    swRenderTempLog();
+  if(id==='sales')   swRenderSales();
 }
 window.swTab = swTab;
 
@@ -495,6 +534,11 @@ function swUpdateStats(){
   const el3=swEl('sw-out-total'); if(el3) el3.textContent = outTotal.toFixed(1);
   const el4=swEl('sw-temp-cur');
   if(el4){ el4.textContent = (lastTemp!==null) ? (lastTemp+'°C') : '—°C'; }
+  // sales income + outstanding over out-ops (uses backfilled amount/paid_amount)
+  let income=0, owed=0;
+  swOps.forEach(o=>{ if(o.type!=='out') return; const amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0; income+=amt; if(amt>0){ const rem=amt-pa; if(rem>0.0001) owed+=rem; } });
+  const el5=swEl('sw-income-total'); if(el5) el5.textContent = swMoney(income);
+  const el6=swEl('sw-owed-total');   if(el6) el6.textContent = swMoney(owed);
   const liveTemp = swEl('sw-live-temp');
   if(liveTemp && lastTemp!==null){
     liveTemp.textContent = lastTemp+'°C';
@@ -802,6 +846,127 @@ function swRenderHistory(){
   }).join('');
 }
 window.swRenderHistory = swRenderHistory;
+
+// ── SALES (sales-focused view of out-ops) ──
+function swPayBadge(o){
+  const sid=safeAttr(o.id);
+  if(o.amount!=null && +o.amount>0){
+    const amt=+o.amount, pa=+o.paid_amount||0, rem=+(amt-pa).toFixed(2);
+    if(pa>=amt) return '<span class="sw-badge" style="background:rgba(16,185,129,.12);color:#059669;border:1px solid rgba(16,185,129,.2);cursor:pointer" onclick="swEditPayment(\''+sid+'\')" title="გადახდის რედაქტირება">🟢 გადახდილი</span>';
+    if(pa>0)   return '<span class="sw-badge" style="background:rgba(245,158,11,.12);color:#b45309;border:1px solid rgba(245,158,11,.25);cursor:pointer" onclick="swEditPayment(\''+sid+'\')" title="გადახდის რედაქტირება">🟡 ნაწილობრივი</span>';
+    return '<span class="sw-badge" style="background:rgba(239,68,68,.1);color:#dc2626;border:1px solid rgba(239,68,68,.2);cursor:pointer" onclick="swEditPayment(\''+sid+'\')" title="გადახდის რედაქტირება">🔴 გადაუხდელი</span>';
+  }
+  return '<span style="color:#0369a1;font-size:.74rem;font-weight:600;cursor:pointer;text-decoration:underline dotted" onclick="swEditPayment(\''+sid+'\')" title="ფასის/გადახდის მითითება">💰 ფასი +</span>';
+}
+function swRenderSales(){
+  const tbody = swEl('sw-sales-tbody'); if(!tbody) return;
+  const from = (swEl('sw-sales-from')||{}).value||'';
+  const to   = (swEl('sw-sales-to')||{}).value||'';
+  let outs = swOps.filter(o=>o.type==='out');
+  // totals over ALL out-ops (not just filtered view)
+  let tAmt=0, tPaid=0, tOwed=0, tKg=0;
+  outs.forEach(o=>{
+    const amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0;
+    tAmt+=amt; tPaid+=Math.min(pa,amt||pa); tKg+=(+o.kg||0);
+    if(amt>0){ const rem=amt-pa; if(rem>0.0001) tOwed+=rem; }
+  });
+  const e1=swEl('sw-sales-total'); if(e1) e1.textContent=swMoney(tAmt);
+  const e2=swEl('sw-sales-paid');  if(e2) e2.textContent=swMoney(tPaid);
+  const e3=swEl('sw-sales-owed');  if(e3) e3.textContent=swMoney(tOwed);
+  const e4=swEl('sw-sales-kg');    if(e4) e4.textContent=swMoney(tKg);
+  // filtered list, newest first
+  let list=[...outs].reverse();
+  if(from) list=list.filter(o=>(o.date||'')>=from);
+  if(to)   list=list.filter(o=>(o.date||'')<=to);
+  if(!list.length){ tbody.innerHTML='<tr><td colspan="10" class="sw-empty">— გაყიდვა არ არის —</td></tr>'; return; }
+  tbody.innerHTML = list.slice(0,200).map(o=>{
+    const kgv=+o.kg||0, amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0;
+    const unit = (amt>0 && kgv>0) ? swMoney(amt/kgv) : '—';
+    const rem  = amt>0 ? swMoney(Math.max(0,amt-pa))+' ₾' : '—';
+    return `<tr>
+      <td class="muted" style="font-size:.72rem">${safeText(o.date||o.time||'—')}</td>
+      <td>${safeText(o.buyer||'—')}</td>
+      <td style="font-weight:400">${safeText(o.product||'—')}</td>
+      <td style="font-family:'Space Mono',monospace;color:#d97706">${kgv.toFixed(1)}</td>
+      <td class="muted">${unit}</td>
+      <td style="font-family:'Space Mono',monospace">${amt>0?swMoney(amt)+' ₾':'—'}</td>
+      <td class="muted">${amt>0?swMoney(Math.min(pa,amt))+' ₾':'—'}</td>
+      <td style="color:${(amt>0&&amt-pa>0.0001)?'#dc2626':'#059669'}">${rem}</td>
+      <td>${swPayBadge(o)}</td>
+      <td><button onclick="swDeleteOp('${safeAttr(o.id)}')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:.95rem" title="წაშლა">🗑</button></td>
+    </tr>`;
+  }).join('');
+}
+window.swRenderSales = swRenderSales;
+
+// ── NEW SALE (reuses take-out reduction logic) ──
+function swNsCalc(){
+  const kgE=document.getElementById('swns-kg'), prE=document.getElementById('swns-price'), amE=document.getElementById('swns-amount');
+  if(!kgE||!prE||!amE) return;
+  const kg=parseFloat(kgE.value), pr=parseFloat(prE.value);
+  if(!isNaN(kg)&&kg>0&&!isNaN(pr)&&pr>=0){ amE.value=+(kg*pr).toFixed(2); }
+}
+window.swNsCalc = swNsCalc;
+function swNsPick(){
+  const sel=document.getElementById('swns-lot'); const kgE=document.getElementById('swns-kg');
+  if(!sel||!kgE) return;
+  const l=swLots.find(x=>x.id===sel.value);
+  if(l && !kgE.value){ kgE.value=(+l.remaining||0).toFixed(1); swNsCalc(); }
+}
+window.swNsPick = swNsPick;
+function swNewSale(){
+  const active = swLots.filter(l=>(+l.remaining||0)>0).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  if(!active.length){ swNotify('⚠️ მარაგი ცარიელია — ჯერ მიიღე პროდუქტი', true); return; }
+  const existing=document.getElementById('sw-newsale-modal'); if(existing) existing.remove();
+  const bg=document.createElement('div'); bg.id='sw-newsale-modal'; bg.className='sw-modal-bg';
+  const opts = active.map(l=>`<option value="${safeAttr(l.id)}">${safeText(l.product||'—')} — ${(+l.remaining).toFixed(1)}კგ ${l.lot?('· '+safeText(l.lot)):''}</option>`).join('');
+  bg.innerHTML = `
+    <div class="sw-modal">
+      <button onclick="document.getElementById('sw-newsale-modal').remove()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer">✕</button>
+      <div style="font-size:1rem;font-weight:600;color:#1e3a5f;margin-bottom:16px">💰 ახალი გაყიდვა</div>
+      <div class="sw-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">
+        <div class="sw-field full"><label>პარტია / პროდუქტი *</label><select id="swns-lot" onchange="swNsPick()">${opts}</select></div>
+        <div class="sw-field"><label>კგ *</label><input type="number" id="swns-kg" min="0.1" step="0.1" oninput="swNsCalc()"></div>
+        <div class="sw-field"><label>ფასი ₾/კგ</label><input type="number" id="swns-price" min="0" step="0.01" placeholder="0.00" oninput="swNsCalc()"></div>
+        <div class="sw-field full"><label>მიმღები / მყიდველი</label><input id="swns-buyer" placeholder="კომპ. ან პირი"></div>
+        <div class="sw-field"><label>თანხა ₾ (სულ)</label><input type="number" id="swns-amount" min="0" step="0.01" placeholder="0.00"></div>
+        <div class="sw-field"><label>გადახდილი ₾</label><input type="number" id="swns-paidamt" min="0" step="0.01" placeholder="0.00"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+        <button class="sw-btn sw-btn-outline" style="font-size:.72rem;padding:6px 12px" onclick="var a=document.getElementById('swns-amount'),p=document.getElementById('swns-paidamt');if(a&&p)p.value=a.value;">✓ სრულად გადახდილი</button>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="sw-btn sw-btn-green" style="flex:1" onclick="swConfirmNewSale()">🚚 გაყიდვა</button>
+        <button class="sw-btn sw-btn-outline" style="flex:1" onclick="document.getElementById('sw-newsale-modal').remove()">გაუქმება</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+  swNsPick();
+}
+window.swNewSale = swNewSale;
+function swConfirmNewSale(){
+  const lotId=(document.getElementById('swns-lot')||{}).value;
+  const l=swLots.find(x=>x.id===lotId);
+  if(!l){ swNotify('⚠️ აირჩიე პარტია', true); return; }
+  const kg=parseFloat(document.getElementById('swns-kg').value||0);
+  const buyer=(document.getElementById('swns-buyer').value||'').trim();
+  let amount=parseFloat(document.getElementById('swns-amount').value);
+  let paidAmt=parseFloat(document.getElementById('swns-paidamt').value);
+  if(isNaN(amount)) amount=null;
+  if(isNaN(paidAmt)||paidAmt<0) paidAmt=0;
+  if(amount!=null && amount<0) amount=null;
+  if(amount!=null && paidAmt>amount) paidAmt=amount;
+  const paid=(amount!=null && amount>0)?(paidAmt>=amount):false;
+  if(!kg||kg<=0){ swNotify('⚠️ ჩაწერე კგ', true); return; }
+  if(kg>(+l.remaining||0)){ swNotify('⚠️ მარაგზე მეტია! მარ: '+(+l.remaining).toFixed(1)+'კგ', true); return; }
+  l.remaining=+((+l.remaining||0)-kg).toFixed(3);
+  swOps.push({ id:'op_'+Date.now(), type:'out', lot:l.lot, product:l.product, kg, buyer, purpose:'გაყიდვა', note:'', amount, paid_amount:paidAmt, paid, date:swDate(), time:swNow() });
+  swSave();
+  swUpdateStats(); swRenderStock(); swRenderHistory(); swRenderSales();
+  const m=document.getElementById('sw-newsale-modal'); if(m) m.remove();
+  swNotify('🚚 გაყიდვა: '+kg+'კგ '+(l.product||''));
+}
+window.swConfirmNewSale = swConfirmNewSale;
 
 // live calc inside the edit-payment modal: total = kg × price/kg
 function swpCalc(){
