@@ -12409,21 +12409,36 @@ async function registerPicker(){
   const _pTbody = kEl("pTbody");
   if(_pTbody) _pTbody.scrollIntoView({behavior:"smooth", block:"nearest"});
 
-  // ── BACKGROUND SYNC to Supabase (non-blocking) ──
-  krepaGetEffectiveUser().then(function(effUser){
+  // ── BACKGROUND SYNC to Supabase — ატომური ნუმერაცია + retry ──
+  //    (user_id,num) უნიკალურ ინდექსზე კონფლიქტისას (სხვა კომპმა იგივე ნომერი აიღო)
+  //    ვიღებთ ახალ ნომერს ღრუბლიდან, ვანახლებთ ლოკალურ ასლს და ვცდით ხელახლა.
+  krepaGetEffectiveUser().then(async function(effUser){
     if(!effUser || !effUser.id || effUser.isDemo) return;
-    _sb.from('krepa_pickers').insert({ ...newPicker, user_id: effUser.id })
-      .then(function(res){
-        if(res.error){
-          if((res.error.message||'').toLowerCase().includes('duplicate') || (res.error.code||'')==='23505'){
-            // already exists — not an error, just skip
-          } else {
-            console.warn('picker save error', res.error);
-            notify("⚠️ ლოკალურად შეინახა, სერვერთან სინქრ. ვერ მოხდა","var(--orange)");
-          }
-        }
-      }).catch(function(e){ console.warn('registerPicker bg save', e); });
-  });
+    var saved=false;
+    for(var attempt=0; attempt<8 && !saved; attempt++){
+      var res;
+      try{ res=await _sb.from('krepa_pickers').insert({ ...newPicker, user_id: effUser.id }); }
+      catch(e){ res={error:{message:(e&&e.message)||String(e)}}; }
+      if(!res.error){ saved=true; break; }
+      var em=(res.error.message||'').toLowerCase(), code=res.error.code||'';
+      var isDup = em.includes('duplicate') || code==='23505';
+      if(isDup && em.includes('num')){
+        // ნომერი დაკავებულია — ავიღოთ შემდეგი ღრუბლიდან და ხელახლა
+        var nn=null;
+        try{ var q=await _sb.from('krepa_pickers').select('num').eq('user_id',effUser.id).order('num',{ascending:false}).limit(1);
+          if(!q.error && q.data && q.data.length){ var mm=parseInt(q.data[0].num,10); if(!isNaN(mm)) nn=mm+1; } }catch(e){ console.warn('nextNum', e); }
+        if(nn==null){ break; }
+        newPicker.num=nn;
+        try{ if(typeof agro_pickers!=='undefined'&&Array.isArray(agro_pickers)){ var ap=agro_pickers.find(function(x){return x.uid===newPicker.uid;}); if(ap) ap.num=nn; } }catch(e){}
+        continue;
+      }
+      if(isDup){ saved=true; break; }   // uid უკვე არსებობს — არ არის შეცდომა
+      console.warn('picker save error', res.error);
+      notify("⚠️ ლოკალურად შეინახა, სერვერთან სინქრ. ვერ მოხდა","var(--orange)");
+      return;
+    }
+    if(saved){ try{ save(); if(typeof renderPickerTable==='function') renderPickerTable(); if(typeof renderStickerSelect==='function') renderStickerSelect(); }catch(e){} }
+  }).catch(function(e){ console.warn('registerPicker bg', e); });
 }
 
 function renderPickerTable(){

@@ -409,18 +409,34 @@ function renderDailyStats(){
 function stat(cls,lbl,val,sub){ return '<div class="stat '+cls+'"><div class="lbl">'+lbl+'</div><div class="val">'+val+'</div><div class="sub">'+sub+'</div></div>'; }
 
 // ── რეგისტრაცია (ავტო-num) ──
+// შემდეგი num ღრუბლიდან (ატომურ ინდექსთან ერთად race-safe); fallback — ლოკალური max
+async function cloudNextNum(){
+  try{ var r=await sb.from('krepa_pickers').select('num').eq('user_id',uid).order('num',{ascending:false}).limit(1);
+    if(!r.error){ if(r.data && r.data.length){ var m=parseInt(r.data[0].num,10); if(!isNaN(m)) return m+1; } return 1; }
+  }catch(e){ console.warn('[cloudNextNum]', e); }
+  var maxn=0; PICKERS.forEach(function(p){ var n=parseInt(p.num,10); if(!isNaN(n)&&n>maxn)maxn=n; });
+  return maxn+1;
+}
 async function registerPicker(){
   var msg=document.getElementById('regMsg');
   var fn=document.getElementById('fFirst').value.trim(), ln=document.getElementById('fLast').value.trim();
   if(!fn||!ln){ msg.innerHTML='<span class="warn">სახელი და გვარი აუცილებელია</span>'; return; }
-  var maxn=0; PICKERS.forEach(function(p){ var n=parseInt(p.num,10); if(!isNaN(n)&&n>maxn)maxn=n; });
   var np={ uid:_uid(), user_id:uid, firstName:fn, lastName:ln, name:fn+' '+ln,
     id:document.getElementById('fId').value.trim(), personal_id:document.getElementById('fId').value.trim(),
     phone:document.getElementById('fPhone').value.trim(), address:document.getElementById('fAddr').value.trim(),
-    bank:document.getElementById('fBank').value.trim(), short_code:'', role:document.getElementById('fRole').value, num:maxn+1 };
+    bank:document.getElementById('fBank').value.trim(), short_code:'', role:document.getElementById('fRole').value };
   np.short_code=np.uid;
-  try{ var r=await sb.from('krepa_pickers').insert(np); if(r.error){ msg.innerHTML='<span class="warn">❌ '+r.error.message+'</span>'; return; } }
-  catch(e){ msg.innerHTML='<span class="warn">❌ '+(e.message||e)+'</span>'; return; }
+  // ── ატომური ნუმერაცია: num ღრუბლიდან; (user_id,num) უნიკალურ ინდექსზე კონფლიქტისას ხელახლა ──
+  var saved=false, lastErr='';
+  for(var attempt=0; attempt<8 && !saved; attempt++){
+    np.num=await cloudNextNum();
+    var r; try{ r=await sb.from('krepa_pickers').insert(np); }catch(e){ r={error:{message:(e.message||e)}}; }
+    if(!r.error){ saved=true; break; }
+    lastErr=r.error.message||''; var code=r.error.code||'';
+    if((code==='23505' || /duplicate/i.test(lastErr)) && /num/i.test(lastErr)) continue; // ნომერი დაკავდა — შემდეგი
+    msg.innerHTML='<span class="warn">❌ '+esc(lastErr)+'</span>'; return;
+  }
+  if(!saved){ msg.innerHTML='<span class="warn">❌ ნომრის მინიჭება ვერ მოხერხდა — სცადე ხელახლა</span>'; return; }
   PICKERS.push(np);
   msg.innerHTML='<span class="ok">✅ დაemატა: #'+np.num+' '+esc(pName(np))+'</span>';
   ['fFirst','fLast','fId','fPhone','fAddr','fBank'].forEach(function(id){ document.getElementById(id).value=''; });
