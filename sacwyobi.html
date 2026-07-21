@@ -26,9 +26,14 @@
 .sw-title{font-size:1.2rem;font-weight:600;color:#f59e0b;display:flex;align-items:center;gap:10px}
 .sw-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
 @media(max-width:700px){.sw-stats{grid-template-columns:repeat(2,1fr)}}
-.sw-stat{background:#f0f6fc;border:1px solid #dde8f5;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:4px}
-.sw-stat-val{font-size:1.6rem;font-weight:600;font-family:'Space Mono',monospace;line-height:1}
-.sw-stat-lbl{font-size:.68rem;color:#2a5a8a;text-transform:uppercase;letter-spacing:.5px}
+/* colorful gradient stat cards (from awonva.html) */
+.stat{border-radius:14px;padding:16px 18px;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);min-width:0;display:flex;flex-direction:column;justify-content:center}
+.stat .lbl{font-size:.72rem;opacity:.92;font-weight:600;line-height:1.25;text-transform:uppercase;letter-spacing:.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.stat .val{font-size:1.7rem;font-weight:800;margin-top:3px;line-height:1.15;font-family:'Space Mono',monospace;word-break:break-word;overflow-wrap:anywhere}
+.s-blue{background:linear-gradient(135deg,#0ea5e9,#0369a1)}
+.s-green{background:linear-gradient(135deg,#10b981,#059669)}
+.s-orange{background:linear-gradient(135deg,#f59e0b,#ea580c)}
+.s-purple{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}
 .sw-tabs{display:flex;gap:2px;border-bottom:1px solid #dde8f5;margin-bottom:20px;overflow-x:auto}
 .sw-tab{padding:10px 18px;font-size:.8rem;font-weight:400;color:#2a5a8a;background:none;border:none;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
 .sw-tab.active{color:#f59e0b;border-bottom-color:#f59e0b}
@@ -102,32 +107,31 @@
   </div>
 
 <div class="sw-wrap">
-  <!-- HEADER -->
-  <div class="sw-header">
-    <div class="sw-title">🏭 მაცივარი / საწყობი</div>
+  <!-- HEADER (action buttons only — title shown once in the top appbar) -->
+  <div class="sw-header" style="justify-content:flex-end">
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="sw-btn sw-btn-outline" onclick="swExportExcel()">📥 Excel ანგარიში</button>
       <button class="sw-btn sw-btn-gold" onclick="swTab('income',null)">+ მიღება</button>
     </div>
   </div>
 
-  <!-- STATS -->
+  <!-- STATS (colorful gradient cards) -->
   <div class="sw-stats">
-    <div class="sw-stat">
-      <div class="sw-stat-val" id="sw-total-kg" style="color:#f59e0b">0</div>
-      <div class="sw-stat-lbl">🧊 სულ მარაგი (კგ)</div>
+    <div class="stat s-green">
+      <div class="lbl">🧊 სულ მარაგი (კგ)</div>
+      <div class="val" id="sw-total-kg">0</div>
     </div>
-    <div class="sw-stat">
-      <div class="sw-stat-val" id="sw-total-lots" style="color:#0369a1">0</div>
-      <div class="sw-stat-lbl">📦 პარტიები</div>
+    <div class="stat s-blue">
+      <div class="lbl">📦 პარტიები</div>
+      <div class="val" id="sw-total-lots">0</div>
     </div>
-    <div class="sw-stat">
-      <div class="sw-stat-val" id="sw-out-total" style="color:#ea580c">0</div>
-      <div class="sw-stat-lbl">📤 გატანილი (კგ)</div>
+    <div class="stat s-orange">
+      <div class="lbl">📤 გატანილი (კგ)</div>
+      <div class="val" id="sw-out-total">0</div>
     </div>
-    <div class="sw-stat">
-      <div class="sw-stat-val" id="sw-temp-cur" style="color:#059669">—°C</div>
-      <div class="sw-stat-lbl">🌡️ ტემპ. ახლა</div>
+    <div class="stat s-purple">
+      <div class="lbl">🌡️ ტემპ. ახლა</div>
+      <div class="val" id="sw-temp-cur">—°C</div>
     </div>
   </div>
 
@@ -430,12 +434,7 @@ function swUpdateStats(){
   const el2=swEl('sw-total-lots'); if(el2) el2.textContent = activeLots;
   const el3=swEl('sw-out-total'); if(el3) el3.textContent = outTotal.toFixed(1);
   const el4=swEl('sw-temp-cur');
-  if(el4){
-    if(lastTemp!==null){
-      el4.textContent = lastTemp+'°C';
-      el4.className = 'sw-stat-val '+(lastTemp<=-1?'sw-temp-ok':lastTemp<=4?'sw-temp-warn':'sw-temp-bad');
-    } else { el4.textContent='—°C'; }
-  }
+  if(el4){ el4.textContent = (lastTemp!==null) ? (lastTemp+'°C') : '—°C'; }
   const liveTemp = swEl('sw-live-temp');
   if(liveTemp && lastTemp!==null){
     liveTemp.textContent = lastTemp+'°C';
@@ -468,6 +467,7 @@ function swRenderStock(){
       <td>${status}</td>
       <td style="white-space:nowrap">
         <button class="sw-btn sw-btn-green" style="padding:4px 12px;font-size:.72rem;margin-right:4px" onclick="swTakeOut('${safeId}')">📤 გატანა</button>
+        <button class="sw-btn sw-btn-outline" style="padding:4px 10px;font-size:.72rem;margin-right:4px" onclick="swEditLot('${safeId}')">✏️</button>
         <button class="sw-btn sw-btn-red" style="padding:4px 10px;font-size:.72rem" onclick="swDeleteLot('${safeId}')">🗑</button>
       </td>
     </tr>`;
@@ -572,6 +572,58 @@ function swDeleteLot(id){
   swNotify('🗑 '+l.lot+' — წაშლილია');
 }
 window.swDeleteLot = swDeleteLot;
+
+// ── EDIT LOT (correction) ──
+function swEditLot(lotId){
+  const l = swLots.find(x=>x.id===lotId);
+  if(!l){ swNotify('⚠️ ლოტი ვ/მ', true); return; }
+  const existing = document.getElementById('sw-edit-modal');
+  if(existing) existing.remove();
+  const bg = document.createElement('div');
+  bg.id = 'sw-edit-modal';
+  bg.className = 'sw-modal-bg';
+  bg.innerHTML = `
+    <div class="sw-modal">
+      <button onclick="document.getElementById('sw-edit-modal').remove()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer">✕</button>
+      <div style="font-size:1rem;font-weight:600;color:#1e3a5f;margin-bottom:16px">✏️ პარტიის კორექტირება</div>
+      <div class="sw-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">
+        <div class="sw-field full"><label>პროდუქტი</label><input id="swe-product" value="${safeAttr(l.product||'')}"></div>
+        <div class="sw-field"><label>პალეტი</label><input id="swe-pallet" value="${safeAttr(l.pallet_code||'')}" oninput="this.value=normalizePalletCode(this.value)"></div>
+        <div class="sw-field"><label>მარაგი (კგ)</label><input type="number" id="swe-remaining" value="${(+l.remaining||0)}" step="0.1" min="0"></div>
+        <div class="sw-field"><label>სეცია</label><input id="swe-section" value="${safeAttr(l.section||'')}"></div>
+        <div class="sw-field"><label>ვადა</label><input type="date" id="swe-expire" value="${safeAttr(l.expire||'')}"></div>
+        <div class="sw-field full"><label>შენიშვნა</label><input id="swe-note" value="${safeAttr(l.note||'')}"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="sw-btn sw-btn-gold" style="flex:1" onclick="swSaveLotEdit('${safeAttr(lotId)}')">💾 შენახვა</button>
+        <button class="sw-btn sw-btn-outline" style="flex:1" onclick="document.getElementById('sw-edit-modal').remove()">გაუქმება</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+}
+window.swEditLot = swEditLot;
+
+function swSaveLotEdit(lotId){
+  const l = swLots.find(x=>x.id===lotId);
+  if(!l){ swNotify('⚠️ ლოტი ვ/მ', true); return; }
+  const product = (document.getElementById('swe-product').value||'').trim();
+  const pallet  = normalizePalletCode(document.getElementById('swe-pallet').value||'');
+  const rem     = parseFloat(document.getElementById('swe-remaining').value);
+  const section = (document.getElementById('swe-section').value||'').trim();
+  const expire  = document.getElementById('swe-expire').value||'';
+  const note    = (document.getElementById('swe-note').value||'').trim();
+  if(product) l.product = product;
+  l.pallet_code = pallet;
+  if(!isNaN(rem) && rem>=0){ l.remaining = +rem.toFixed(3); if(l.remaining > (+l.qty||0)) l.qty = l.remaining; }
+  l.section = section;
+  l.expire  = expire;
+  l.note    = note;
+  swSave();
+  swUpdateStats(); swRenderStock();
+  const m = document.getElementById('sw-edit-modal'); if(m) m.remove();
+  swNotify('✅ პარტია განახლდა');
+}
+window.swSaveLotEdit = swSaveLotEdit;
 
 // ── TEMP LOG ──
 function swLogTemp(){
