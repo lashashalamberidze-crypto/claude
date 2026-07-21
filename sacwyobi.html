@@ -99,7 +99,7 @@
 <div id="app" style="display:none">
   <div id="netbar" class="on">🌐 ონლაინ</div>
   <div class="appbar">
-    <div style="font-size:.9rem;font-weight:700;color:#f59e0b">🏭 მაცივარი / საწყობი</div>
+    <div style="font-size:1.3rem;font-weight:800;color:#f59e0b;letter-spacing:.2px">🏭 მაცივარი / საწყობი</div>
     <div style="font-size:.76rem;text-align:right;display:flex;align-items:center;gap:8px">
       <span>შესული: <b id="whoami" style="color:#0369a1">…</b></span>
       <button onclick="doLogout()">გასვლა</button>
@@ -215,7 +215,10 @@
   <!-- ── TAB: HISTORY ── -->
   <div id="sw-page-history" class="sw-page">
     <div class="sw-card">
-      <div class="sw-card-title">📋 ოპერაციების ისტორია</div>
+      <div class="sw-card-title" style="justify-content:space-between">
+        <span>📋 ოპერაციების ისტორია</span>
+        <span id="sw-unpaid-sum" style="font-size:.72rem;font-weight:600;letter-spacing:0;text-transform:none"></span>
+      </div>
       <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
         <input type="date" id="sw-hist-from" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
         <input type="date" id="sw-hist-to" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
@@ -223,8 +226,8 @@
       </div>
       <div class="sw-table-wrap">
         <table class="sw-table">
-          <thead><tr><th>დრო</th><th>ოპ.</th><th>პარტია</th><th>პროდ.</th><th>კგ</th><th>მიმღ./სეც.</th><th>შენიშ.</th></tr></thead>
-          <tbody id="sw-hist-tbody"><tr><td colspan="7" class="sw-empty">— ისტ. ცარიელია —</td></tr></tbody>
+          <thead><tr><th>დრო</th><th>ოპ.</th><th>პარტია</th><th>პროდ.</th><th>კგ</th><th>მიმღ./სეც.</th><th>გადახდა</th><th>შენიშ.</th></tr></thead>
+          <tbody id="sw-hist-tbody"><tr><td colspan="8" class="sw-empty">— ისტ. ცარიელია —</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -295,7 +298,8 @@ async function sbLoadSacwyobi(userId){
       _sb.from('sacwyobi_ops').select('*').eq('user_id', u).order('date', { ascending:false }),
       _sb.from('sacwyobi_temps').select('*').eq('user_id', u).order('time', { ascending:false })
     ]);
-    return { lots: lRes.data||[], ops: oRes.data||[], temps: tRes.data||[] };
+    const ops = (oRes.data||[]).map(o => ({ ...o, paid: o.paid===true })); // coalesce null → false
+    return { lots: lRes.data||[], ops, temps: tRes.data||[] };
   }catch(e){ return null; }
 }
 async function sacwyobiLoadFromSupabase(){
@@ -530,6 +534,11 @@ function swTakeOut(lotId){
         </div>
         <div class="sw-field full"><label>მიმღები / მყიდველი</label><input id="swt-buyer" placeholder="კომპ. ან პირი"></div>
         <div class="sw-field full"><label>შენიშვნა</label><input id="swt-note" placeholder="ნ.ა."></div>
+        <div class="sw-field full">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-size:.85rem;color:#1e3a5f">
+            <input type="checkbox" id="swt-paid" style="width:18px;height:18px;cursor:pointer"> 💰 გადახდილია?
+          </label>
+        </div>
       </div>
       <div style="display:flex;gap:10px;margin-top:8px">
         <button class="sw-btn sw-btn-green" style="flex:1" onclick="swConfirmTakeOut('${safeAttr(lotId)}')">🚚 გატანა</button>
@@ -548,10 +557,11 @@ function swConfirmTakeOut(lotId){
   const buyer   = (document.getElementById('swt-buyer').value||'').trim();
   const purpose = document.getElementById('swt-purpose').value;
   const note    = (document.getElementById('swt-note').value||'').trim();
+  const paid    = !!(document.getElementById('swt-paid')||{}).checked;
   if(!kg || kg<=0){ swNotify('⚠️ ჩაწერე გასატანი კგ', true); return; }
   if(kg > (+l.remaining||0)){ swNotify('⚠️ მარაგზე მეტია! მარ: '+(+l.remaining).toFixed(1)+'კგ', true); return; }
   l.remaining = +((+l.remaining||0) - kg).toFixed(3);
-  swOps.push({ id:'op_'+Date.now(), type:'out', lot:l.lot, product:l.product, kg, buyer, purpose, note, date:swDate(), time:swNow() });
+  swOps.push({ id:'op_'+Date.now(), type:'out', lot:l.lot, product:l.product, kg, buyer, purpose, note, paid, date:swDate(), time:swNow() });
   swSave();
   swUpdateStats(); swRenderStock(); swRenderHistory();
   const m = document.getElementById('sw-take-modal'); if(m) m.remove();
@@ -664,18 +674,48 @@ function swRenderHistory(){
   let ops = [...swOps].reverse();
   if(from) ops = ops.filter(o=>o.date>=from);
   if(to)   ops = ops.filter(o=>o.date<=to);
-  if(!ops.length){ tbody.innerHTML='<tr><td colspan="7" class="sw-empty">— ისტ. ცარიელია —</td></tr>'; return; }
-  tbody.innerHTML = ops.slice(0,100).map(o=>`<tr>
+  // unpaid summary (out ops only)
+  const sumEl = swEl('sw-unpaid-sum');
+  if(sumEl){
+    const unpaid = swOps.filter(o=>o.type==='out' && o.paid!==true).length;
+    sumEl.innerHTML = unpaid>0 ? '🔴 გადაუხდელი: <b style="color:#dc2626">'+unpaid+'</b>' : '<span style="color:#059669">✓ ყველა გადახდილია</span>';
+  }
+  if(!ops.length){ tbody.innerHTML='<tr><td colspan="8" class="sw-empty">— ისტ. ცარიელია —</td></tr>'; return; }
+  tbody.innerHTML = ops.slice(0,100).map(o=>{
+    let payCell = '<span class="muted">—</span>';
+    if(o.type==='out'){
+      payCell = o.paid===true
+        ? '<span class="sw-badge" style="background:rgba(16,185,129,.12);color:#059669;border:1px solid rgba(16,185,129,.2);cursor:pointer" onclick="swTogglePaid(\''+safeAttr(o.id)+'\')" title="დააჭირე გადაუხდელად">🟢 გადახდილი</span>'
+        : '<span class="sw-badge" style="background:rgba(239,68,68,.1);color:#dc2626;border:1px solid rgba(239,68,68,.2);cursor:pointer" onclick="swTogglePaid(\''+safeAttr(o.id)+'\')" title="დააჭირე გადახდილად">🔴 გადაუხდელი</span>';
+    }
+    return `<tr>
     <td class="muted" style="font-size:.72rem">${safeText(o.time||o.date)}</td>
     <td>${o.type==='in'?'<span class="sw-badge sw-badge-in">📥 მიღ.</span>':'<span class="sw-badge sw-badge-out">📤 გატ.</span>'}</td>
     <td><span class="sw-lot-tag">${safeText(o.lot||'—')}</span></td>
     <td style="font-weight:400">${safeText(o.product||'—')}</td>
     <td style="font-family:'Space Mono',monospace;color:#d97706">${(+o.kg||0).toFixed(1)}</td>
     <td class="muted">${safeText(o.buyer||o.section||'—')}</td>
+    <td>${payCell}</td>
     <td class="muted">${safeText(o.note||'—')} <button onclick="swDeleteOp('${safeAttr(o.id)}')" style="margin-left:6px;background:none;border:none;cursor:pointer;color:#ef4444;font-size:.95rem" title="წაშლა">🗑</button></td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
 }
 window.swRenderHistory = swRenderHistory;
+
+// toggle paid/unpaid on an out-op
+function swTogglePaid(id){
+  const o = swOps.find(x=>x.id===id);
+  if(!o || o.type!=='out') return;
+  o.paid = !(o.paid===true);
+  swSave();
+  swRenderHistory();
+  if(_sb && currentUser && currentUser.id){
+    _sb.from('sacwyobi_ops').update({paid:o.paid}).eq('id', id).eq('user_id', currentUser.id)
+      .then(function(){}).catch(function(e){ console.warn('swTogglePaid', e); });
+  }
+  swNotify(o.paid ? '🟢 მონიშნულია გადახდილად' : '🔴 მონიშნულია გადაუხდელად');
+}
+window.swTogglePaid = swTogglePaid;
 
 function swDeleteOp(id){
   const o = swOps.find(x=>x.id===id);
