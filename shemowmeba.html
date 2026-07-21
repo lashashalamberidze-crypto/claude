@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ყუთის შემოწმება</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:680px;margin:0 auto}
+  h1{font-size:1.1rem;margin:6px 0}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input{width:100%;padding:12px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem}
+  input:focus{outline:none;border-color:#0369a1}
+  button{background:#0369a1;color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:#0369a1;border:1.5px solid #0369a1}
+  button.g{background:#059669}button.r{background:#dc2626}button.o{background:#ea580c}
+  button:active{transform:scale(.98)}
+  .row{display:flex;gap:8px}.row button{flex:1}
+  #scanIn,#scanIn2,#palIn{font-size:1.15rem;font-weight:700;text-align:center;border-color:#0369a1;border-width:2px}
+  .res{border-radius:14px;padding:18px;margin-top:12px;text-align:center;font-weight:700}
+  .ok{background:#dcfce7;border:2px solid #16a34a;color:#166534}
+  .no{background:#fee2e2;border:2px solid #dc2626;color:#991b1b}
+  .res .big{font-size:1.5rem;margin-bottom:6px}
+  .res .det{font-size:.92rem;font-weight:500;line-height:1.8;color:#334155;margin-top:10px;text-align:left;display:inline-block}
+  .stat{display:flex;gap:8px;margin-bottom:12px}
+  .stat>div{flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px;text-align:center}
+  .stat .n{font-size:1.5rem;font-weight:800;line-height:1}
+  .stat .l{font-size:.72rem;color:#64748b;margin-top:3px}
+  table{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:8px}
+  th,td{padding:6px;text-align:left;border-top:1px solid #f1f5f9}
+  th{color:#64748b}
+  .badge{padding:2px 8px;border-radius:20px;font-size:.72rem;font-weight:700}
+  .b-ok{background:#dcfce7;color:#166534}.b-no{background:#fee2e2;color:#991b1b}
+  .muted{font-size:.78rem;color:#94a3b8}
+  .key{font-family:monospace;font-size:.82rem;background:#f1f5f9;padding:2px 6px;border-radius:5px}
+  #reader,#reader2{margin-top:10px;border-radius:12px;overflow:hidden}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+  .dlinfo{font-size:.8rem;color:#0369a1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:9px;margin-top:8px}
+  .tabs{display:flex;gap:8px;margin-bottom:13px}
+  .tabs button{flex:1;margin:0;background:#fff;color:#64748b;border:1.5px solid #e2e8f0}
+  .tabs button.active{background:#0369a1;color:#fff;border-color:#0369a1}
+  .x{color:#dc2626;cursor:pointer;font-weight:800;padding:0 6px}
+  .qbar{background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:9px;font-size:.82rem;color:#92400e;margin-bottom:10px;display:none}
+  .sresults{margin-top:8px}
+  .sres-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:9px;margin-top:6px;background:#fff;cursor:pointer}
+  .sres-row:hover{background:#f8fafc}
+  .sres-row .meta{font-size:.82rem}
+  .sres-row .pal{font-size:.72rem;color:#64748b}
+  .sres-add{background:#0369a1;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:.8rem;font-weight:700;width:auto;margin:0;flex-shrink:0}
+  .sres-hint{font-size:.74rem;color:#94a3b8;margin-top:6px}
+</style>
+</head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>🔍 ყუთის შემოწმება — შესვლა</h1>
+  <label>ელ-ფოსტა</label>
+  <input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label>
+  <input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <h1>🔍 ყუთის შემოწმება</h1>
+    <div style="font-size:.76rem;color:#475569;text-align:right">
+      <div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
+      <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
+    </div>
+  </div>
+
+  <div class="qbar" id="qbar"></div>
+
+  <div class="card">
+    <label>📥 გადმოწერა (ინტერნეტზე ჯერ — მერე ოფლაინ იმუშავებს)</label>
+    <div class="row">
+      <button class="g" onclick="dl(0)">დღევანდელი</button>
+      <button class="g" onclick="dl(6)">ბოლო 7 დღე</button>
+      <button class="g" onclick="dl(-1)">ყველა (სეზონი)</button>
+    </div>
+    <div id="dlstatus" class="dlinfo">ჯერ არ გადმოწერილა — დააჭირე ღილაკს ინტერნეტზე</div>
+  </div>
+
+  <div class="tabs">
+    <button id="tabCheck" class="active" onclick="setMode('check')">🔍 შემოწმება</button>
+    <button id="tabFix" onclick="setMode('fix')">📦 პალეტის გასწორება</button>
+    <button id="tabCode" onclick="setMode('code')">🔧 კოდის გასწორება</button>
+  </div>
+
+  <!-- CHECK MODE -->
+  <div id="modeCheck">
+    <div class="stat">
+      <div><div class="n" id="cChecked" style="color:#0369a1">0</div><div class="l">შემოწმდა</div></div>
+      <div><div class="n" id="cFound" style="color:#16a34a">0</div><div class="l">✅ ჩაწერილია</div></div>
+      <div><div class="n" id="cMiss" style="color:#dc2626">0</div><div class="l">❌ არ არის</div></div>
+    </div>
+    <div class="card">
+      <label>დაასკანერე ან მოძებნე (კოდი, ან მკრეფავის სახელი)</label>
+      <input id="scanIn" placeholder="სკანი ან ძებნა..." autocomplete="off" oninput="onType('check')">
+      <div id="searchResults" class="sresults"></div>
+      <button class="sec" onclick="toggleCam('reader','scanIn',this)">📷 კამერით სკანი</button>
+      <div id="reader"></div>
+      <div id="result"></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <b>შემოწმებული ყუთები</b>
+        <button class="sec" style="width:auto;padding:7px 12px;margin:0;font-size:.8rem" onclick="copyMiss()">❌-ების კოპირება</button>
+      </div>
+      <table><thead><tr><th>#</th><th>კოდი</th><th>სტატ.</th><th>დეტალი</th></tr></thead>
+      <tbody id="logBody"><tr><td colspan="4" class="muted">ჯერ არაფერი</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <!-- FIX MODE -->
+  <div id="modeFix" style="display:none">
+    <!-- 1. პალეტი (ჯერ) -->
+    <div class="card">
+      <div style="font-size:.82rem;color:#475569;margin-bottom:8px">📦 <b>1. ასკანერე პალეტი</b> → ჩამოიტვირთება მისი ყუთები/მკრეფავები. <b>2. ასკანერე ყუთები</b> სათითაოდ (ქვემოთ) → ✅ სწორია / ➕ მიება / 🆕 დაემატება.</div>
+      <label>🎯 სამიზნე პალეტი — მხოლოდ სკანით</label>
+      <input id="palIn" placeholder="დაასკანერე პალეტის QR..." autocomplete="off" readonly style="background:#f8fafc;cursor:not-allowed">
+      <button class="sec" onclick="toggleCam('readerP','palIn',this)" id="palCamBtn">📷 პალეტის სკანი (კამერა)</button>
+      <div id="readerP"></div>
+      <div class="muted" style="margin-top:6px">USB-სკანერითაც: დააჭირე ველს და დაასკანერე.</div>
+      <div id="assignMsg" style="font-size:.85rem;margin-top:8px"></div>
+      <div id="palContents" style="margin-top:10px"></div>
+    </div>
+
+    <!-- 2. ყუთის სკანი (მერე, სათითაოდ) -->
+    <div class="card">
+      <div style="font-size:.82rem;margin-bottom:6px"><span id="vtally" style="color:#0369a1;font-weight:600"></span></div>
+      <label>ყუთის სკანი ან ძებნა (კოდი / მკრეფავის სახელი)</label>
+      <input id="scanIn2" placeholder="სკანი ან ძებნა..." autocomplete="off" oninput="onType('fix')">
+      <div id="searchResults2" class="sresults"></div>
+      <button class="sec" onclick="toggleCam('reader2','scanIn2',this)">📷 კამერით სკანი</button>
+      <button class="o" onclick="addUnidentified()" style="width:100%;margin-top:6px">🚫 ვერ იდენტიფიცირდა — დაამატე პალეტს</button>
+      <div id="reader2"></div>
+      <div id="fixMsg" style="font-size:.85rem;margin-top:8px"></div>
+    </div>
+
+    <!-- 3. მონიშნული (batch — სათადარიგო) -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <b>მონიშნული ყუთები: <span id="markCount" style="color:#0369a1">0</span></b>
+        <button class="sec" style="width:auto;padding:6px 12px;margin:0;font-size:.78rem" onclick="clearMarks()">გასუფთავება</button>
+      </div>
+      <table><thead><tr><th>კოდი</th><th>მკრეფავი</th><th>ახლანდ. პალეტი</th><th></th></tr></thead>
+      <tbody id="markBody"><tr><td colspan="4" class="muted">ჯერ არცერთი</td></tr></tbody></table>
+      <button class="g" onclick="assignPallet()" id="assignBtn" style="margin-top:10px">✅ მიაკუთვნე მონიშნული ყუთები ამ პალეტს</button>
+      <button class="sec" onclick="assignNoPallet()" style="margin-top:6px">🚫 პალეტის გარეშე (გაასუფთავე)</button>
+    </div>
+
+    <div class="card" id="queueCard" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <b>⏳ რიგში (ჯერ არ გასინქრონებული): <span id="qCount">0</span></b>
+        <button class="o" style="width:auto;padding:7px 14px;margin:0;font-size:.82rem" onclick="syncQueue()">🔄 სინქრონიზაცია</button>
+      </div>
+      <div class="muted" style="margin-top:6px">ინტერნეტზე ავტომატურად გასინქრონდება.</div>
+    </div>
+  </div>
+  <div id="modeCode" style="display:none">
+    <div class="card">
+      <div style="font-size:.82rem;color:#475569;margin-bottom:8px">🔧 <b>1. ასკანერე პალეტი</b> → გამოჩნდება ყუთები წონებით. <b>2. ასკანერე ყუთის ლეიბი.</b> <b>3. დააჭირე</b> იმ ყუთს, რომლის წონაც ემთხვევა ხელში დაჭერილს — კოდი ჩაანაცვლდება. წონა/რიგი/SMS <b>არ იცვლება</b>.</div>
+      <input id="codePal" placeholder="1️⃣ პალეტი (PAL-XXXXXX-XXXX)" autocomplete="off" onchange="codeSetPallet(this.value)">
+      <button class="sec" onclick="toggleCam('readerCodeP','codePal',this)">📷 პალეტის სკანი</button>
+      <div id="readerCodeP"></div>
+      <input id="codeScan" placeholder="2️⃣ ლეიბი, ან სახელი/გვარი..." autocomplete="off" style="margin-top:8px" onchange="codeArm(this.value)">
+      <button class="sec" onclick="toggleCam('readerCode','codeScan',this)">📷 ლეიბის სკანი</button>
+      <div id="readerCode"></div>
+      <div id="codeMsg" style="font-size:.9rem;margin-top:8px"></div>
+      <div id="codeBoxes" style="margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+let sb=null, uid=null, log=[], busy=false, lastCode="", lastT=0, MODE='check';
+let camObj=null, camOn=false, searchTimer=null;
+let DB={idx:{},recs:[],meta:null};
+let marks=[]; // {lbl,id,n,pal}
+let queue=[]; // {id,lbl,pallet}
+
+function norm(s){ return (s==null?'':s).toString().trim().toUpperCase(); }
+function lastSeg(s){ var n=norm(s); if(n.indexOf('|')>=0){ var p=n.split('|'); return p[p.length-1]; } return n; }
+
+function idbOpen(){ return new Promise(function(res,rej){ var r=indexedDB.open('checkStore',1); r.onupgradeneeded=function(){ try{ r.result.createObjectStore('kv'); }catch(e){} }; r.onsuccess=function(){ res(r.result); }; r.onerror=function(){ rej(r.error); }; }); }
+function idbSet(key,val){ return idbOpen().then(function(db){ return new Promise(function(res,rej){ var tx=db.transaction('kv','readwrite'); tx.objectStore('kv').put(val,key); tx.oncomplete=function(){ db.close(); res(true); }; tx.onerror=function(){ db.close(); rej(tx.error); }; }); }); }
+function idbGet(key){ return idbOpen().then(function(db){ return new Promise(function(res,rej){ var tx=db.transaction('kv','readonly'); var g=tx.objectStore('kv').get(key); g.onsuccess=function(){ db.close(); res(g.result); }; g.onerror=function(){ db.close(); rej(g.error); }; }); }); }
+
+function init(){
+  ['check_db','check_db2','check_db3','check_db4','check_db5'].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+  try{ var q=JSON.parse(localStorage.getItem('check_queue')||'[]'); if(Array.isArray(q)) queue=q; }catch(e){}
+  if(window.supabase){ try{ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); }catch(e){} }
+  window.addEventListener('online',function(){ updateNet(); syncQueue(); });
+  window.addEventListener('offline',updateNet);
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('./sw-check.js'); }catch(e){} }
+  idbGet('db').then(function(d){ if(d&&d.idx&&d.recs) DB=d; afterDbLoad(); }).catch(function(){ afterDbLoad(); });
+}
+function afterDbLoad(){
+  if(sb){ sb.auth.getSession().then(({data})=>{ if(data&&data.session){ uid=data.session.user.id; showApp(); } else { offlineOrLogin(); } }).catch(offlineOrLogin); }
+  else { offlineOrLogin(); }
+}
+function offlineOrLogin(){ if(DB.recs&&DB.recs.length){ showApp(); } else { var e=document.getElementById('loginErr'); if(e&&!navigator.onLine) e.textContent='ოფლაინ ხარ და მონაცემი არ არის გადმოწერილი — ჯერ ინტერნეტზე გადმოწერე.'; } }
+function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ — გადმოწერილზე მუშაობს'; } renderQueue(); }
+
+async function doLogin(){
+  const email=document.getElementById('email').value.trim(), pass=document.getElementById('pass').value;
+  const err=document.getElementById('loginErr'); err.textContent='';
+  if(!email||!pass){ err.textContent='შეავსე ორივე'; return; }
+  try{ const {data,error}=await sb.auth.signInWithPassword({email,password:pass}); if(error) throw error; uid=data.user.id; showApp(); }
+  catch(e){ err.textContent='ვერ მოხერხდა: '+(e.message||e); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+function showApp(){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  updateNet(); renderDlStatus(); renderQueue(); focus1();
+  if(sb){ sb.auth.getUser().then(({data})=>{ var em=(data&&data.user&&data.user.email)||'-'; var el=document.getElementById('whoami'); if(el) el.textContent=em; }).catch(function(){}); }
+  else { var el2=document.getElementById('whoami'); if(el2) el2.textContent='ოფლაინ'; }
+  if(navigator.onLine && uid) syncQueue();
+}
+function focus1(){ var el=document.getElementById(MODE==='check'?'scanIn':'scanIn2'); if(el) el.focus(); }
+function setMode(m){ MODE=m;
+  document.getElementById('modeCheck').style.display = m==='check'?'block':'none';
+  document.getElementById('modeFix').style.display = m==='fix'?'block':'none';
+  var _mc=document.getElementById('modeCode'); if(_mc) _mc.style.display = m==='code'?'block':'none';
+  document.getElementById('tabCheck').className = m==='check'?'active':'';
+  document.getElementById('tabFix').className = m==='fix'?'active':'';
+  var _tc=document.getElementById('tabCode'); if(_tc) _tc.className = m==='code'?'active':'';
+  clearSearch(); focus1();
+}
+
+function renderDlStatus(){
+  var s=document.getElementById('dlstatus'); if(!s)return;
+  if(DB.meta){ var when=new Date(DB.meta.at).toLocaleString('ka-GE');
+    s.innerHTML='✅ გადმოწერილია <b>'+DB.meta.count+' ყუთი</b> ('+DB.meta.label+') · '+when; }
+  else { s.innerHTML='ჯერ არ გადმოწერილა — დააჭირე ღილაკს ინტერნეტზე'; }
+}
+
+async function dl(daysBack){
+  if(!navigator.onLine){ alert('📴 ინტერნეტი არ არის — გადმოწერა ინტერნეტზე ჯერ.'); return; }
+  var s=document.getElementById('dlstatus');
+  var from=null, label='ყველა სეზონი';
+  if(daysBack>=0){ var d=new Date(); d.setDate(d.getDate()-daysBack); from=d.toISOString().slice(0,10); label=(daysBack===0?'დღევანდელი':('ბოლო '+(daysBack+1)+' დღე')); }
+  s.innerHTML='გადმოწერა...';
+  try{
+    var recs=[], idx={}, total=0, page=0, size=1000;
+    while(true){
+      var q=sb.from('harvest_sessions').select('id,code,short_code,picker_name,date,time,weight,kg,pallet_code,source,quarter,row_num');
+      q=q.eq('user_id',uid); if(from) q=q.gte('date',from);
+      var r=await q.range(page*size,(page+1)*size-1);
+      if(r.error) throw r.error;
+      var rows=(r.data||[]).filter(x=>x.source!=='sms_phantom');
+      rows.forEach(function(x){
+        var i=recs.length;
+        var lbl=(x.short_code||lastSeg(x.code)||'').toString();
+        recs.push([x.picker_name||'', +(x.weight||x.kg)||0, (x.date||'').toString().slice(0,10), (x.time||'').toString().slice(11,19)||(x.time||'').toString().slice(0,8), x.pallet_code||'', x.id, lbl, x.quarter||'', x.row_num||'']);
+        var k1=lastSeg(x.code), k2=norm(x.short_code);
+        if(k1) idx[k1]=i; if(k2&&k2!==k1) idx[k2]=i;
+      });
+      total+=rows.length; s.innerHTML='გადმოწერა... '+total+' ყუთი';
+      if(!r.data || r.data.length<size) break; page++; if(page>40) break;
+    }
+    DB={idx:idx,recs:recs,meta:{count:total,label:label,at:new Date().toISOString()}};
+    try{
+      await idbSet('db', DB);
+      renderDlStatus();
+      alert('✅ გადმოწერილია '+total+' ყუთი — ოფლაინაც შენახულია (ტაბი შეგიძლია დახურო).');
+    }catch(qe){
+      renderDlStatus();
+      s.innerHTML='⚠️ ჩამოიტვირთა '+total+', მაგრამ ოფლაინ შენახვა ვერ მოხერხდა — ფანჯარა ღია დატოვე';
+      alert('⚠️ '+total+' ყუთი ჩამოიტვირთა, მაგრამ ოფლაინ შენახვა ვერ მოხერხდა: '+(qe.message||qe));
+    }
+  }catch(e){ s.innerHTML='❌ ვერ მოხერხდა: '+(e.message||e); }
+}
+
+function recAt(i){ var r=DB.recs[i]; if(!r) return null; return {n:r[0],kg:r[1],d:r[2],tm:r[3],pal:r[4],id:r[5],lbl:r[6]||'',q:r[7]||'',rw:r[8]||''}; }
+function localLookup(code){ var i=DB.idx[lastSeg(code)]; if(i==null) i=DB.idx[norm(code)]; return (i==null)?null:recAt(i); }
+
+// ── live search (picker name OR code) ──
+function onType(mode){
+  var inp=document.getElementById(mode==='check'?'scanIn':'scanIn2');
+  var q=inp.value.trim();
+  if(searchTimer) clearTimeout(searchTimer);
+  if(q.length<2){ clearSearch(); return; }
+  searchTimer=setTimeout(function(){ doSearch(mode,q); }, 220);
+}
+function clearSearch(){ var a=document.getElementById('searchResults'),b=document.getElementById('searchResults2'); if(a)a.innerHTML=''; if(b)b.innerHTML=''; }
+function doSearch(mode,q){
+  var Q=norm(q), out=[], seen={}, i;
+  for(i=0;i<DB.recs.length && out.length<40;i++){
+    var r=DB.recs[i];
+    if(norm(r[0]).indexOf(Q)>=0 || norm(r[6]).indexOf(Q)>=0){ if(!seen[i]){ seen[i]=1; out.push(i); } }
+  }
+  renderSearch(mode,out,q);
+}
+function renderSearch(mode,idxs,q){
+  var box=document.getElementById(mode==='check'?'searchResults':'searchResults2');
+  if(!idxs.length){ box.innerHTML='<div class="sres-hint">ვერ მოიძებნა „'+q+'" (გადმოწერილში)</div>'; return; }
+  var html=idxs.map(function(i){ var r=recAt(i);
+    var palTxt=r.pal?('📦 '+r.pal):'<span style="color:#dc2626">პალეტი არ აქვს</span>';
+    var act=(mode==='fix')?'<button class="sres-add" onclick="event.stopPropagation();markByIndex('+i+')">➕ მონიშვნა</button>':'';
+    return '<div class="sres-row" onclick="pickResult(\''+mode+'\','+i+')"><div class="meta"><b>'+(r.n||'-')+'</b> · '+(+r.kg||0).toFixed(1)+'კგ<br><span class="key">'+(r.lbl||'-')+'</span> <span class="pal">'+r.d+' · '+palTxt+'</span></div>'+act+'</div>';
+  }).join('');
+  box.innerHTML='<div class="sres-hint">'+idxs.length+' ნაპოვნი'+(idxs.length>=40?'+ (აკონკრეტე)':'')+'</div>'+html;
+}
+function pickResult(mode,i){ if(mode==='fix'){ markByIndex(i); } else { showHitByIndex(i); } }
+
+// ── CHECK ──
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter') return;
+  var a=document.activeElement; if(!a) return;
+  if(a.id==='scanIn'){ var v=a.value.trim(); if(v) check(v); a.value=''; clearSearch(); e.preventDefault(); }
+  else if(a.id==='scanIn2'){ var v2=a.value.trim(); if(v2){ if(palOk((document.getElementById('palIn').value||'').trim())) verifyAttach(v2); else markBox(v2); } a.value=''; clearSearch(); e.preventDefault(); }
+  else if(a.id==='palIn'){ e.preventDefault(); document.getElementById('assignBtn').focus(); }
+});
+
+// პალეტის ველი: მხოლოდ სკანერი (სწრაფი აკრეფა). ნელი ხელით აკრეფა იბლოკება.
+(function(){
+  var buf='', lastK=0;
+  document.addEventListener('keydown', function(e){
+    var a=document.activeElement;
+    if(!a || a.id!=='palIn') return;
+    var now=Date.now();
+    if(e.key==='Enter'){
+      if(buf.length>=3){ setPallet(buf); }
+      buf=''; e.preventDefault(); return;
+    }
+    if(e.key.length===1){
+      // სკანერი სწრაფად ტიპავს (<50ms კლავიშებს შორის); ხელით — ნელა
+      if(now-lastK>120) buf='';
+      buf+=e.key; lastK=now;
+      e.preventDefault(); // ველში პირდაპირ არ ჩავწეროთ (readonly)
+    }
+  }, true);
+})();
+function palOk(v){ return /^PAL-\d{6}-\d{4}$/i.test((v||'').toString().trim()); }
+function setPallet(code){
+  var v=(code||'').toString().trim().toUpperCase();
+  var msg=document.getElementById('assignMsg');
+  if(!palOk(v)){
+    document.getElementById('palIn').value='';
+    var pc0=document.getElementById('palContents'); if(pc0) pc0.innerHTML='';
+    if(msg) msg.innerHTML='<span style="color:#dc2626">❌ არასწორი პალეტი: „'+v+'". მხოლოდ PAL-XXXXXX-XXXX მიიღება — თავიდან დაასკანერე.</span>';
+    return;
+  }
+  document.getElementById('palIn').value=v;
+  if(msg) msg.innerHTML='<span style="color:#16a34a">📦 პალეტი დასკანერდა: '+v+'</span>';
+  loadPalletContents(v);
+}
+async function loadPalletContents(pal){
+  var el=document.getElementById('palContents'); if(!el) return;
+  el.innerHTML='<div class="muted">⏳ იტვირთება პალეტის ყუთები...</div>';
+  var rows=[];
+  // ჯერ ოფლაინ ქეშიდან (გადმოწერილი) — მაცივარში ინტერნეტი არ არის
+  try{ if(DB && DB.recs && DB.recs.length){ DB.recs.forEach(function(r){ if((r[4]||'')===pal){ rows.push({picker_name:r[0], weight:r[1], quarter:r[7], row_num:r[8]}); } }); } }catch(e){}
+  // თუ ქეშში არ არის და ონლაინ ვართ — ცოცხალი ბაზა
+  if(!rows.length && navigator.onLine && uid && sb){
+    try{ var r=await sb.from('harvest_sessions').select('picker_name,quarter,row_num,weight').eq('user_id',uid).eq('pallet_code',pal); if(!r.error) rows=r.data||[]; }catch(e){}
+  }
+  if(!rows.length){
+    var off=(!navigator.onLine)?' (ოფლაინ — ჯერ გადმოწერე ონლაინზე)':'';
+    el.innerHTML='<div class="muted" style="background:#fffbeb;color:#92400e;padding:9px;border-radius:9px;text-align:center">📦 '+pal+' — ამ პალეტზე ყუთი ვერ მოიძებნა'+off+'.<br>ასკანერე ყუთები სათითაოდ ⬇️ და მიაბი.</div>'; return;
+  }
+  var kg=0, noPick=0, byPick={};
+  rows.forEach(function(x){ kg+=(+x.weight||0); var nm=(x.picker_name||'').trim(); if(!nm||nm==='ვერ იდენტიფიცირდა'||nm==='უცნობი') noPick++; else byPick[nm]=(byPick[nm]||0)+1; });
+  var np=Object.keys(byPick).length;
+  var h='<div style="font-weight:800;background:#dcfce7;color:#166534;padding:9px;border-radius:9px;text-align:center;margin-bottom:6px">📦 '+pal+'<br>'+rows.length+' ყუთი · '+(Math.round(kg*10)/10).toFixed(1)+' კგ · 👥 '+np+' მკრეფავი</div>';
+  if(noPick) h+='<div style="background:#fef2f2;color:#dc2626;padding:8px;border-radius:8px;margin-bottom:6px;font-weight:600;text-align:center">⚠️ '+noPick+' ყუთს მკრეფავი აკლია — სათითაოდ გადაამოწმე ⬇️</div>';
+  h+='<table><thead><tr><th>#</th><th>მკრეფავი</th><th>სექტ/რიგი</th><th>კგ</th></tr></thead><tbody>';
+  rows.forEach(function(x,i){ var nm=(x.picker_name||'').trim(); var bad=(!nm||nm==='ვერ იდენტიფიცირდა'||nm==='უცნობი'); var sr=((x.quarter?x.quarter+'/':'')+(x.row_num||''))||'—'; h+='<tr'+(bad?' style="background:#fef2f2"':'')+'><td>'+(i+1)+'</td><td>'+(bad?'<span style="color:#dc2626">⚠️ '+(nm||'ვერ იდენტიფიცირდა')+'</span>':nm)+'</td><td class="muted">'+sr+'</td><td><b>'+(+x.weight||0).toFixed(1)+'</b></td></tr>'; });
+  h+='</tbody></table>';
+  el.innerHTML=h;
+}
+
+function showHit(hit,seg,src){
+  showResult('<div class="big">✅ ჩაწერილია</div>','ok','<div class="det"><b>კოდი:</b> <span class="key">'+(seg||hit.lbl||'-')+'</span><br>👤 მკრეფავი: <b>'+(hit.n||'-')+'</b><br>⚖️ წონა: <b>'+(+hit.kg||0).toFixed(2)+' კგ</b><br>📅 თარიღი: <b>'+(hit.d||'-')+' '+(hit.tm||'')+'</b>'+(hit.pal?('<br>📦 პალეტი: <b>'+hit.pal+'</b>'):'<br>📦 პალეტი: <span style="color:#dc2626">არ აქვს</span>')+(src?('<br><span class="muted">წყარო: '+src+'</span>'):'')+'</div>');
+}
+function showHitByIndex(i){ var r=recAt(i); if(r){ setMode('check'); showHit(r,r.lbl,'გადმოწერილი'); addLog(r.lbl||'-',true,(r.n||'')+' · '+(+r.kg||0).toFixed(1)+'კგ'); clearSearch(); document.getElementById('scanIn').value=''; } }
+
+async function pickerStat(code){
+  var parts=String(code||'').split('|'), pUid=parts[0]||'';
+  if(!pUid || pUid.indexOf('P')!==0) return null;
+  var count=0, name='';
+  if(navigator.onLine && uid && sb){
+    try{ var pr=await sb.from('harvest_sessions').select('picker_name',{count:'exact'}).eq('user_id',uid).ilike('code',pUid+'|%').limit(1);
+      count=(pr.count!=null)?pr.count:((pr.data||[]).length);
+      name=(pr.data&&pr.data[0])?pr.data[0].picker_name:'';
+    }catch(e){}
+  }
+  if(!name){ try{ if(DB&&DB.recs){ for(var i=0;i<DB.recs.length;i++){ /* name fallback not stored by uid */ } } }catch(e){} }
+  return {uid:pUid, pos:(parts[4]||''), count:count, name:name};
+}
+async function check(code){
+  if(busy) return; var now=Date.now(); if(code===lastCode&&(now-lastT)<700) return; lastCode=code; lastT=now;
+  busy=true; showResult('<div class="muted">მოწმდება...</div>',''); var seg=lastSeg(code);
+  try{
+    var hit=localLookup(code), src='გადმოწერილი';
+    if(!hit && navigator.onLine && uid){ var rows=await cloudLookup(code,seg); if(rows.length){ var r=rows[0]; hit={n:r.picker_name,kg:+(r.weight||r.kg)||0,d:(r.date||'').slice(0,10),tm:((r.time||'').slice(11,19)||(r.time||'').slice(0,8)),pal:r.pallet_code||'',id:r.id,lbl:r.short_code||seg}; src='ღრუბელი'; } }
+    var ps=await pickerStat(code);
+    busy=false;
+    var pInfo='';
+    if(ps){ pInfo = ps.count>0 ? ('<br>✅ მკრეფავი გატარებულია (ოდესმე): <b>'+ps.count+'</b> ყუთი') : ('<br><span style="color:#dc2626;font-weight:700">❌ ეს მკრეფავი საერთოდ არ არის ბაზაში!</span>'); }
+    if(hit){
+      showResult('<div class="big">✅ ჩაწერილია</div>','ok','<div class="det"><b>კოდი:</b> <span class="key">'+(seg||hit.lbl||'-')+'</span><br>👤 მკრეფავი: <b>'+(hit.n||'-')+'</b><br>⚖️ წონა: <b>'+(+hit.kg||0).toFixed(2)+' კგ</b><br>📅 თარიღი: <b>'+(hit.d||'-')+' '+(hit.tm||'')+'</b>'+(hit.pal?('<br>📦 პალეტი: <b>'+hit.pal+'</b>'):'<br>📦 პალეტი: <span style="color:#dc2626">არ აქვს</span>')+pInfo+(src?('<br><span class="muted">წყარო: '+src+'</span>'):'')+'</div>');
+      addLog(seg,true,(hit.n||'')+' · '+(+hit.kg||0).toFixed(1)+'კგ');
+    } else if(ps && (ps.name||ps.count>0)){
+      showResult('<div class="big" style="color:#ea580c">⚠️ ეს ყუთი ბაზაში არ არის</div>','no','<div class="det"><b>კოდი:</b> <span class="key">'+seg+'</span><br>👤 მკრეფავი: <b>'+(ps.name||ps.uid)+'</b>'+pInfo+'<br>📦 პოზიცია '+(ps.pos||'-')+': <span style="color:#dc2626;font-weight:700">ვერ მოიძებნა</span><br><span class="muted">⚠️ იქნებ აუწონავი ყუთია (პალეტზე მოხვდა, აწონვა გამოტოვდა), ან სხვა კოდით ჩაიწერა. სანამ დაამატებ — დარწმუნდი მართლა აუწონავია.</span></div>');
+      addLog(seg,false,'ყუთი არ არის ('+(ps.name||'')+')');
+    } else {
+      var off=!navigator.onLine?'<br><span class="muted">(ოფლაინ — გადმოწერილში ვეძებე)</span>':'';
+      showResult('<div class="big">❌ არ არის ჩაწერილი</div>','no','<div class="det"><b>კოდი:</b> <span class="key">'+seg+'</span><br>ვერ მოიძებნა.'+off+'</div>'); addLog(seg,false,'არ არის');
+    }
+  }catch(e){ busy=false; showResult('<div class="big">⚠️ შეცდომა</div>','no','<div class="det">'+(e.message||e)+'</div>'); }
+  focus1();
+}
+async function cloudLookup(code,seg){
+  var sel='id,picker_name,date,time,weight,kg,pallet_code,code,short_code,source';
+  var r=await sb.from('harvest_sessions').select(sel).eq('user_id',uid).eq('code',code).limit(5);
+  var rows=(r.data||[]).filter(x=>x.source!=='sms_phantom');
+  if(!rows.length&&seg){ var r2=await sb.from('harvest_sessions').select(sel).eq('user_id',uid).eq('short_code',seg).limit(5); rows=(r2.data||[]).filter(x=>x.source!=='sms_phantom'); }
+  if(!rows.length&&seg){ var r3=await sb.from('harvest_sessions').select(sel).eq('user_id',uid).ilike('code','%'+seg).limit(5); rows=(r3.data||[]).filter(x=>x.source!=='sms_phantom'); }
+  // პრეფიქსით ძებნა: მკრეფავი|თარიღი|||პოზიცია (სუფიქსის უგულებელყოფა — ხელახლა ბეჭდილი ლეიბლებისთვის)
+  if(!rows.length && code && code.indexOf('|')>=0){
+    var _pfx=code.substring(0, code.lastIndexOf('|')+1);
+    if(_pfx.length>10){
+      var r4=await sb.from('harvest_sessions').select(sel).eq('user_id',uid).ilike('code',_pfx+'%').limit(5);
+      rows=(r4.data||[]).filter(x=>x.source!=='sms_phantom');
+      rows.forEach(function(x){ x._prefixMatch=true; });
+    }
+  }
+  return rows;
+}
+function showResult(big,cls,det){ document.getElementById('result').innerHTML='<div class="res '+(cls||'')+'">'+big+(det||'')+'</div>'; }
+function addLog(seg,ok,det){ log.unshift({seg:seg,ok:ok,det:det}); renderLog(); }
+function renderLog(){
+  document.getElementById('cChecked').textContent=log.length;
+  document.getElementById('cFound').textContent=log.filter(x=>x.ok).length;
+  document.getElementById('cMiss').textContent=log.filter(x=>!x.ok).length;
+  var b=document.getElementById('logBody'); if(!log.length){ b.innerHTML='<tr><td colspan="4" class="muted">ჯერ არაფერი</td></tr>'; return; }
+  b.innerHTML=log.map(function(x,i){ return '<tr><td>'+(log.length-i)+'</td><td class="key">'+x.seg+'</td><td><span class="badge '+(x.ok?'b-ok">✅':'b-no">❌')+'</span></td><td class="muted">'+x.det+'</td></tr>'; }).join('');
+}
+function copyMiss(){ var m=log.filter(x=>!x.ok).map(x=>x.seg).join('\n'); if(!m){ alert('❌ არ არის — ყველაფერი ჩაწერილია 🎉'); return; } navigator.clipboard.writeText(m).then(()=>alert('დაკოპირდა '+log.filter(x=>!x.ok).length+' კოდი')).catch(()=>prompt('არ-ჩაწერილი:',m)); }
+
+// ── FIX (re-palletize) ──
+var _lastNotFound='';
+function registerScanned(code){
+  if(!code){ return; }
+  var seg=lastSeg(code), id=_uuid(), d=_todayLocal();
+  if(marks.find(function(m){return m.code===code || (m.lbl===seg && m.isNew);})){ document.getElementById('fixMsg').innerHTML='<span style="color:#ea580c">⚠️ უკვე მონიშნულია: '+seg+'</span>'; return; }
+  marks.push({lbl:seg, id:id, n:'უცნობი', pal:'', isNew:true, weight:UNID_DEFAULT_KG, code:code, date:d});
+  document.getElementById('fixMsg').innerHTML='<span style="color:#16a34a">➕ დარეგისტრირდა: <b>'+seg+'</b> · '+UNID_DEFAULT_KG+'კგ — მიაკუთვნე პალეტს</span>';
+  renderMarks(); clearSearch(); var inp=document.getElementById('scanIn2'); if(inp) inp.value=''; focus1();
+}
+var _pendAttach=null;
+var _vt={ok:0,att:0,add:0,miss:0};
+function _tally(k){ if(_vt[k]!=null) _vt[k]++; var el=document.getElementById('vtally'); if(el) el.innerHTML='✅ სწორი: '+_vt.ok+' · ➕ მიება: '+_vt.att+' · 🆕 დაემატა: '+_vt.add+' · ❌ ვერ: '+_vt.miss; }
+async function verifyAttach(code){
+  var pal=(document.getElementById('palIn').value||'').trim(), msg=document.getElementById('fixMsg');
+  if(!palOk(pal)){ markBox(code); return; }
+  var seg=lastSeg(code); _pendAttach=null;
+  var hit=localLookup(code);
+  try{ if(!hit && navigator.onLine && uid){ var rows=await cloudLookup(code,seg); if(rows.length){ var r=rows[0]; hit={n:r.picker_name,kg:+(r.weight||r.kg)||0,pal:r.pallet_code||'',id:r.id,lbl:r.short_code||seg}; } } }catch(e){}
+  if(!hit){ _lastNotFound=code; msg.innerHTML='<span style="color:#dc2626">❌ ვერ მოიძებნა ბაზაში: '+seg+'</span><br><button class="o" style="width:100%;margin-top:6px" onclick="addUnidentified()">➕ დაამატე ეს ყუთი (მკრეფავი + წონა) → პალეტზე</button>'; _tally('miss'); focus1(); return; }
+  if(!hit.id){ msg.innerHTML='<span style="color:#dc2626">⚠️ id არ აქვს — გადმოწერე ხელახლა</span>'; focus1(); return; }
+  if((hit.pal||'')===pal){ msg.innerHTML='<span style="color:#16a34a">✅ '+seg+' — უკვე ამ პალეტზეა · 👤 '+(hit.n||'-')+'</span>'; _tally('ok'); focus1(); return; }
+  _pendAttach={id:hit.id, seg:seg, n:hit.n};
+  var other=hit.pal?('სხვა პალეტი: <b>'+hit.pal+'</b>'):'პალეტი <b>არ აქვს</b>';
+  msg.innerHTML='<div>⚠️ <b>'+seg+'</b> · 👤 '+(hit.n||'-')+' · '+other+'</div><button class="g" style="width:100%;margin-top:6px" onclick="attachPending()">➕ მიაბი ამ პალეტს ('+pal+')</button>';
+  focus1();
+}
+function attachPending(){
+  if(!_pendAttach) return; var pal=(document.getElementById('palIn').value||'').trim();
+  if(!palOk(pal)) return;
+  queue.push({id:_pendAttach.id, lbl:_pendAttach.seg, pallet:pal, isNew:false, picker:_pendAttach.n});
+  saveQueue(); _tally('att');
+  document.getElementById('fixMsg').innerHTML='<span style="color:#16a34a">✅ მიება: '+_pendAttach.seg+' → '+pal+'</span>';
+  _pendAttach=null; renderQueue(); if(navigator.onLine && uid) syncQueue(); focus1();
+}
+function markBox(code){
+  var seg=lastSeg(code), hit=localLookup(code), msg=document.getElementById('fixMsg');
+  if(!hit){
+    var _nf=function(txt){ _lastNotFound=code; msg.innerHTML='<span style="color:#dc2626">'+txt+'</span><br><button class="o" style="width:100%;margin-top:6px" onclick="addUnidentified()">➕ დაამატე ეს ყუთი (მკრეფავი + წონა)</button>'; };
+    if(navigator.onLine && uid){ cloudLookup(code,seg).then(function(rows){ if(rows.length){ var r=rows[0]; addMark(r.short_code||seg,r.id,r.picker_name,r.pallet_code); } else { _nf('❌ ვერ მოიძებნა ბაზაში: '+seg); } }); }
+    else { _nf('❌ ვერ მოიძებნა გადმოწერილში: '+seg); }
+    focus1(); return;
+  }
+  if(!hit.id){ msg.innerHTML='<span style="color:#dc2626">⚠️ id არ აქვს — გადმოწერე ხელახლა</span>'; focus1(); return; }
+  addMark(hit.lbl||seg,hit.id,hit.n,hit.pal);
+}
+function markByIndex(i){ var r=recAt(i); if(!r){ return; } if(!r.id){ document.getElementById('fixMsg').innerHTML='<span style="color:#dc2626">⚠️ id არ აქვს — გადმოწერე ხელახლა</span>'; return; } addMark(r.lbl,r.id,r.n,r.pal); }
+function _uuid(){ return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);}); }
+function _todayLocal(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+var UNID_DEFAULT_KG=5.3; /* დამატებული ყუთის default ნეტო წონა (შესაცვლელი) */
+function _price(){ return parseFloat(localStorage.getItem('its_price')||'1.5')||1.5; }
+function _genCode(){ var cs='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', c='CHK-'; for(var i=0;i<6;i++){ c+=cs[Math.floor(Math.random()*cs.length)]; } return c; }
+function _nowTime(){ var d=new Date(); return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()+' '+d.getHours()+':'+('0'+d.getMinutes()).slice(-2); }
+function _uniquePickers(){
+  var set={}, out=[];
+  for(var i=0;i<DB.recs.length;i++){ var nm=(DB.recs[i][0]||'').toString().trim(); if(nm && nm!=='ვერ იდენტიფიცირდა' && nm!=='უცნობი' && !set[nm]){ set[nm]=1; out.push(nm); } }
+  out.sort(function(a,b){ return a.localeCompare(b,'ka'); });
+  return out;
+}
+function addUnidentified(){
+  var pickers=_uniquePickers();
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;padding:34px 14px;';
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;padding:16px;max-width:430px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.35)">'
+    +'<div style="font-weight:700;margin-bottom:8px">👤 რომელი მკრეფავია?</div>'
+    +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><span style="font-weight:600;white-space:nowrap">⚖️ წონა (კგ):</span><input id="_upWt" type="number" step="0.1" min="0" value="5.3" style="flex:1;padding:9px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;box-sizing:border-box"></div>'
+    +'<input id="_upSearch" placeholder="აკრიფე სახელი..." autocomplete="off" style="width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;box-sizing:border-box">'
+    +'<div id="_upList" style="max-height:320px;overflow:auto;margin-top:8px"></div>'
+    +'<button id="_upCancel" style="background:#fff;color:#64748b;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px;width:100%;margin-top:8px;font-weight:600;cursor:pointer">გაუქმება</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  var inp=ov.querySelector('#_upSearch'), list=ov.querySelector('#_upList');
+  function close(){ try{ ov.remove(); }catch(e){} }
+  function pick(name){ var w=parseFloat((ov.querySelector('#_upWt')||{}).value); close(); _finishUnid(name, w); }
+  function render(q){
+    q=(q||'').trim().toUpperCase(); list.innerHTML='';
+    var un=document.createElement('div'); un.className='sres-row'; un.innerHTML='<div class="meta"><b>❓ უცნობი</b> — სახელის გარეშე</div>'; un.onclick=function(){ pick(''); }; list.appendChild(un);
+    var shown=0;
+    for(var i=0;i<pickers.length && shown<50;i++){ var nm=pickers[i]; if(!q || nm.toUpperCase().indexOf(q)>=0){ (function(name){ var row=document.createElement('div'); row.className='sres-row'; row.innerHTML='<div class="meta"><b>'+name+'</b></div>'; row.onclick=function(){ pick(name); }; list.appendChild(row); })(nm); shown++; } }
+    if(!shown && q){ var e=document.createElement('div'); e.className='sres-hint'; e.textContent='ვერ მოიძებნა „'+inp.value+'"'; list.appendChild(e); }
+  }
+  ov.querySelector('#_upCancel').onclick=close;
+  inp.oninput=function(){ render(inp.value); };
+  render(''); setTimeout(function(){ inp.focus(); },50);
+}
+function _finishUnid(pickerName, wt, pickerId){
+  wt=parseFloat(wt); if(!(wt>0)) wt=UNID_DEFAULT_KG;
+  pickerName=(pickerName||'').toString().trim()||'ვერ იდენტიფიცირდა';
+  var code=_genCode(), id=_uuid(), d=_todayLocal(), pr=_price(), ea=Math.round(wt*pr*100)/100, tm=_nowTime();
+  var msg=document.getElementById('fixMsg');
+  var pal=(document.getElementById('palIn')?document.getElementById('palIn').value:'')||''; pal=pal.trim();
+  if(palOk(pal)){
+    queue.push({id:id, lbl:code, pallet:pal, isNew:true, picker:pickerName, weight:wt, code:code, date:d, price:pr, earned:ea, picker_id:pickerId||'', time:tm});
+    saveQueue(); if(typeof _tally==='function') _tally('add');
+    if(msg) msg.innerHTML='<span style="color:#16a34a">🆕 დაემატა და მიება პალეტს ('+pal+'): <b>'+wt.toFixed(1)+'კგ</b> × '+pr+' = '+ea.toFixed(2)+'₾ · 👤 '+pickerName+'</span>';
+    renderQueue(); if(navigator.onLine && uid) syncQueue();
+  } else {
+    marks.push({lbl:code, id:id, n:pickerName, pal:'', isNew:true, weight:wt, code:code, date:d, price:pr, earned:ea, picker_id:pickerId||'', time:tm});
+    if(msg) msg.innerHTML='<span style="color:#16a34a">➕ დაემატა ნამდვილი ყუთი: <b>'+wt.toFixed(1)+'კგ</b> × '+pr+' = '+ea.toFixed(2)+'₾ · 👤 '+pickerName+' — ⬇️ ახლა მიაკუთვნე პალეტს</span>';
+    renderMarks();
+  }
+  focus1();
+}
+function addMark(lbl,id,picker,pal){
+  if(marks.find(function(m){return m.id===id;})){ document.getElementById('fixMsg').innerHTML='<span style="color:#ea580c">⚠️ უკვე მონიშნულია: '+lbl+'</span>'; return; }
+  marks.push({lbl:lbl,id:id,n:picker||'',pal:pal||''});
+  document.getElementById('fixMsg').innerHTML='<span style="color:#16a34a">✅ მონიშნულია: '+lbl+'</span>';
+  renderMarks(); clearSearch(); var inp=document.getElementById('scanIn2'); if(inp) inp.value=''; focus1();
+}
+function rmMark(id){ marks=marks.filter(function(m){return m.id!==id;}); renderMarks(); }
+function clearMarks(){ marks=[]; renderMarks(); }
+function renderMarks(){
+  document.getElementById('markCount').textContent=marks.length;
+  var b=document.getElementById('markBody'); if(!marks.length){ b.innerHTML='<tr><td colspan="4" class="muted">ჯერ არცერთი</td></tr>'; return; }
+  b.innerHTML=marks.map(function(m){ var tag=m.isNew?' <span style="color:#ea580c;font-size:.68rem">🚫</span>':''; return '<tr><td class="key">'+m.lbl+tag+'</td><td>'+(m.n||'-')+'</td><td class="muted">'+(m.pal||'—')+'</td><td><span class="x" onclick="rmMark(\''+m.id+'\')">✕</span></td></tr>'; }).join('');
+}
+async function assignNoPallet(){
+  var msg=document.getElementById('assignMsg');
+  if(!marks.length){ msg.innerHTML='<span style="color:#dc2626">ჯერ მონიშნე ყუთები</span>'; return; }
+  if(!confirm(marks.length+' ყუთს მოეხსნება პალეტი (პალეტის გარეშე დარჩება).\n\nგავაგრძელო?')) return;
+  marks.forEach(function(m){ queue.push({id:m.id, lbl:m.lbl, pallet:'', isNew:!!m.isNew, picker:m.n, weight:m.weight||0, code:m.code||m.lbl, date:m.date, price:m.price, earned:m.earned, picker_id:m.picker_id, time:m.time}); });
+  saveQueue(); var nn=marks.length; marks=[]; renderMarks();
+  document.getElementById('palIn').value='';
+  msg.innerHTML='<span style="color:#16a34a">✅ '+nn+' ყუთი ჩაიდო რიგში → პალეტის გარეშე</span>';
+  renderQueue(); if(navigator.onLine && uid) syncQueue();
+}
+async function assignPallet(){
+  var pal=document.getElementById('palIn').value.trim(), msg=document.getElementById('assignMsg');
+  if(!marks.length){ msg.innerHTML='<span style="color:#dc2626">ჯერ მონიშნე ყუთები</span>'; return; }
+  if(!pal){ msg.innerHTML='<span style="color:#dc2626">დაასკანერე სამიზნე პალეტი (ან „პალეტის გარეშე")</span>'; return; }
+  if(!palOk(pal)){ msg.innerHTML='<span style="color:#dc2626">❌ არასწორი პალეტი. მხოლოდ PAL-XXXXXX-XXXX — თავიდან დაასკანერე.</span>'; return; }
+  if(!confirm(marks.length+' ყუთი მიეკუთვნება პალეტს:\n'+pal+'\n\nგავაგრძელო?')) return;
+  marks.forEach(function(m){ queue.push({id:m.id, lbl:m.lbl, pallet:pal, isNew:!!m.isNew, picker:m.n, weight:m.weight||0, code:m.code||m.lbl, date:m.date, price:m.price, earned:m.earned, picker_id:m.picker_id, time:m.time}); });
+  saveQueue(); var n=marks.length; marks=[]; renderMarks();
+  document.getElementById('palIn').value='';
+  msg.innerHTML='<span style="color:#16a34a">✅ '+n+' ყუთი ჩაიდო რიგში → '+pal+'</span>';
+  renderQueue(); if(navigator.onLine && uid) syncQueue();
+}
+function saveQueue(){ try{ localStorage.setItem('check_queue', JSON.stringify(queue)); }catch(e){} }
+function renderQueue(){
+  var card=document.getElementById('queueCard'), bar=document.getElementById('qbar');
+  document.getElementById('qCount').textContent=queue.length;
+  if(queue.length){ card.style.display='block'; bar.style.display='block'; bar.innerHTML='⏳ '+queue.length+' ცვლილება რიგშია'+(navigator.onLine?' — ვასინქრონებ...':' (ოფლაინ — ინტერნეტზე გასინქრონდება)'); }
+  else { card.style.display='none'; bar.style.display='none'; }
+}
+let syncing=false;
+async function syncQueue(){
+  if(syncing || !queue.length || !navigator.onLine || !sb || !uid) return;
+  syncing=true; var done=0, fail=0, remain=[], lastErr='';
+  for(var i=0;i<queue.length;i++){ var q=queue[i];
+    try{ var r;
+      if(q.isNew){
+        var nrow={ id:q.id, user_id:uid, picker_name:q.picker||'ვერ იდენტიფიცირდა', picker_id:q.picker_id||'', weight:q.weight, kg:q.weight, price:(q.price||_price()), earned:(q.earned!=null?q.earned:Math.round((q.weight||0)*_price()*100)/100), date:q.date, time:(q.time||_nowTime()), code:q.code, short_code:q.lbl, box_num:'', pallet_code:q.pallet, quarter:'', row_num:null, source:'krepa_bulk' };
+        r=await sb.from('harvest_sessions').insert(nrow);
+      } else if(q.op==='code'){
+        r=await sb.from('harvest_sessions').update({code:q.code, short_code:q.short}).eq('user_id',uid).eq('id',q.id);
+      } else {
+        r=await sb.from('harvest_sessions').update({pallet_code:q.pallet}).eq('user_id',uid).eq('id',q.id);
+      }
+      if(r.error){ fail++; lastErr=r.error.message||''; remain.push(q); } else { done++; } }
+    catch(e){ fail++; lastErr=(e.message||e); remain.push(q); }
+  }
+  queue=remain; saveQueue(); renderQueue(); syncing=false;
+  var bar=document.getElementById('qbar');
+  if(done){ bar.style.display='block'; bar.innerHTML='✅ '+done+' ცვლილება გასინქრონდა'+(fail?(' · ❌ '+fail+' დარჩა'):''); if(!queue.length) setTimeout(function(){ bar.style.display='none'; },3000); }
+  else if(fail){ bar.style.display='block'; bar.innerHTML='❌ ვერ გასინქრონდა ('+fail+')'+(lastErr?(': '+lastErr):''); }
+}
+
+// ── camera ──
+function toggleCam(readerId, inputId, btn){
+  if(camOn){ if(camObj){ camObj.stop().then(()=>{ camObj.clear(); camOn=false; btn.textContent='📷 კამერით სკანი'; document.getElementById(readerId).innerHTML=''; }); } return; }
+  camObj=new Html5Qrcode(readerId);
+  camObj.start({facingMode:"environment"},{fps:10,qrbox:220},function(txt){ var t=txt.trim(); if(inputId==='scanIn') check(t); else if(inputId==='palIn'){ setPallet(t); } else if(inputId==='codePal'){ codeSetPallet(t); } else if(inputId==='codeScan'){ codeArm(t); } else markBox(t); },function(){}).then(()=>{ camOn=true; btn.textContent='⏹ გაჩერება'; }).catch(e=>alert('კამერა ვერ ჩაირთო: '+e));
+}
+// ── CODE FIX (კოდის გასწორება) ──
+var _armed=null, _codePal='', _codeDone={}, _codeFilter='';
+function _codeGen(){ var cs='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', c='CHK-'; for(var i=0;i<6;i++){ c+=cs[Math.floor(Math.random()*cs.length)]; } return c; }
+function _normUid(x){ return String(x||'').replace(/^P/i,'').replace(/_/g,'').trim().toUpperCase(); }
+function _pickReg(){ try{ return JSON.parse(localStorage.getItem('its_p')||localStorage.getItem('its_pickers')||'[]')||[]; }catch(e){ return []; } }
+function _nameByLabel(label){
+  var parts=String(label||'').split('|'), uid=parts[0]||'', sh=parts[parts.length-1]||'';
+  var reg=_pickReg();
+  for(var i=0;i<reg.length;i++){ var pk=reg[i];
+    if(_normUid(pk.uid)===_normUid(uid) || (sh && _normUid(pk.shortCode)===_normUid(sh))){
+      return ((pk.firstName||'')+' '+(pk.lastName||'')).trim() || (pk.name||'');
+    }
+  }
+  return '';
+}
+function _regNames(){ var reg=_pickReg(), out=[]; for(var i=0;i<reg.length;i++){ var nm=((reg[i].firstName||'')+' '+(reg[i].lastName||'')).trim()||(reg[i].name||''); if(nm) out.push(nm); } return out; }
+function _matchPickerName(q){
+  q=norm(q); if(!q) return '';
+  // сначала точное имя из реестра
+  var names=_regNames();
+  for(var i=0;i<names.length;i++){ if(norm(names[i])===q) return names[i]; }
+  // затем — по именам, которые реально есть на этом паллете (частичное совпадение)
+  var rows=_palRows(), seen={};
+  for(var j=0;j<rows.length;j++){ var nm=(rows[j][0]||'').trim(); if(nm && norm(nm).indexOf(q)>=0 && !seen[nm]){ seen[nm]=1; return nm; } }
+  return '';
+}
+function codeSetPallet(v){
+  v=(v||'').toString().trim().toUpperCase(); var msg=document.getElementById('codeMsg');
+  if(!palOk(v)){ document.getElementById('codePal').value=''; if(msg) msg.innerHTML='<span style="color:#dc2626">❌ არასწორი პალეტი — PAL-XXXXXX-XXXX</span>'; return; }
+  _codePal=v; _codeFilter=''; _armed=null; document.getElementById('codePal').value=v;
+  if(msg) msg.innerHTML='<span style="color:#16a34a">📦 პალეტი: '+v+' — ახლა ასკანერე ან აკრიფე ყუთის ლეიბი</span>';
+  codeRenderBoxes();
+}
+function _palRows(){ var rows=[]; try{ DB.recs.forEach(function(r){ if((r[4]||'')===_codePal){ rows.push(r); } }); }catch(e){} return rows; }
+function codeRenderBoxes(){
+  var el=document.getElementById('codeBoxes'); if(!el) return;
+  if(!_codePal){ el.innerHTML='<div class="muted">ჯერ ასკანერე პალეტი ⬆️</div>'; return; }
+  var all=_palRows();
+  if(!all.length){ el.innerHTML='<div class="muted" style="background:#fffbeb;color:#92400e;padding:9px;border-radius:9px;text-align:center">📦 '+_codePal+' — ყუთი ვერ მოიძებნა (ონლაინ ჯერ გადმოწერე).</div>'; return; }
+  var bound=0; all.forEach(function(r){ if(_codeDone[r[5]]) bound++; });
+  var rows=all, filtNote='';
+  if(_codeFilter){ rows=all.filter(function(r){ return norm(r[0])===norm(_codeFilter); }); filtNote='<div style="background:#eff6ff;color:#0369a1;padding:7px;border-radius:8px;text-align:center;margin-bottom:6px;font-weight:600">👤 '+_codeFilter+' — '+rows.length+' ყუთი <button class="o" style="width:auto;padding:3px 10px;margin:0 0 0 6px;font-size:.78rem" onclick="_codeFilter=\'\';codeRenderBoxes()">ყველა</button></div>'; }
+  var h='<div style="font-weight:800;background:#dcfce7;color:#166534;padding:9px;border-radius:9px;text-align:center;margin-bottom:6px">📦 '+_codePal+' · '+all.length+' ყუთი · ✅ მიბმული: '+bound+' / '+all.length+'</div>'+filtNote;
+  if(_armed){ h+='<div style="background:#eff6ff;border:1.5px solid #0369a1;border-radius:10px;padding:8px;text-align:center;margin-bottom:6px">🏷️ <b>'+_armed.short+'</b> — 👇 დააჭირე ყუთს (წონით)</div>'; }
+  h+='<div style="font-size:.8rem;color:#475569;margin-bottom:6px">დააჭირე ყუთს, რომლის წონაც ემთხვევა ხელში დაჭერილს:</div>';
+  h+='<table><thead><tr><th>წონა</th><th>მკრეფავი</th><th>რიგი</th><th></th></tr></thead><tbody>';
+  rows.forEach(function(r){ var id=r[5], done=_codeDone[id]; var sr=((r[7]?r[7]+'/':'')+(r[8]||''))||'—';
+    h+='<tr style="'+(done?'background:#dcfce7':'cursor:pointer')+'"'+(done?'':' onclick="codeAssign(\''+id+'\')"')+'><td><b>'+(+r[1]||0).toFixed(1)+'</b></td><td>'+(r[0]||'—')+'</td><td class="muted">'+sr+'</td><td>'+(done?'✅ მიბმულია':'👆')+'</td></tr>';
+  });
+  h+='</tbody></table>'; el.innerHTML=h;
+}
+function codeArm(label){
+  label=(label||'').toString().trim(); var msg=document.getElementById('codeMsg'); if(!label) return;
+  if(palOk(label.toUpperCase())){ codeSetPallet(label); return; }
+  if(!_codePal){ if(msg) msg.innerHTML='<span style="color:#dc2626">❌ ჯერ ასკანერე პალეტი</span>'; return; }
+  var inp=document.getElementById('codeScan'); if(inp) inp.value='';
+  var isLabel = label.indexOf('|')>=0;
+  var nm, sh, codeToUse;
+  if(isLabel){
+    // лейбл: код с лейбла
+    sh=lastSeg(label); nm=_nameByLabel(label); codeToUse={code:label, short:sh};
+  } else {
+    // имя/фамилия: находим сборщика, код генерируем сами (заглушка)
+    nm=_matchPickerName(label);
+    if(!nm){ if(msg) msg.innerHTML='<span style="color:#dc2626">❌ ვერ ვიპოვე მკრეფავი: „'+label+'"</span>'; return; }
+    var gc=_codeGen(); sh=gc; codeToUse={code:gc, short:gc};
+  }
+  _armed=codeToUse; _codeFilter = nm || '';
+  var mine = _codeFilter ? _palRows().filter(function(r){ return norm(r[0])===norm(_codeFilter) && !_codeDone[r[5]]; }) : [];
+  if(_codeFilter && mine.length===1){ codeAssign(mine[0][5]); return; }
+  if(_codeFilter && mine.length>1){ if(msg) msg.innerHTML='<span style="color:#0369a1">'+(isLabel?('🏷️ '+sh):'👤')+' · <b>'+_codeFilter+'</b> — '+mine.length+' ყუთი, აირჩიე წონით 👇</span>'; }
+  else if(_codeFilter && mine.length===0){ if(msg) msg.innerHTML='<span style="color:#ea580c">👤 '+_codeFilter+' — ამ პალეტზე თავისუფალი ყუთი აღარ არის</span>'; }
+  else { if(msg) msg.innerHTML='<span style="color:#ea580c">🏷️ '+sh+' — 👤 ვერ ვცანი, აირჩიე ხელით 👇</span>'; }
+  codeRenderBoxes();
+}
+function codeAssign(id){
+  var msg=document.getElementById('codeMsg');
+  if(!_armed){ if(msg) msg.innerHTML='<span style="color:#dc2626">❌ ჯერ ასკანერე ლეიბი ან სახელი, მერე დააჭირე ყუთს</span>'; return; }
+  if(_codeDone[id]) return;
+  // найти имя+вес привязанного ящика для показа
+  var nm='', wt=''; try{ for(var i=0;i<DB.recs.length;i++){ if(DB.recs[i][5]===id){ nm=(DB.recs[i][0]||''); wt=(+DB.recs[i][1]||0).toFixed(1); break; } } }catch(e){}
+  queue.push({ id:id, op:'code', code:_armed.code, short:_armed.short });
+  saveQueue(); _codeDone[id]=true;
+  if(msg) msg.innerHTML='<span style="color:#16a34a">✅ მიება: <b>'+_armed.short+'</b> → 👤 '+(nm||'—')+(wt?(' · ⚖️ '+wt+' კგ'):'')+' → ✅ გამწვანდა</span>';
+  _armed=null; _codeFilter='';
+  codeRenderBoxes(); renderQueue(); if(navigator.onLine && uid) syncQueue();
+}
+init();
+</script>
+</body>
+</html>

@@ -2103,7 +2103,7 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.7)}
 
 /* Map */
 #plantationMap{
-  height:280px;border-radius:12px;
+  height:clamp(340px,58vh,600px);border-radius:12px;
   overflow:hidden;border:1px solid #0f2845;
   margin-bottom:12px;
 }
@@ -4763,7 +4763,7 @@ document.addEventListener('keydown', function(e){
         <!-- STEP 3: Map + Save -->
         <div id="plS3" style="display:none">
           <div style="font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">პლანტაციის კონტური (სურვილისამებრ)</div>
-          <div id="plMap" style="height:320px;border-radius:12px;overflow:hidden;margin-bottom:10px;border:1px solid var(--border)"></div>
+          <div id="plMap" style="height:clamp(380px,64vh,660px);border-radius:12px;overflow:hidden;margin-bottom:10px;border:1px solid var(--border)"></div>
           <div style="font-size:.72rem;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
             <span>🖊 დააკლიკე რუკაზე კუთხეების დასამატებლად · 🟢 წერტილი გადაათრიე გადასაადგილებლად · დააჭირე წერტილს წასაშლელად</span>
             <span id="plArea" style="color:var(--green2);font-weight:400;font-family:'Space Mono',monospace"></span>
