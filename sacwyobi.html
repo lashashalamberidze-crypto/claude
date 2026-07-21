@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏭 საწყობი / მაცივარი</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<style>
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:1340px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05);max-width:520px;margin-left:auto;margin-right:auto}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff}
+  input:focus,select:focus{outline:none;border-color:#0369a1}
+  .card button{background:#0369a1;color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  .card button:active{transform:scale(.98)}
+  .muted{font-size:.8rem;color:#64748b}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+  .appbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;max-width:1300px;margin:0 auto 6px;padding:0 24px}
+  .appbar button{background:#fff;color:#0369a1;border:1.5px solid #0369a1;padding:5px 10px;border-radius:8px;font-size:.72rem;font-weight:700;cursor:pointer}
+
+/* ── SACWYOBI MODULE STYLES (unified LIGHT theme) ── */
+.sw-wrap{max-width:1300px;margin:0 auto;padding:12px 24px 40px}
+.sw-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap}
+.sw-title{font-size:1.2rem;font-weight:600;color:#f59e0b;display:flex;align-items:center;gap:10px}
+.sw-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+@media(max-width:700px){.sw-stats{grid-template-columns:repeat(2,1fr)}}
+.sw-stat{background:#f0f6fc;border:1px solid #dde8f5;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.sw-stat-val{font-size:1.6rem;font-weight:600;font-family:'Space Mono',monospace;line-height:1}
+.sw-stat-lbl{font-size:.68rem;color:#2a5a8a;text-transform:uppercase;letter-spacing:.5px}
+.sw-tabs{display:flex;gap:2px;border-bottom:1px solid #dde8f5;margin-bottom:20px;overflow-x:auto}
+.sw-tab{padding:10px 18px;font-size:.8rem;font-weight:400;color:#2a5a8a;background:none;border:none;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.sw-tab.active{color:#f59e0b;border-bottom-color:#f59e0b}
+.sw-tab:hover:not(.active){color:#0369a1}
+.sw-page{display:none}.sw-page.active{display:block}
+.sw-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:900px){.sw-grid{grid-template-columns:1fr}}
+.sw-card{background:#ffffff;border:1px solid #dde8f5;border-radius:16px;padding:22px}
+.sw-card-title{font-size:.85rem;font-weight:500;color:#2a5a8a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.sw-form{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media(max-width:600px){.sw-form{grid-template-columns:1fr}}
+.sw-field{margin-bottom:12px}
+.sw-field label{display:block;font-size:.72rem;color:#2a5a8a;font-weight:400;margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
+.sw-field input,.sw-field select,.sw-field textarea{width:100%;padding:10px 13px;background:#f7fafd;border:1px solid #dde8f5;border-radius:9px;color:#1e3a5f;font-family:inherit;font-size:.88rem;outline:none;transition:border-color .2s}
+.sw-field input:focus,.sw-field select:focus,.sw-field textarea:focus{border-color:#f59e0b}
+.sw-field.full{grid-column:span 2}
+@media(max-width:600px){.sw-field.full{grid-column:span 1}}
+.sw-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;font-family:inherit;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;border:none}
+.sw-btn-gold{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;box-shadow:0 2px 12px rgba(245,158,11,.3)}
+.sw-btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(245,158,11,.4)}
+.sw-btn-outline{background:transparent;border:1px solid #cbd5e1;color:#2a5a8a}
+.sw-btn-outline:hover{border-color:#f59e0b;color:#f59e0b}
+.sw-btn-red{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);color:#ef4444}
+.sw-btn-red:hover{background:rgba(239,68,68,.2)}
+.sw-btn-green{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+.sw-btn-row{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
+.sw-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid #dde8f5}
+.sw-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.sw-table thead th{padding:10px 12px;text-align:left;background:#0369a1;color:#fff;font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #dde8f5;white-space:nowrap}
+.sw-table tbody tr{border-bottom:1px solid #eef2f7;transition:background .15s}
+.sw-table tbody tr:hover{background:#f0f6fc}
+.sw-table tbody td{padding:9px 12px;vertical-align:middle;color:#1e3a5f}
+.sw-table td.muted{color:#2a5a8a;font-size:.75rem}
+.sw-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.68rem;font-weight:500}
+.sw-badge-in{background:rgba(16,185,129,.12);color:#059669;border:1px solid rgba(16,185,129,.2)}
+.sw-badge-out{background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2)}
+.sw-badge-res{background:rgba(14,165,233,.1);color:#0369a1;border:1px solid rgba(14,165,233,.2)}
+.sw-temp-box{display:flex;align-items:center;gap:8px;background:#f0f6fc;border:1px solid #dde8f5;border-radius:12px;padding:14px 18px;margin-bottom:10px}
+.sw-temp-icon{font-size:1.6rem}
+.sw-temp-val{font-size:1.8rem;font-weight:600;font-family:'Space Mono',monospace}
+.sw-temp-ok{color:#059669}.sw-temp-warn{color:#d97706}.sw-temp-bad{color:#ef4444}
+.sw-temp-label{font-size:.7rem;color:#2a5a8a;margin-top:2px}
+.sw-notify{position:fixed;bottom:24px;right:24px;z-index:9999;padding:13px 22px;border-radius:12px;background:#fff;border:1px solid #dde8f5;color:#1e3a5f;font-size:.85rem;font-weight:400;transform:translateY(80px);opacity:0;transition:all .35s;pointer-events:none;max-width:320px;box-shadow:0 6px 24px rgba(15,23,42,.14)}
+.sw-notify.show{transform:translateY(0);opacity:1}
+.sw-empty{text-align:center;color:#2a5a8a;padding:28px 0;font-size:.82rem}
+.sw-lot-tag{display:inline-block;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);color:#b45309;border-radius:6px;padding:2px 8px;font-size:.7rem;font-weight:400;font-family:'Space Mono',monospace}
+.sw-progress-bar{height:6px;border-radius:3px;background:#eef2f7;overflow:hidden;margin-top:6px}
+.sw-progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#f59e0b,#fbbf24);transition:width .5s}
+.sw-modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.sw-modal{background:#fff;border:1px solid #dde8f5;border-radius:16px;padding:24px;width:min(94vw,400px);position:relative;box-shadow:0 20px 60px rgba(15,23,42,.25)}
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>🏭 საწყობი — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+  <div class="appbar">
+    <div style="font-size:.9rem;font-weight:700;color:#f59e0b">🏭 მაცივარი / საწყობი</div>
+    <div style="font-size:.76rem;text-align:right;display:flex;align-items:center;gap:8px">
+      <span>შესული: <b id="whoami" style="color:#0369a1">…</b></span>
+      <button onclick="doLogout()">გასვლა</button>
+    </div>
+  </div>
+
+<div class="sw-wrap">
+  <!-- HEADER -->
+  <div class="sw-header">
+    <div class="sw-title">🏭 მაცივარი / საწყობი</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="sw-btn sw-btn-outline" onclick="swExportExcel()">📥 Excel ანგარიში</button>
+      <button class="sw-btn sw-btn-gold" onclick="swTab('income',null)">+ მიღება</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="sw-stats">
+    <div class="sw-stat">
+      <div class="sw-stat-val" id="sw-total-kg" style="color:#f59e0b">0</div>
+      <div class="sw-stat-lbl">🧊 სულ მარაგი (კგ)</div>
+    </div>
+    <div class="sw-stat">
+      <div class="sw-stat-val" id="sw-total-lots" style="color:#0369a1">0</div>
+      <div class="sw-stat-lbl">📦 პარტიები</div>
+    </div>
+    <div class="sw-stat">
+      <div class="sw-stat-val" id="sw-out-total" style="color:#ea580c">0</div>
+      <div class="sw-stat-lbl">📤 გატანილი (კგ)</div>
+    </div>
+    <div class="sw-stat">
+      <div class="sw-stat-val" id="sw-temp-cur" style="color:#059669">—°C</div>
+      <div class="sw-stat-lbl">🌡️ ტემპ. ახლა</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="sw-tabs">
+    <button class="sw-tab active" onclick="swTab('stock',this)">📦 მარაგი</button>
+    <button class="sw-tab" onclick="swTab('income',this)">📥 მიღება</button>
+    <button class="sw-tab" onclick="swTab('temp',this)">🌡️ ტემპ.</button>
+    <button class="sw-tab" onclick="swTab('history',this)">📋 ისტორია</button>
+  </div>
+
+  <!-- ── TAB: STOCK ── -->
+  <div id="sw-page-stock" class="sw-page active">
+    <div class="sw-card">
+      <div class="sw-card-title">📦 მიმდინარე მარაგი — რა დევს მაცივარში</div>
+      <div class="sw-table-wrap">
+        <table class="sw-table">
+          <thead><tr>
+            <th>პარტ.</th><th>პალეტი</th><th>პროდუქტი</th><th>მარაგი (კგ)</th><th>სეცია</th><th>ვადა</th><th>მდგ.</th><th></th>
+          </tr></thead>
+          <tbody id="sw-stock-tbody"><tr><td colspan="8" class="sw-empty">— მარაგი ცარიელია —</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: INCOME ── -->
+  <div id="sw-page-income" class="sw-page">
+    <div class="sw-card" style="max-width:640px">
+      <div class="sw-card-title">📥 პალეტის მოთავსება მაცივარში</div>
+      <div class="sw-form">
+        <div class="sw-field full"><label>პალეტის QR / კოდი <span style="color:#64748b">(არასავალდებულო)</span></label><input id="sw-in-pallet" placeholder="PAL-260520-0001" oninput="this.value=normalizePalletCode(this.value)"></div>
+        <div class="sw-field"><label>პროდუქტი *</label><input id="sw-in-product" placeholder="მოცვი პრემიუმ"></div>
+        <div class="sw-field"><label>რაოდ. (კგ) *</label><input type="number" id="sw-in-kg" placeholder="500" min="0.1" step="0.1"></div>
+        <div class="sw-field"><label>სეცია / კამერა</label><input id="sw-in-section" placeholder="A1"></div>
+        <div class="sw-field"><label>ტემპ. (°C)</label><input type="number" id="sw-in-temp" placeholder="-2" step="0.1"></div>
+        <div class="sw-field"><label>ვადა</label><input type="date" id="sw-in-expire"></div>
+        <div class="sw-field"><label>პარტია № (ნ.ა.)</label><input id="sw-in-lot" placeholder="ავტო"></div>
+        <div class="sw-field full"><label>შენიშვნა</label><input id="sw-in-note" placeholder="მომწოდებელი, ხარისხი..."></div>
+      </div>
+      <div class="sw-btn-row">
+        <button class="sw-btn sw-btn-gold" onclick="swAddIncome()">✅ მიღება</button>
+        <button class="sw-btn sw-btn-outline" onclick="swClearIncomeForm()">🗑 გასუფთ.</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: TEMP LOG ── -->
+  <div id="sw-page-temp" class="sw-page">
+    <div class="sw-grid">
+      <div class="sw-card">
+        <div class="sw-card-title">🌡️ ტემპ. ჩაწერა</div>
+        <div class="sw-temp-box">
+          <div class="sw-temp-icon">❄️</div>
+          <div>
+            <div class="sw-temp-val sw-temp-ok" id="sw-live-temp">—°C</div>
+            <div class="sw-temp-label">ბოლო ჩანაწერი</div>
+          </div>
+        </div>
+        <div class="sw-form" style="margin-top:12px">
+          <div class="sw-field"><label>სეცია</label><input id="sw-temp-sec" placeholder="A1"></div>
+          <div class="sw-field"><label>ტემპ. (°C) *</label><input type="number" id="sw-temp-val" placeholder="-2" step="0.1"></div>
+          <div class="sw-field full"><label>შენიშვნა</label><input id="sw-temp-note" placeholder="ნ.ა."></div>
+        </div>
+        <div class="sw-btn-row">
+          <button class="sw-btn sw-btn-gold" onclick="swLogTemp()">🌡️ ჩაწერა</button>
+        </div>
+      </div>
+      <div class="sw-card">
+        <div class="sw-card-title">🌡️ ტემპ. ჟურნალი</div>
+        <div class="sw-table-wrap">
+          <table class="sw-table">
+            <thead><tr><th>თარიღი/საათი</th><th>სეცია</th><th>ტემპ. (°C)</th><th>სტ.</th><th>შენიშ.</th></tr></thead>
+            <tbody id="sw-temp-tbody"><tr><td colspan="5" class="sw-empty">— ჩანაწერი არ არის —</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: HISTORY ── -->
+  <div id="sw-page-history" class="sw-page">
+    <div class="sw-card">
+      <div class="sw-card-title">📋 ოპერაციების ისტორია</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <input type="date" id="sw-hist-from" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
+        <input type="date" id="sw-hist-to" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
+        <button class="sw-btn sw-btn-outline" onclick="swRenderHistory()">🔍 ფილტრი</button>
+      </div>
+      <div class="sw-table-wrap">
+        <table class="sw-table">
+          <thead><tr><th>დრო</th><th>ოპ.</th><th>პარტია</th><th>პროდ.</th><th>კგ</th><th>მიმღ./სეც.</th><th>შენიშ.</th></tr></thead>
+          <tbody id="sw-hist-tbody"><tr><td colspan="7" class="sw-empty">— ისტ. ცარიელია —</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /sw-wrap -->
+<div class="sw-notify" id="sw-notif"></div>
+
+</div><!-- /app -->
+
+<script>
+// ══════════════════════════════════════════════════════
+//  STANDALONE GLOBALS / STUBS (replaces index.html deps)
+// ══════════════════════════════════════════════════════
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+let sb=null;          // supabase client
+let _sb=null;         // warehouse code references _sb — same client
+let uid=null;         // logged-in user id
+let currentUser=null; // warehouse code references currentUser / currentUser.id
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+// safeText / safeAttr — ported from index.html
+function safeText(v){ if(v===null||v===undefined) return ''; return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;').replace(/`/g,'&#96;'); }
+function safeAttr(v){ if(v===null||v===undefined) return ''; return String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#039;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+window.safeText=safeText; window.safeAttr=safeAttr;
+
+// geoDateTime — ported from index.html
+function geoDateTime(d){ const t=d||new Date(); return t.getDate()+'/'+(t.getMonth()+1)+'/'+t.getFullYear()+' '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0'); }
+
+// normalizePalletCode — ported from index.html (uppercase/trim/strip)
+window.normalizePalletCode=function(v){ return String(v||'').trim().toUpperCase().replace(/[^A-Z0-9\-]/g,'').replace(/--+/g,'-').slice(0,40); };
+
+// _swK — per-user localStorage key, uid-scoped
+window._swK=function(name){ var u=(uid||(currentUser&&currentUser.id)||'guest'); return 'its_sw_'+name+'__'+u; };
+
+// showHubToast stub → route to swNotify
+function showHubToast(msg,isErr){ if(window.swNotify) window.swNotify(msg,isErr); }
+window.showHubToast=showHubToast;
+
+// ══════════════════════════════════════════════════════
+//  SUPABASE SYNC HELPERS (adapted — uid-scoped)
+// ══════════════════════════════════════════════════════
+async function sbSaveSacwyobi(userId, lots, ops, temps){
+  const u = userId || uid; if(!u || !_sb) return;
+  try{
+    if(lots && lots.length){
+      await _sb.from('sacwyobi_lots').upsert(lots.map(l => ({ ...l, pallet_code: l.pallet_code||'', user_id: u })), { onConflict:'id' });
+      // prune orphans (lots deleted locally)
+      try{
+        var _lids = new Set(lots.map(function(l){ return String(l.id); }));
+        var _cr = await _sb.from('sacwyobi_lots').select('id').eq('user_id', u);
+        var _orph = (_cr.data||[]).map(function(x){ return String(x.id); }).filter(function(id){ return !_lids.has(id); });
+        for(var _i=0; _i<_orph.length; _i+=80){ await _sb.from('sacwyobi_lots').delete().eq('user_id', u).in('id', _orph.slice(_i,_i+80)); }
+      }catch(_pe){ console.warn('WH prune', _pe); }
+    }
+    if(ops && ops.length)     await _sb.from('sacwyobi_ops').upsert(ops.map(o => ({ ...o, pallet_code: o.pallet_code||'', user_id: u })), { onConflict:'id' });
+    if(temps && temps.length) await _sb.from('sacwyobi_temps').upsert(temps.map(t => ({ ...t, user_id: u })), { onConflict:'id' });
+  }catch(e){ console.warn('Sacwyobi Supabase save error:', e); }
+}
+async function sbLoadSacwyobi(userId){
+  const u = userId || uid; if(!u || !_sb) return null;
+  try{
+    const [lRes,oRes,tRes] = await Promise.all([
+      _sb.from('sacwyobi_lots').select('*').eq('user_id', u),
+      _sb.from('sacwyobi_ops').select('*').eq('user_id', u).order('date', { ascending:false }),
+      _sb.from('sacwyobi_temps').select('*').eq('user_id', u).order('time', { ascending:false })
+    ]);
+    return { lots: lRes.data||[], ops: oRes.data||[], temps: tRes.data||[] };
+  }catch(e){ return null; }
+}
+async function sacwyobiLoadFromSupabase(){
+  if(!_sb || !uid) return;
+  try{
+    const res = await sbLoadSacwyobi(uid);
+    if(!res) return;
+    try{ localStorage.setItem(_swK('lots'),  JSON.stringify(res.lots||[]));  }catch(_e){}
+    try{ localStorage.setItem(_swK('ops'),   JSON.stringify(res.ops||[]));   }catch(_e){}
+    try{ localStorage.setItem(_swK('temps'), JSON.stringify(res.temps||[])); }catch(_e){}
+  }catch(e){ console.warn('sacwyobiLoadFromSupabase', e); }
+}
+window.sacwyobiLoadFromSupabase = sacwyobiLoadFromSupabase;
+
+// ══════════════════════════════════════════════════════
+//  AUTH / APP SHELL
+// ══════════════════════════════════════════════════════
+async function doLogin(){
+  var e=document.getElementById('email').value.trim(), p=document.getElementById('pass').value, err=document.getElementById('loginErr');
+  err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{
+    var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    _sb=client; uid=r.data.user.id; currentUser={id:uid,isDemo:false};
+    showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+
+async function showApp(email){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('whoami').textContent=email||'—';
+  updateNet();
+  window.addEventListener('online', updateNet);
+  window.addEventListener('offline', updateNet);
+  if(window.initSacwyobiFromHub){ try{ await window.initSacwyobiFromHub(); }catch(e){ console.warn(e); } }
+}
+function updateNet(){ var b=document.getElementById('netbar'); if(!b) return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ — ცვლილება ლოკალურად ინახება'; } }
+
+// auto-resume existing session
+window.addEventListener('load', async function(){
+  var client=getSb(); if(!client) return;
+  try{
+    var r=await client.auth.getSession();
+    if(r.data && r.data.session && r.data.session.user){
+      _sb=client; uid=r.data.session.user.id; currentUser={id:uid,isDemo:false};
+      showApp(r.data.session.user.email);
+    }
+  }catch(e){}
+});
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  SACWYOBI MODULE — მაცივარი / საწყობი  (simple version)
+// ══════════════════════════════════════════════════════
+(function(){
+try {
+
+// ── STATE ──
+let swLots  = JSON.parse(localStorage.getItem(_swK('lots'))  ||'[]');
+let swOps   = JSON.parse(localStorage.getItem(_swK('ops'))   ||'[]');
+let swTemps = JSON.parse(localStorage.getItem(_swK('temps')) ||'[]');
+
+let _swSaveTimer = null;
+const swSave = () => {
+  localStorage.setItem(_swK('lots'),  JSON.stringify(swLots));
+  localStorage.setItem(_swK('ops'),   JSON.stringify(swOps));
+  localStorage.setItem(_swK('temps'), JSON.stringify(swTemps));
+  // ── Supabase sync — debounced 800ms (cloud is source of truth) ──
+  if(_sb && currentUser && currentUser.id){
+    clearTimeout(_swSaveTimer);
+    _swSaveTimer = setTimeout(function(){
+      sbSaveSacwyobi(currentUser.id, swLots, swOps, swTemps).catch(function(e){ console.warn('swSave cloud error',e); });
+    }, 800);
+  }
+};
+
+const swEl  = id => document.getElementById(id);
+const swNow = () => geoDateTime(new Date());
+const swDate= () => new Date().toISOString().slice(0,10);
+
+// ── INIT ── (cloud-first for logged-in user)
+async function initSacwyobiFromHub(){
+  if(_sb && uid){
+    try{
+      await sacwyobiLoadFromSupabase();
+      swLots  = JSON.parse(localStorage.getItem(_swK('lots'))  ||'[]');
+      swOps   = JSON.parse(localStorage.getItem(_swK('ops'))   ||'[]');
+      swTemps = JSON.parse(localStorage.getItem(_swK('temps')) ||'[]');
+    }catch(_e){ console.warn('initSacwyobi cloud', _e); }
+  }
+  swUpdateStats(); swRenderStock(); swRenderTempLog(); swRenderHistory();
+}
+window.initSacwyobiFromHub = initSacwyobiFromHub;
+
+// ── TABS ──
+function swTab(id, el){
+  document.querySelectorAll('.sw-page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sw-tab').forEach(t=>t.classList.remove('active'));
+  const pg = document.getElementById('sw-page-'+id);
+  if(pg) pg.classList.add('active');
+  if(el) el.classList.add('active');
+  else {
+    const tabs = document.querySelectorAll('.sw-tab');
+    const map = {stock:0,income:1,temp:2,history:3};
+    if(map[id]!==undefined && tabs[map[id]]) tabs[map[id]].classList.add('active');
+  }
+  if(id==='stock')   swRenderStock();
+  if(id==='history') swRenderHistory();
+  if(id==='temp')    swRenderTempLog();
+}
+window.swTab = swTab;
+
+// ── NOTIFY ──
+function swNotify(msg, isErr){
+  const n = swEl('sw-notif'); if(!n) return;
+  n.textContent = msg;
+  n.style.borderColor = isErr ? '#ef4444' : '#f59e0b';
+  n.style.color = isErr ? '#dc2626' : '#b45309';
+  n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'), 3200);
+}
+window.swNotify = swNotify;
+
+// ── STATS ──
+function swUpdateStats(){
+  const totalKg = swLots.reduce((a,l)=>a+(+l.remaining||0), 0);
+  const activeLots = swLots.filter(l=>(+l.remaining||0)>0).length;
+  const outTotal = swOps.filter(o=>o.type==='out').reduce((a,o)=>a+(+o.kg||0),0);
+  const lastTemp = swTemps.length ? swTemps[swTemps.length-1].temp : null;
+
+  const el1=swEl('sw-total-kg'); if(el1) el1.textContent = totalKg.toFixed(1);
+  const el2=swEl('sw-total-lots'); if(el2) el2.textContent = activeLots;
+  const el3=swEl('sw-out-total'); if(el3) el3.textContent = outTotal.toFixed(1);
+  const el4=swEl('sw-temp-cur');
+  if(el4){
+    if(lastTemp!==null){
+      el4.textContent = lastTemp+'°C';
+      el4.className = 'sw-stat-val '+(lastTemp<=-1?'sw-temp-ok':lastTemp<=4?'sw-temp-warn':'sw-temp-bad');
+    } else { el4.textContent='—°C'; }
+  }
+  const liveTemp = swEl('sw-live-temp');
+  if(liveTemp && lastTemp!==null){
+    liveTemp.textContent = lastTemp+'°C';
+    liveTemp.className = 'sw-temp-val '+(lastTemp<=-1?'sw-temp-ok':lastTemp<=4?'sw-temp-warn':'sw-temp-bad');
+  }
+}
+
+// ── STOCK RENDER ──
+function swRenderStock(){
+  const tbody = swEl('sw-stock-tbody'); if(!tbody) return;
+  const inStore = swLots.filter(l=>(+l.remaining||0)>0);
+  if(!inStore.length){ tbody.innerHTML='<tr><td colspan="8" class="sw-empty">— მარაგი ცარიელია —</td></tr>'; return; }
+  tbody.innerHTML = inStore.map(l=>{
+    const pct = l.qty>0 ? ((l.remaining/l.qty)*100).toFixed(0) : 0;
+    const expired = l.expire && l.expire < swDate();
+    const status = expired
+      ? '<span class="sw-badge" style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2)">ვადაგასული</span>'
+      : '<span class="sw-badge sw-badge-in">✓ დევს</span>';
+    const safeId = safeAttr(l.id);
+    return `<tr>
+      <td><span class="sw-lot-tag">${safeText(l.lot||'—')}</span></td>
+      <td>${l.pallet_code?`<span class="sw-lot-tag" style="background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.22);color:#059669">${safeText(l.pallet_code)}</span>`:'—'}</td>
+      <td style="font-weight:400">${safeText(l.product||'—')}</td>
+      <td>
+        <strong style="color:#d97706">${(+l.remaining||0).toFixed(1)}</strong> <span class="muted" style="font-size:.7rem">/ ${(+l.qty||0).toFixed(1)}</span>
+        <div class="sw-progress-bar" style="width:80px"><div class="sw-progress-fill" style="width:${pct}%"></div></div>
+      </td>
+      <td class="muted">${safeText(l.section||'—')}</td>
+      <td class="muted" style="color:${expired?'#ef4444':'inherit'}">${safeText(l.expire||'—')}</td>
+      <td>${status}</td>
+      <td style="white-space:nowrap">
+        <button class="sw-btn sw-btn-green" style="padding:4px 12px;font-size:.72rem;margin-right:4px" onclick="swTakeOut('${safeId}')">📤 გატანა</button>
+        <button class="sw-btn sw-btn-red" style="padding:4px 10px;font-size:.72rem" onclick="swDeleteLot('${safeId}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+window.swRenderStock = swRenderStock;
+
+// ── INCOME (intake) ──
+function swAddIncome(){
+  const product = (swEl('sw-in-product').value||'').trim();
+  const lot     = (swEl('sw-in-lot').value||'').trim();
+  const kg      = parseFloat(swEl('sw-in-kg').value||0);
+  const section = (swEl('sw-in-section').value||'').trim();
+  const palletCode = normalizePalletCode((swEl('sw-in-pallet')&&swEl('sw-in-pallet').value)||'');
+  const temp    = swEl('sw-in-temp').value;
+  const expire  = swEl('sw-in-expire').value||'';
+  const note    = (swEl('sw-in-note').value||'').trim();
+  if(!product||!kg){ swNotify('⚠️ პროდუქტი და კგ სავალდებულოა', true); return; }
+  const autoLot = lot || ('P-'+Date.now().toString().slice(-5));
+  const now = Date.now();
+  swLots.push({ id:'sw_'+now, product, lot:autoLot, pallet_code:palletCode, qty:kg, remaining:kg, section, temp:temp||'', expire, note, date:swDate() });
+  swOps.push({ id:'op_'+now, type:'in', lot:autoLot, pallet_code:palletCode, product, kg, section, note, date:swDate(), time:swNow() });
+  if(temp){ swTemps.push({ id:'t_'+now, section, temp:parseFloat(temp), note:'მიღებისას', time:swNow() }); }
+  swSave();
+  swUpdateStats(); swRenderStock(); swRenderTempLog();
+  swNotify('✅ '+product+' — '+kg+'კგ მაცივარშია');
+  swClearIncomeForm();
+}
+window.swAddIncome = swAddIncome;
+
+function swClearIncomeForm(){
+  ['sw-in-product','sw-in-lot','sw-in-pallet','sw-in-kg','sw-in-section','sw-in-temp','sw-in-expire','sw-in-note'].forEach(id=>{const e=swEl(id);if(e)e.value='';});
+}
+window.swClearIncomeForm = swClearIncomeForm;
+
+// ── TAKE OUT (simple per-lot removal, no FIFO/multi) ──
+function swTakeOut(lotId){
+  const l = swLots.find(x=>x.id===lotId);
+  if(!l){ swNotify('⚠️ ლოტი ვ/მ', true); return; }
+  const existing = document.getElementById('sw-take-modal');
+  if(existing) existing.remove();
+  const bg = document.createElement('div');
+  bg.id = 'sw-take-modal';
+  bg.className = 'sw-modal-bg';
+  bg.innerHTML = `
+    <div class="sw-modal">
+      <button onclick="document.getElementById('sw-take-modal').remove()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer">✕</button>
+      <div style="font-size:1rem;font-weight:600;color:#1e3a5f;margin-bottom:4px">📤 გატანა მაცივრიდან</div>
+      <div class="muted" style="margin-bottom:16px"><span class="sw-lot-tag">${safeText(l.lot)}</span> ${safeText(l.product)} — მარაგში <b>${(+l.remaining).toFixed(1)}</b> კგ</div>
+      <div class="sw-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">
+        <div class="sw-field"><label>გასატანი კგ *</label><input type="number" id="swt-kg" value="${(+l.remaining).toFixed(1)}" min="0.1" step="0.1" max="${l.remaining}"></div>
+        <div class="sw-field"><label>მიზანი</label>
+          <select id="swt-purpose">
+            <option value="გაყიდვა">📦 გაყიდვა</option>
+            <option value="ექსპ./ექსპორტი">✈️ ექსპ./ექსპორტი</option>
+            <option value="პროც./გადამუშ.">🏭 პროც./გადამუშ.</option>
+            <option value="ჩამოწ./დანაკარგი">❌ ჩამოწ./დანაკარგი</option>
+            <option value="სხვა">• სხვა</option>
+          </select>
+        </div>
+        <div class="sw-field full"><label>მიმღები / მყიდველი</label><input id="swt-buyer" placeholder="კომპ. ან პირი"></div>
+        <div class="sw-field full"><label>შენიშვნა</label><input id="swt-note" placeholder="ნ.ა."></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="sw-btn sw-btn-green" style="flex:1" onclick="swConfirmTakeOut('${safeAttr(lotId)}')">🚚 გატანა</button>
+        <button class="sw-btn sw-btn-outline" style="flex:1" onclick="document.getElementById('sw-take-modal').remove()">გაუქმება</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+  const kgIn = document.getElementById('swt-kg'); if(kgIn){ kgIn.focus(); kgIn.select(); }
+}
+window.swTakeOut = swTakeOut;
+
+function swConfirmTakeOut(lotId){
+  const l = swLots.find(x=>x.id===lotId);
+  if(!l){ swNotify('⚠️ ლოტი ვ/მ', true); return; }
+  const kg      = parseFloat(document.getElementById('swt-kg').value||0);
+  const buyer   = (document.getElementById('swt-buyer').value||'').trim();
+  const purpose = document.getElementById('swt-purpose').value;
+  const note    = (document.getElementById('swt-note').value||'').trim();
+  if(!kg || kg<=0){ swNotify('⚠️ ჩაწერე გასატანი კგ', true); return; }
+  if(kg > (+l.remaining||0)){ swNotify('⚠️ მარაგზე მეტია! მარ: '+(+l.remaining).toFixed(1)+'კგ', true); return; }
+  l.remaining = +((+l.remaining||0) - kg).toFixed(3);
+  swOps.push({ id:'op_'+Date.now(), type:'out', lot:l.lot, product:l.product, kg, buyer, purpose, note, date:swDate(), time:swNow() });
+  swSave();
+  swUpdateStats(); swRenderStock(); swRenderHistory();
+  const m = document.getElementById('sw-take-modal'); if(m) m.remove();
+  swNotify('🚚 '+kg+'კგ გავიდა — '+l.lot);
+}
+window.swConfirmTakeOut = swConfirmTakeOut;
+
+// ── DELETE LOT ──
+function swDeleteLot(id){
+  const l = swLots.find(x=>x.id===id);
+  if(!l||!confirm('წაშლა: '+l.lot+'?')) return;
+  swLots = swLots.filter(x=>x.id!==id);
+  swSave(); swUpdateStats(); swRenderStock();
+  if(_sb && currentUser && currentUser.id){
+    _sb.from('sacwyobi_lots').delete().eq('id', id).eq('user_id', currentUser.id)
+      .then(function(){}).catch(function(e){ console.warn('swDeleteLot Supabase error', e); });
+  }
+  swNotify('🗑 '+l.lot+' — წაშლილია');
+}
+window.swDeleteLot = swDeleteLot;
+
+// ── TEMP LOG ──
+function swLogTemp(){
+  const section = (swEl('sw-temp-sec').value||'').trim()||'ზოგ.';
+  const val = parseFloat(swEl('sw-temp-val').value);
+  const note = (swEl('sw-temp-note').value||'').trim();
+  if(isNaN(val)){ swNotify('⚠️ ტემპ. შეიყვანეთ', true); return; }
+  swTemps.push({ id:'t_'+Date.now(), section, temp:val, note, time:swNow() });
+  swSave(); swUpdateStats(); swRenderTempLog();
+  swNotify('🌡️ '+val+'°C — ჩაწერილია');
+  swEl('sw-temp-val').value=''; swEl('sw-temp-note').value='';
+}
+window.swLogTemp = swLogTemp;
+
+function swRenderTempLog(){
+  const tbody = swEl('sw-temp-tbody'); if(!tbody) return;
+  if(!swTemps.length){ tbody.innerHTML='<tr><td colspan="5" class="sw-empty">— ჩ. არ არის —</td></tr>'; return; }
+  const list = [...swTemps].reverse().slice(0,50);
+  tbody.innerHTML = list.map(t=>{
+    const cls = t.temp<=-1?'sw-temp-ok':t.temp<=4?'sw-temp-warn':'sw-temp-bad';
+    const icon = t.temp<=-1?'❄️':t.temp<=4?'🌡️':'🔥';
+    return `<tr>
+      <td class="muted" style="font-size:.75rem">${safeText(t.time||'—')}</td>
+      <td>${safeText(t.section||'—')}</td>
+      <td><span class="${cls}" style="font-family:'Space Mono',monospace;font-weight:600">${icon} ${Number(t.temp)||0}°C</span></td>
+      <td>${t.temp<=-1?'<span class="sw-badge sw-badge-in">ნ.</span>':t.temp<=4?'<span class="sw-badge sw-badge-res">ყ.</span>':'<span class="sw-badge sw-badge-out">⚠️</span>'}</td>
+      <td class="muted">${safeText(t.note||'—')}</td>
+    </tr>`;
+  }).join('');
+}
+window.swRenderTempLog = swRenderTempLog;
+
+// ── HISTORY ──
+function swRenderHistory(){
+  const tbody = swEl('sw-hist-tbody'); if(!tbody) return;
+  const from = (swEl('sw-hist-from')||{}).value||'';
+  const to   = (swEl('sw-hist-to')||{}).value||'';
+  let ops = [...swOps].reverse();
+  if(from) ops = ops.filter(o=>o.date>=from);
+  if(to)   ops = ops.filter(o=>o.date<=to);
+  if(!ops.length){ tbody.innerHTML='<tr><td colspan="7" class="sw-empty">— ისტ. ცარიელია —</td></tr>'; return; }
+  tbody.innerHTML = ops.slice(0,100).map(o=>`<tr>
+    <td class="muted" style="font-size:.72rem">${safeText(o.time||o.date)}</td>
+    <td>${o.type==='in'?'<span class="sw-badge sw-badge-in">📥 მიღ.</span>':'<span class="sw-badge sw-badge-out">📤 გატ.</span>'}</td>
+    <td><span class="sw-lot-tag">${safeText(o.lot||'—')}</span></td>
+    <td style="font-weight:400">${safeText(o.product||'—')}</td>
+    <td style="font-family:'Space Mono',monospace;color:#d97706">${(+o.kg||0).toFixed(1)}</td>
+    <td class="muted">${safeText(o.buyer||o.section||'—')}</td>
+    <td class="muted">${safeText(o.note||'—')} <button onclick="swDeleteOp('${safeAttr(o.id)}')" style="margin-left:6px;background:none;border:none;cursor:pointer;color:#ef4444;font-size:.95rem" title="წაშლა">🗑</button></td>
+  </tr>`).join('');
+}
+window.swRenderHistory = swRenderHistory;
+
+function swDeleteOp(id){
+  const o = swOps.find(x=>x.id===id);
+  if(!o || !confirm('წაშლა: '+(o.type==='in'?'მიღება':'გატანა')+' '+(+o.kg||0).toFixed(1)+'კგ?')) return;
+  swOps = swOps.filter(x=>x.id!==id);
+  swSave(); swUpdateStats(); swRenderHistory();
+  if(_sb && currentUser && currentUser.id){
+    _sb.from('sacwyobi_ops').delete().eq('id', id).eq('user_id', currentUser.id).then(function(){}).catch(function(e){ console.warn('swDeleteOp', e); });
+  }
+  swNotify('🗑 ოპერაცია წაშლილია');
+}
+window.swDeleteOp = swDeleteOp;
+
+// ── EXCEL ──
+window.xlStyleWB = function(WB){
+  try{
+    if(!WB || !WB.SheetNames) return WB;
+    WB.SheetNames.forEach(function(nm){
+      var ws=WB.Sheets[nm]; if(!ws || !ws['!ref']) return;
+      var R=XLSX.utils.decode_range(ws['!ref']);
+      var thin={style:'thin',color:{rgb:'D9D9D9'}}, border={top:thin,bottom:thin,left:thin,right:thin};
+      for(var r=R.s.r; r<=R.e.r; r++){
+        for(var c=R.s.c; c<=R.e.c; c++){
+          var a=XLSX.utils.encode_cell({r:r,c:c});
+          if(!ws[a]) ws[a]={t:'s',v:''};
+          var st={border:border};
+          if(r===R.s.r){ st.fill={fgColor:{rgb:'0369A1'}}; st.font={color:{rgb:'FFFFFF'},bold:true}; st.alignment={horizontal:'center'}; }
+          ws[a].s=Object.assign({}, ws[a].s||{}, st);
+        }
+      }
+    });
+  }catch(e){ console.warn('[xlStyleWB]', e); }
+  return WB;
+};
+function swExportExcel(){
+  if(typeof XLSX==='undefined'){ swNotify('⚠️ XLSX ბიბლ. ვ/მ', true); return; }
+  const WB = XLSX.utils.book_new();
+  // Sheet 1: lots
+  const s1=[['ლოტი','პალეტი','პროდუქტი','მიღება','სულ კგ','მარაგი','სეც.','ვადა','შენ.']];
+  swLots.forEach(l=>s1.push([l.lot,l.pallet_code||'',l.product,l.date,+l.qty,+l.remaining,l.section||'',l.expire||'',l.note||'']));
+  const ws1=XLSX.utils.aoa_to_sheet(s1);
+  ws1['!cols']=[{wch:12},{wch:16},{wch:20},{wch:12},{wch:10},{wch:10},{wch:8},{wch:12},{wch:24}];
+  XLSX.utils.book_append_sheet(WB,ws1,'მარაგი');
+  // Sheet 2: ops
+  const s2=[['#','დრო','ოპ.','ლოტი','პროდ.','კგ','მიმღ./სეც.','შენ.']];
+  swOps.forEach((o,i)=>s2.push([i+1,o.time,o.type==='in'?'მიღება':'გატანა',o.lot,o.product,+o.kg,o.buyer||o.section||'',o.note||'']));
+  const ws2=XLSX.utils.aoa_to_sheet(s2);
+  ws2['!cols']=[{wch:5},{wch:18},{wch:10},{wch:12},{wch:20},{wch:10},{wch:18},{wch:24}];
+  XLSX.utils.book_append_sheet(WB,ws2,'ოპ. ისტ.');
+  // Sheet 3: temps
+  const s3=[['დრო','სეც.','ტემპ. °C','შენ.']];
+  swTemps.forEach(t=>s3.push([t.time,t.section,+t.temp,t.note||'']));
+  const ws3=XLSX.utils.aoa_to_sheet(s3);
+  XLSX.utils.book_append_sheet(WB,ws3,'ტემპ. ჟ.');
+  xlStyleWB(WB); XLSX.writeFile(WB,'InTechSol_Sacwyobi_'+swDate()+'.xlsx');
+  swNotify('📥 Excel ჩამოიტვირთა');
+}
+window.swExportExcel = swExportExcel;
+
+} catch(e){ console.warn('sacwyobi init',e); }
+})();
+</script>
+</body></html>
