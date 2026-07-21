@@ -298,7 +298,7 @@ async function sbLoadSacwyobi(userId){
       _sb.from('sacwyobi_ops').select('*').eq('user_id', u).order('date', { ascending:false }),
       _sb.from('sacwyobi_temps').select('*').eq('user_id', u).order('time', { ascending:false })
     ]);
-    const ops = (oRes.data||[]).map(o => ({ ...o, paid: o.paid===true })); // coalesce null → false
+    const ops = (oRes.data||[]).map(o => ({ ...o, amount: (o.amount==null?null:+o.amount), paid_amount: (+o.paid_amount||0), paid: o.paid===true })); // coalesce nulls
     return { lots: lRes.data||[], ops, temps: tRes.data||[] };
   }catch(e){ return null; }
 }
@@ -383,6 +383,8 @@ const swSave = () => {
 const swEl  = id => document.getElementById(id);
 const swNow = () => geoDateTime(new Date());
 const swDate= () => new Date().toISOString().slice(0,10);
+// money format — up to 2 decimals, thousands separators, no trailing .00 noise
+const swMoney = v => { const n=+v||0; return n.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}); };
 
 // ── INIT ── (cloud-first for logged-in user)
 async function initSacwyobiFromHub(){
@@ -507,6 +509,15 @@ function swClearIncomeForm(){
 }
 window.swClearIncomeForm = swClearIncomeForm;
 
+// live: amount = kg × price/kg (updates the total field as user types)
+function swCalcAmount(){
+  const kgE=document.getElementById('swt-kg'), prE=document.getElementById('swt-price'), amE=document.getElementById('swt-amount');
+  if(!kgE||!prE||!amE) return;
+  const kg=parseFloat(kgE.value), pr=parseFloat(prE.value);
+  if(!isNaN(kg) && kg>0 && !isNaN(pr) && pr>=0){ amE.value = +(kg*pr).toFixed(2); }
+}
+window.swCalcAmount = swCalcAmount;
+
 // ── TAKE OUT (simple per-lot removal, no FIFO/multi) ──
 function swTakeOut(lotId){
   const l = swLots.find(x=>x.id===lotId);
@@ -522,7 +533,7 @@ function swTakeOut(lotId){
       <div style="font-size:1rem;font-weight:600;color:#1e3a5f;margin-bottom:4px">📤 გატანა მაცივრიდან</div>
       <div class="muted" style="margin-bottom:16px"><span class="sw-lot-tag">${safeText(l.lot)}</span> ${safeText(l.product)} — მარაგში <b>${(+l.remaining).toFixed(1)}</b> კგ</div>
       <div class="sw-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">
-        <div class="sw-field"><label>გასატანი კგ *</label><input type="number" id="swt-kg" value="${(+l.remaining).toFixed(1)}" min="0.1" step="0.1" max="${l.remaining}"></div>
+        <div class="sw-field"><label>გასატანი კგ *</label><input type="number" id="swt-kg" value="${(+l.remaining).toFixed(1)}" min="0.1" step="0.1" max="${l.remaining}" oninput="swCalcAmount()"></div>
         <div class="sw-field"><label>მიზანი</label>
           <select id="swt-purpose">
             <option value="გაყიდვა">📦 გაყიდვა</option>
@@ -533,10 +544,13 @@ function swTakeOut(lotId){
           </select>
         </div>
         <div class="sw-field full"><label>მიმღები / მყიდველი</label><input id="swt-buyer" placeholder="კომპ. ან პირი"></div>
+        <div class="sw-field"><label>ფასი ₾/კგ</label><input type="number" id="swt-price" placeholder="0.00" min="0" step="0.01" oninput="swCalcAmount()"></div>
+        <div class="sw-field"><label>თანხა ₾ (სულ)</label><input type="number" id="swt-amount" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="sw-field"><label>გადახდილი ₾ (ახლა)</label><input type="number" id="swt-paidamt" placeholder="0.00" min="0" step="0.01"></div>
         <div class="sw-field full"><label>შენიშვნა</label><input id="swt-note" placeholder="ნ.ა."></div>
         <div class="sw-field full">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-size:.85rem;color:#1e3a5f">
-            <input type="checkbox" id="swt-paid" style="width:18px;height:18px;cursor:pointer"> 💰 გადახდილია?
+            <input type="checkbox" id="swt-paidfull" style="width:18px;height:18px;cursor:pointer" onclick="if(this.checked){var a=document.getElementById('swt-amount'),p=document.getElementById('swt-paidamt');if(a&&p)p.value=a.value;}"> 💰 სრულად გადახდილია (paid = სულ)
           </label>
         </div>
       </div>
@@ -557,11 +571,16 @@ function swConfirmTakeOut(lotId){
   const buyer   = (document.getElementById('swt-buyer').value||'').trim();
   const purpose = document.getElementById('swt-purpose').value;
   const note    = (document.getElementById('swt-note').value||'').trim();
-  const paid    = !!(document.getElementById('swt-paid')||{}).checked;
+  let amount    = parseFloat(document.getElementById('swt-amount').value);
+  let paidAmt   = parseFloat(document.getElementById('swt-paidamt').value);
+  if(isNaN(amount)) amount = null;
+  if(isNaN(paidAmt) || paidAmt<0) paidAmt = 0;
+  if(amount!=null && paidAmt>amount) paidAmt = amount;
+  const paid = (amount!=null && amount>0) ? (paidAmt >= amount) : false;
   if(!kg || kg<=0){ swNotify('⚠️ ჩაწერე გასატანი კგ', true); return; }
   if(kg > (+l.remaining||0)){ swNotify('⚠️ მარაგზე მეტია! მარ: '+(+l.remaining).toFixed(1)+'კგ', true); return; }
   l.remaining = +((+l.remaining||0) - kg).toFixed(3);
-  swOps.push({ id:'op_'+Date.now(), type:'out', lot:l.lot, product:l.product, kg, buyer, purpose, note, paid, date:swDate(), time:swNow() });
+  swOps.push({ id:'op_'+Date.now(), type:'out', lot:l.lot, product:l.product, kg, buyer, purpose, note, amount, paid_amount:paidAmt, paid, date:swDate(), time:swNow() });
   swSave();
   swUpdateStats(); swRenderStock(); swRenderHistory();
   const m = document.getElementById('sw-take-modal'); if(m) m.remove();
@@ -674,19 +693,31 @@ function swRenderHistory(){
   let ops = [...swOps].reverse();
   if(from) ops = ops.filter(o=>o.date>=from);
   if(to)   ops = ops.filter(o=>o.date<=to);
-  // unpaid summary (out ops only)
+  // outstanding summary — Σ(amount - paid_amount) over out-ops still owing
   const sumEl = swEl('sw-unpaid-sum');
   if(sumEl){
-    const unpaid = swOps.filter(o=>o.type==='out' && o.paid!==true).length;
-    sumEl.innerHTML = unpaid>0 ? '🔴 გადაუხდელი: <b style="color:#dc2626">'+unpaid+'</b>' : '<span style="color:#059669">✓ ყველა გადახდილია</span>';
+    let owed = 0;
+    swOps.forEach(o=>{ if(o.type==='out' && o.amount!=null && +o.amount>0){ const rem=(+o.amount)-(+o.paid_amount||0); if(rem>0.0001) owed+=rem; } });
+    sumEl.innerHTML = owed>0.0001
+      ? '🔴 გადასახდელი დარჩა: <b style="color:#dc2626">'+swMoney(owed)+' ₾</b>'
+      : '<span style="color:#059669">✓ ყველა გადახდილია</span>';
   }
   if(!ops.length){ tbody.innerHTML='<tr><td colspan="8" class="sw-empty">— ისტ. ცარიელია —</td></tr>'; return; }
   tbody.innerHTML = ops.slice(0,100).map(o=>{
     let payCell = '<span class="muted">—</span>';
-    if(o.type==='out'){
-      payCell = o.paid===true
-        ? '<span class="sw-badge" style="background:rgba(16,185,129,.12);color:#059669;border:1px solid rgba(16,185,129,.2);cursor:pointer" onclick="swTogglePaid(\''+safeAttr(o.id)+'\')" title="დააჭირე გადაუხდელად">🟢 გადახდილი</span>'
-        : '<span class="sw-badge" style="background:rgba(239,68,68,.1);color:#dc2626;border:1px solid rgba(239,68,68,.2);cursor:pointer" onclick="swTogglePaid(\''+safeAttr(o.id)+'\')" title="დააჭირე გადახდილად">🔴 გადაუხდელი</span>';
+    if(o.type==='out' && o.amount!=null && +o.amount>0){
+      const amt=+o.amount, pa=+o.paid_amount||0, rem=+(amt-pa).toFixed(2), sid=safeAttr(o.id);
+      const kgv=+o.kg||0, unit = kgv>0 ? swMoney(amt/kgv) : '—';
+      const priceNote = '<div class="muted" style="font-size:.68rem;margin-top:3px">'+swMoney(amt)+' ₾ · '+unit+' ₾/კგ</div>';
+      let badge;
+      if(pa>=amt){
+        badge = '<span class="sw-badge" style="background:rgba(16,185,129,.12);color:#059669;border:1px solid rgba(16,185,129,.2);cursor:pointer" onclick="swAddPayment(\''+sid+'\')" title="გადახდის დამატება">🟢 გადახდილი</span>';
+      } else if(pa>0){
+        badge = '<span class="sw-badge" style="background:rgba(245,158,11,.12);color:#b45309;border:1px solid rgba(245,158,11,.25);cursor:pointer" onclick="swAddPayment(\''+sid+'\')" title="გადახდის დამატება">🟡 ნაწილობრივი · დარჩა '+swMoney(rem)+' ₾</span>';
+      } else {
+        badge = '<span class="sw-badge" style="background:rgba(239,68,68,.1);color:#dc2626;border:1px solid rgba(239,68,68,.2);cursor:pointer" onclick="swAddPayment(\''+sid+'\')" title="გადახდის დამატება">🔴 გადაუხდელი · '+swMoney(amt)+' ₾</span>';
+      }
+      payCell = badge + priceNote;
     }
     return `<tr>
     <td class="muted" style="font-size:.72rem">${safeText(o.time||o.date)}</td>
@@ -702,20 +733,28 @@ function swRenderHistory(){
 }
 window.swRenderHistory = swRenderHistory;
 
-// toggle paid/unpaid on an out-op
-function swTogglePaid(id){
+// add a payment to an out-op (partial-payment tracking)
+function swAddPayment(id){
   const o = swOps.find(x=>x.id===id);
-  if(!o || o.type!=='out') return;
-  o.paid = !(o.paid===true);
+  if(!o || o.type!=='out' || o.amount==null || +o.amount<=0) return;
+  const amt = +o.amount, pa = +o.paid_amount||0, rem = +(amt-pa).toFixed(2);
+  const inp = prompt('დაამატე გადახდა (₾) — დარჩენილი: '+swMoney(rem)+' ₾', rem>0?String(rem):'');
+  if(inp===null) return;
+  let add = parseFloat(inp);
+  if(isNaN(add) || add<=0){ swNotify('⚠️ არასწორი თანხა', true); return; }
+  let np = +(pa + add).toFixed(2);
+  if(np > amt) np = amt; // cap at total
+  o.paid_amount = np;
+  o.paid = (np >= amt);
   swSave();
   swRenderHistory();
   if(_sb && currentUser && currentUser.id){
-    _sb.from('sacwyobi_ops').update({paid:o.paid}).eq('id', id).eq('user_id', currentUser.id)
-      .then(function(){}).catch(function(e){ console.warn('swTogglePaid', e); });
+    _sb.from('sacwyobi_ops').update({paid_amount:o.paid_amount, paid:o.paid}).eq('id', id).eq('user_id', currentUser.id)
+      .then(function(){}).catch(function(e){ console.warn('swAddPayment', e); });
   }
-  swNotify(o.paid ? '🟢 მონიშნულია გადახდილად' : '🔴 მონიშნულია გადაუხდელად');
+  swNotify(o.paid ? '🟢 სრულად გადახდილია' : '🟡 დარჩა '+swMoney(amt-np)+' ₾');
 }
-window.swTogglePaid = swTogglePaid;
+window.swAddPayment = swAddPayment;
 
 function swDeleteOp(id){
   const o = swOps.find(x=>x.id===id);
