@@ -314,6 +314,54 @@ async function sacwyobiLoadFromSupabase(){
 }
 window.sacwyobiLoadFromSupabase = sacwyobiLoadFromSupabase;
 
+// ── gv_sales map (for auto-filling old sale prices onto warehouse out-ops) ──
+window.__swSalesMap = window.__swSalesMap || {};
+async function swLoadSalesMap(){
+  window.__swSalesMap = {};
+  if(!_sb || !uid) return window.__swSalesMap;
+  try{
+    var from=0, STEP=1000;
+    while(true){
+      var r = await _sb.from('gv_sales').select('id,buyerName,product,kg,price,total,paid').eq('user_id', uid).range(from, from+STEP-1);
+      if(r.error){ console.warn('[swLoadSalesMap]', r.error); break; }
+      var d = r.data||[];
+      d.forEach(function(s){ if(s && s.id!=null) window.__swSalesMap[String(s.id)] = s; });
+      if(d.length < STEP) break;
+      from += STEP; if(from > 100000) break;
+    }
+  }catch(e){ console.warn('[swLoadSalesMap]', e); }
+  return window.__swSalesMap;
+}
+window.swLoadSalesMap = swLoadSalesMap;
+
+// derive sale id from an out-op (gv_ref 'sale_<id>' or note '#<id>')
+function swSaleIdOf(o){
+  if(!o) return '';
+  var ref = String(o.gv_ref||'');
+  if(ref.indexOf('sale_')===0) return ref.slice(5);
+  var m = String(o.note||'').match(/#(\S+)/);
+  return m ? m[1] : '';
+}
+// non-destructive display backfill: fill amount/paid_amount from gv_sales for out-ops that have no amount yet
+function swBackfillFromSales(ops){
+  var map = window.__swSalesMap||{};
+  (ops||[]).forEach(function(o){
+    if(!o || o.type!=='out') return;
+    if(o.amount!=null && +o.amount>0) return; // manual/set amount takes precedence — don't overwrite
+    var sid = swSaleIdOf(o); if(!sid) return;
+    var s = map[String(sid)]; if(!s) return;
+    var amt = (+s.total) || ((+s.kg||0)*(+s.price||0)) || 0;
+    if(amt>0){
+      o.amount = +(+amt).toFixed(2);
+      o.paid_amount = +(+s.paid||0).toFixed(2);
+      if(o.paid_amount > o.amount) o.paid_amount = o.amount;
+      o.paid = o.amount>0 && o.paid_amount >= o.amount;
+    }
+  });
+  return ops;
+}
+window.swBackfillFromSales = swBackfillFromSales;
+
 // ══════════════════════════════════════════════════════
 //  AUTH / APP SHELL
 // ══════════════════════════════════════════════════════
@@ -397,6 +445,12 @@ async function initSacwyobiFromHub(){
     }catch(_e){ console.warn('initSacwyobi cloud', _e); }
   }
   swUpdateStats(); swRenderStock(); swRenderTempLog(); swRenderHistory();
+  // auto-fill old sale prices from gv_sales (non-destructive display backfill), then re-render
+  if(_sb && uid){
+    swLoadSalesMap().then(function(){
+      try{ swBackfillFromSales(swOps); swUpdateStats(); swRenderHistory(); }catch(e){ console.warn('backfill', e); }
+    }).catch(function(e){ console.warn('swLoadSalesMap', e); });
+  }
 }
 window.initSacwyobiFromHub = initSacwyobiFromHub;
 
