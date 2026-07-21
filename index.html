@@ -9054,7 +9054,7 @@ function phExportExcel(){
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols']=[{wch:4},{wch:12},{wch:22},{wch:30},{wch:16},{wch:30},{wch:12}];
   XLSX.utils.book_append_sheet(WB, ws, 'ფენოლოგია');
-  XLSX.writeFile(WB, 'phenocal_'+(pl.name||'plantation')+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  xlStyleWB(WB); XLSX.writeFile(WB, 'phenocal_'+(pl.name||'plantation')+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
 function renderPhLog(){
@@ -10492,7 +10492,7 @@ function downloadPickerTemplate(){
     ws2["!cols"] = [{wch:80}];
     XLSX.utils.book_append_sheet(WB, ws2, "ინსტრუქცია");
 
-    XLSX.writeFile(WB, "მკრეფავების_შაბლონი.xlsx");
+    xlStyleWB(WB); XLSX.writeFile(WB, "მკრეფავების_შაბლონი.xlsx");
     if(typeof notify === "function") notify("✅ შაბლონი ჩამოტვირთულია");
   } catch(err){
     console.error("downloadPickerTemplate error:", err);
@@ -15871,6 +15871,28 @@ function swSaveEdit(id){
 window.swSaveEdit = swSaveEdit;
 
 // ── EXCEL ──
+// ── საერთო ფერ-helper: ყოველ ფურცელს პირველ (სათაურის) რიგს ალურჯებს + ბორდერებს ──
+//    გამოძახება writeFile-მდე: xlStyleWB(WB). არსებულ სტილს ინახავს (Object.assign).
+window.xlStyleWB = function(WB){
+  try{
+    if(!WB || !WB.SheetNames) return WB;
+    WB.SheetNames.forEach(function(nm){
+      var ws=WB.Sheets[nm]; if(!ws || !ws['!ref']) return;
+      var R=XLSX.utils.decode_range(ws['!ref']);
+      var thin={style:'thin',color:{rgb:'D9D9D9'}}, border={top:thin,bottom:thin,left:thin,right:thin};
+      for(var r=R.s.r; r<=R.e.r; r++){
+        for(var c=R.s.c; c<=R.e.c; c++){
+          var a=XLSX.utils.encode_cell({r:r,c:c});
+          if(!ws[a]) ws[a]={t:'s',v:''};
+          var st={border:border};
+          if(r===R.s.r){ st.fill={fgColor:{rgb:'0369A1'}}; st.font={color:{rgb:'FFFFFF'},bold:true}; st.alignment={horizontal:'center'}; }
+          ws[a].s=Object.assign({}, ws[a].s||{}, st);
+        }
+      }
+    });
+  }catch(e){ console.warn('[xlStyleWB]', e); }
+  return WB;
+};
 function swExportExcel(){
   if(typeof XLSX==='undefined'){ swNotify('⚠️ XLSX ბიბლ. ვ/მ', true); return; }
   const WB = XLSX.utils.book_new();
@@ -15891,7 +15913,7 @@ function swExportExcel(){
   swTemps.forEach(t=>s3.push([t.time,t.section,+t.temp,t.note||'']));
   const ws3=XLSX.utils.aoa_to_sheet(s3);
   XLSX.utils.book_append_sheet(WB,ws3,'ტემპ. ჟ.');
-  XLSX.writeFile(WB,'InTechSol_Sacwyobi_'+swDate()+'.xlsx');
+  xlStyleWB(WB); XLSX.writeFile(WB,'InTechSol_Sacwyobi_'+swDate()+'.xlsx');
   swNotify('📥 Excel ჩამოიტვირთა');
 }
 window.swExportExcel = swExportExcel;
@@ -16676,7 +16698,7 @@ window.gvExportSalesXlsx = function(){
     var ws=XLSX.utils.aoa_to_sheet([head].concat(rows));
     ws['!cols']=[{wch:12},{wch:12},{wch:20},{wch:16},{wch:8},{wch:9},{wch:11},{wch:13},{wch:10},{wch:13}];
     var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'გაყიდვები');
-    XLSX.writeFile(wb, 'gayidvebi_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    xlStyleWB(wb); XLSX.writeFile(wb, 'gayidvebi_'+new Date().toISOString().slice(0,10)+'.xlsx');
     if(window.gvNotify)gvNotify('✅ გაყიდვების Excel ჩამოიტვირთა');
   }catch(e){ console.warn('gvExportSalesXlsx', e); if(window.gvNotify)gvNotify('შეცდომა ექსპორტში', true); }
 };
@@ -16691,7 +16713,7 @@ window.gvExportPurchasesXlsx = function(){
     var ws=XLSX.utils.aoa_to_sheet([head].concat(rows));
     ws['!cols']=[{wch:12},{wch:12},{wch:20},{wch:16},{wch:8},{wch:9},{wch:11},{wch:13},{wch:10},{wch:13}];
     var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'შესყიდვები');
-    XLSX.writeFile(wb, 'shesyidvebi_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    xlStyleWB(wb); XLSX.writeFile(wb, 'shesyidvebi_'+new Date().toISOString().slice(0,10)+'.xlsx');
     if(window.gvNotify)gvNotify('✅ შესყიდვების Excel ჩამოიტვირთა');
   }catch(e){ console.warn('gvExportPurchasesXlsx', e); if(window.gvNotify)gvNotify('შეცდომა ექსპორტში', true); }
 };
@@ -16894,7 +16916,7 @@ function gvExportExcel(){
   const ws4=XLSX.utils.aoa_to_sheet(s4);
   ws4['!cols']=[{wch:24},{wch:13},{wch:14},{wch:13},{wch:12},{wch:13}];
   XLSX.utils.book_append_sheet(WB,ws4,'მომწოდებლები');
-  XLSX.writeFile(WB,'InTechSol_Gayvida_'+gvDate()+'.xlsx');
+  xlStyleWB(WB); XLSX.writeFile(WB,'InTechSol_Gayvida_'+gvDate()+'.xlsx');
   gvNotify('📥 Excel ჩამოიტვირთა');
 }
 window.gvExportExcel = gvExportExcel;
@@ -22395,7 +22417,7 @@ window.shPrepExportXlsx=function(){
     var s3=[['თარიღი','პრეპარატი','რაოდენობა','ერთ.','წყარო','ღონისძიება / სად']];
     (us||[]).forEach(function(u){ var ev='', when=u.date||''; if(u.source==='phenocal'&&u.refId&&phById[u.refId]){ var e=phById[u.refId]; ev=e.phase||e.note||'ფენოკალენდარი'; if(e.date) when=e.date; } else if(u.source==='phenocal'){ ev='ფენოკალენდარი'; } else { ev=u.note||'ხელით'; } s3.push([when,nm[u.itemId]||'',+u.qty||0,unitById[u.itemId]||'',u.source==='phenocal'?'ფენოკალენდარი':'ხელით',ev]); });
     XLSX.utils.book_append_sheet(WB, XLSX.utils.aoa_to_sheet(s3), 'გამოყენება');
-    XLSX.writeFile(WB, 'პრეპარატები_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    xlStyleWB(WB); XLSX.writeFile(WB, 'პრეპარატები_'+new Date().toISOString().slice(0,10)+'.xlsx');
     try{AG.toast('📊 Excel ჩამოიტვირთა');}catch(e){}
   }catch(e){ console.warn('prep xlsx',e); try{AG.toast('ექსპორტი ვერ მოხერხდა');}catch(_){} }
 };
@@ -22572,7 +22594,7 @@ window.Expenses = (function(){
     var cws=XLSX.utils.aoa_to_sheet(crows); cws['!cols']=[{wch:24},{wch:14},{wch:10}];
     XLSX.utils.book_append_sheet(WB, cws, 'კატეგორიები');
     var fn='expenses_'+(_filter.from||'all')+(_filter.to?('_'+_filter.to):'')+'.xlsx';
-    XLSX.writeFile(WB, fn);
+    xlStyleWB(WB); XLSX.writeFile(WB, fn);
     AG.toast('📥 Excel ჩამოიტვირთა');
   }
 
@@ -22966,7 +22988,7 @@ window.expensesLoadFromSupabase = async function(){
       ws['!cols']=[{wch:26},{wch:18},{wch:10}];
       var wb=XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'რიგები');
-      XLSX.writeFile(wb, 'rigebi_shabloni_'+blockNm.replace(/[^a-zA-Z0-9]/g,'')+'.xlsx');
+      xlStyleWB(wb); XLSX.writeFile(wb, 'rigebi_shabloni_'+blockNm.replace(/[^a-zA-Z0-9]/g,'')+'.xlsx');
       try{AG.toast('📥 შაბლონი ჩამოიტვირთა');}catch(e){}
     }catch(e){ console.warn('znRowsDownloadTemplate',e); alert('შაბლონი ვერ შეიქმნა'); }
   };
@@ -23469,7 +23491,7 @@ window.shRenderIncome = function(){
         ws3['!cols']=[{wch:20},{wch:11},{wch:16},{wch:12},{wch:9},{wch:14},{wch:14},{wch:9},{wch:8},{wch:9},{wch:7},{wch:9}];
         XLSX.utils.book_append_sheet(wb, ws3, 'დეტალები');
       }catch(e){ console.warn('detail sheet', e); }
-      XLSX.writeFile(wb, 'mkrepavebis_xarji_'+new Date().toISOString().slice(0,10)+'.xlsx');
+      xlStyleWB(wb); XLSX.writeFile(wb, 'mkrepavebis_xarji_'+new Date().toISOString().slice(0,10)+'.xlsx');
       try{(window.AG&&AG.toast)&&AG.toast('📊 Excel ჩამოიტვირთა');}catch(e){}
     }catch(e){ console.warn('shKrepaExportXlsx', e); alert('ექსპორტი ვერ მოხერხდა: '+(e&&e.message||e)); }
   };
@@ -24982,7 +25004,7 @@ window.Personnel = (function(){
       var ws2=XLSX.utils.aoa_to_sheet(s2); ws2['!cols']=[{wch:20},{wch:11},{wch:16},{wch:12},{wch:9},{wch:14},{wch:14},{wch:9},{wch:8},{wch:9},{wch:7},{wch:9}];
       XLSX.utils.book_append_sheet(wb, ws1, 'დღიური');
       XLSX.utils.book_append_sheet(wb, ws2, 'დეტალები');
-      XLSX.writeFile(wb, 'mkrepavis_analitika_'+new Date().toISOString().slice(0,10)+'.xlsx');
+      xlStyleWB(wb); XLSX.writeFile(wb, 'mkrepavis_analitika_'+new Date().toISOString().slice(0,10)+'.xlsx');
     }catch(e){ console.warn('KStats.excel', e); alert('ექსპორტი ვერ მოხერხდა: '+(e&&e.message||e)); }
   };
 
@@ -27401,7 +27423,7 @@ window.Personnel = (function(){
     var aoa=[['ჯგუფი','მკრეფავი','ტელეფონი','სექტორი','რიგი','ხელმძღვანელი','ხელმძღ. ტელ.','თარიღი','საათი']];
     (g.members||[]).forEach(function(m){ aoa.push([g.name||'',m.name||'',m.phone||'',g.sector||'',g.row||'',g.leaderName||'',g.leaderPhone||'',g.date||'',g.time||'']); });
     var ws=XLSX.utils.aoa_to_sheet(aoa); var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'ჯგუფი');
-    XLSX.writeFile(wb,'krepa_jgufi_'+(g.name||'group')+'.xlsx');
+    xlStyleWB(wb); XLSX.writeFile(wb,'krepa_jgufi_'+(g.name||'group')+'.xlsx');
   };
 
   // ── გამშვები ღილაკი: ვამატებთ „SMS ყველას"-ის გვერდით (პერსონალის/მკრეფავების ტაბში) ──
@@ -28018,7 +28040,7 @@ window.Personnel = (function(){
     var aoa=[['თარიღი','სახელი','როლი','მოსვლა','წასვლა','ხანგრძლივობა']];
     rows.forEach(function(r){ var dur=''; if(r.inT&&r.outT){ var mi=tmin(r.outT)-tmin(r.inT); if(mi>0) dur=Math.floor(mi/60)+'სთ '+(mi%60)+'წთ'; } aoa.push([r.date,r.name,roleLbl(r.role),r.inT||'',r.outT||'',dur]); });
     var wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet(aoa); ws['!cols']=[{wch:12},{wch:26},{wch:12},{wch:10},{wch:10},{wch:14}];
-    XLSX.utils.book_append_sheet(wb,ws,'დასწრება'); XLSX.writeFile(wb,'დასწრება_'+today()+'.xlsx');
+    XLSX.utils.book_append_sheet(wb,ws,'დასწრება'); xlStyleWB(wb); XLSX.writeFile(wb,'დასწრება_'+today()+'.xlsx');
   };
 
   window.attAddCarrier=function(){
