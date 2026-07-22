@@ -1155,6 +1155,17 @@ function swNpCalc(){
   if(!isNaN(kg)&&kg>0&&!isNaN(pr)&&pr>=0){ amE.value=+(kg*pr).toFixed(2); }
 }
 window.swNpCalc = swNpCalc;
+// auto-fill supplier ს/კ / phone / addr when name matches a known supplier
+function swNpSupFill(){
+  const nE=document.getElementById('swnp-supplier'); if(!nE) return;
+  const rec=(window.__swSupByName||{})[String(nE.value||'').trim().toLowerCase()];
+  if(!rec) return;
+  const idE=document.getElementById('swnp-supidnum'), phE=document.getElementById('swnp-supphone'), adE=document.getElementById('swnp-supaddr');
+  if(idE && !idE.value && (rec.idnum||rec.idcode)) idE.value = rec.idnum||rec.idcode;
+  if(phE && !phE.value && rec.phone) phE.value = rec.phone;
+  if(adE && !adE.value && (rec.addr||rec.address)) adE.value = rec.addr||rec.address;
+}
+window.swNpSupFill = swNpSupFill;
 function swNewPurchase(){
   const existing=document.getElementById('sw-newpur-modal'); if(existing) existing.remove();
   const bg=document.createElement('div'); bg.id='sw-newpur-modal'; bg.className='sw-modal-bg';
@@ -1164,7 +1175,10 @@ function swNewPurchase(){
       <div style="font-size:1rem;font-weight:600;color:#1e3a5f;margin-bottom:16px">🛒 ახალი შესყიდვა</div>
       <div class="sw-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">
         <div class="sw-field full"><label>პროდუქტი *</label><input id="swnp-product" placeholder="მოცვი პრემიუმ"></div>
-        <div class="sw-field full"><label>მომწოდებელი</label><input id="swnp-supplier" list="sw-suppliers-dl" placeholder="მომწოდებლის სახელი"></div>
+        <div class="sw-field full"><label>მომწოდებელი</label><input id="swnp-supplier" list="sw-suppliers-dl" placeholder="მომწოდებლის სახელი" oninput="swNpSupFill()" onchange="swNpSupFill()"></div>
+        <div class="sw-field"><label>ს/კ (საიდ./პ.ნ.)</label><input id="swnp-supidnum" placeholder="ნ.ა."></div>
+        <div class="sw-field"><label>ტელეფონი</label><input id="swnp-supphone" placeholder="ნ.ა."></div>
+        <div class="sw-field full"><label>მისამართი (ნ.ა.)</label><input id="swnp-supaddr" placeholder="ნ.ა."></div>
         <div class="sw-field"><label>კგ *</label><input type="number" id="swnp-kg" min="0.1" step="0.1" oninput="swNpCalc()"></div>
         <div class="sw-field"><label>ფასი ₾/კგ</label><input type="number" id="swnp-price" min="0" step="0.01" placeholder="0.00" oninput="swNpCalc()"></div>
         <div class="sw-field"><label>თანხა ₾ (სულ)</label><input type="number" id="swnp-amount" min="0" step="0.01" placeholder="0.00"></div>
@@ -1187,6 +1201,9 @@ window.swNewPurchase = swNewPurchase;
 function swConfirmNewPurchase(){
   const product=(document.getElementById('swnp-product').value||'').trim();
   const supplier=(document.getElementById('swnp-supplier').value||'').trim();
+  const supIdnum=(document.getElementById('swnp-supidnum').value||'').trim();
+  const supPhone=(document.getElementById('swnp-supphone').value||'').trim();
+  const supAddr =(document.getElementById('swnp-supaddr').value||'').trim();
   const kg=parseFloat(document.getElementById('swnp-kg').value||0);
   let amount=parseFloat(document.getElementById('swnp-amount').value);
   let paidAmt=parseFloat(document.getElementById('swnp-paidamt').value);
@@ -1204,11 +1221,45 @@ function swConfirmNewPurchase(){
   swLots.push({ id:'sw_p_'+now, product, lot:autoLot, pallet_code:'', qty:kg, remaining:kg, section:'შესყიდვა', temp:'', expire, note:supplier, date:swDate() });
   swOps.push({ id:'op_'+now, type:'in', lot:autoLot, product, kg, section:'შესყიდვა', buyer:supplier, note:'შესყიდვა', amount, paid_amount:paidAmt, paid, date:swDate(), time:swNow() });
   swSave();
+  // remember supplier details in gv_suppliers (so the act's გამყიდველი is complete next time)
+  if(supplier) swUpsertSupplier(supplier, supIdnum, supPhone, supAddr);
   swUpdateStats(); swRenderStock(); swRenderHistory(); swRenderPurchases(); swBuildContactLists();
   const m=document.getElementById('sw-newpur-modal'); if(m) m.remove();
   swNotify('🛒 შესყიდვა: '+kg+'კგ '+product);
 }
 window.swConfirmNewPurchase = swConfirmNewPurchase;
+
+// upsert supplier details into gv_suppliers + refresh in-memory map/datalist
+function swUpsertSupplier(name, idnum, phone, addr){
+  name=String(name||'').trim(); if(!name) return;
+  const key=name.toLowerCase();
+  const existing=(window.__swSupByName||{})[key];
+  // build the record (only fields we have; merge over existing)
+  const rec=Object.assign({}, existing||{}, { name });
+  if(idnum) rec.idnum=idnum;
+  if(phone) rec.phone=phone;
+  if(addr)  rec.addr=addr;
+  if(!rec.id) rec.id='sup_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+  // update in-memory map + name list immediately (available to the act right away)
+  window.__swSupByName = window.__swSupByName||{};
+  window.__swSupByName[key]=rec;
+  window.__swSupNames = window.__swSupNames||[];
+  if(window.__swSupNames.indexOf(name)<0) window.__swSupNames.push(name);
+  swBuildContactLists();
+  // persist to cloud (non-blocking)
+  if(_sb && uid){
+    const payload={ id:rec.id, user_id:uid, name:rec.name };
+    if(rec.idnum!=null) payload.idnum=rec.idnum;
+    if(rec.phone!=null) payload.phone=rec.phone;
+    if(rec.addr!=null)  payload.addr=rec.addr;
+    try{
+      _sb.from('gv_suppliers').upsert(payload,{ onConflict:'id' })
+        .then(function(r){ if(r&&r.error) console.warn('swUpsertSupplier', r.error); })
+        .catch(function(e){ console.warn('swUpsertSupplier', e); });
+    }catch(e){ console.warn('swUpsertSupplier', e); }
+  }
+}
+window.swUpsertSupplier = swUpsertSupplier;
 
 // ══════════════════════════════════════════════════════
 //  PURCHASE ACT (შესყიდვის აქტი) — ported from reference, buyer = user's company
