@@ -996,7 +996,7 @@
     try { if (window.gtag) gtag('event', event, params||{}); } catch(e){}
     try {
       if (window.fbq) {
-        var std = {contact:'Lead', register:'CompleteRegistration', waitlist:'Lead', review:'SubmitApplication'};
+        var std = {contact:'Lead', register:'CompleteRegistration', waitlist:'Lead', review:'SubmitApplication', booking:'Schedule'};
         fbq('track', std[event] || 'Lead', params||{});
       }
     } catch(e){}
@@ -2236,6 +2236,101 @@
         <button class="modal-cancel" onclick="backToContactChoice()">← უკან</button>
         <button class="modal-submit" onclick="submitContact()">გაგზავნა</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- 📅 ჯავშნის მოდალი -->
+<style>
+  .gv-fab{position:fixed;right:18px;bottom:18px;z-index:9000;background:var(--orange);color:#fff;
+    border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:15px;
+    padding:14px 20px;border-radius:100px;box-shadow:0 12px 30px rgba(216,90,48,.45);
+    display:flex;align-items:center;gap:8px}
+  .gv-fab:hover{filter:brightness(1.05)}
+  .gv-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .gv-slot{padding:10px 6px;border:1px solid var(--border-strong);border-radius:8px;background:var(--bg);
+    cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;color:var(--text);transition:.15s}
+  .gv-slot.sel{background:var(--green);color:#fff;border-color:var(--green)}
+  .gv-field{margin-bottom:14px}
+  .gv-field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text-muted)}
+  .gv-field input,.gv-field select,.gv-field textarea{width:100%;padding:11px 13px;border:1px solid var(--border-strong);
+    border-radius:8px;font-size:15px;font-family:inherit;background:var(--bg);outline:none}
+  @media(max-width:640px){ .gv-fab{right:14px;bottom:14px;padding:12px 16px;font-size:14px} }
+</style>
+
+<button class="gv-fab" onclick="openBooking()" aria-label="დაჯავშნე ვიზიტი">📅 დაჯავშნე ვიზიტი</button>
+
+<div id="booking-modal" class="modal-overlay">
+  <div class="modal" style="max-width: 480px;">
+    <div style="text-align:center;margin-bottom:18px;">
+      <div style="font-size:40px;line-height:1;margin-bottom:8px;">📅</div>
+      <h2 style="margin-bottom:6px;">დაჯავშნე ვიზიტი</h2>
+      <p style="color:var(--text-muted);font-size:14px;margin:0;">აირჩიე დრო — ოსტატი მოვა თქვენთან</p>
+    </div>
+
+    <div class="gv-field">
+      <label>სერვისი *</label>
+      <select id="bk-service">
+        <option value="სანტექნიკოსი">🔧 სანტექნიკოსი</option>
+        <option value="ელექტრიკოსი">⚡ ელექტრიკოსი</option>
+        <option value="დამლაგებელი">🧹 დამლაგებელი</option>
+        <option value="კონდიციონერი">❄️ კონდიციონერი</option>
+        <option value="სხვა">➕ სხვა</option>
+      </select>
+    </div>
+
+    <div class="gv-field">
+      <label>ქალაქი *</label>
+      <select id="bk-city">
+        <option value="batumi">🌊 ბათუმი</option>
+        <option value="rustavi">🏭 რუსთავი</option>
+        <option value="kutaisi">🏛️ ქუთაისი</option>
+        <option value="zugdidi">🌿 ზუგდიდი</option>
+        <option value="telavi">🍇 თელავი</option>
+        <option value="marneuli">🌻 მარნეული</option>
+      </select>
+    </div>
+
+    <div class="gv-field">
+      <label>თარიღი *</label>
+      <input type="date" id="bk-date">
+    </div>
+
+    <div class="gv-field">
+      <label>დროის მონაკვეთი *</label>
+      <div class="gv-slots" id="bk-slots">
+        <button type="button" class="gv-slot" onclick="pickSlot(this)">09:00–11:00</button>
+        <button type="button" class="gv-slot" onclick="pickSlot(this)">11:00–13:00</button>
+        <button type="button" class="gv-slot" onclick="pickSlot(this)">13:00–15:00</button>
+        <button type="button" class="gv-slot" onclick="pickSlot(this)">15:00–17:00</button>
+        <button type="button" class="gv-slot" onclick="pickSlot(this)">17:00–19:00</button>
+        <button type="button" class="gv-slot" onclick="pickSlot(this)">19:00–21:00</button>
+      </div>
+    </div>
+
+    <div class="gv-field">
+      <label>მისამართი *</label>
+      <input type="text" id="bk-address" placeholder="ქუჩა, ბინა">
+    </div>
+
+    <div class="gv-field">
+      <label>ტელეფონი *</label>
+      <input type="tel" id="bk-phone" placeholder="+995 5XX XX XX XX">
+    </div>
+
+    <div class="gv-field">
+      <label>სახელი <span style="font-weight:400;color:var(--text-light);">(არჩევითი)</span></label>
+      <input type="text" id="bk-name" placeholder="მაგ: მარიამი">
+    </div>
+
+    <div class="gv-field">
+      <label>დამატებითი აღწერა <span style="font-weight:400;color:var(--text-light);">(არჩევითი)</span></label>
+      <textarea id="bk-note" rows="2" placeholder="მაგ: ონკანი ჟონავს სამზარეულოში"></textarea>
+    </div>
+
+    <div class="modal-buttons">
+      <button class="modal-cancel" onclick="closeBooking()">გაუქმება</button>
+      <button class="modal-submit" onclick="submitBooking()" id="bk-submit">დაჯავშნა</button>
     </div>
   </div>
 </div>
@@ -3567,18 +3662,91 @@
   
   function contactMaster(name) {
     currentContactMaster = name;
-    
+
     document.getElementById('contact-master-name').textContent = name;
     document.getElementById('contact-customer-phone').value = '';
     document.getElementById('contact-customer-name').value = '';
-    
+
     // ვაჩვენოთ არჩევანი (1-ლი ნაბიჯი)
     document.getElementById('contact-choice-step').style.display = 'block';
     document.getElementById('contact-phone-step').style.display = 'none';
-    
+
     document.getElementById('contact-modal').classList.add('active');
   }
-  
+
+  // ============================================
+  // 📅 ჯავშნის ფუნქციები
+  // ============================================
+  let bkSlot = null;
+  function pickSlot(btn) {
+    bkSlot = btn.textContent;
+    document.querySelectorAll('#bk-slots .gv-slot').forEach(s => s.classList.remove('sel'));
+    btn.classList.add('sel');
+  }
+  function openBooking() {
+    bkSlot = null;
+    document.querySelectorAll('#bk-slots .gv-slot').forEach(s => s.classList.remove('sel'));
+    ['bk-address','bk-phone','bk-name','bk-note'].forEach(id => { var el=document.getElementById(id); if(el) el.value=''; });
+    // დღევანდელი მინიმალური თარიღი + წინასწარ არჩეული ქალაქი
+    var d = document.getElementById('bk-date');
+    try { d.min = new Date().toISOString().split('T')[0]; } catch(e){}
+    if (typeof selectedCity !== 'undefined' && selectedCity) {
+      var cs = document.getElementById('bk-city'); if (cs) cs.value = selectedCity;
+    }
+    document.getElementById('booking-modal').classList.add('active');
+  }
+  function closeBooking() {
+    document.getElementById('booking-modal').classList.remove('active');
+  }
+  async function submitBooking() {
+    if (window._submittingBooking) return;
+    var service = document.getElementById('bk-service').value;
+    var city    = document.getElementById('bk-city').value;
+    var date    = document.getElementById('bk-date').value;
+    var address = document.getElementById('bk-address').value.trim();
+    var name    = document.getElementById('bk-name').value.trim();
+    var note    = document.getElementById('bk-note').value.trim();
+    var phone   = document.getElementById('bk-phone').value.trim();
+
+    if (!date)      { showToast('⚠️ აირჩიე თარიღი'); return; }
+    if (!bkSlot)    { showToast('⚠️ აირჩიე დროის მონაკვეთი'); return; }
+    if (!address)   { showToast('⚠️ შეიყვანე მისამართი'); return; }
+    if (!phone || phone.length < 9) { showToast('⚠️ შეიყვანე სწორი ტელეფონი'); return; }
+
+    var cleanPhone = phone.replace(/[\s\-()]/g, '');
+    if (!cleanPhone.startsWith('+')) cleanPhone = cleanPhone.startsWith('995') ? '+' + cleanPhone : '+995' + cleanPhone;
+    if (!/^\+995\d{9}$/.test(cleanPhone)) { showToast('⚠️ ქართული მობილური საჭიროა (+995 5XX XXX XXX)'); return; }
+
+    window._submittingBooking = true;
+    var btn = document.getElementById('bk-submit');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ იგზავნება...'; }
+
+    if (sb) {
+      try {
+        var { error } = await sb.from('bookings').insert([{
+          service: service, city: city, booking_date: date, time_slot: bkSlot,
+          address: address, customer_name: name || null, customer_phone: cleanPhone,
+          note: note || null, status: 'new'
+        }]);
+        if (error) console.warn('booking insert:', error);
+      } catch(e) { console.error('booking error:', e); }
+    }
+
+    // ადმინს SMS ახალი ჯავშნის შესახებ
+    try {
+      var adminSms = 'gverdshi.ge: akhali javshani! ' + service + ' — ' + date + ' ' + bkSlot
+                   + ' — ' + cleanPhone + ' (' + city + ')';
+      if (typeof notifyAdmin === 'function') notifyAdmin(adminSms);
+    } catch(e){}
+
+    if (window.gvTrack) gvTrack('booking', { service: service, city: city });
+
+    window._submittingBooking = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'დაჯავშნა'; }
+    closeBooking();
+    showToast('✅ ჯავშანი მიღებულია! ოსტატი დაგიკავშირდებათ დასადასტურებლად.');
+  }
+
   function closeContactModal() {
     document.getElementById('contact-modal').classList.remove('active');
   }

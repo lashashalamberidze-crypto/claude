@@ -84,6 +84,30 @@ create index if not exists contacts_due_idx
   where review_sms_sent = false;
 
 -- ---------------------------------------------------------------------------
+-- 3b. BOOKINGS — ჯავშნები (თარიღი/დროის მონაკვეთით)
+-- ---------------------------------------------------------------------------
+create table if not exists public.bookings (
+  id              uuid primary key default gen_random_uuid(),
+  service         text,
+  city            text default 'batumi',
+  booking_date    date,
+  time_slot       text,
+  address         text,
+  customer_name   text,
+  customer_phone  text,
+  note            text,
+  master_id       uuid references public.masters(id) on delete set null,
+  status          text default 'new',   -- new | confirmed | done | cancelled
+  created_at      timestamptz default now()
+);
+create index if not exists bookings_date_idx on public.bookings (booking_date, status);
+
+alter table public.bookings enable row level security;
+drop policy if exists bookings_anon_insert on public.bookings;
+create policy bookings_anon_insert on public.bookings
+  for insert with check (true);
+
+-- ---------------------------------------------------------------------------
 -- 4. WAITLIST — მოცდის რიგი (მომავალი სერვისები)
 -- ---------------------------------------------------------------------------
 create table if not exists public.waitlist (
