@@ -930,6 +930,78 @@
   .shefaseba-master-info .meta { font-size: 13px; color: var(--text-muted); }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- 📱 PWA -->
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="gverdshi.ge">
+
+<!-- 🔎 SEO structured data (schema.org) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "gverdshi.ge",
+  "description": "სახლის ოსტატები საქართველოში — სანტექნიკოსი, ელექტრიკოსი, დამლაგებელი. სანდო, სწრაფი, ფასი წინასწარ.",
+  "url": "https://gverdshi.ge/",
+  "image": "https://gverdshi.ge/og-image.png",
+  "priceRange": "₾₾",
+  "areaServed": [
+    {"@type":"City","name":"ბათუმი"},
+    {"@type":"City","name":"რუსთავი"},
+    {"@type":"City","name":"ქუთაისი"},
+    {"@type":"City","name":"ზუგდიდი"},
+    {"@type":"City","name":"თელავი"},
+    {"@type":"City","name":"მარნეული"}
+  ],
+  "makesOffer": [
+    {"@type":"Offer","itemOffered":{"@type":"Service","name":"სანტექნიკოსი"}},
+    {"@type":"Offer","itemOffered":{"@type":"Service","name":"ელექტრიკოსი"}},
+    {"@type":"Offer","itemOffered":{"@type":"Service","name":"დამლაგებელი"}}
+  ]
+}
+</script>
+
+<!-- 📊 Analytics & Ads (ჩაანაცვლე ID-ები რომ ჩაირთოს) -->
+<script>
+  // ⬇️ აქ ჩასვი შენი ID-ები. სანამ placeholder-ია, არაფერი იტვირთება (საიტს არ აზიანებს).
+  window.GVERDSHI_ANALYTICS = {
+    GA4_ID:       'G-XXXXXXXXXX',        // Google Analytics 4 → Measurement ID
+    META_PIXEL_ID:'XXXXXXXXXXXXXXX'      // Facebook/Meta Pixel ID
+  };
+  (function(){
+    var cfg = window.GVERDSHI_ANALYTICS || {};
+    // — Google Analytics 4 —
+    if (cfg.GA4_ID && cfg.GA4_ID.indexOf('XXXX') === -1) {
+      var s=document.createElement('script'); s.async=true;
+      s.src='https://www.googletagmanager.com/gtag/js?id='+cfg.GA4_ID;
+      document.head.appendChild(s);
+      window.dataLayer=window.dataLayer||[];
+      window.gtag=function(){dataLayer.push(arguments)};
+      gtag('js',new Date()); gtag('config',cfg.GA4_ID);
+    }
+    // — Meta Pixel —
+    if (cfg.META_PIXEL_ID && cfg.META_PIXEL_ID.indexOf('XXXX') === -1) {
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+      document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init',cfg.META_PIXEL_ID); fbq('track','PageView');
+    }
+  })();
+  // 🔔 კონვერსიის ივენთის უნივერსალური helper — გამოიძახება ფორმებიდან
+  window.gvTrack = function(event, params){
+    try { if (window.gtag) gtag('event', event, params||{}); } catch(e){}
+    try {
+      if (window.fbq) {
+        var std = {contact:'Lead', register:'CompleteRegistration', waitlist:'Lead', review:'SubmitApplication'};
+        fbq('track', std[event] || 'Lead', params||{});
+      }
+    } catch(e){}
+  };
+</script>
 </head>
 <body>
 
@@ -2075,7 +2147,8 @@
         <h4 data-t="footer_for_masters">ოსტატებს</h4>
         <a onclick="showPage('register')" data-t="footer_become">გახდი ოსტატი</a>
         <a onclick="scrollToHow()" data-t="footer_how">როგორ მუშაობს</a>
-        <a onclick="showPage('terms')" data-t="footer_rules">წესები</a>
+        <a href="/terms.html" data-t="footer_rules">წესები და პირობები</a>
+        <a href="/privacy.html" data-t="footer_privacy">კონფიდენციალურობა</a>
         <a href="mailto:info@gverdshi.ge" data-t="footer_help">დახმარება</a>
       </div>
     </div>
@@ -3683,6 +3756,7 @@
 
     closeContactModal();
     showToast('✅ თქვენი ნომერი გადაეცა ოსტატს. ის დაგიკავშირდებათ მალე.');
+    if (window.gvTrack) gvTrack('contact', { master: masterName, city: (typeof selectedCity!=='undefined'?selectedCity:'') });
     
     // 📌 WhatsApp აღარ იხსნება ავტომატურად — ეს ცალკე ღილაკისთვისაა
     // window.open(waUrl, '_blank');
@@ -3785,6 +3859,7 @@
 
     if (success) {
       showToast('✅ რეგისტრაცია გაიგზავნა! 24 საათში დაგიკავშირდებით ვერიფიკაციისთვის.');
+      if (window.gvTrack) gvTrack('register', {});
       // ვაახლებთ counter-ს ახალი რეგისტრაციის შემდეგ
       setTimeout(updateFreeSpotsCounter, 500);
       // ვასუფთავებთ ფორმას
@@ -4012,6 +4087,7 @@
 
     closeReviewModal();
     showToast('✓ შენი შეფასება გაიგზავნა. მადლობა! მოდერაცია 24 საათში.');
+    if (window.gvTrack) gvTrack('review', { rating: currentRating });
   }
 
   function showToast(text) {
@@ -4109,6 +4185,7 @@
     // წარმატების toast მომხმარებლის ენაზე
     const dict = translations[currentLang] || translations.ka;
     showToast(dict.wl_success || '✅ მადლობა! პირველი გაცნობებთ.');
+    if (window.gvTrack) gvTrack('waitlist', { service: currentWaitlistService });
     closeWaitlistModal();
   }
 
@@ -5108,6 +5185,7 @@
       }
       const success = document.getElementById('shefaseba-success');
       if (success) success.style.display = 'block';
+      if (window.gvTrack) gvTrack('review', { rating: rating });
     } catch(e) {
       console.error('შეცდომა:', e);
       if (typeof showToast === 'function') showToast('❌ შეცდომა მოხდა');
@@ -5309,6 +5387,52 @@
   // უსაფრთხოების gear — 10 წუთის შემდეგ მოვწყვიტოთ
   setTimeout(() => clearInterval(interval), 10000);
 })();
+</script>
+
+<!-- 🍪 Cookie consent banner -->
+<style>
+  #cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;max-width:720px;margin:0 auto;
+    background:#fff;border:1px solid var(--border,#e5e7eb);border-radius:16px;box-shadow:0 16px 40px rgba(0,0,0,.16);
+    padding:18px 20px;display:none;align-items:center;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--text,#1f2421)}
+  #cookie-banner.show{display:flex}
+  #cookie-banner p{flex:1 1 300px;line-height:1.5;margin:0}
+  #cookie-banner a{color:var(--green,#17794e);font-weight:600}
+  #cookie-banner .ck-btns{display:flex;gap:10px;flex-wrap:wrap}
+  #cookie-banner button{font-family:inherit;font-size:14px;font-weight:600;padding:10px 20px;border-radius:100px;cursor:pointer;border:none}
+  #cookie-banner .ck-ok{background:var(--green,#17794e);color:#fff}
+  #cookie-banner .ck-no{background:#f1f1ee;color:var(--text,#1f2421)}
+</style>
+<div id="cookie-banner">
+  <p>🍪 ვიყენებთ cookie-ებს საიტის გამართული მუშაობისა და ანალიტიკისთვის.
+     დეტალები — <a href="/privacy.html">კონფიდენციალურობის პოლიტიკაში</a>.</p>
+  <div class="ck-btns">
+    <button class="ck-no" onclick="gvCookie(false)">მხოლოდ საჭირო</button>
+    <button class="ck-ok" onclick="gvCookie(true)">თანხმობა</button>
+  </div>
+</div>
+
+<script>
+  // 🍪 Cookie consent
+  (function(){
+    try {
+      if (!localStorage.getItem('gv_cookie_consent')) {
+        var el = document.getElementById('cookie-banner');
+        if (el) setTimeout(function(){ el.classList.add('show'); }, 800);
+      }
+    } catch(e){}
+  })();
+  window.gvCookie = function(accepted){
+    try { localStorage.setItem('gv_cookie_consent', accepted ? 'all' : 'essential'); } catch(e){}
+    var el = document.getElementById('cookie-banner'); if (el) el.classList.remove('show');
+    if (accepted && window.gtag) { try { gtag('consent','update',{analytics_storage:'granted'}); } catch(e){} }
+  };
+
+  // 📱 Service worker (PWA offline + installable)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('/sw.js').catch(function(e){ console.warn('SW:', e); });
+    });
+  }
 </script>
 </body>
 </html>

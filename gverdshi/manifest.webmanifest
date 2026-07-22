@@ -1,0 +1,16 @@
+{
+  "name": "gverdshi.ge — სახლის ოსტატი თქვენს გვერდში",
+  "short_name": "gverdshi.ge",
+  "description": "სახლის ოსტატები საქართველოში — სანტექნიკოსი, ელექტრიკოსი, დამლაგებელი. სანდო, სწრაფი, ფასი წინასწარ.",
+  "start_url": "/?utm_source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf8f3",
+  "theme_color": "#17794e",
+  "lang": "ka",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
