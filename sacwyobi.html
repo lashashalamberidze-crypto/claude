@@ -1183,7 +1183,6 @@ function swNewPurchase(){
         <div class="sw-field"><label>ფასი ₾/კგ</label><input type="number" id="swnp-price" min="0" step="0.01" placeholder="0.00" oninput="swNpCalc()"></div>
         <div class="sw-field"><label>თანხა ₾ (სულ)</label><input type="number" id="swnp-amount" min="0" step="0.01" placeholder="0.00"></div>
         <div class="sw-field"><label>გადახდილი ₾</label><input type="number" id="swnp-paidamt" min="0" step="0.01" placeholder="0.00"></div>
-        <div class="sw-field"><label>პარტია (ნ.ა.)</label><input id="swnp-lot" placeholder="ავტო"></div>
         <div class="sw-field"><label>სეცია</label><input id="swnp-section" placeholder="A1"></div>
         <div class="sw-field"><label>ვადა</label><input type="date" id="swnp-expire"></div>
       </div>
@@ -1207,7 +1206,7 @@ function swConfirmNewPurchase(){
   const kg=parseFloat(document.getElementById('swnp-kg').value||0);
   let amount=parseFloat(document.getElementById('swnp-amount').value);
   let paidAmt=parseFloat(document.getElementById('swnp-paidamt').value);
-  const lotIn=(document.getElementById('swnp-lot').value||'').trim();
+  const lotIn='';  // პარტია მოხსნილია შესყიდვიდან — ლოტი ავტო
   const section=(document.getElementById('swnp-section').value||'').trim();
   const expire=document.getElementById('swnp-expire').value||'';
   if(!product||!kg||kg<=0){ swNotify('⚠️ პროდუქტი და კგ სავალდებულოა', true); return; }
