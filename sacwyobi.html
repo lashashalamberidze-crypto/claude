@@ -1653,23 +1653,110 @@ window.xlStyleWB = function(WB){
 function swExportExcel(){
   if(typeof XLSX==='undefined'){ swNotify('⚠️ XLSX ბიბლ. ვ/მ', true); return; }
   const WB = XLSX.utils.book_new();
-  // Sheet 1: lots
-  const s1=[['ლოტი','პალეტი','პროდუქტი','მიღება','სულ კგ','მარაგი','სეც.','ვადა','შენ.']];
-  swLots.forEach(l=>s1.push([l.lot,l.pallet_code||'',l.product,l.date,+l.qty,+l.remaining,l.section||'',l.expire||'',l.note||'']));
+  const M  = v => swMoney(v);                 // money string
+  const n2 = v => +(+v||0).toFixed(2);        // numeric money
+  const n1 = v => +(+v||0).toFixed(1);        // numeric kg
+  const lots  = Array.isArray(swLots)?swLots:[];
+  const ops   = Array.isArray(swOps)?swOps:[];
+  const temps = Array.isArray(swTemps)?swTemps:[];
+  const ships = Array.isArray(swShipments)?swShipments:[];
+  const outs  = ops.filter(o=>o&&o.type==='out');
+  const purs  = ops.filter(o=>o&&typeof swIsPurchase==='function'&&swIsPurchase(o));
+  const supByName = window.__swSupByName||{};
+  function payStatus(o){ const amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0; if(amt<=0) return '—'; if(pa>=amt) return 'გადახდილი'; if(pa>0) return 'ნაწილობრივი'; return 'გადაუხდელი'; }
+
+  // ── totals ──
+  const totRemaining = lots.reduce((a,l)=>a+(+l.remaining||0),0);
+  const activeLots   = lots.filter(l=>(+l.remaining||0)>0).length;
+  let saleTot=0, salePaid=0, saleOwed=0, saleKg=0;
+  outs.forEach(o=>{ const amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0; saleTot+=amt; salePaid+=Math.min(pa,amt||pa); saleKg+=(+o.kg||0); if(amt>0){ const r=amt-pa; if(r>0.0001) saleOwed+=r; } });
+  let purTot=0, purPaid=0, purOwed=0;
+  purs.forEach(o=>{ const amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0; purTot+=amt; purPaid+=Math.min(pa,amt||pa); if(amt>0){ const r=amt-pa; if(r>0.0001) purOwed+=r; } });
+  let shipP=0, shipN=0; ships.forEach(s=>{ shipP+=(+s.pallets||0); shipN+=(+s.net||0); });
+
+  // ── 1) summary ──
+  const s0=[
+    ['📊 შეჯამება — საწყობი / მაცივარი',''],
+    ['თარიღი', swDate()],
+    ['',''],
+    ['— მარაგი —',''],
+    ['სულ მარაგი (კგ)', n1(totRemaining)],
+    ['პარტიები (აქტიური)', activeLots],
+    ['',''],
+    ['— გაყიდვა —',''],
+    ['სულ გაყიდვა (₾)', n2(saleTot)],
+    ['გადახდილი (₾)', n2(salePaid)],
+    ['🔴 დარჩა — გვმართებენ (₾)', n2(saleOwed)],
+    ['გაყიდული (კგ)', n1(saleKg)],
+    ['',''],
+    ['— შესყიდვა —',''],
+    ['სულ შესყიდვა (₾)', n2(purTot)],
+    ['გადახდილი (₾)', n2(purPaid)],
+    ['🔴 მომწოდებლებს ვმართებთ (₾)', n2(purOwed)],
+    ['',''],
+    ['— გამგზავრება —',''],
+    ['ჩანაწერი', ships.length],
+    ['პალეტი (Σ)', n1(shipP)],
+    ['ნეტო (Σ, კგ)', n1(shipN)]
+  ];
+  const ws0=XLSX.utils.aoa_to_sheet(s0); ws0['!cols']=[{wch:34},{wch:16}];
+  XLSX.utils.book_append_sheet(WB,ws0,'შეჯამება');
+
+  // ── 2) lots ──
+  const s1=[['ლოტი','პალეტი','პროდუქტი','მიღების თარიღი','სულ კგ','მარაგი','სეცია','ვადა','შენიშვნა']];
+  lots.forEach(l=>s1.push([l.lot||'',l.pallet_code||'',l.product||'',l.date||'',n1(l.qty),n1(l.remaining),l.section||'',l.expire||'',l.note||'']));
   const ws1=XLSX.utils.aoa_to_sheet(s1);
-  ws1['!cols']=[{wch:12},{wch:16},{wch:20},{wch:12},{wch:10},{wch:10},{wch:8},{wch:12},{wch:24}];
+  ws1['!cols']=[{wch:12},{wch:16},{wch:20},{wch:14},{wch:10},{wch:10},{wch:10},{wch:12},{wch:24}];
   XLSX.utils.book_append_sheet(WB,ws1,'მარაგი');
-  // Sheet 2: ops
-  const s2=[['#','დრო','ოპ.','ლოტი','პროდ.','კგ','მიმღ./სეც.','შენ.']];
-  swOps.forEach((o,i)=>s2.push([i+1,o.time,o.type==='in'?'მიღება':'გატანა',o.lot,o.product,+o.kg,o.buyer||o.section||'',o.note||'']));
+
+  // ── 3) sales (out-ops) ──
+  const s2=[['თარიღი','მიმღები','პროდუქტი','კგ','ფასი ₾/კგ','სულ ₾','გადახდილი ₾','დარჩა ₾','სტატუსი']];
+  let c2kg=0,c2t=0,c2p=0,c2r=0;
+  outs.forEach(o=>{ const kg=+o.kg||0, amt=(o.amount!=null?+o.amount:0)||0, pa=Math.min(+o.paid_amount||0,amt||(+o.paid_amount||0)), rem=amt>0?Math.max(0,amt-pa):0, unit=(amt>0&&kg>0)?n2(amt/kg):'';
+    c2kg+=kg;c2t+=amt;c2p+=pa;c2r+=rem;
+    s2.push([o.date||'',o.buyer||'',o.product||'',n1(kg),unit,amt>0?n2(amt):'',amt>0?n2(pa):'',amt>0?n2(rem):'',payStatus(o)]); });
+  if(outs.length) s2.push(['ჯამი','','',n1(c2kg),'',n2(c2t),n2(c2p),n2(c2r),'']);
   const ws2=XLSX.utils.aoa_to_sheet(s2);
-  ws2['!cols']=[{wch:5},{wch:18},{wch:10},{wch:12},{wch:20},{wch:10},{wch:18},{wch:24}];
-  XLSX.utils.book_append_sheet(WB,ws2,'ოპ. ისტ.');
-  // Sheet 3: temps
-  const s3=[['დრო','სეც.','ტემპ. °C','შენ.']];
-  swTemps.forEach(t=>s3.push([t.time,t.section,+t.temp,t.note||'']));
+  ws2['!cols']=[{wch:12},{wch:20},{wch:20},{wch:9},{wch:11},{wch:12},{wch:12},{wch:11},{wch:14}];
+  XLSX.utils.book_append_sheet(WB,ws2,'გაყიდვები');
+
+  // ── 4) purchases (purchase in-ops) ──
+  const s3=[['თარიღი','მომწოდებელი','ს/კ','პროდუქტი','კგ','ფასი ₾/კგ','სულ ₾','გადახდილი ₾','დარჩა ₾','სტატუსი']];
+  let c3kg=0,c3t=0,c3p=0,c3r=0;
+  purs.forEach(o=>{ const kg=+o.kg||0, amt=(o.amount!=null?+o.amount:0)||0, pa=Math.min(+o.paid_amount||0,amt||(+o.paid_amount||0)), rem=amt>0?Math.max(0,amt-pa):0, unit=(amt>0&&kg>0)?n2(amt/kg):'';
+    const rec=supByName[String(o.buyer||'').trim().toLowerCase()]; const idc=(rec&&(rec.idnum||rec.idcode))||'';
+    c3kg+=kg;c3t+=amt;c3p+=pa;c3r+=rem;
+    s3.push([o.date||'',o.buyer||o.section||'',idc,o.product||'',n1(kg),unit,amt>0?n2(amt):'',amt>0?n2(pa):'',amt>0?n2(rem):'',payStatus(o)]); });
+  if(purs.length) s3.push(['ჯამი','','','',n1(c3kg),'',n2(c3t),n2(c3p),n2(c3r),'']);
   const ws3=XLSX.utils.aoa_to_sheet(s3);
-  XLSX.utils.book_append_sheet(WB,ws3,'ტემპ. ჟ.');
+  ws3['!cols']=[{wch:12},{wch:20},{wch:16},{wch:20},{wch:9},{wch:11},{wch:12},{wch:12},{wch:11},{wch:14}];
+  XLSX.utils.book_append_sheet(WB,ws3,'შესყიდვები');
+
+  // ── 5) shipments ──
+  const s4=[['თარიღი','მისაბმელი','მძღოლი','მიმართულება','პალეტი','ბრუტო','ნეტო']];
+  let c4p=0,c4b=0,c4n=0;
+  ships.slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))).forEach(s=>{ c4p+=(+s.pallets||0);c4b+=(+s.gross||0);c4n+=(+s.net||0);
+    s4.push([s.date||'',s.trailer||'',s.driver||'',s.dest||'',n1(s.pallets),n1(s.gross),n1(s.net)]); });
+  if(ships.length) s4.push(['ჯამი','','','',n1(c4p),n1(c4b),n1(c4n)]);
+  const ws4=XLSX.utils.aoa_to_sheet(s4);
+  ws4['!cols']=[{wch:12},{wch:14},{wch:16},{wch:18},{wch:9},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(WB,ws4,'გამგზავრება');
+
+  // ── 6) all ops ──
+  const s5=[['თარიღი','დრო','ტიპი','პროდუქტი','ლოტი','კგ','მიმღ./მომწ./სეც.','თანხა ₾','გადახდილი ₾','შენიშვნა']];
+  ops.forEach(o=>{ const amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0;
+    s5.push([o.date||'',o.time||'',o.type==='in'?'მიღება':'გატანა',o.product||'',o.lot||'',n1(o.kg),o.buyer||o.section||'',amt>0?n2(amt):'',amt>0?n2(pa):'',o.note||'']); });
+  const ws5=XLSX.utils.aoa_to_sheet(s5);
+  ws5['!cols']=[{wch:12},{wch:10},{wch:9},{wch:20},{wch:12},{wch:9},{wch:18},{wch:11},{wch:12},{wch:22}];
+  XLSX.utils.book_append_sheet(WB,ws5,'ოპერაციები');
+
+  // ── 7) temps ──
+  const s6=[['დრო','სეცია','ტემპ. °C','შენიშვნა']];
+  temps.forEach(t=>s6.push([t.time||'',t.section||'',+t.temp||0,t.note||'']));
+  const ws6=XLSX.utils.aoa_to_sheet(s6);
+  ws6['!cols']=[{wch:18},{wch:10},{wch:10},{wch:24}];
+  XLSX.utils.book_append_sheet(WB,ws6,'ტემპერატურა');
+
   xlStyleWB(WB); XLSX.writeFile(WB,'InTechSol_Sacwyobi_'+swDate()+'.xlsx');
   swNotify('📥 Excel ჩამოიტვირთა');
 }
