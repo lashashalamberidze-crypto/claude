@@ -110,6 +110,45 @@
   }
   .nav-cta:hover { background: var(--orange); color: white !important; }
 
+  /* 🍔 Mobile hamburger menu */
+  .nav-burger {
+    display: none;
+    flex-direction: column; justify-content: center; gap: 5px;
+    width: 44px; height: 44px; padding: 11px;
+    background: none; border: none; cursor: pointer; border-radius: 10px;
+  }
+  .nav-burger span {
+    display: block; height: 2.5px; width: 100%;
+    background: var(--text); border-radius: 3px; transition: transform .25s, opacity .2s;
+  }
+  .nav-burger.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .nav-burger.open span:nth-child(2) { opacity: 0; }
+  .nav-burger.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  @media (max-width: 640px) {
+    .nav-inner { position: relative; }
+    .nav-burger { display: flex; }
+    .nav-links {
+      position: absolute; top: 100%; left: 0; right: 0;
+      flex-direction: column; align-items: stretch; gap: 2px;
+      background: var(--card, #fff);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 14px 30px rgba(0,0,0,.12);
+      padding: 12px 20px 18px;
+      display: none;
+    }
+    .nav-links.open { display: flex; }
+    .nav-links a {
+      padding: 14px 4px; font-size: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .lang-switcher { align-self: flex-start; margin-bottom: 8px; }
+    .nav-cta {
+      text-align: center; padding: 14px; font-size: 16px;
+      border-bottom: none !important; margin-top: 8px;
+    }
+  }
+
   .page { display: none; animation: fadeIn 0.3s ease; }
   .page.active { display: block; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
@@ -918,6 +957,9 @@
       <a onclick="scrollToHow()" data-t="nav_how">როგორ მუშაობს</a>
       <a onclick="showPage('register')" class="nav-cta" data-t="nav_become">გახდი ოსტატი</a>
     </div>
+    <button class="nav-burger" id="nav-burger" aria-label="მენიუ" onclick="toggleNav(event)">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
 
@@ -4588,6 +4630,25 @@
       document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
       document.querySelectorAll('.ms-trigger.open').forEach(t => t.classList.remove('open'));
     }
+  });
+
+  // 🍔 მობილური მენიუ (hamburger)
+  function toggleNav(e) {
+    if (e) e.stopPropagation();
+    document.querySelector('.nav-links')?.classList.toggle('open');
+    document.getElementById('nav-burger')?.classList.toggle('open');
+  }
+  function closeNav() {
+    document.querySelector('.nav-links')?.classList.remove('open');
+    document.getElementById('nav-burger')?.classList.remove('open');
+  }
+  window.toggleNav = toggleNav;
+  // ბმულზე დაჭერისას მენიუ დაიხუროს; გარე კლიკზეც
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.nav-links a').forEach(a => a.addEventListener('click', closeNav));
+  });
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.nav-inner')) closeNav();
   });
 
   // ინიცირება — დეფოლტი ლეიბლი
