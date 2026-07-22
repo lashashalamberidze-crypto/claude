@@ -769,14 +769,16 @@
     background: rgba(26, 26, 26, 0.6);
     backdrop-filter: blur(8px);
     display: none; align-items: center; justify-content: center;
-    z-index: 1000; padding: 20px;
+    z-index: 1000; padding: 20px; overflow-y: auto;
   }
   .modal-overlay.active { display: flex; }
   .modal {
     background: var(--card); border-radius: var(--radius-lg);
     padding: 40px; max-width: 400px; width: 100%;
     border: 1px solid var(--border);
+    max-height: calc(100vh - 40px); overflow-y: auto;   /* გრძელი მოდალი შიგნით სქროლავს */
   }
+  @media (max-width: 640px) { .modal { padding: 24px 20px; } }
   .modal h2 {
     font-family: 'Noto Serif Georgian', serif; font-weight: 900;
     font-size: 24px; margin-bottom: 8px;
