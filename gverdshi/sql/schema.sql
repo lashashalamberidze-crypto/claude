@@ -108,6 +108,26 @@ create policy bookings_anon_insert on public.bookings
   for insert with check (true);
 
 -- ---------------------------------------------------------------------------
+-- 3c. PAYMENTS — BOG გადახდები (Edge Function-ები ავსებენ)
+-- ---------------------------------------------------------------------------
+create table if not exists public.payments (
+  id                 uuid primary key default gen_random_uuid(),
+  order_id           text,               -- BOG order id
+  external_order_id  text,               -- ჩვენი id (booking_id)
+  booking_id         uuid references public.bookings(id) on delete set null,
+  amount             numeric,
+  currency           text default 'GEL',
+  customer_phone     text,
+  status             text default 'pending',   -- pending | paid | failed
+  raw_status         text,
+  paid_at            timestamptz,
+  created_at         timestamptz default now()
+);
+create index if not exists payments_order_idx on public.payments (order_id);
+alter table public.payments enable row level security;
+-- ⚠️ anon policy არ ვამატებთ — payments-ს მხოლოდ Edge Function (service role) წერს/კითხულობს.
+
+-- ---------------------------------------------------------------------------
 -- 4. WAITLIST — მოცდის რიგი (მომავალი სერვისები)
 -- ---------------------------------------------------------------------------
 create table if not exists public.waitlist (
