@@ -153,6 +153,7 @@
     <button class="sw-tab" onclick="swTab('history',this)">📋 ისტორია</button>
     <button class="sw-tab" onclick="swTab('sales',this)">💰 გაყიდვები</button>
     <button class="sw-tab" onclick="swTab('purchases',this)">🛒 შესყიდვა</button>
+    <button class="sw-tab" onclick="swTab('ship',this)">🚚 გამგზავრება</button>
   </div>
 
   <!-- ── TAB: STOCK ── -->
@@ -290,6 +291,30 @@
     </div>
   </div>
 
+  <!-- ── TAB: SHIP (dispatch/export) ── -->
+  <div id="sw-page-ship" class="sw-page">
+    <div class="sw-card">
+      <div class="sw-card-title" style="justify-content:space-between">
+        <span>🚚 გამგზავრება <span id="sw-ship-summary" class="muted" style="font-weight:400;letter-spacing:0;text-transform:none"></span></span>
+        <span style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="sw-btn sw-btn-outline" style="padding:6px 12px;font-size:.76rem" onclick="swPrintShip()">🖨️ გამგზავრების დოკუმენტი</button>
+          <button class="sw-btn sw-btn-gold" style="padding:6px 14px;font-size:.78rem" onclick="swNewShipment()">➕ ახალი გამგზავრება</button>
+        </span>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <input type="date" id="sw-ship-from" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
+        <input type="date" id="sw-ship-to" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
+        <button class="sw-btn sw-btn-outline" onclick="swRenderShip()">🔍 ფილტრი</button>
+      </div>
+      <div class="sw-table-wrap">
+        <table class="sw-table">
+          <thead><tr><th>თარიღი</th><th>მისაბმელი</th><th>მძღოლი</th><th>მიმართულება</th><th>პალეტი</th><th>ბრუტო</th><th>ნეტო</th><th></th></tr></thead>
+          <tbody id="sw-ship-tbody"><tr><td colspan="8" class="sw-empty">— გამგზავრება არ არის —</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /sw-wrap -->
 <datalist id="sw-suppliers-dl"></datalist>
 <datalist id="sw-buyers-dl"></datalist>
@@ -372,6 +397,34 @@ async function sacwyobiLoadFromSupabase(){
   }catch(e){ console.warn('sacwyobiLoadFromSupabase', e); }
 }
 window.sacwyobiLoadFromSupabase = sacwyobiLoadFromSupabase;
+
+// ── shipments (dispatch) cloud helpers — table sacwyobi_shipments ──
+async function swLoadShipments(){
+  if(!_sb || !uid) return null;
+  try{
+    var all=[], from=0, STEP=1000;
+    while(true){
+      var r = await _sb.from('sacwyobi_shipments').select('*').eq('user_id', uid).range(from, from+STEP-1);
+      if(r.error){ console.warn('[swLoadShipments]', r.error); break; }
+      var d=r.data||[]; all=all.concat(d);
+      if(d.length<STEP) break; from+=STEP; if(from>100000) break;
+    }
+    return all;
+  }catch(e){ console.warn('[swLoadShipments]', e); return null; }
+}
+window.swLoadShipments = swLoadShipments;
+async function swSaveShipment(s){
+  if(!_sb || !uid || !s) return;
+  try{ var r=await _sb.from('sacwyobi_shipments').upsert(Object.assign({}, s, { user_id: uid }), { onConflict:'id' }); if(r&&r.error) console.warn('swSaveShipment', r.error); }
+  catch(e){ console.warn('swSaveShipment', e); }
+}
+window.swSaveShipment = swSaveShipment;
+async function swDeleteShipmentCloud(id){
+  if(!_sb || !uid || !id) return;
+  try{ await _sb.from('sacwyobi_shipments').delete().eq('id', id).eq('user_id', uid); }
+  catch(e){ console.warn('swDeleteShipmentCloud', e); }
+}
+window.swDeleteShipmentCloud = swDeleteShipmentCloud;
 
 // ── gv_sales map (for auto-filling old sale prices onto warehouse out-ops) ──
 window.__swSalesMap = window.__swSalesMap || {};
@@ -569,12 +622,14 @@ try {
 let swLots  = JSON.parse(localStorage.getItem(_swK('lots'))  ||'[]');
 let swOps   = JSON.parse(localStorage.getItem(_swK('ops'))   ||'[]');
 let swTemps = JSON.parse(localStorage.getItem(_swK('temps')) ||'[]');
+let swShipments = JSON.parse(localStorage.getItem(_swK('ships')) ||'[]');
 
 let _swSaveTimer = null;
 const swSave = () => {
   localStorage.setItem(_swK('lots'),  JSON.stringify(swLots));
   localStorage.setItem(_swK('ops'),   JSON.stringify(swOps));
   localStorage.setItem(_swK('temps'), JSON.stringify(swTemps));
+  try{ localStorage.setItem(_swK('ships'), JSON.stringify(swShipments)); }catch(e){}
   // ── Supabase sync — debounced 800ms (cloud is source of truth) ──
   if(_sb && currentUser && currentUser.id){
     clearTimeout(_swSaveTimer);
@@ -602,18 +657,21 @@ async function initSacwyobiFromHub(){
   }
   swUpdateStats(); swRenderStock(); swRenderTempLog(); swRenderHistory(); swBuildContactLists();
   // auto-fill old sale/purchase prices from gv_* + load remembered contacts, then re-render
+  swRenderShip();
+  // auto-fill old sale/purchase prices from gv_* + load remembered contacts, then re-render
   if(_sb && uid){
     Promise.all([
       swLoadSalesMap().catch(function(e){ console.warn('swLoadSalesMap', e); }),
       swLoadPurchasesMap().catch(function(e){ console.warn('swLoadPurchasesMap', e); }),
       swLoadContacts().catch(function(e){ console.warn('swLoadContacts', e); }),
-      swLoadCompany().catch(function(e){ console.warn('swLoadCompany', e); })
+      swLoadCompany().catch(function(e){ console.warn('swLoadCompany', e); }),
+      swLoadShipments().then(function(rows){ if(rows){ swShipments=rows; try{ localStorage.setItem(_swK('ships'), JSON.stringify(rows)); }catch(e){} } }).catch(function(e){ console.warn('swLoadShipments', e); })
     ]).then(function(){
       try{
         swBackfillFromSales(swOps);
         swBackfillFromPurchases(swOps);
         swUpdateStats(); swRenderHistory(); swRenderSales(); swRenderPurchases(); swRenderStock();
-        swBuildContactLists();
+        swBuildContactLists(); swRenderShip();
       }catch(e){ console.warn('backfill', e); }
     });
   }
@@ -629,7 +687,7 @@ function swTab(id, el){
   if(el) el.classList.add('active');
   else {
     const tabs = document.querySelectorAll('.sw-tab');
-    const map = {stock:0,income:1,temp:2,history:3,sales:4,purchases:5};
+    const map = {stock:0,income:1,temp:2,history:3,sales:4,purchases:5,ship:6};
     if(map[id]!==undefined && tabs[map[id]]) tabs[map[id]].classList.add('active');
   }
   if(id==='stock')     swRenderStock();
@@ -637,6 +695,7 @@ function swTab(id, el){
   if(id==='temp')      swRenderTempLog();
   if(id==='sales')     swRenderSales();
   if(id==='purchases') swRenderPurchases();
+  if(id==='ship')      swRenderShip();
 }
 window.swTab = swTab;
 
@@ -1369,6 +1428,125 @@ function swActBatch(){
   swBumpActNum(list.length);
 }
 window.swActBatch = swActBatch;
+
+// ══════════════════════════════════════════════════════
+//  SHIPMENTS (🚚 გამგზავრება — dispatch/export)
+// ══════════════════════════════════════════════════════
+function _swShipFiltered(){
+  const from=(swEl('sw-ship-from')||{}).value||'';
+  const to  =(swEl('sw-ship-to')||{}).value||'';
+  let list=[...swShipments];
+  if(from) list=list.filter(s=>(s.date||'')>=from);
+  if(to)   list=list.filter(s=>(s.date||'')<=to);
+  return list;
+}
+function swRenderShip(){
+  const tbody = swEl('sw-ship-tbody'); if(!tbody) return;
+  let list=_swShipFiltered().sort((a,b)=>(String(b.date||'')).localeCompare(String(a.date||'')) || (String(b.id||'')).localeCompare(String(a.id||'')));
+  // summary over ALL shipments
+  let sumP=0, sumN=0;
+  swShipments.forEach(s=>{ sumP+=(+s.pallets||0); sumN+=(+s.net||0); });
+  const sEl=swEl('sw-ship-summary');
+  if(sEl) sEl.textContent='· ჩანაწერი: '+swShipments.length+' · პალეტი: '+_akFmt(sumP)+' · ნეტო: '+_akFmt(sumN)+' კგ';
+  if(!list.length){ tbody.innerHTML='<tr><td colspan="8" class="sw-empty">— გამგზავრება არ არის —</td></tr>'; return; }
+  tbody.innerHTML=list.slice(0,300).map(s=>`<tr>
+    <td class="muted" style="font-size:.72rem">${safeText(s.date||'—')}</td>
+    <td>${safeText(s.trailer||'—')}</td>
+    <td>${safeText(s.driver||'—')}</td>
+    <td>${safeText(s.dest||'—')}</td>
+    <td style="font-family:'Space Mono',monospace">${_akFmt(+s.pallets||0)}</td>
+    <td style="font-family:'Space Mono',monospace">${_akFmt(+s.gross||0)}</td>
+    <td style="font-family:'Space Mono',monospace;color:#059669">${_akFmt(+s.net||0)}</td>
+    <td><button onclick="swDeleteShipment('${safeAttr(s.id)}')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:.95rem" title="წაშლა">🗑</button></td>
+  </tr>`).join('');
+}
+window.swRenderShip = swRenderShip;
+
+function swNewShipment(){
+  const existing=document.getElementById('sw-newship-modal'); if(existing) existing.remove();
+  const bg=document.createElement('div'); bg.id='sw-newship-modal'; bg.className='sw-modal-bg';
+  bg.innerHTML=`
+    <div class="sw-modal">
+      <button onclick="document.getElementById('sw-newship-modal').remove()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer">✕</button>
+      <div style="font-size:1rem;font-weight:600;color:#1e3a5f;margin-bottom:16px">🚚 ახალი გამგზავრება</div>
+      <div class="sw-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">
+        <div class="sw-field"><label>თარიღი</label><input type="date" id="swsh-date" value="${swDate()}"></div>
+        <div class="sw-field"><label>მიმართულება</label><input id="swsh-dest" placeholder="ქვეყ. / ქალაქი"></div>
+        <div class="sw-field"><label>მისაბმელი</label><input id="swsh-trailer" placeholder="ნომერი"></div>
+        <div class="sw-field"><label>მძღოლი</label><input id="swsh-driver" placeholder="სახელი"></div>
+        <div class="sw-field"><label>პალეტი</label><input type="number" id="swsh-pallets" min="0" step="1" placeholder="0"></div>
+        <div class="sw-field"><label>ბრუტო კგ</label><input type="number" id="swsh-gross" min="0" step="0.1" placeholder="0.0"></div>
+        <div class="sw-field"><label>ნეტო კგ (ნ.ა.=ბრუტო)</label><input type="number" id="swsh-net" min="0" step="0.1" placeholder="0.0"></div>
+        <div class="sw-field full"><label>შენიშვნა</label><input id="swsh-note" placeholder="ნ.ა."></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="sw-btn sw-btn-gold" style="flex:1" onclick="swConfirmNewShipment()">🚚 გამგზავრება</button>
+        <button class="sw-btn sw-btn-outline" style="flex:1" onclick="document.getElementById('sw-newship-modal').remove()">გაუქმება</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+}
+window.swNewShipment = swNewShipment;
+
+function swConfirmNewShipment(){
+  const date=(document.getElementById('swsh-date').value||'')||swDate();
+  const trailer=(document.getElementById('swsh-trailer').value||'').trim();
+  const driver=(document.getElementById('swsh-driver').value||'').trim();
+  const dest=(document.getElementById('swsh-dest').value||'').trim();
+  const pallets=parseFloat(document.getElementById('swsh-pallets').value)||0;
+  const gross=parseFloat(document.getElementById('swsh-gross').value)||0;
+  let net=parseFloat(document.getElementById('swsh-net').value);
+  if(isNaN(net)||net<0) net=gross; // default net = gross
+  const note=(document.getElementById('swsh-note').value||'').trim();
+  if(!trailer && !driver && !dest && !pallets && !gross){ swNotify('⚠️ შეავსე მინიმუმ ერთი ველი', true); return; }
+  const s={ id:'shp_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), user_id:(uid||''), date, trailer, driver, dest, pallets, gross, net, note };
+  swShipments.push(s);
+  try{ localStorage.setItem(_swK('ships'), JSON.stringify(swShipments)); }catch(e){}
+  swSaveShipment(s);
+  swRenderShip();
+  const m=document.getElementById('sw-newship-modal'); if(m) m.remove();
+  swNotify('🚚 გამგზავრება ჩაიწერა');
+}
+window.swConfirmNewShipment = swConfirmNewShipment;
+
+function swDeleteShipment(id){
+  const s=swShipments.find(x=>x.id===id);
+  if(!s || !confirm('წაშლა: გამგზავრება '+(s.date||'')+(s.dest?(' → '+s.dest):'')+'?')) return;
+  swShipments=swShipments.filter(x=>x.id!==id);
+  try{ localStorage.setItem(_swK('ships'), JSON.stringify(swShipments)); }catch(e){}
+  swDeleteShipmentCloud(id);
+  swRenderShip();
+  swNotify('🗑 გამგზავრება წაშლილია');
+}
+window.swDeleteShipment = swDeleteShipment;
+
+// ── print dispatch document (grouped by date, subtotals + grand total) ──
+function swPrintShip(){
+  let recs=_swShipFiltered().slice().sort((a,b)=>(String(a.date||'')).localeCompare(String(b.date||'')));
+  if(!recs.length){ swNotify('⚠️ გამგზავრება არ არის', true); return; }
+  const co=_swCo();
+  const dates=[...new Set(recs.map(r=>r.date||''))].sort();
+  const period=dates.length?(dates.length===1?dates[0]:(dates[0]+' — '+dates[dates.length-1])):'—';
+  const th='border:1px solid #000;padding:8px 10px;font-size:14px;font-weight:700';
+  const td='border:1px solid #000;padding:7px 10px;font-size:13.5px';
+  let GP=0,GB=0,GN=0,GC=0, body='';
+  dates.forEach(d=>{
+    const items=recs.filter(r=>(r.date||'')===d);
+    let dP=0,dB=0,dN=0;
+    items.forEach(r=>{ const p=+r.pallets||0,g=+r.gross||0,n=+r.net||0; dP+=p;dB+=g;dN+=n;
+      body+=`<tr><td style="${td}">${safeText(d)}</td><td style="${td}">${safeText(r.trailer||'')}</td><td style="${td}">${safeText(r.driver||'')}</td><td style="${td}">${safeText(r.dest||'')}</td><td style="${td};text-align:center">${_akFmt(p)}</td><td style="${td};text-align:right">${_akFmt(g)}</td><td style="${td};text-align:right">${_akFmt(n)}</td></tr>`;
+    });
+    GP+=dP;GB+=dB;GN+=dN;GC+=items.length;
+    if(dates.length>1) body+=`<tr><td style="${td}"></td><td style="${td};font-weight:700">სულ ${safeText(d)}</td><td style="${td}"></td><td style="${td}"></td><td style="${td};text-align:center;font-weight:700">${_akFmt(dP)}</td><td style="${td};text-align:right;font-weight:700">${_akFmt(dB)}</td><td style="${td};text-align:right;font-weight:700">${_akFmt(dN)}</td></tr>`;
+  });
+  body+=`<tr style="background:#eef3f8"><td style="${td}"></td><td style="${td};font-weight:800">ჯამი</td><td style="${td}"></td><td style="${td}"></td><td style="${td};text-align:center;font-weight:800">${_akFmt(GP)}</td><td style="${td};text-align:right;font-weight:800">${_akFmt(GB)}</td><td style="${td};text-align:right;font-weight:800">${_akFmt(GN)}</td></tr>`;
+  const head=`<div style="text-align:center;margin:0 0 6px">${co.name?('<div style="font-size:20px;font-weight:800">'+safeText(co.name)+'</div>'):''}<div style="font-size:19px;font-weight:700;margin-top:4px">🚚 გამგზავრების დოკუმენტი</div><div style="font-size:13px;color:#333;margin-top:4px">პერიოდი: ${safeText(period)} · დღე: ${dates.length} · გამგზავრება: ${recs.length}</div></div>`;
+  const table=`<table style="width:100%;border-collapse:collapse;margin:14px 0"><thead><tr><th style="${th}">თარიღი</th><th style="${th}">მისაბმელი</th><th style="${th}">მძღოლი</th><th style="${th}">მიმართულება</th><th style="${th};text-align:center">პალეტი</th><th style="${th};text-align:right">ბრუტო</th><th style="${th};text-align:right">ნეტო, კგ</th></tr></thead><tbody>${body}</tbody></table>`;
+  const foot=`<div style="margin-top:22px;font-size:13.5px;color:#333">დაბეჭდილია: ${new Date().toLocaleString('ka-GE')} · ხელმოწერა: ____________________</div>`;
+  const inner=`<div style="font-family:'Noto Sans Georgian','DejaVu Sans',sans-serif;color:#000;max-width:920px;margin:0 auto;padding:6px 4px">${head}${table}${foot}</div>`;
+  swPrintAct(inner, 'გამგზავრების დოკუმენტი');
+}
+window.swPrintShip = swPrintShip;
 
 // live calc inside the edit-payment modal: total = kg × price/kg
 function swpCalc(){
