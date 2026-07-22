@@ -204,61 +204,24 @@ create trigger reviews_recalc_trg
 -- ============================================================================
 -- CRON — 3 დღეში კლიენტს ავტომატურად ეგზავნება შეფასების SMS.  (#4)
 --
--- იყენებს pg_cron + pg_net ექსთენშენებს (Supabase-ზე ჩართვადია).
--- send-sms edge function უნდა იყოს deploy-ული.
+-- ⚠️ ამ ფაილს cron *არ* ემატება.
+-- პროექტს უკვე აქვს საკუთარი, გამართული პიპლაინი:
+--   cron job:      send-pending-reviews-15min  (*/15 * * * *)
+--   edge function: send-pending-reviews        (x-cron-secret-ით დაცული)
+-- იგი კითხულობს public.contacts-ს (status='pending', send_review_at <= now())
+-- და აგზავნის შეფასების SMS-ს.
+--
+-- აქ მეორე cron-ის დამატება დუბლიკატ SMS-ს გამოიწვევდა, ამიტომ გამორთულია.
+-- contacts insert-ს index.html აკეთებს ამ ფაილში აღწერილი სვეტებით
+-- (customer_phone, send_review_at, status='pending', master_id/name…),
+-- რაც send-pending-reviews function-ს ჭირდება.
 -- ============================================================================
-create extension if not exists pg_cron;
-create extension if not exists pg_net;
 
-create or replace function public.dispatch_review_sms()
-returns void language plpgsql security definer as $$
-declare
-  r record;
-  v_url  text := 'https://debbzurtkrlsknhpqvfm.supabase.co/functions/v1/send-sms';
-  -- ⚠️ ANON KEY — იგივე რაც index.html-ში (საჯაროა). როტაციისას შეცვალე აქაც.
-  v_key  text := 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlYmJ6dXJ0a3Jsc2tuaHBxdmZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzOTk4NDYsImV4cCI6MjA5MTk3NTg0Nn0.Qxhib7OtwJyWHm58_MxJHB8rAkydOwgq60ktceEmAWo';
-  v_msg  text;
-  v_link text;
-begin
-  for r in
-    select id, customer_phone, master_name, master_id
-      from public.contacts
-     where review_sms_sent = false
-       and customer_phone is not null
-       and send_review_at is not null
-       and send_review_at <= now()
-     limit 50
-  loop
-    v_link := 'https://gverdshi.ge/?shefaseba=1'
-              || case when r.master_id is not null
-                      then '&m=' || r.master_id::text else '' end;
-    v_msg := 'gverdshi.ge: gamarjoba! tu ' || coalesce(r.master_name, 'ostatma')
-             || '-ma ushvelat shesrula samushao, datove shefaseba: ' || v_link || ' . madloba!';
-
-    perform net.http_post(
-      url     := v_url,
-      headers := jsonb_build_object(
-                   'Content-Type', 'application/json',
-                   'Authorization', 'Bearer ' || v_key,
-                   'apikey', v_key),
-      body    := jsonb_build_object('phone', r.customer_phone, 'message', v_msg)
-    );
-
-    update public.contacts
-       set review_sms_sent = true, status = 'review_sent'
-     where id = r.id;
-  end loop;
-end;
-$$;
-
--- ყოველ 15 წუთში ვამოწმებთ ვის დაუდგა 3 დღე
-select cron.unschedule('gverdshi-review-sms')
-  where exists (select 1 from cron.job where jobname = 'gverdshi-review-sms');
-select cron.schedule('gverdshi-review-sms', '*/15 * * * *', $$ select public.dispatch_review_sms(); $$);
+-- (განზრახ ცარიელია — cron პროექტში უკვე დგას.)
 
 -- ============================================================================
 -- დასრულდა. შემოწმება:
---   select jobname, schedule, active from cron.job;              -- cron დგას?
---   select id, send_review_at, review_sms_sent from public.contacts
+--   select jobname, schedule, active from cron.job;              -- ერთი cron?
+--   select id, send_review_at, status from public.contacts
 --     order by created_at desc limit 10;                         -- განრიგი ჩანს?
 -- ============================================================================

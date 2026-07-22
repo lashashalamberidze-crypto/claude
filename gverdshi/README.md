@@ -22,8 +22,10 @@
   `reviews_count`-ს დამტკიცებული შეფასებებიდან.
 - **#3** `submitContact` ახლა **ერთ** `contacts` insert-ს აკეთებს (ადრე ორი
   სხვადასხვა სქემით — ერთ-ერთი ცდებოდა).
-- **#4** cron (`dispatch_review_sms`, ყოველ 15 წთ) აგზავნის 3-დღიან
-  შეფასების SMS-ს `send_review_at`-ის მიხედვით.
+- **#4** 3-დღიან შეფასების SMS-ს აგზავნის პროექტის საკუთარი cron
+  (`send-pending-reviews-15min` + edge function `send-pending-reviews`),
+  რომელიც `contacts`-ს კითხულობს `send_review_at`-ის მიხედვით. schema.sql
+  თავად cron-ს *არ* ამატებს — რომ დუბლიკატი არ გამოვიდეს.
 - **#7** კონტაქტი/waitlist ახლა `selectedCity`-ს იყენებს — აღარაა hardcoded `batumi`.
 
 ## ცოცხალ წვდომას საჭიროებს (ვერიფიკაცია)
