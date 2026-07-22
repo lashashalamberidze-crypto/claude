@@ -1,0 +1,53 @@
+# ============================================================================
+# gverdshi.ge — ავტომატური deploy (GitHub → cPanel FTP)
+#
+# ატვირთავს მხოლოდ gverdshi/index.html-ს gverdshi.ge-ის web root-ში.
+# agrointechsol.ge-ის deploy-ს (deploy.yml) არ ეხება.
+#
+# საჭიროა 3 secret (GitHub → Settings → Secrets and variables → Actions):
+#   GV_FTP_SERVER    — მაგ. ftp.gverdshi.ge  (ან სერვერის ჰოსტი / IP)
+#   GV_FTP_USERNAME  — cPanel FTP მომხმარებელი (cPanel → "FTP Accounts")
+#   GV_FTP_PASSWORD  — იმ FTP ანგარიშის პაროლი
+# ============================================================================
+name: Deploy gverdshi.ge
+
+on:
+  push:
+    branches:
+      - main
+      - claude/website-urgent-development-mst17f
+    paths:
+      - 'gverdshi/**'
+      - '.github/workflows/deploy-gverdshi.yml'
+  workflow_dispatch: {}   # Actions ტაბში ხელით გაშვების ღილაკი
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: FTP deploy (gverdshi/ → web root)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.GV_FTP_SERVER }}
+          username: ${{ secrets.GV_FTP_USERNAME }}
+          password: ${{ secrets.GV_FTP_PASSWORD }}
+          # ftps = დაშიფრული (cPanel-ის უმეტესობა უჭერს მხარს).
+          # თუ ვერ დაუკავშირდა, შეცვალე: ftp
+          protocol: ftps
+          port: 21
+          # წყარო: მხოლოდ gverdshi/ საქაღალდე (ბოლო "/" აუცილებელია)
+          local-dir: ./gverdshi/
+          # დანიშნულება: საიტის ძირი. თუ FTP ანგარიში scoped-ია public_html-ზე
+          # → ./ სწორია. თუ მთავარი cPanel ანგარიშია → შეცვალე: public_html/
+          server-dir: ./
+          # რაც სერვერზე არ უნდა წავიდეს (მხოლოდ index.html გვინდა):
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/README*
+            **/*.md
+            sql/**
+            **/sql/**
