@@ -1095,6 +1095,13 @@
             <label><input type="checkbox" data-value="moving" onchange="onMSChange('ms-service')"><span class="ms-opt-label">გადაზიდვა</span></label>
             <label><input type="checkbox" data-value="tech" onchange="onMSChange('ms-service')"><span class="ms-opt-label">ტექნიკის შეკეთება</span></label>
             <label><input type="checkbox" data-value="family" onchange="onMSChange('ms-service')"><span class="ms-opt-label">ოჯახის დახმარება</span></label>
+            <label><input type="checkbox" data-value="restorer" onchange="onMSChange('ms-service')"><span class="ms-opt-label">რესტავრატორი</span></label>
+            <div style="font-size:11px;font-weight:700;color:#9aa0a6;text-transform:uppercase;letter-spacing:.04em;padding:8px 4px 2px;">🌱 აგრონომია</div>
+            <label><input type="checkbox" data-value="agronomist" onchange="onMSChange('ms-service')"><span class="ms-opt-label">აგრონომი</span></label>
+            <label><input type="checkbox" data-value="vet" onchange="onMSChange('ms-service')"><span class="ms-opt-label">ვეტერინარი</span></label>
+            <label><input type="checkbox" data-value="plant-protection" onchange="onMSChange('ms-service')"><span class="ms-opt-label">მცენარეთა დამცველი</span></label>
+            <label><input type="checkbox" data-value="technologist" onchange="onMSChange('ms-service')"><span class="ms-opt-label">ტექნოლოგი</span></label>
+            <label><input type="checkbox" data-value="picker" onchange="onMSChange('ms-service')"><span class="ms-opt-label">მკრეფავი</span></label>
           </div>
         </div>
         <div class="divider"></div>
@@ -1523,11 +1530,28 @@
         <div class="filter-group">
           <div class="filter-label" data-t="filter_category">კატეგორია</div>
           <select>
-            <option data-t="cat_plumber">სანტექნიკოსი</option>
-            <option data-t="cat_electrician">ელექტრიკოსი</option>
-            <option data-t="cat_ac_master">კონდიციონერი</option>
-            <option data-t="cat_cleaner">დამლაგებელი</option>
-            <option data-t="cat_renovation">რემონტი</option>
+            <option data-t="filter_all">ყველა</option>
+            <option>სანტექნიკოსი</option>
+            <option>ელექტრიკოსი</option>
+            <option>კონდიციონერი</option>
+            <option>დამლაგებელი</option>
+            <option>რემონტი</option>
+            <option>ავეჯის აწყობა</option>
+            <option>რესტავრატორი</option>
+            <option>ცხოველების მომვლელი</option>
+            <option>მანქანის ხელოსანი</option>
+            <option>რეპეტიტორი</option>
+            <option>სილამაზე სახლში</option>
+            <option>გადაზიდვა</option>
+            <option>ტექნიკის შეკეთება</option>
+            <option>ოჯახის დახმარება</option>
+            <optgroup label="🌱 აგრონომია">
+              <option>აგრონომი</option>
+              <option>ვეტერინარი</option>
+              <option>მცენარეთა დამცველი</option>
+              <option>ტექნოლოგი</option>
+              <option>მკრეფავი</option>
+            </optgroup>
           </select>
         </div>
 
@@ -2441,6 +2465,16 @@
         <option value="ელექტრიკოსი">⚡ ელექტრიკოსი</option>
         <option value="დამლაგებელი">🧹 დამლაგებელი</option>
         <option value="კონდიციონერი">❄️ კონდიციონერი</option>
+        <option value="რემონტი">🔨 რემონტი</option>
+        <option value="ავეჯის აწყობა">🪑 ავეჯის აწყობა</option>
+        <option value="რესტავრატორი">🖌️ რესტავრატორი</option>
+        <optgroup label="🌱 აგრონომია">
+          <option value="აგრონომი">🌾 აგრონომი</option>
+          <option value="ვეტერინარი">🐄 ვეტერინარი</option>
+          <option value="მცენარეთა დამცველი">🐛 მცენარეთა დამცველი</option>
+          <option value="ტექნოლოგი">🧪 ტექნოლოგი</option>
+          <option value="მკრეფავი">🧺 მკრეფავი</option>
+        </optgroup>
         <option value="სხვა">➕ სხვა</option>
       </select>
     </div>
