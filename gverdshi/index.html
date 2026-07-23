@@ -4,10 +4,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- Cache prevention — always load fresh -->
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
+<!-- ⚡ სიჩქარე: წინასწარ დაკავშირება CDN-სა და Supabase-თან -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://debbzurtkrlsknhpqvfm.supabase.co" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 <title>gverdshi.ge — სახლის ოსტატი თქვენს გვერდში</title>
 
 <!-- 🔍 SEO -->
@@ -934,7 +934,7 @@
   .shefaseba-master-info h3 { font-size: 17px; margin-bottom: 2px; font-weight: 700; }
   .shefaseba-master-info .meta { font-size: 13px; color: var(--text-muted); }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
 <!-- 📱 PWA -->
 <link rel="manifest" href="/manifest.webmanifest">
@@ -2725,16 +2725,24 @@
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlYmJ6dXJ0a3Jsc2tuaHBxdmZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzOTk4NDYsImV4cCI6MjA5MTk3NTg0Nn0.Qxhib7OtwJyWHm58_MxJHB8rAkydOwgq60ktceEmAWo';
   
   let sb = null;
-  try {
-    if (window.supabase && window.supabase.createClient) {
-      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      console.log('✓ Supabase დაუკავშირდა');
-    } else {
-      console.warn('⚠️ Supabase CDN ჯერ არ ჩატვირთულა');
+  // ⚡ Supabase CDN იტვირთება defer-ით — კლიენტს ვქმნით მას შემდეგ რაც ჩაიტვირთება
+  function initSupabase() {
+    if (sb) return sb;
+    try {
+      if (window.supabase && window.supabase.createClient) {
+        sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('✓ Supabase დაუკავშირდა');
+      } else {
+        console.warn('⚠️ Supabase CDN ჯერ არ ჩატვირთულა');
+      }
+    } catch(e) {
+      console.error('Supabase შეცდომა:', e);
     }
-  } catch(e) {
-    console.error('Supabase შეცდომა:', e);
+    return sb;
   }
+  // defer-ის შემდეგ CDN მზადაა DOMContentLoaded-მდე — ვქმნით ყველა სხვა ინიციალიზაციამდე
+  if (window.supabase && window.supabase.createClient) initSupabase();
+  else document.addEventListener('DOMContentLoaded', initSupabase);
 
   // ============================================
   // SMS ფუნქცია (Supabase Edge Function-ით)
