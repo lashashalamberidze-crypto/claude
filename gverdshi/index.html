@@ -1061,13 +1061,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="city-panel" id="city-panel" onclick="event.stopPropagation()">
-          <div class="city-option active" data-city="batumi" onclick="selectCity('batumi', 'ბათუმი')">🌊 ბათუმი <svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-          <div class="city-option" data-city="rustavi" onclick="selectCity('rustavi', 'რუსთავი')">🏭 რუსთავი</div>
-          <div class="city-option" data-city="kutaisi" onclick="selectCity('kutaisi', 'ქუთაისი')">🏛️ ქუთაისი</div>
-          <div class="city-option" data-city="zugdidi" onclick="selectCity('zugdidi', 'ზუგდიდი')">🌳 ზუგდიდი</div>
-          <div class="city-option" data-city="telavi" onclick="selectCity('telavi', 'თელავი')">🍇 თელავი</div>
-          <div class="city-option" data-city="marneuli" onclick="selectCity('marneuli', 'მარნეული')">🌾 მარნეული</div>
-          <div class="city-option" data-city="racha" onclick="selectCity('racha', 'რაჭა')">🏔️ რაჭა</div>
+          <!-- ივსება buildLocationPickers()-ით (CITY_AREAS-დან) -->
         </div>
       </div>
 
@@ -1078,13 +1072,7 @@
             <svg class="ms-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="ms-panel" id="ms-city-panel" onclick="event.stopPropagation()">
-            <label onclick="selectCity('batumi', 'ბათუმი', '🌊'); document.getElementById('ms-city-panel').classList.remove('open'); document.getElementById('ms-city-trigger').classList.remove('open');" style="cursor: pointer;"><span class="ms-opt-label">🌊 ბათუმი</span></label>
-            <label onclick="selectCity('rustavi', 'რუსთავი', '🏭'); document.getElementById('ms-city-panel').classList.remove('open'); document.getElementById('ms-city-trigger').classList.remove('open');" style="cursor: pointer;"><span class="ms-opt-label">🏭 რუსთავი</span></label>
-            <label onclick="selectCity('kutaisi', 'ქუთაისი', '🏛️'); document.getElementById('ms-city-panel').classList.remove('open'); document.getElementById('ms-city-trigger').classList.remove('open');" style="cursor: pointer;"><span class="ms-opt-label">🏛️ ქუთაისი</span></label>
-            <label onclick="selectCity('zugdidi', 'ზუგდიდი', '🌳'); document.getElementById('ms-city-panel').classList.remove('open'); document.getElementById('ms-city-trigger').classList.remove('open');" style="cursor: pointer;"><span class="ms-opt-label">🌳 ზუგდიდი</span></label>
-            <label onclick="selectCity('telavi', 'თელავი', '🍇'); document.getElementById('ms-city-panel').classList.remove('open'); document.getElementById('ms-city-trigger').classList.remove('open');" style="cursor: pointer;"><span class="ms-opt-label">🍇 თელავი</span></label>
-            <label onclick="selectCity('marneuli', 'მარნეული', '🌾'); document.getElementById('ms-city-panel').classList.remove('open'); document.getElementById('ms-city-trigger').classList.remove('open');" style="cursor: pointer;"><span class="ms-opt-label">🌾 მარნეული</span></label>
-            <label onclick="selectCity('racha', 'რაჭა', '🏔️'); document.getElementById('ms-city-panel').classList.remove('open'); document.getElementById('ms-city-trigger').classList.remove('open');" style="cursor: pointer;"><span class="ms-opt-label">🏔️ რაჭა</span></label>
+            <!-- ივსება buildLocationPickers()-ით (CITY_AREAS-დან) -->
           </div>
         </div>
         <div class="divider"></div>
@@ -1448,6 +1436,48 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
               <span style="font-size: 13px; color: var(--text-muted);">⭐ 4.7 · სეზონური</span>
               <a href="tel:+995555000004" style="font-size: 14px; font-weight: 700; color: var(--green); text-decoration: none;">📞 555 00 00 04</a>
+            </div>
+          </div>
+
+          <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 52px; height: 52px; border-radius: 50%; background: #EEEDFE; display: flex; align-items: center; justify-content: center; font-size: 26px; flex: 0 0 auto;">🧪</div>
+              <div style="min-width: 0;">
+                <div style="font-weight: 700; font-size: 16px;">ლევან თ. <span style="font-size: 11px; font-weight: 700; color: #92400E; background: #FEF0C7; border: 1px solid #F59E0B; padding: 1px 7px; border-radius: 6px;">დემო</span></div>
+                <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">ტექნოლოგი · იმერეთი (ზესტაფონი)</div>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
+              <span style="font-size: 13px; color: var(--text-muted);">⭐ 4.9 · 7 წ.</span>
+              <a href="tel:+995555000005" style="font-size: 14px; font-weight: 700; color: var(--green); text-decoration: none;">📞 555 00 00 05</a>
+            </div>
+          </div>
+
+          <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 52px; height: 52px; border-radius: 50%; background: #E1F5EE; display: flex; align-items: center; justify-content: center; font-size: 26px; flex: 0 0 auto;">🌾</div>
+              <div style="min-width: 0;">
+                <div style="font-weight: 700; font-size: 16px;">მარიამ ბ. <span style="font-size: 11px; font-weight: 700; color: #92400E; background: #FEF0C7; border: 1px solid #F59E0B; padding: 1px 7px; border-radius: 6px;">დემო</span></div>
+                <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">აგრონომი · კახეთი (თელავი)</div>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
+              <span style="font-size: 13px; color: var(--text-muted);">⭐ 4.8 · 5 წ.</span>
+              <a href="tel:+995555000006" style="font-size: 14px; font-weight: 700; color: var(--green); text-decoration: none;">📞 555 00 00 06</a>
+            </div>
+          </div>
+
+          <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 52px; height: 52px; border-radius: 50%; background: #FAEEDA; display: flex; align-items: center; justify-content: center; font-size: 26px; flex: 0 0 auto;">🐑</div>
+              <div style="min-width: 0;">
+                <div style="font-weight: 700; font-size: 16px;">ზაზა ღ. <span style="font-size: 11px; font-weight: 700; color: #92400E; background: #FEF0C7; border: 1px solid #F59E0B; padding: 1px 7px; border-radius: 6px;">დემო</span></div>
+                <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">ვეტერინარი · სამცხე-ჯავახეთი</div>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
+              <span style="font-size: 13px; color: var(--text-muted);">⭐ 4.9 · 12 წ.</span>
+              <a href="tel:+995555000007" style="font-size: 14px; font-weight: 700; color: var(--green); text-decoration: none;">📞 555 00 00 07</a>
             </div>
           </div>
 
@@ -1901,14 +1931,8 @@
               მუნიციპალიტეტი — სად მუშაობ? *
             </label>
             <select id="reg-municipality" required onchange="updateRegAreas(this.value)" style="width: 100%; padding: 14px 16px; font-size: 16px; font-weight: 600; border: 2px solid var(--green); border-radius: 10px; background: white; color: var(--text); font-family: inherit; outline: none; cursor: pointer;">
-              <option value="" disabled selected>აირჩიე ქალაქი...</option>
-              <option value="batumi">🌊 ბათუმი</option>
-              <option value="rustavi">🏭 რუსთავი</option>
-              <option value="kutaisi">🏛️ ქუთაისი</option>
-              <option value="zugdidi">🌳 ზუგდიდი</option>
-              <option value="telavi">🍇 თელავი</option>
-              <option value="marneuli">🌾 მარნეული</option>
-              <option value="racha">🏔️ რაჭა</option>
+              <option value="" disabled selected>აირჩიე ლოკაცია...</option>
+              <!-- ივსება buildLocationPickers()-ით (CITY_AREAS-დან) -->
             </select>
             <div style="font-size: 12px; color: var(--green-dark); margin-top: 8px; opacity: 0.8;">
               აუცილებელია — კლიენტები ქალაქის მიხედვით ეძებენ ოსტატებს
@@ -5075,7 +5099,17 @@
     zugdidi:  { ka: 'ზუგდიდი',  ru: 'Зугдиди', en: 'Zugdidi',  emoji: '🌳' },
     telavi:   { ka: 'თელავი',   ru: 'Телави',  en: 'Telavi',   emoji: '🍇' },
     marneuli: { ka: 'მარნეული', ru: 'Марнеули', en: 'Marneuli', emoji: '🌾' },
-    racha:    { ka: 'რაჭა',     ru: 'Рача',    en: 'Racha',    emoji: '🏔️' }
+    racha:    { ka: 'რაჭა',     ru: 'Рача',    en: 'Racha',    emoji: '🏔️' },
+    tbilisi:  { ka: 'თბილისი',  ru: 'Тбилиси', en: 'Tbilisi',  emoji: '🏙️' },
+    adjara:   { ka: 'აჭარა',    ru: 'Аджария', en: 'Adjara',   emoji: '🌊' },
+    imereti:  { ka: 'იმერეთი',  ru: 'Имерети', en: 'Imereti',  emoji: '🏛️' },
+    kakheti:  { ka: 'კახეთი',   ru: 'Кахетия', en: 'Kakheti',  emoji: '🍇' },
+    'kvemo-kartli': { ka: 'ქვემო ქართლი', ru: 'Квемо-Картли', en: 'Kvemo Kartli', emoji: '🏭' },
+    samegrelo: { ka: 'სამეგრელო-ზ. სვანეთი', ru: 'Самегрело', en: 'Samegrelo', emoji: '🌊' },
+    'shida-kartli': { ka: 'შიდა ქართლი', ru: 'Шида-Картли', en: 'Shida Kartli', emoji: '🏞️' },
+    samtskhe: { ka: 'სამცხე-ჯავახეთი', ru: 'Самцхе-Джавахети', en: 'Samtskhe-Javakheti', emoji: '⛰️' },
+    'mtskheta-mtianeti': { ka: 'მცხეთა-მთიანეთი', ru: 'Мцхета-Мтианети', en: 'Mtskheta-Mtianeti', emoji: '🏔️' },
+    guria:    { ka: 'გურია',    ru: 'Гурия',   en: 'Guria',    emoji: '🌿' }
   };
 
   // 🏙️ ქალაქის label-ის აღება მიმდინარე ენაზე
@@ -5098,8 +5132,8 @@
 
   function getCityLocative(cityKey) {
     const c = CITY_LOCATIVES[cityKey];
-    if (!c) return '';
-    return c[currentLang] || c.ka || '';
+    if (!c) return getCityLabel(cityKey);
+    return c[currentLang] || c.ka || getCityLabel(cityKey);
   }
 
   const CITY_AREAS = {
@@ -5194,8 +5228,135 @@
         { value: 'tsageri', label: 'ცაგერი' },
         { value: 'lentekhi', label: 'ლენტეხი' }
       ]
+    },
+    tbilisi: {
+      emoji: '🏙️', label: 'თბილისი',
+      areas: [
+        { value: 'vake', label: 'ვაკე' }, { value: 'saburtalo', label: 'საბურთალო' },
+        { value: 'mtatsminda', label: 'მთაწმინდა' }, { value: 'old-tbilisi', label: 'ძველი თბილისი' },
+        { value: 'vera', label: 'ვერა' }, { value: 'isani', label: 'ისანი' },
+        { value: 'samgori', label: 'სამგორი' }, { value: 'gldani', label: 'გლდანი' },
+        { value: 'nadzaladevi', label: 'ნაძალადევი' }, { value: 'didube', label: 'დიდუბე' },
+        { value: 'chughureti', label: 'ჩუღურეთი' }, { value: 'didi-digomi', label: 'დიდი დიღომი' },
+        { value: 'varketili', label: 'ვარკეთილი' }, { value: 'sa050', label: 'საველე / სხვა' }
+      ]
+    },
+    adjara: {
+      emoji: '🌊', label: 'აჭარა',
+      areas: [
+        { value: 'batumi', label: 'ბათუმი' }, { value: 'qobuleti', label: 'ქობულეთი' },
+        { value: 'khelvachauri', label: 'ხელვაჩაური' }, { value: 'keda', label: 'ქედა' },
+        { value: 'shuakhevi', label: 'შუახევი' }, { value: 'khulo', label: 'ხულო' }
+      ]
+    },
+    imereti: {
+      emoji: '🏛️', label: 'იმერეთი',
+      areas: [
+        { value: 'kutaisi', label: 'ქუთაისი' }, { value: 'zestaponi', label: 'ზესტაფონი' },
+        { value: 'chiatura', label: 'ჭიათურა' }, { value: 'samtredia', label: 'სამტრედია' },
+        { value: 'khoni', label: 'ხონი' }, { value: 'tkibuli', label: 'ტყიბული' },
+        { value: 'vani', label: 'ვანი' }, { value: 'baghdati', label: 'ბაღდათი' },
+        { value: 'terjola', label: 'თერჯოლა' }, { value: 'sachkhere', label: 'საჩხერე' },
+        { value: 'kharagauli', label: 'ხარაგაული' }
+      ]
+    },
+    kakheti: {
+      emoji: '🍇', label: 'კახეთი',
+      areas: [
+        { value: 'telavi', label: 'თელავი' }, { value: 'gurjaani', label: 'გურჯაანი' },
+        { value: 'sagarejo', label: 'საგარეჯო' }, { value: 'signagi', label: 'სიღნაღი' },
+        { value: 'kvareli', label: 'ყვარელი' }, { value: 'lagodekhi', label: 'ლაგოდეხი' },
+        { value: 'dedoplistskaro', label: 'დედოფლისწყარო' }, { value: 'akhmeta', label: 'ახმეტა' }
+      ]
+    },
+    'kvemo-kartli': {
+      emoji: '🏭', label: 'ქვემო ქართლი',
+      areas: [
+        { value: 'rustavi', label: 'რუსთავი' }, { value: 'marneuli', label: 'მარნეული' },
+        { value: 'gardabani', label: 'გარდაბანი' }, { value: 'bolnisi', label: 'ბოლნისი' },
+        { value: 'dmanisi', label: 'დმანისი' }, { value: 'tetritskaro', label: 'თეთრიწყარო' },
+        { value: 'tsalka', label: 'წალკა' }
+      ]
+    },
+    samegrelo: {
+      emoji: '🌊', label: 'სამეგრელო-ზ. სვანეთი',
+      areas: [
+        { value: 'zugdidi', label: 'ზუგდიდი' }, { value: 'poti', label: 'ფოთი' },
+        { value: 'senaki', label: 'სენაკი' }, { value: 'martvili', label: 'მარტვილი' },
+        { value: 'khobi', label: 'ხობი' }, { value: 'chkhorotsku', label: 'ჩხოროწყუ' },
+        { value: 'tsalenjikha', label: 'წალენჯიხა' }, { value: 'mestia', label: 'მესტია' },
+        { value: 'abasha', label: 'აბაშა' }
+      ]
+    },
+    'shida-kartli': {
+      emoji: '🏞️', label: 'შიდა ქართლი',
+      areas: [
+        { value: 'gori', label: 'გორი' }, { value: 'kareli', label: 'ქარელი' },
+        { value: 'kaspi', label: 'კასპი' }, { value: 'khashuri', label: 'ხაშური' }
+      ]
+    },
+    samtskhe: {
+      emoji: '⛰️', label: 'სამცხე-ჯავახეთი',
+      areas: [
+        { value: 'akhaltsikhe', label: 'ახალციხე' }, { value: 'borjomi', label: 'ბორჯომი' },
+        { value: 'akhalkalaki', label: 'ახალქალაქი' }, { value: 'aspindza', label: 'ასპინძა' },
+        { value: 'adigeni', label: 'ადიგენი' }, { value: 'ninotsminda', label: 'ნინოწმინდა' }
+      ]
+    },
+    'mtskheta-mtianeti': {
+      emoji: '🏔️', label: 'მცხეთა-მთიანეთი',
+      areas: [
+        { value: 'mtskheta', label: 'მცხეთა' }, { value: 'dusheti', label: 'დუშეთი' },
+        { value: 'tianeti', label: 'თიანეთი' }, { value: 'kazbegi', label: 'ყაზბეგი' }
+      ]
+    },
+    guria: {
+      emoji: '🌿', label: 'გურია',
+      areas: [
+        { value: 'ozurgeti', label: 'ოზურგეთი' }, { value: 'lanchkhuti', label: 'ლანჩხუთი' },
+        { value: 'chokhatauri', label: 'ჩოხატაური' }
+      ]
     }
   };
+
+  // 🗺️ ლოკაციების დაჯგუფება პიკერისთვის
+  const LOCATION_GROUPS = {
+    cities:  ['tbilisi', 'batumi', 'kutaisi', 'rustavi', 'zugdidi', 'telavi', 'marneuli'],
+    regions: ['adjara', 'imereti', 'kakheti', 'kvemo-kartli', 'samegrelo', 'shida-kartli', 'samtskhe', 'mtskheta-mtianeti', 'guria', 'racha']
+  };
+
+  // 🏗️ ლოკაციების პიკერების ავტომატური აგება CITY_AREAS-დან (3 ადგილი)
+  function buildLocationPickers() {
+    const groups = [
+      { title: 'დიდი ქალაქები', keys: LOCATION_GROUPS.cities },
+      { title: 'რეგიონები', keys: LOCATION_GROUPS.regions }
+    ];
+    const headStyle = 'font-size:11px;font-weight:700;color:#9aa0a6;text-transform:uppercase;letter-spacing:.04em;padding:10px 12px 4px;';
+    const emojiOf = (k) => (CITY_LABELS[k] && CITY_LABELS[k].emoji) || (CITY_AREAS[k] && CITY_AREAS[k].emoji) || '📍';
+    const check = ' <svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    let heroHTML = '', msHTML = '';
+    let regHTML = '<option value="" disabled selected>აირჩიე ლოკაცია...</option>';
+    groups.forEach(g => {
+      heroHTML += '<div style="' + headStyle + '">' + g.title + '</div>';
+      msHTML   += '<div style="' + headStyle + '">' + g.title + '</div>';
+      let regOpts = '';
+      g.keys.forEach(key => {
+        if (!CITY_AREAS[key]) return;
+        const lbl = getCityLabel(key), em = emojiOf(key), active = (key === selectedCity);
+        heroHTML += '<div class="city-option' + (active ? ' active' : '') + '" data-city="' + key + '" onclick="selectCity(\'' + key + '\')">' + em + ' ' + lbl + (active ? check : '') + '</div>';
+        msHTML += '<label onclick="selectCity(\'' + key + '\'); document.getElementById(\'ms-city-panel\').classList.remove(\'open\'); document.getElementById(\'ms-city-trigger\').classList.remove(\'open\');" style="cursor:pointer;"><span class="ms-opt-label">' + em + ' ' + lbl + '</span></label>';
+        regOpts += '<option value="' + key + '">' + em + ' ' + lbl + '</option>';
+      });
+      regHTML += '<optgroup label="' + g.title + '">' + regOpts + '</optgroup>';
+    });
+    const hero = document.getElementById('city-panel');
+    const ms = document.getElementById('ms-city-panel');
+    const reg = document.getElementById('reg-municipality');
+    if (hero) hero.innerHTML = heroHTML;
+    if (ms) ms.innerHTML = msHTML;
+    if (reg) reg.innerHTML = regHTML;
+  }
+  document.addEventListener('DOMContentLoaded', buildLocationPickers);
 
   function toggleCityPanel(e) {
     if (e) e.stopPropagation();
