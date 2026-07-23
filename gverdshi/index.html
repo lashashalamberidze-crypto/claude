@@ -1336,7 +1336,7 @@
       </div>
       <div class="cat-grid">
 
-        <div class="cat-card" onclick="agroContact('აგრონომი')">
+        <div class="cat-card" onclick="openAgroList('აგრონომი')">
           <div class="cat-icon" style="background: #E1F5EE; font-size: 26px; display: flex; align-items: center; justify-content: center;">🌾</div>
           <div>
             <div class="cat-name" data-t="agro_agronom">აგრონომი</div>
@@ -1345,7 +1345,7 @@
           <div class="cat-footer"><span style="font-size: 13px; color: var(--text-muted);" data-t="by_agreement">შეთანხმებით</span><span class="cat-arrow">→</span></div>
         </div>
 
-        <div class="cat-card" onclick="agroContact('ვეტერინარი')">
+        <div class="cat-card" onclick="openAgroList('ვეტერინარი')">
           <div class="cat-icon" style="background: #FAEEDA; font-size: 26px; display: flex; align-items: center; justify-content: center;">🐄</div>
           <div>
             <div class="cat-name" data-t="agro_vet">ვეტერინარი</div>
@@ -1354,7 +1354,7 @@
           <div class="cat-footer"><span style="font-size: 13px; color: var(--text-muted);" data-t="by_agreement">შეთანხმებით</span><span class="cat-arrow">→</span></div>
         </div>
 
-        <div class="cat-card" onclick="agroContact('მცენარეთა დამცველი')">
+        <div class="cat-card" onclick="openAgroList('მცენარეთა დამცველი')">
           <div class="cat-icon" style="background: #E6F1FB; font-size: 26px; display: flex; align-items: center; justify-content: center;">🐛</div>
           <div>
             <div class="cat-name" data-t="agro_protect">მცენარეთა დამცველი</div>
@@ -1363,7 +1363,7 @@
           <div class="cat-footer"><span style="font-size: 13px; color: var(--text-muted);" data-t="by_agreement">შეთანხმებით</span><span class="cat-arrow">→</span></div>
         </div>
 
-        <div class="cat-card" onclick="agroContact('ტექნოლოგი')">
+        <div class="cat-card" onclick="openAgroList('ტექნოლოგი')">
           <div class="cat-icon" style="background: #EEEDFE; font-size: 26px; display: flex; align-items: center; justify-content: center;">🧪</div>
           <div>
             <div class="cat-name" data-t="agro_tech">ტექნოლოგი</div>
@@ -1372,7 +1372,7 @@
           <div class="cat-footer"><span style="font-size: 13px; color: var(--text-muted);" data-t="by_agreement">შეთანხმებით</span><span class="cat-arrow">→</span></div>
         </div>
 
-        <div class="cat-card" onclick="agroContact('მკრეფავები')">
+        <div class="cat-card" onclick="openAgroList('მკრეფავები')">
           <div class="cat-icon" style="background: #FAECE7; font-size: 26px; display: flex; align-items: center; justify-content: center;">🧺</div>
           <div>
             <div class="cat-name" data-t="agro_pickers">მკრეფავები</div>
@@ -1383,113 +1383,6 @@
 
       </div>
 
-      <!-- 🧪 დემო სპეციალისტები (მაგალითი) -->
-      <div style="margin-top: 30px;">
-        <div style="text-align: center; margin-bottom: 16px;">
-          <span style="display: inline-block; background: #FEF0C7; color: #92400E; border: 1px solid #F59E0B; font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 100px;">⚠️ დემო მაგალითები — რეალური სპეციალისტები მალე დაემატება</span>
-        </div>
-        <div class="cat-grid">
-
-          <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 52px; height: 52px; border-radius: 50%; background: #E1F5EE; display: flex; align-items: center; justify-content: center; font-size: 26px; flex: 0 0 auto;">🌾</div>
-              <div style="min-width: 0;">
-                <div style="font-weight: 700; font-size: 16px;">გიორგი მ. <span style="font-size: 11px; font-weight: 700; color: #92400E; background: #FEF0C7; border: 1px solid #F59E0B; padding: 1px 7px; border-radius: 6px;">დემო</span></div>
-                <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">აგრონომი · რაჭა (ამბროლაური)</div>
-              </div>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
-              <span style="font-size: 13px; color: var(--text-muted);">⭐ 4.9 · 8 წ.</span>
-              <a href="tel:+995555000001" style="font-size: 14px; font-weight: 700; color: var(--green); text-decoration: none;">📞 555 00 00 01</a>
-            </div>
-          </div>
-
-          <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 52px; height: 52px; border-radius: 50%; background: #FAEEDA; display: flex; align-items: center; justify-content: center; font-size: 26px; flex: 0 0 auto;">🐄</div>
-              <div style="min-width: 0;">
-                <div style="font-weight: 700; font-size: 16px;">ნინო კ. <span style="font-size: 11px; font-weight: 700; color: #92400E; background: #FEF0C7; border: 1px solid #F59E0B; padding: 1px 7px; border-radius: 6px;">დემო</span></div>
-                <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">ვეტერინარი · რაჭა (ონი)</div>
-              </div>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
-              <span style="font-size: 13px; color: var(--text-muted);">⭐ 4.8 · 6 წ.</span>
-              <a href="tel:+995555000002" style="font-size: 14px; font-weight: 700; color: var(--green); text-decoration: none;">📞 555 00 00 02</a>
-            </div>
-          </div>
-
-          <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 52px; height: 52px; border-radius: 50%; background: #E6F1FB; display: flex; align-items: center; justify-content: center; font-size: 26px; flex: 0 0 auto;">🐛</div>
-              <div style="min-width: 0;">
-                <div style="font-weight: 700; font-size: 16px;">დავით ჩ. <span style="font-size: 11px; font-weight: 700; color: #92400E; background: #FEF0C7; border: 1px solid #F59E0B; padding: 1px 7px; border-radius: 6px;">დემო</span></div>
-                <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">მცენარეთა დამცველი · რაჭა</div>
-              </div>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
-              <span style="font-size: 13px; color: var(--text-muted);">⭐ 5.0 · 10 წ.</span>
-              <a href="tel:+995555000003" style="font-size: 14px; font-weight: 700; color: var(--green); text-decoration: none;">📞 555 00 00 03</a>
-            </div>
-          </div>
-
-          <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 52px; height: 52px; border-radius: 50%; background: #FAECE7; display: flex; align-items: center; justify-content: center; font-size: 26px; flex: 0 0 auto;">🧺</div>
-              <div style="min-width: 0;">
-                <div style="font-weight: 700; font-size: 16px;">ბრიგადა „მოსავალი" <span style="font-size: 11px; font-weight: 700; color: #92400E; background: #FEF0C7; border: 1px solid #F59E0B; padding: 1px 7px; border-radius: 6px;">დემო</span></div>
-                <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">მკრეფავები · რაჭა</div>
-              </div>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
-              <span style="font-size: 13px; color: var(--text-muted);">⭐ 4.7 · სეზონური</span>
-              <a href="tel:+995555000004" style="font-size: 14px; font-weight: 700; color: var(--green); text-decoration: none;">📞 555 00 00 04</a>
-            </div>
-          </div>
-
-          <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 52px; height: 52px; border-radius: 50%; background: #EEEDFE; display: flex; align-items: center; justify-content: center; font-size: 26px; flex: 0 0 auto;">🧪</div>
-              <div style="min-width: 0;">
-                <div style="font-weight: 700; font-size: 16px;">ლევან თ. <span style="font-size: 11px; font-weight: 700; color: #92400E; background: #FEF0C7; border: 1px solid #F59E0B; padding: 1px 7px; border-radius: 6px;">დემო</span></div>
-                <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">ტექნოლოგი · იმერეთი (ზესტაფონი)</div>
-              </div>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
-              <span style="font-size: 13px; color: var(--text-muted);">⭐ 4.9 · 7 წ.</span>
-              <a href="tel:+995555000005" style="font-size: 14px; font-weight: 700; color: var(--green); text-decoration: none;">📞 555 00 00 05</a>
-            </div>
-          </div>
-
-          <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 52px; height: 52px; border-radius: 50%; background: #E1F5EE; display: flex; align-items: center; justify-content: center; font-size: 26px; flex: 0 0 auto;">🌾</div>
-              <div style="min-width: 0;">
-                <div style="font-weight: 700; font-size: 16px;">მარიამ ბ. <span style="font-size: 11px; font-weight: 700; color: #92400E; background: #FEF0C7; border: 1px solid #F59E0B; padding: 1px 7px; border-radius: 6px;">დემო</span></div>
-                <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">აგრონომი · კახეთი (თელავი)</div>
-              </div>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
-              <span style="font-size: 13px; color: var(--text-muted);">⭐ 4.8 · 5 წ.</span>
-              <a href="tel:+995555000006" style="font-size: 14px; font-weight: 700; color: var(--green); text-decoration: none;">📞 555 00 00 06</a>
-            </div>
-          </div>
-
-          <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 52px; height: 52px; border-radius: 50%; background: #FAEEDA; display: flex; align-items: center; justify-content: center; font-size: 26px; flex: 0 0 auto;">🐑</div>
-              <div style="min-width: 0;">
-                <div style="font-weight: 700; font-size: 16px;">ზაზა ღ. <span style="font-size: 11px; font-weight: 700; color: #92400E; background: #FEF0C7; border: 1px solid #F59E0B; padding: 1px 7px; border-radius: 6px;">დემო</span></div>
-                <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">ვეტერინარი · სამცხე-ჯავახეთი</div>
-              </div>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
-              <span style="font-size: 13px; color: var(--text-muted);">⭐ 4.9 · 12 წ.</span>
-              <a href="tel:+995555000007" style="font-size: 14px; font-weight: 700; color: var(--green); text-decoration: none;">📞 555 00 00 07</a>
-            </div>
-          </div>
-
-        </div>
-      </div>
     </div>
   </section>
 
@@ -1592,6 +1485,20 @@
             <option data-t="sort_cheap">ფასით: იაფი</option>
             <option data-t="sort_expensive">ფასით: ძვირი</option>
           </select>
+        </div>
+
+        <!-- 🌱 აგრო სპეციალისტების სია (ჩნდება აგრო კატეგორიაზე დაჭერისას) -->
+        <div id="agro-list-body" style="display: none;">
+          <div style="background: #FEF0C7; color: #92400E; border: 1px solid #F59E0B; font-size: 13px; font-weight: 700; padding: 10px 16px; border-radius: 12px; text-align: center; margin-bottom: 16px;">⚠️ დემო მაგალითები — რეალური სპეციალისტები მალე დაემატება</div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px;">
+            <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;"><div style="display:flex;align-items:center;gap:12px;"><div style="width:52px;height:52px;border-radius:50%;background:#E1F5EE;display:flex;align-items:center;justify-content:center;font-size:26px;flex:0 0 auto;">🌾</div><div><div style="font-weight:700;font-size:16px;">გიორგი მ. <span style="font-size:11px;font-weight:700;color:#92400E;background:#FEF0C7;border:1px solid #F59E0B;padding:1px 7px;border-radius:6px;">დემო</span></div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">აგრონომი · რაჭა (ამბროლაური)</div></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;"><span style="font-size:13px;color:var(--text-muted);">⭐ 4.9 · 8 წ.</span><a href="tel:+995555000001" style="font-size:14px;font-weight:700;color:var(--green);text-decoration:none;">📞 555 00 00 01</a></div></div>
+            <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;"><div style="display:flex;align-items:center;gap:12px;"><div style="width:52px;height:52px;border-radius:50%;background:#FAEEDA;display:flex;align-items:center;justify-content:center;font-size:26px;flex:0 0 auto;">🐄</div><div><div style="font-weight:700;font-size:16px;">ნინო კ. <span style="font-size:11px;font-weight:700;color:#92400E;background:#FEF0C7;border:1px solid #F59E0B;padding:1px 7px;border-radius:6px;">დემო</span></div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">ვეტერინარი · რაჭა (ონი)</div></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;"><span style="font-size:13px;color:var(--text-muted);">⭐ 4.8 · 6 წ.</span><a href="tel:+995555000002" style="font-size:14px;font-weight:700;color:var(--green);text-decoration:none;">📞 555 00 00 02</a></div></div>
+            <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;"><div style="display:flex;align-items:center;gap:12px;"><div style="width:52px;height:52px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:26px;flex:0 0 auto;">🐛</div><div><div style="font-weight:700;font-size:16px;">დავით ჩ. <span style="font-size:11px;font-weight:700;color:#92400E;background:#FEF0C7;border:1px solid #F59E0B;padding:1px 7px;border-radius:6px;">დემო</span></div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">მცენარეთა დამცველი · რაჭა</div></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;"><span style="font-size:13px;color:var(--text-muted);">⭐ 5.0 · 10 წ.</span><a href="tel:+995555000003" style="font-size:14px;font-weight:700;color:var(--green);text-decoration:none;">📞 555 00 00 03</a></div></div>
+            <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;"><div style="display:flex;align-items:center;gap:12px;"><div style="width:52px;height:52px;border-radius:50%;background:#FAECE7;display:flex;align-items:center;justify-content:center;font-size:26px;flex:0 0 auto;">🧺</div><div><div style="font-weight:700;font-size:16px;">ბრიგადა „მოსავალი" <span style="font-size:11px;font-weight:700;color:#92400E;background:#FEF0C7;border:1px solid #F59E0B;padding:1px 7px;border-radius:6px;">დემო</span></div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">მკრეფავები · რაჭა</div></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;"><span style="font-size:13px;color:var(--text-muted);">⭐ 4.7 · სეზონური</span><a href="tel:+995555000004" style="font-size:14px;font-weight:700;color:var(--green);text-decoration:none;">📞 555 00 00 04</a></div></div>
+            <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;"><div style="display:flex;align-items:center;gap:12px;"><div style="width:52px;height:52px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:26px;flex:0 0 auto;">🧪</div><div><div style="font-weight:700;font-size:16px;">ლევან თ. <span style="font-size:11px;font-weight:700;color:#92400E;background:#FEF0C7;border:1px solid #F59E0B;padding:1px 7px;border-radius:6px;">დემო</span></div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">ტექნოლოგი · იმერეთი (ზესტაფონი)</div></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;"><span style="font-size:13px;color:var(--text-muted);">⭐ 4.9 · 7 წ.</span><a href="tel:+995555000005" style="font-size:14px;font-weight:700;color:var(--green);text-decoration:none;">📞 555 00 00 05</a></div></div>
+            <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;"><div style="display:flex;align-items:center;gap:12px;"><div style="width:52px;height:52px;border-radius:50%;background:#E1F5EE;display:flex;align-items:center;justify-content:center;font-size:26px;flex:0 0 auto;">🌾</div><div><div style="font-weight:700;font-size:16px;">მარიამ ბ. <span style="font-size:11px;font-weight:700;color:#92400E;background:#FEF0C7;border:1px solid #F59E0B;padding:1px 7px;border-radius:6px;">დემო</span></div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">აგრონომი · კახეთი (თელავი)</div></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;"><span style="font-size:13px;color:var(--text-muted);">⭐ 4.8 · 5 წ.</span><a href="tel:+995555000006" style="font-size:14px;font-weight:700;color:var(--green);text-decoration:none;">📞 555 00 00 06</a></div></div>
+            <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px;"><div style="display:flex;align-items:center;gap:12px;"><div style="width:52px;height:52px;border-radius:50%;background:#FAEEDA;display:flex;align-items:center;justify-content:center;font-size:26px;flex:0 0 auto;">🐑</div><div><div style="font-weight:700;font-size:16px;">ზაზა ღ. <span style="font-size:11px;font-weight:700;color:#92400E;background:#FEF0C7;border:1px solid #F59E0B;padding:1px 7px;border-radius:6px;">დემო</span></div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">ვეტერინარი · სამცხე-ჯავახეთი</div></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;"><span style="font-size:13px;color:var(--text-muted);">⭐ 4.9 · 12 წ.</span><a href="tel:+995555000007" style="font-size:14px;font-weight:700;color:var(--green);text-decoration:none;">📞 555 00 00 07</a></div></div>
+          </div>
         </div>
 
         <div class="demo-card-wrapper" onclick="showPage('profile')">
@@ -3810,6 +3717,9 @@
     targetPage.classList.add('active');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
+    // 🌱 სიის რეჟიმი: აგრო (დემო სპეციალისტები) თუ ჩვეულებრივი
+    if (id === 'list') { applyListMode(window._openAgro ? 'agro' : 'home'); window._openAgro = false; }
+
     // 🎯 დავიმახსოვროთ ადმინ გვერდი — refresh-ის შემთხვევაში დავაბრუნოთ
     try {
       if (id === 'admin') {
@@ -3823,6 +3733,26 @@
       }
     } catch(e) {}
   }
+
+  // 🌱 აგრო/ჩვეულებრივი სიის რეჟიმის გადართვა
+  function applyListMode(mode) {
+    const main = document.querySelector('#page-list main');
+    if (!main) return;
+    const agroBody = document.getElementById('agro-list-body');
+    const homeEls = main.querySelectorAll(':scope > .demo-card-wrapper, :scope > .master-card, :scope > .test-banner-top');
+    const title = main.querySelector('.list-head h2');
+    if (mode === 'agro') {
+      if (agroBody) agroBody.style.display = 'block';
+      homeEls.forEach(e => e.style.display = 'none');
+      if (title) title.textContent = 'აგრონომია — დემო სპეციალისტები';
+    } else {
+      if (agroBody) agroBody.style.display = 'none';
+      homeEls.forEach(e => e.style.display = '');
+      if (title) title.textContent = 'ოსტატები';
+    }
+  }
+  function openAgroList(role) { window._openAgro = true; showPage('list'); }
+  window.openAgroList = openAgroList;
 
   function scrollToCategories() {
     showPage('home');
