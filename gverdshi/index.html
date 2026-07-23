@@ -707,6 +707,9 @@
   .footer-col a { display: block; font-size: 14px; color: var(--text-muted); text-decoration: none; padding: 4px 0; cursor: pointer; }
   .footer-col a:hover { color: var(--text); }
   .footer-col p { font-size: 14px; color: var(--text-muted); max-width: 280px; }
+  .footer-links { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; }
+  .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+  .footer-links a:hover { color: var(--text); }
   .footer-bottom {
     padding-top: 24px; border-top: 1px solid var(--border);
     display: flex; justify-content: space-between; font-size: 13px; color: var(--text-light);
@@ -1064,6 +1067,7 @@
           <div class="city-option" data-city="zugdidi" onclick="selectCity('zugdidi', 'ზუგდიდი')">🌳 ზუგდიდი</div>
           <div class="city-option" data-city="telavi" onclick="selectCity('telavi', 'თელავი')">🍇 თელავი</div>
           <div class="city-option" data-city="marneuli" onclick="selectCity('marneuli', 'მარნეული')">🌾 მარნეული</div>
+          <div class="city-option" data-city="racha" onclick="selectCity('racha', 'რაჭა')">🏔️ რაჭა</div>
         </div>
       </div>
 
@@ -1080,6 +1084,7 @@
             <label onclick="selectCity('zugdidi', 'ზუგდიდი', '🌳'); document.getElementById('ms-city-panel').classList.remove('open'); document.getElementById('ms-city-trigger').classList.remove('open');" style="cursor: pointer;"><span class="ms-opt-label">🌳 ზუგდიდი</span></label>
             <label onclick="selectCity('telavi', 'თელავი', '🍇'); document.getElementById('ms-city-panel').classList.remove('open'); document.getElementById('ms-city-trigger').classList.remove('open');" style="cursor: pointer;"><span class="ms-opt-label">🍇 თელავი</span></label>
             <label onclick="selectCity('marneuli', 'მარნეული', '🌾'); document.getElementById('ms-city-panel').classList.remove('open'); document.getElementById('ms-city-trigger').classList.remove('open');" style="cursor: pointer;"><span class="ms-opt-label">🌾 მარნეული</span></label>
+            <label onclick="selectCity('racha', 'რაჭა', '🏔️'); document.getElementById('ms-city-panel').classList.remove('open'); document.getElementById('ms-city-trigger').classList.remove('open');" style="cursor: pointer;"><span class="ms-opt-label">🏔️ რაჭა</span></label>
           </div>
         </div>
         <div class="divider"></div>
@@ -1837,6 +1842,7 @@
               <option value="zugdidi">🌳 ზუგდიდი</option>
               <option value="telavi">🍇 თელავი</option>
               <option value="marneuli">🌾 მარნეული</option>
+              <option value="racha">🏔️ რაჭა</option>
             </select>
             <div style="font-size: 12px; color: var(--green-dark); margin-top: 8px; opacity: 0.8;">
               აუცილებელია — კლიენტები ქალაქის მიხედვით ეძებენ ოსტატებს
@@ -1859,6 +1865,14 @@
               <option>გადაზიდვა</option>
               <option>ტექნიკის შეკეთება</option>
               <option>ოჯახის დახმარება</option>
+              <option>რესტავრატორი</option>
+              <optgroup label="🌱 აგრონომია">
+                <option>აგრონომი</option>
+                <option>ვეტერინარი</option>
+                <option>მცენარეთა დამცველი</option>
+                <option>ტექნოლოგი</option>
+                <option>მკრეფავი</option>
+              </optgroup>
             </select>
           </div>
 
@@ -2199,7 +2213,7 @@
 
 <footer class="footer">
   <div class="container">
-    <div class="footer-grid">
+    <div class="footer-grid" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 24px;">
       <div class="footer-col">
         <div class="logo" style="margin-bottom: 12px;">
           <svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" style="width: 32px; height: 32px;">
@@ -2212,25 +2226,13 @@
         </div>
         <p data-t="footer_tagline">სახლის ყველა პრობლემა — ერთ ადგილას. ვერიფიცირებული ოსტატები, რეალური შეფასებები. 🌊</p>
       </div>
-      <div class="footer-col">
-        <h4 data-t="footer_company">კომპანია</h4>
-        <a href="/terms.html" data-t="footer_terms">წესები და პირობები</a>
-        <a href="/privacy.html" data-t="footer_privacy">კონფიდენციალურობა</a>
-      </div>
-      <div class="footer-col">
-        <h4>პოპულარული სერვისები</h4>
-        <a href="/santeqnikosi.html">სანტექნიკოსი</a>
-        <a href="/elektrikosi.html">ელექტრიკოსი</a>
-        <a href="/damlagebeli.html">დამლაგებელი</a>
-      </div>
-      <div class="footer-col">
-        <h4 data-t="footer_for_masters">ოსტატებს</h4>
+      <nav class="footer-links">
         <a onclick="showPage('register')" data-t="footer_become">გახდი ოსტატი</a>
         <a onclick="scrollToHow()" data-t="footer_how">როგორ მუშაობს</a>
-        <a href="/terms.html" data-t="footer_rules">წესები და პირობები</a>
+        <a href="/terms.html" data-t="footer_terms">წესები და პირობები</a>
         <a href="/privacy.html" data-t="footer_privacy">კონფიდენციალურობა</a>
         <a href="mailto:info@gverdshi.ge" data-t="footer_help">დახმარება</a>
-      </div>
+      </nav>
     </div>
     <div class="footer-bottom">
       <span><span data-t="footer_copyright">© 2026 gverdshi.ge · ყველა უფლება დაცულია</span> <span style="color: var(--text-light); font-size: 10px; opacity: 0.6; margin-left: 8px;">v2.7</span><span class="admin-dot" onclick="openLogin()" title="ადმინი"></span></span>
@@ -5006,7 +5008,8 @@
     kutaisi:  { ka: 'ქუთაისი',  ru: 'Кутаиси', en: 'Kutaisi',  emoji: '🏛️' },
     zugdidi:  { ka: 'ზუგდიდი',  ru: 'Зугдиди', en: 'Zugdidi',  emoji: '🌳' },
     telavi:   { ka: 'თელავი',   ru: 'Телави',  en: 'Telavi',   emoji: '🍇' },
-    marneuli: { ka: 'მარნეული', ru: 'Марнеули', en: 'Marneuli', emoji: '🌾' }
+    marneuli: { ka: 'მარნეული', ru: 'Марнеули', en: 'Marneuli', emoji: '🌾' },
+    racha:    { ka: 'რაჭა',     ru: 'Рача',    en: 'Racha',    emoji: '🏔️' }
   };
 
   // 🏙️ ქალაქის label-ის აღება მიმდინარე ენაზე
@@ -5023,7 +5026,8 @@
     kutaisi:  { ka: 'ქუთაისში',  ru: 'в Кутаиси', en: 'in Kutaisi'  },
     zugdidi:  { ka: 'ზუგდიდში',  ru: 'в Зугдиди', en: 'in Zugdidi'  },
     telavi:   { ka: 'თელავში',   ru: 'в Телави',  en: 'in Telavi'   },
-    marneuli: { ka: 'მარნეულში', ru: 'в Марнеули', en: 'in Marneuli' }
+    marneuli: { ka: 'მარნეულში', ru: 'в Марнеули', en: 'in Marneuli' },
+    racha:    { ka: 'რაჭაში',    ru: 'в Раче',    en: 'in Racha'    }
   };
 
   function getCityLocative(cityKey) {
@@ -5113,6 +5117,16 @@
         { value: 'kachagani', label: 'კაჩაგანი' },
         { value: 'algeti', label: 'ალგეთი' },
         { value: 'shulaveri', label: 'შულავერი' }
+      ]
+    },
+    racha: {
+      emoji: '🏔️',
+      label: 'რაჭა',
+      areas: [
+        { value: 'ambrolauri', label: 'ამბროლაური' },
+        { value: 'oni', label: 'ონი' },
+        { value: 'tsageri', label: 'ცაგერი' },
+        { value: 'lentekhi', label: 'ლენტეხი' }
       ]
     }
   };
