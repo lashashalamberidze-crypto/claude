@@ -748,25 +748,41 @@ window.smsJournalView=async function(){
     if(!rows.length){ body.innerHTML='<div style="padding:20px;text-align:center;color:#94a3b8">ჯერ ჟურნალში ჩანაწერი არ არის.<br><span style="font-size:.75rem">(ახალი გაგზავნები აქ ჩაიწერება)</span></div>'; return; }
     var sent=rows.filter(function(r){var s=String(r.status||'');return s.indexOf('sent')>=0||s.indexOf('deliver')>=0;}).length;
     var fail=rows.filter(function(r){return String(r.status||'').indexOf('fail')>=0;}).length;
-    var totKg=rows.reduce(function(a,r){return a+(+r.kg||0);},0), totGel=rows.reduce(function(a,r){return a+(+r.gel||0);},0);
-    var h='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'
+    var h='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'
       +'<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:7px 11px"><b style="font-size:1.15rem;color:#16a34a">'+rows.length+'</b><div style="font-size:.68rem;color:#64748b">სულ</div></div>'
       +'<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:7px 11px"><b style="font-size:1.15rem;color:#0369a1">'+sent+'</b><div style="font-size:.68rem;color:#64748b">გაგზავნილი</div></div>'
       +(fail?'<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:7px 11px"><b style="font-size:1.15rem;color:#dc2626">'+fail+'</b><div style="font-size:.68rem;color:#64748b">ჩავარდა</div></div>':'')+'</div>';
-    h+='<input id="smsJSearch" oninput="_smsJFilter()" placeholder="🔍 ძებნა სახელით ან ნომრით..." style="width:100%;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:inherit;font-size:.9rem;margin-bottom:8px;box-sizing:border-box">';
-    h+='<div id="smsJStat" style="font-size:.8rem;color:#0369a1;font-weight:600;margin-bottom:6px">ნაპოვნი: '+rows.length+' SMS · '+totKg.toFixed(1)+' კგ · '+totGel.toFixed(2)+' ₾</div>';
-    h+='<div style="max-height:50vh;overflow:auto;border:1px solid #e5e7eb;border-radius:10px"><table style="width:100%;border-collapse:collapse;font-size:.78rem"><thead><tr style="background:#0369a1;color:#fff;position:sticky;top:0"><th style="padding:6px 8px;text-align:left">თარიღი</th><th style="padding:6px 8px;text-align:left">მკრეფავი</th><th style="padding:6px 8px;text-align:left">ნომერი</th><th style="padding:6px 8px;text-align:right">კგ</th><th style="padding:6px 8px;text-align:right">₾</th><th style="padding:6px 8px">✓</th></tr></thead><tbody id="smsJTbody">';
+    h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">'
+      +'<input id="smsJSearch" oninput="_smsJFilter()" placeholder="🔍 სახელი ან ნომერი" style="flex:1;min-width:140px;padding:9px 11px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:inherit;font-size:.88rem;box-sizing:border-box">'
+      +'<input id="smsJFrom" type="date" onchange="_smsJFilter()" title="თარიღი დან" style="padding:8px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:inherit;font-size:.82rem">'
+      +'<input id="smsJTo" type="date" onchange="_smsJFilter()" title="თარიღი მდე" style="padding:8px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:inherit;font-size:.82rem">'
+      +'</div>';
+    h+='<div id="smsJStat" style="font-size:.8rem;color:#0369a1;font-weight:700;margin-bottom:6px"></div>';
+    h+='<div id="smsJByDate" style="margin-bottom:8px"></div>';
+    h+='<div style="max-height:42vh;overflow:auto;border:1px solid #e5e7eb;border-radius:10px"><table style="width:100%;border-collapse:collapse;font-size:.78rem"><thead><tr style="background:#0369a1;color:#fff;position:sticky;top:0"><th style="padding:6px 8px;text-align:left">თარიღი</th><th style="padding:6px 8px;text-align:left">მკრეფავი</th><th style="padding:6px 8px;text-align:left">ნომერი</th><th style="padding:6px 8px;text-align:right">კგ</th><th style="padding:6px 8px;text-align:right">₾</th><th style="padding:6px 8px">✓</th></tr></thead><tbody id="smsJTbody">';
     rows.forEach(function(r){ var s=String(r.status||''); var ic=(s.indexOf('fail')>=0)?'❌':((s.indexOf('sent')>=0||s.indexOf('deliver')>=0)?'✅':'·');
       var ds=((r.picker_name||'')+' '+(r.phone||'')).toLowerCase().replace(/"/g,'');
-      h+='<tr data-s="'+ds+'" data-kg="'+(+r.kg||0)+'" data-gel="'+(+r.gel||0)+'" style="border-top:1px solid #f1f5f9"><td style="padding:5px 8px">'+(r.date||'—')+'</td><td style="padding:5px 8px;font-weight:600">'+(r.picker_name||'—')+'</td><td style="padding:5px 8px;font-family:monospace">'+(r.phone||'—')+'</td><td style="padding:5px 8px;text-align:right">'+(r.kg!=null?(+r.kg).toFixed(2):'—')+'</td><td style="padding:5px 8px;text-align:right">'+(r.gel!=null?(+r.gel).toFixed(2):'—')+'</td><td style="padding:5px 8px;text-align:center">'+ic+'</td></tr>'; });
+      h+='<tr data-s="'+ds+'" data-date="'+(r.date||'')+'" data-kg="'+(+r.kg||0)+'" data-gel="'+(+r.gel||0)+'" style="border-top:1px solid #f1f5f9"><td style="padding:5px 8px">'+(r.date||'—')+'</td><td style="padding:5px 8px;font-weight:600">'+(r.picker_name||'—')+'</td><td style="padding:5px 8px;font-family:monospace">'+(r.phone||'—')+'</td><td style="padding:5px 8px;text-align:right">'+(r.kg!=null?(+r.kg).toFixed(2):'—')+'</td><td style="padding:5px 8px;text-align:right">'+(r.gel!=null?(+r.gel).toFixed(2):'—')+'</td><td style="padding:5px 8px;text-align:center">'+ic+'</td></tr>'; });
     h+='</tbody></table></div>';
     body.innerHTML=h;
     window._smsJFilter=function(){
       var q=(document.getElementById('smsJSearch').value||'').trim().toLowerCase();
-      var trs=document.querySelectorAll('#smsJTbody tr'); var n=0,kg=0,gel=0;
-      trs.forEach(function(tr){ var m=!q || (tr.getAttribute('data-s')||'').indexOf(q)>=0; tr.style.display=m?'':'none'; if(m){ n++; kg+=+tr.getAttribute('data-kg')||0; gel+=+tr.getAttribute('data-gel')||0; } });
+      var from=document.getElementById('smsJFrom').value||'', to=document.getElementById('smsJTo').value||'';
+      var trs=document.querySelectorAll('#smsJTbody tr'); var n=0,kg=0,gel=0, byd={};
+      trs.forEach(function(tr){
+        var dt=tr.getAttribute('data-date')||'';
+        var m=(!q||(tr.getAttribute('data-s')||'').indexOf(q)>=0) && (!from||dt>=from) && (!to||dt<=to);
+        tr.style.display=m?'':'none';
+        if(m){ var k=+tr.getAttribute('data-kg')||0, g=+tr.getAttribute('data-gel')||0; n++; kg+=k; gel+=g;
+          if(!byd[dt]) byd[dt]={n:0,kg:0,gel:0}; byd[dt].n++; byd[dt].kg+=k; byd[dt].gel+=g; }
+      });
       var st=document.getElementById('smsJStat'); if(st) st.textContent='ნაპოვნი: '+n+' SMS · '+kg.toFixed(1)+' კგ · '+gel.toFixed(2)+' ₾';
+      var bd=document.getElementById('smsJByDate');
+      if(bd){ var dts=Object.keys(byd).sort().reverse();
+        bd.innerHTML = dts.length ? ('<div style="font-size:.72rem;color:#64748b;font-weight:700;margin:2px 0 4px">📅 თარიღების მიხედვით</div>'+dts.map(function(d){var v=byd[d];return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:.78rem;padding:4px 9px;background:#f8fafc;border:1px solid #eef2f7;border-radius:7px;margin-bottom:3px"><b>'+d+'</b><span style="color:#334155">'+v.n+' SMS · '+v.kg.toFixed(1)+' კგ · <b style="color:#16a34a">'+v.gel.toFixed(2)+' ₾</b></span></div>';}).join('')) : '';
+      }
     };
+    _smsJFilter();
   }catch(e){ body.textContent='❌ '+(e.message||e); }
 };
 
