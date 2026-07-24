@@ -101,6 +101,7 @@
       </div>
     </div>
     <div class="muted" style="margin-top:6px">ფასი/ტარა ღრუბელშივე ინახება — მთავარ გვერდზეც იგივე ჩანს. SMS გამორთულით გატესტე.</div>
+    <button onclick="smsJournalView()" style="margin-top:8px;width:100%;padding:9px;border:1.5px solid #cbd5e1;border-radius:10px;background:#f8fafc;color:#0369a1;font-family:inherit;font-weight:700;font-size:.85rem;cursor:pointer">📋 SMS ჟურნალი — ვის რა გაეგზავნა</button>
   </div>
 
   <div class="tabs">
@@ -728,6 +729,37 @@ function smsLog(rec){
   if(!sb||!uid) return;
   try{ sb.from('sms_log').insert({ user_id:uid, picker_name:rec.name||'', picker_id:rec.pid||'', phone:rec.phone||'', text:rec.text||'', kg:rec.kg||0, gel:rec.gel||0, box_code:rec.code||'', pallet_code:rec.pallet||'', status:rec.status||'', error:rec.error||'', msg_id:rec.msg_id||'', date:_today() }).then(function(){},function(){}); }catch(e){}
 }
+// #SMS-JOURNAL: გაგზავნილი SMS-ების ნახვა (sms_log-იდან)
+window.smsJournalView=async function(){
+  var old=document.getElementById('smsJModal'); if(old) old.remove();
+  var ov=document.createElement('div'); ov.id='smsJModal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.6);display:flex;align-items:flex-start;justify-content:center;z-index:100000;padding:16px;overflow:auto';
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:720px;width:100%;padding:16px;box-shadow:0 10px 40px rgba(0,0,0,.3)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:1.05rem;font-weight:800;color:#0369a1">📋 SMS ჟურნალი</div><button onclick="document.getElementById(\'smsJModal\').remove()" style="border:none;background:#f1f5f9;border-radius:8px;padding:6px 11px;cursor:pointer">✕</button></div>'
+    +'<div id="smsJBody" style="font-size:.85rem;color:#475569">⏳ იტვირთება...</div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){ if(e.target===ov) ov.remove(); });
+  var body=document.getElementById('smsJBody');
+  try{
+    if(!sb||!uid){ body.textContent='ჯერ შედი სისტემაში.'; return; }
+    var res=await sb.from('sms_log').select('date,picker_name,phone,kg,gel,status').eq('user_id',uid).order('date',{ascending:false}).limit(1000);
+    if(res.error){ body.textContent='❌ '+res.error.message; return; }
+    var rows=res.data||[];
+    if(!rows.length){ body.innerHTML='<div style="padding:20px;text-align:center;color:#94a3b8">ჯერ ჟურნალში ჩანაწერი არ არის.<br><span style="font-size:.75rem">(ახალი გაგზავნები აქ ჩაიწერება)</span></div>'; return; }
+    var sent=rows.filter(function(r){var s=String(r.status||'');return s.indexOf('sent')>=0||s.indexOf('deliver')>=0;}).length;
+    var fail=rows.filter(function(r){return String(r.status||'').indexOf('fail')>=0;}).length;
+    var h='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">'
+      +'<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px 12px"><b style="font-size:1.2rem;color:#16a34a">'+rows.length+'</b><div style="font-size:.7rem;color:#64748b">სულ</div></div>'
+      +'<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:8px 12px"><b style="font-size:1.2rem;color:#0369a1">'+sent+'</b><div style="font-size:.7rem;color:#64748b">გაგზავნილი</div></div>'
+      +(fail?'<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:8px 12px"><b style="font-size:1.2rem;color:#dc2626">'+fail+'</b><div style="font-size:.7rem;color:#64748b">ჩავარდა</div></div>':'')+'</div>';
+    h+='<div style="max-height:56vh;overflow:auto;border:1px solid #e5e7eb;border-radius:10px"><table style="width:100%;border-collapse:collapse;font-size:.78rem"><thead><tr style="background:#0369a1;color:#fff;position:sticky;top:0"><th style="padding:6px 8px;text-align:left">თარიღი</th><th style="padding:6px 8px;text-align:left">მკრეფავი</th><th style="padding:6px 8px;text-align:left">ნომერი</th><th style="padding:6px 8px;text-align:right">კგ</th><th style="padding:6px 8px;text-align:right">₾</th><th style="padding:6px 8px">✓</th></tr></thead><tbody>';
+    rows.forEach(function(r){ var s=String(r.status||''); var ic=(s.indexOf('fail')>=0)?'❌':((s.indexOf('sent')>=0||s.indexOf('deliver')>=0)?'✅':'·');
+      h+='<tr style="border-top:1px solid #f1f5f9"><td style="padding:5px 8px">'+(r.date||'—')+'</td><td style="padding:5px 8px;font-weight:600">'+(r.picker_name||'—')+'</td><td style="padding:5px 8px;font-family:monospace">'+(r.phone||'—')+'</td><td style="padding:5px 8px;text-align:right">'+(r.kg!=null?(+r.kg).toFixed(2):'—')+'</td><td style="padding:5px 8px;text-align:right">'+(r.gel!=null?(+r.gel).toFixed(2):'—')+'</td><td style="padding:5px 8px;text-align:center">'+ic+'</td></tr>'; });
+    h+='</tbody></table></div>';
+    body.innerHTML=h;
+  }catch(e){ body.textContent='❌ '+(e.message||e); }
+};
+
 async function syncQueue(){
   if(syncing || !queue.length || !navigator.onLine || !sb || !uid) return;
   syncing=true; var done=0, fail=0, remain=[], lastErr='';
