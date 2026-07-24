@@ -370,7 +370,7 @@ async function sbSaveSacwyobi(userId, lots, ops, temps){
         for(var _i=0; _i<_orph.length; _i+=80){ await _sb.from('sacwyobi_lots').delete().eq('user_id', u).in('id', _orph.slice(_i,_i+80)); }
       }catch(_pe){ console.warn('WH prune', _pe); }
     }
-    if(ops && ops.length)     await _sb.from('sacwyobi_ops').upsert(ops.map(o => { var r=Object.assign({}, o, { pallet_code: o.pallet_code||'', user_id: u }); delete r.gv_ref; return r; }), { onConflict:'id' });
+    if(ops && ops.length)     await _sb.from('sacwyobi_ops').upsert(ops.map(o => Object.assign({}, o, { pallet_code: o.pallet_code||'', user_id: u })), { onConflict:'id' }); // #GVREF-PERSIST: gv_ref ინახება — გადახდის კორექტირება გადატვირთვის შემდეგაც სინქრდება
     if(temps && temps.length) await _sb.from('sacwyobi_temps').upsert(temps.map(t => ({ ...t, user_id: u })), { onConflict:'id' });
   }catch(e){ console.warn('Sacwyobi Supabase save error:', e); }
 }
