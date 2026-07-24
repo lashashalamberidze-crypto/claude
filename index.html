@@ -5177,7 +5177,7 @@ document.addEventListener('keydown', function(e){
       <div id="stW">❌ წონა: —</div>
       <label style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:.72rem;cursor:pointer;user-select:none" title="ჩართულის შემთხვევაში, ჩაწერისთანავე მკრეფავს გაეგზავნება SMS">
         <input type="checkbox" class="chkSmsOnEntry" style="width:16px;height:16px;cursor:pointer;accent-color:var(--green)"
-          onchange="localStorage.setItem('its_sms_on_entry', this.checked ? '1' : '0'); document.querySelectorAll('.chkSmsOnEntry').forEach(function(c){c.checked=event.target.checked});">
+          onchange="if(window.setSmsMode){window.setSmsMode(this.checked?'instant':'off');}else{localStorage.setItem('its_sms_on_entry',this.checked?'1':'0');}">
         <span>📲 ავტო SMS</span>
       </label>
     </div>
@@ -5558,7 +5558,7 @@ document.addEventListener('keydown', function(e){
       <div id="stW">❌ წონა: —</div>
       <label style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:.72rem;cursor:pointer;user-select:none" title="ჩართულის შემთხვევაში, ჩაწერისთანავე მკრეფავს გაეგზავნება SMS">
         <input type="checkbox" class="chkSmsOnEntry" style="width:16px;height:16px;cursor:pointer;accent-color:var(--green)"
-          onchange="localStorage.setItem('its_sms_on_entry', this.checked ? '1' : '0'); document.querySelectorAll('.chkSmsOnEntry').forEach(function(c){c.checked=event.target.checked});">
+          onchange="if(window.setSmsMode){window.setSmsMode(this.checked?'instant':'off');}else{localStorage.setItem('its_sms_on_entry',this.checked?'1':'0');}">
         <span>📲 ავტო SMS</span>
       </label>
     </div>
@@ -9486,7 +9486,7 @@ window.krepaLoadBonusesFromSupabase = async function(){
 
 // #SETTINGS-SYNC: მოწყობილობის პარამეტრების ღრუბლის სინქრონი (ფასი/ბაზა/ტარა/SMS კონფიგი)
 // user_settings ცხრილში — რომ ახალ მოწყობილობაზე თავიდან შეყვანა აღარ დაჭირდეს.
-window._SETTINGS_KEYS = ['its_price','its_base','its_box_w','its_punnet_w','its_punnet_n','its_sms_config','its_sms_on_entry'];
+window._SETTINGS_KEYS = ['its_price','its_base','its_box_w','its_punnet_w','its_punnet_n','its_sms_config','its_sms_on_entry','its_sms_mode','its_kgbonus_tiers','its_carrierbonus_amt','its_weigh_mode','its_std_weight','its_tare_pin'];
 window.pushUserSettings = function(){
   try{
     if(typeof _sb==='undefined' || typeof currentUser==='undefined' || !currentUser || !currentUser.id || currentUser.isDemo) return;
@@ -11538,6 +11538,7 @@ function exportExcel(){
   const ws5=XLSX.utils.aoa_to_sheet(s5);
   ws5["!cols"]=[{wch:18},{wch:24},{wch:12},{wch:12},{wch:10},{wch:12},{wch:32}];
   XLSX.utils.book_append_sheet(WB,ws5,"პალეტები");
+  try{ if(typeof xlStyleWB==='function') xlStyleWB(WB); }catch(e){}
   XLSX.writeFile(WB,"InTechSol_"+d+".xlsx");
   notify("📥 Excel ჩამოიტვირთა");
 }
@@ -13548,6 +13549,7 @@ function exportExcel(){
   const ws5=XLSX.utils.aoa_to_sheet(s5);
   ws5["!cols"]=[{wch:18},{wch:24},{wch:12},{wch:12},{wch:10},{wch:12},{wch:32}];
   XLSX.utils.book_append_sheet(WB,ws5,"პალეტები");
+  try{ if(typeof xlStyleWB==='function') xlStyleWB(WB); }catch(e){}
   XLSX.writeFile(WB,"InTechSol_"+d+".xlsx");
   notify("📥 Excel ჩამოიტვირთა");
 }
@@ -19451,24 +19453,61 @@ window.rmLoadRisks = rmLoadRisks;
     if(localStorage.getItem('its_box_w') === null) localStorage.setItem('its_box_w','0.600');
     if(localStorage.getItem('its_punnet_w') === null) localStorage.setItem('its_punnet_w','0');
     if(localStorage.getItem('its_punnet_n') === null) localStorage.setItem('its_punnet_n','0');
-    if(localStorage.getItem('its_sms_on_entry') === null) localStorage.setItem('its_sms_on_entry','1');
+    // #SMS-MODE: SMS რეჟიმი — 'instant' (ყოველ აწონვაზე მაშინვე) | 'daily' (დღის ბოლოს ღილაკით) | 'off'
+    // მიგრაცია ძველი its_sms_on_entry-დან (თავსებადობა)
+    if(localStorage.getItem('its_sms_mode') === null){
+      var _old = localStorage.getItem('its_sms_on_entry');
+      localStorage.setItem('its_sms_mode', (_old==='0') ? 'off' : 'instant');
+    }
+    // ძველ ცვლადს ვასინქრონებთ რეჟიმთან — რომ ძველი კოდიც სწორად მუშაობდეს
+    localStorage.setItem('its_sms_on_entry', (localStorage.getItem('its_sms_mode')==='instant') ? '1' : '0');
   }catch(e){}
+
+  window.smsMode = function(){ try{ return localStorage.getItem('its_sms_mode') || 'instant'; }catch(e){ return 'instant'; } };
+  window.setSmsMode = function(m){
+    try{
+      if(['instant','daily','off'].indexOf(m)<0) m='off';
+      localStorage.setItem('its_sms_mode', m);
+      localStorage.setItem('its_sms_on_entry', m==='instant' ? '1' : '0');
+      document.querySelectorAll('.chkSmsOnEntry').forEach(function(c){ c.checked = (m==='instant'); });
+      document.querySelectorAll('.smsModeSel').forEach(function(s){ s.value = m; });
+      if(typeof window.pushUserSettings==='function') window.pushUserSettings();
+    }catch(e){}
+  };
+
+  // #SMS-LOG: ყველა გაგზავნილი SMS ღრუბლის ჟურნალში (sms_log) — ვის, ნომერი, თანხა, დრო, სტატუსი
+  window.smsLogInsert = function(rec){
+    try{
+      if(typeof _sb==='undefined' || !window.currentUser || !currentUser.id || currentUser.isDemo) return;
+      var today; try{ today = new Date().toISOString().slice(0,10); }catch(e){ today=''; }
+      _sb.from('sms_log').insert({
+        user_id: currentUser.id,
+        picker_name: rec.name||'', picker_id: rec.pid||'', phone: rec.phone||'',
+        text: rec.text||'', kg: (+rec.kg||0), gel: (+rec.gel||0),
+        box_code: rec.code||'', pallet_code: rec.pallet||'',
+        status: rec.status||'', error: rec.error||'', msg_id: rec.msg_id||'',
+        date: rec.date||today, source: rec.source||'index'
+      }).then(function(){},function(){});
+    }catch(e){}
+  };
 
   window.triggerInstantSMS = function(entry){
     try{
-      const enabled = localStorage.getItem('its_sms_on_entry') !== '0';
-      if(!enabled || !entry || !entry.phone) return;
+      if(window.smsMode() !== 'instant' || !entry || !entry.phone) return;
       const cfg = window.sms_config || {};
+      // მოკლე ტექსტი — 1 SMS-ში ეტევა (70 სიმბ.), ~50% ეკონომია. „რიგი" ხაზი აღარ არის.
       const msg = 'InTechSol ✅\n' +
         (entry.pickerName||'მკრეფავი') + '\n' +
         'ახალი: ' + (+(entry.weight||0)).toFixed(2) + ' კგ = ' + (+(entry.earned||0)).toFixed(2) + ' ₾\n' +
-        'რიგი/ბლოკი: ' + (entry.row||'—') + '/' + (entry.quarter||'—') + '\n' +
         'დრო: ' + (entry.time||'');
+      var _code = entry.short_code||entry.code||entry.id||'';
       if(cfg.method === 'smsoffice' && cfg.proxyUrl && typeof window.smsSendViaApi === 'function'){
-        window.smsSendViaApi(entry.phone, msg).then(function(){
+        window.smsSendViaApi(entry.phone, msg).then(function(res){
           if(typeof notify==='function') notify('📲 SMS გაიგზავნა → '+(entry.pickerName||''));
+          if(window.smsLogInsert) window.smsLogInsert({name:entry.pickerName,pid:entry.pickerUid||entry.pickerId,phone:entry.phone,text:msg,kg:entry.weight,gel:entry.earned,code:_code,pallet:entry.pallet_code||'',status:'sent',msg_id:(res&&(res.msgId||res.MessageId||res.messageId||res.id))||''});
         }).catch(function(e){
           if(typeof notify==='function') notify('⚠️ SMS ვერ გაიგზავნა: '+e.message,'var(--orange)');
+          if(window.smsLogInsert) window.smsLogInsert({name:entry.pickerName,pid:entry.pickerUid||entry.pickerId,phone:entry.phone,text:msg,kg:entry.weight,gel:entry.earned,code:_code,pallet:entry.pallet_code||'',status:'failed',error:(e&&e.message)||String(e)});
           console.warn('instant sms failed', e);
         });
       } else {
@@ -19486,8 +19525,9 @@ window.rmLoadRisks = rmLoadRisks;
       document.querySelectorAll('#boxWIn').forEach(function(el){ if(!el.value) el.value = bw.toFixed(2); });
       const tare = (typeof agro_tare === 'function') ? agro_tare() : bw;
       document.querySelectorAll('#hTare,#hTare2').forEach(function(el){ el.textContent = (+tare||0).toFixed(2); });
-      const smsSaved = localStorage.getItem('its_sms_on_entry') !== '0';
-      document.querySelectorAll('.chkSmsOnEntry').forEach(function(c){ c.checked = smsSaved; });
+      const instant = window.smsMode()==='instant';
+      document.querySelectorAll('.chkSmsOnEntry').forEach(function(c){ c.checked = instant; });
+      document.querySelectorAll('.smsModeSel').forEach(function(s){ s.value = window.smsMode(); });
     }catch(e){}
   }
   window.addEventListener('DOMContentLoaded', syncDefaultsToUI);
@@ -19806,8 +19846,9 @@ window.rmLoadRisks = rmLoadRisks;
 <script>
 // Init SMS-on-entry checkbox state on page load
 window.addEventListener('DOMContentLoaded', function(){
-  var saved = localStorage.getItem('its_sms_on_entry') !== '0';
+  var saved = (typeof window.smsMode==='function') ? (window.smsMode()==='instant') : (localStorage.getItem('its_sms_on_entry') !== '0');
   document.querySelectorAll('.chkSmsOnEntry').forEach(function(c){ c.checked = saved; });
+  document.querySelectorAll('.smsModeSel').forEach(function(s){ if(typeof window.smsMode==='function') s.value = window.smsMode(); });
 });
 </script>
 
