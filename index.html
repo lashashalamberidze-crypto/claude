@@ -19494,6 +19494,11 @@ window.rmLoadRisks = rmLoadRisks;
   window.triggerInstantSMS = function(entry){
     try{
       if(window.smsMode() !== 'instant' || !entry || !entry.phone) return;
+      // #PHANTOM-GUARD: ფანტომური ჩანაწერი SMS-ს ვერასდროს გააგზავნის (ისევე როგორც რეპორტებში ფილტრდება)
+      if(entry.source === 'sms_phantom' || entry.phantom === true) return;
+      // #PHONE-GUARD: მხოლოდ ვალიდურ ქართულ მობილურზე (9955XXXXXXXX)
+      var _to = (typeof window.normalizePhone==='function') ? window.normalizePhone(entry.phone) : String(entry.phone||'').replace(/\D+/g,'');
+      if(!/^9955\d{8}$/.test(_to)){ console.warn('instant SMS: არავალიდური ნომერი', entry.phone); return; }
       const cfg = window.sms_config || {};
       // მოკლე ტექსტი — 1 SMS-ში ეტევა (70 სიმბ.), ~50% ეკონომია. „რიგი" ხაზი აღარ არის.
       const msg = 'InTechSol ✅\n' +

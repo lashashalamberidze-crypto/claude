@@ -733,6 +733,8 @@ async function syncQueue(){
   syncing=true; var done=0, fail=0, remain=[], lastErr='';
   function toRow(q){ return { id:q.id, user_id:uid, picker_name:q.picker_name, picker_id:q.picker_id||'', kg:q.kg, price:q.price||0, date:q.date, weight:q.weight, earned:q.earned||0, phone:q.phone||'', row_num:q.row_num||null, quarter:q.quarter||'', short_code:q.short_code, box_num:'', time:q.time, code:q.code, pallet_code:q.pallet_code||'', source:'krepa_bulk', entry_mode:q.entry_mode||'' }; }
   function sendSms(q){ if(!(q.sms && q.phone)) return;
+    if(q.source==='sms_phantom' || q.phantom===true) return;   // #PHANTOM-GUARD: ფანტომი SMS-ს ვერ აგზავნის
+    var _to=normPhone(q.phone); if(!/^9955\d{8}$/.test(_to)) return;   // #PHONE-GUARD: მხოლოდ ვალიდური მობილური
     var bc=q.short_code||q.code||''; if(!bc) bc='noc-'+(q.id||Math.random());
     if(smsSentBoxes[bc]) return;            // ამ სესიაში უკვე გაიგზავნა — აღარ ვიმეორებთ
     smsSentBoxes[bc]=1;

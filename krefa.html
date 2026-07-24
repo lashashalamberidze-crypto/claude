@@ -755,6 +755,25 @@ function exportReportExcel(){
   for(var R2=0;R2<a2.length;R2++)for(var C2=0;C2<a2[R2].length;C2++){ var rf2=XLSX.utils.encode_cell({r:R2,c:C2}); if(!ws2[rf2])ws2[rf2]={t:'s',v:''}; ws2[rf2].s=(R2===0?head:cell); }
   ws2['!cols']=[{wch:20},{wch:9},{wch:8},{wch:11},{wch:11}];
   XLSX.utils.book_append_sheet(wb,ws2,'ბლოკების მიხედვით');
+  // ფურცელი 3: ყუთ-ყუთობით — თითო აწონვა ცალკე რიგად (დეტალური)
+  var a3=[['თარიღი','დრო','მკრეფავი','ბლოკი','რიგი','ყუთის კოდი','პალეტი','კგ','₾/კგ','₾']];
+  var det=rows.slice().sort(function(a,b){
+    return (''+(a.date||'')).localeCompare(''+(b.date||''))
+        || (''+(a.picker_name||'')).localeCompare(''+(b.picker_name||''),'ka')
+        || (''+(a.time||'')).localeCompare(''+(b.time||''));
+  });
+  var dK=0,dE=0;
+  det.forEach(function(s){
+    var w=+s.weight||0, e=+s.earned||0, ppk=w>0?(e/w):0; dK+=w; dE+=e;
+    a3.push([ s.date||'', String(s.time||'').slice(0,8), s.picker_name||'',
+      s.quarter||'', s.row_num||'', s.short_code||s.code||'', s.pallet_code||'',
+      Math.round(w*100)/100, Math.round(ppk*100)/100, Math.round(e*100)/100 ]);
+  });
+  a3.push(['ჯამი','','','','','','',Math.round(dK*100)/100,'',Math.round(dE*100)/100]);
+  var ws3=XLSX.utils.aoa_to_sheet(a3);
+  for(var R3=0;R3<a3.length;R3++)for(var C3=0;C3<a3[R3].length;C3++){ var rf3=XLSX.utils.encode_cell({r:R3,c:C3}); if(!ws3[rf3])ws3[rf3]={t:'s',v:''}; ws3[rf3].s=(R3===0?head:(R3===a3.length-1?tot:cell)); }
+  ws3['!cols']=[{wch:12},{wch:9},{wch:22},{wch:8},{wch:7},{wch:14},{wch:14},{wch:8},{wch:8},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws3,'ყუთ-ყუთობით');
   try{ XLSX.writeFile(wb,'krefa_angarishi_'+_today()+'.xlsx'); }catch(e){ alert('❌ '+(e.message||e)); }
 }
 function printReport(){
