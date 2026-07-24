@@ -758,12 +758,15 @@ window.smsJournalView=async function(){
       +'<input id="smsJTo" type="date" onchange="_smsJFilter()" title="თარიღი მდე" style="padding:8px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:inherit;font-size:.82rem">'
       +'</div>';
     h+='<div id="smsJStat" style="font-size:.8rem;color:#0369a1;font-weight:700;margin-bottom:6px"></div>';
+    h+='<button onclick="smsReconcile()" style="width:100%;padding:9px;margin-bottom:8px;border:1.5px solid #7c3aed;border-radius:10px;background:#f5f3ff;color:#6d28d9;font-family:inherit;font-weight:700;font-size:.85rem;cursor:pointer">⚖️ თანხვედრა პროგრამასთან — SMS სწორია?</button>';
+    h+='<div id="smsJRecon" style="margin-bottom:8px"></div>';
     h+='<div id="smsJByDate" style="margin-bottom:8px"></div>';
     h+='<div style="max-height:42vh;overflow:auto;border:1px solid #e5e7eb;border-radius:10px"><table style="width:100%;border-collapse:collapse;font-size:.78rem"><thead><tr style="background:#0369a1;color:#fff;position:sticky;top:0"><th style="padding:6px 8px;text-align:left">თარიღი</th><th style="padding:6px 8px;text-align:left">მკრეფავი</th><th style="padding:6px 8px;text-align:left">ნომერი</th><th style="padding:6px 8px;text-align:right">კგ</th><th style="padding:6px 8px;text-align:right">₾</th><th style="padding:6px 8px">✓</th></tr></thead><tbody id="smsJTbody">';
     rows.forEach(function(r){ var s=String(r.status||''); var ic=(s.indexOf('fail')>=0)?'❌':((s.indexOf('sent')>=0||s.indexOf('deliver')>=0)?'✅':'·');
       var ds=((r.picker_name||'')+' '+(r.phone||'')).toLowerCase().replace(/"/g,'');
       h+='<tr data-s="'+ds+'" data-date="'+(r.date||'')+'" data-kg="'+(+r.kg||0)+'" data-gel="'+(+r.gel||0)+'" style="border-top:1px solid #f1f5f9"><td style="padding:5px 8px">'+(r.date||'—')+'</td><td style="padding:5px 8px;font-weight:600">'+(r.picker_name||'—')+'</td><td style="padding:5px 8px;font-family:monospace">'+(r.phone||'—')+'</td><td style="padding:5px 8px;text-align:right">'+(r.kg!=null?(+r.kg).toFixed(2):'—')+'</td><td style="padding:5px 8px;text-align:right">'+(r.gel!=null?(+r.gel).toFixed(2):'—')+'</td><td style="padding:5px 8px;text-align:center">'+ic+'</td></tr>'; });
     h+='</tbody></table></div>';
+    window._smsJRows=rows;
     body.innerHTML=h;
     window._smsJFilter=function(){
       var q=(document.getElementById('smsJSearch').value||'').trim().toLowerCase();
@@ -784,6 +787,58 @@ window.smsJournalView=async function(){
     };
     _smsJFilter();
   }catch(e){ body.textContent='❌ '+(e.message||e); }
+};
+
+// #SMS-RECON: SMS-ის თანხვედრა პროგრამის რეალურ აწონვებთან (harvest_sessions)
+window.smsReconcile=async function(){
+  var box=document.getElementById('smsJRecon'); if(!box) return;
+  var rows=window._smsJRows||[]; if(!rows.length){ box.innerHTML='ჟურნალი ცარიელია.'; return; }
+  var from=(document.getElementById('smsJFrom')||{}).value||'', to=(document.getElementById('smsJTo')||{}).value||'';
+  var dts=rows.map(function(r){return r.date;}).filter(Boolean).sort();
+  if(!from) from=dts[0]||''; if(!to) to=dts[dts.length-1]||'';
+  box.innerHTML='<div style="padding:10px;color:#64748b">⏳ ვამოწმებ პროგრამის მონაცემებს ('+from+' – '+to+')...</div>';
+  if(!sb||!uid){ box.innerHTML='ჯერ შედი სისტემაში.'; return; }
+  // რეალური აწონვები harvest_sessions-იდან (ფანტომის გარეშე)
+  var real={}, step=1000, off=0;
+  try{
+    while(true){
+      var q=sb.from('harvest_sessions').select('picker_name,date,weight,earned,source').eq('user_id',uid);
+      if(from) q=q.gte('date',from); if(to) q=q.lte('date',to);
+      var r=await q.range(off,off+step-1);
+      if(r.error){ box.innerHTML='❌ '+r.error.message; return; }
+      (r.data||[]).forEach(function(x){ if(x.source==='sms_phantom') return; var k=(x.picker_name||'')+'|'+(x.date||''); if(!real[k])real[k]={kg:0,gel:0}; real[k].kg+=+x.weight||0; real[k].gel+=+x.earned||0; });
+      if(!r.data||r.data.length<step) break; off+=step; if(off>60000) break;
+    }
+  }catch(e){ box.innerHTML='❌ '+(e.message||e); return; }
+  // SMS-ის ჯამი (picker×date), მიმდინარე დიაპაზონში
+  var sms={};
+  rows.forEach(function(r){ var d=r.date||''; if(from&&d<from)return; if(to&&d>to)return; var k=(r.picker_name||'')+'|'+d; if(!sms[k])sms[k]={kg:0,gel:0,n:0}; sms[k].kg+=+r.kg||0; sms[k].gel+=+r.gel||0; sms[k].n++; });
+  var keys=Object.keys(sms), okN=0,overN=0,noRealN=0, res=[];
+  keys.forEach(function(k){
+    var s=sms[k], rl=real[k]||null, rk=rl?rl.kg:0;
+    var st, diff=+(s.kg-rk).toFixed(2);
+    if(!rl){ st='🔴'; noRealN++; } else if(diff>0.4){ st='⚠️'; overN++; } else { st='✅'; okN++; }
+    var parts=k.split('|');
+    res.push({name:parts[0],date:parts[1],sms:s.kg,real:rk,diff:diff,n:s.n,st:st});
+  });
+  res.sort(function(a,b){ var o={'🔴':0,'⚠️':1,'✅':2}; return o[a.st]-o[b.st] || b.diff-a.diff; });
+  var h='<div style="border:1px solid #e9d5ff;border-radius:12px;padding:12px;background:#faf5ff">'
+    +'<div style="font-weight:800;color:#6d28d9;margin-bottom:6px">⚖️ თანხვედრა SMS ↔ პროგრამა ('+from+' – '+to+')</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;font-size:.8rem">'
+    +'<span style="background:#dcfce7;padding:3px 9px;border-radius:8px">✅ ემთხვევა: <b>'+okN+'</b></span>'
+    +'<span style="background:#fef9c3;padding:3px 9px;border-radius:8px">⚠️ SMS-ით მეტი: <b>'+overN+'</b></span>'
+    +'<span style="background:#fee2e2;padding:3px 9px;border-radius:8px">🔴 პროგრამაში არ არის: <b>'+noRealN+'</b></span></div>';
+  if(overN+noRealN>0){
+    h+='<div style="max-height:34vh;overflow:auto;border:1px solid #e5e7eb;border-radius:8px;background:#fff"><table style="width:100%;border-collapse:collapse;font-size:.76rem"><thead><tr style="background:#6d28d9;color:#fff;position:sticky;top:0"><th style="padding:5px 7px;text-align:left">მკრეფავი</th><th style="padding:5px 7px">თარიღი</th><th style="padding:5px 7px;text-align:right">SMS კგ</th><th style="padding:5px 7px;text-align:right">პროგრ. კგ</th><th style="padding:5px 7px;text-align:right">სხვ.</th><th style="padding:5px 7px"></th></tr></thead><tbody>';
+    res.filter(function(x){return x.st!=='✅';}).forEach(function(x){
+      h+='<tr style="border-top:1px solid #f1f5f9"><td style="padding:4px 7px;font-weight:600">'+x.name+'</td><td style="padding:4px 7px">'+x.date+'</td><td style="padding:4px 7px;text-align:right">'+x.sms.toFixed(1)+'</td><td style="padding:4px 7px;text-align:right">'+x.real.toFixed(1)+'</td><td style="padding:4px 7px;text-align:right;font-weight:700;color:'+(x.diff>0?'#dc2626':'#334155')+'">'+(x.diff>0?'+':'')+x.diff.toFixed(1)+'</td><td style="padding:4px 7px;text-align:center">'+x.st+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  } else {
+    h+='<div style="color:#16a34a;font-weight:700;padding:6px 0">✅ ყველა SMS ემთხვევა პროგრამის მონაცემებს — აცდენა არ არის.</div>';
+  }
+  h+='</div>';
+  box.innerHTML=h;
 };
 
 async function syncQueue(){
