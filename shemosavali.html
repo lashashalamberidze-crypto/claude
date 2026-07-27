@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💰 შემოსავალი / ხარჯები</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<style>
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:960px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.95rem;margin:0 0 8px;color:#334155}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff}
+  input:focus,select:focus{outline:none;border-color:#059669}
+  button{background:#059669;color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:#059669;border:1.5px solid #059669}
+  button.o{background:#ea580c}button.r{background:#dc2626}button.teal{background:#0d9488}
+  button:active{transform:scale(.98)}
+  .row2{display:flex;gap:8px}.row2>*{flex:1}
+  table{width:100%;border-collapse:collapse;font-size:.83rem;margin-top:8px}
+  th,td{padding:8px 8px;text-align:left;border-top:1px solid #f1f5f9}
+  th{color:#64748b;font-size:.72rem;text-transform:uppercase}
+  .muted{font-size:.8rem;color:#64748b}
+  .ok{color:#16a34a;font-weight:700}.warn{color:#dc2626;font-weight:700}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  .tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .tab{flex:1;min-width:120px;background:#fff;color:#475569;border:1px solid #dde8f5;padding:12px 4px;border-radius:11px;font-size:.9rem;font-weight:700;margin:0;cursor:pointer}
+  .tab.active{color:#fff}
+  .panel{display:none}.panel.active{display:block}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .stat{flex:1;min-width:150px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px}
+  .stat .val{font-size:1.35rem;font-weight:800;line-height:1.1}
+  .stat .lbl{font-size:.76rem;color:#64748b;margin-top:4px}
+  .big{flex:1;min-width:150px;border-radius:16px;padding:18px 20px;color:#fff}
+  .big .v{font-size:1.9rem;font-weight:800;margin-top:4px;line-height:1}
+  .big .l{font-size:.82rem;opacity:.92;font-weight:600}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #e2e8f0;border-radius:999px;padding:5px 12px;font-size:.76rem;color:#475569;margin:3px 4px 0 0}
+  .chip .dot{width:8px;height:8px;border-radius:50%}
+  .barrow{display:flex;align-items:center;gap:8px;margin-top:7px}
+  .barrow .nm{width:180px;font-size:.78rem;color:#1e3a5f;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .barrow .track{flex:1;background:#f1f5f9;border-radius:6px;height:16px;overflow:hidden}
+  .barrow .fill{height:100%;background:linear-gradient(90deg,#fb923c,#ea580c)}
+  .barrow .amt{width:100px;text-align:right;font-size:.78rem;font-weight:700;color:#c2410c;flex-shrink:0}
+  .barrow .pc{width:40px;text-align:right;font-size:.72rem;color:#94a3b8;flex-shrink:0}
+  .scrollx{overflow-x:auto;border:1px solid #e2e8f0;border-radius:10px}
+  .xdel{background:none;border:none;color:#dc2626;cursor:pointer;font-size:.95rem;width:auto;padding:0;margin:0}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:11px 20px;border-radius:12px;font-size:.86rem;font-weight:600;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.25);opacity:0;transition:opacity .2s;pointer-events:none}
+  .toast.show{opacity:1}
+  .subttl{font-size:.92rem;font-weight:700;margin:0 0 10px}
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>💰 შემოსავალი / ხარჯები — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <h1>💰 შემოსავალი და ხარჯები <span style="font-size:.6rem;background:#059669;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v1</span></h1>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#059669">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="sh-dash" style="margin:8px 0 16px"><div class="muted">იტვირთება…</div></div>
+
+  <div class="tabs">
+    <button class="tab" data-t="income"  onclick="shTab('income')">💰 შემოსავალი</button>
+    <button class="tab" data-t="expense" onclick="shTab('expense')">🧾 ხარჯები</button>
+    <button class="tab" data-t="profit"  onclick="shTab('profit')">📈 მოგება</button>
+    <button class="tab" data-t="calc"    onclick="shTab('calc')">📊 პროგნოზი</button>
+  </div>
+
+  <!-- ═══ INCOME ═══ -->
+  <div class="panel" id="p-income">
+    <div id="sh-tab-income"><div class="muted">იტვირთება…</div></div>
+  </div>
+
+  <!-- ═══ EXPENSES ═══ -->
+  <div class="panel" id="p-expense">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div class="subttl" style="color:#c2410c;margin:0">🧾 ხარჯები — ერთჯერადი / დღიური</div>
+        <button onclick="expToggleAdd()" style="width:auto;background:#ea580c;padding:8px 14px;font-size:.82rem">➕ ხარჯის დამატება</button>
+      </div>
+      <div class="muted" style="margin:8px 0 0">ჩაიწერე ხარჯი — ტრანსპორტი, საწვავი, კვება, მასალა და სხვა. სურვილისამებრ დაურთე ქვითარი.</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat" style="border-color:rgba(234,88,12,.25)"><div class="val" style="color:#7c2d12" id="exp-today-total">0 ₾</div><div class="lbl">დღეს (<span id="exp-today-date">—</span>)</div></div>
+      <div class="stat" style="border-color:rgba(59,130,246,.25)"><div class="val" style="color:#1e40af" id="exp-month-total">0 ₾</div><div class="lbl">ამ თვეში სულ</div></div>
+      <div class="stat" style="border-color:rgba(220,38,38,.25)"><div class="val" style="color:#b91c1c" id="exp-all-total">0 ₾</div><div class="lbl">ჯამი (ერთჯერადი)</div></div>
+    </div>
+
+    <div id="exp-addform" class="card" style="display:none;border-color:#f0d9c4">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+        <div><label>თარიღი</label><input type="date" id="exp-date"></div>
+        <div><label>კატეგორია</label>
+          <select id="exp-cat">
+            <option>🚜 ტრანსპორტი / მანქანა</option>
+            <option>⛽ საწვავი</option>
+            <option>🍽️ კვება / საჭმელი</option>
+            <option>👷 მუშახელი / ხელფასი</option>
+            <option>🧪 მასალა / პრეპარატი</option>
+            <option>🔧 ინვენტარი / ტექნიკა</option>
+            <option>💡 კომუნალური</option>
+            <option>📦 სხვა</option>
+          </select>
+        </div>
+        <div><label>თანხა (₾)</label><input type="number" id="exp-amount" step="0.01" min="0" placeholder="0.00"></div>
+        <div style="grid-column:1/-1"><label>აღწერა / დანიშნულება</label><input type="text" id="exp-note" placeholder="მაგ: საწვავი ტრაქტორისთვის…"></div>
+        <div style="grid-column:1/-1"><label>დოკუმენტი / ქვითარი (არასავალდებულო)</label><input type="file" id="exp-doc" accept="image/*,application/pdf"></div>
+      </div>
+      <input type="hidden" id="exp-crop" value="">
+      <input type="hidden" id="exp-editid" value="">
+      <button onclick="expSave()" style="background:linear-gradient(135deg,#ea580c,#c2410c)" id="exp-savebtn">➕ ხარჯის დამატება</button>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+        <div style="flex:0"><label style="margin-top:0">დან</label><input type="date" id="exp-from" style="width:auto" onchange="expApplyFilter()"></div>
+        <div style="flex:0"><label style="margin-top:0">მდე</label><input type="date" id="exp-to" style="width:auto" onchange="expApplyFilter()"></div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;flex:1">
+          <button class="sec" style="width:auto;padding:8px 12px" onclick="expQuick('today')">დღეს</button>
+          <button class="sec" style="width:auto;padding:8px 12px" onclick="expQuick('week')">7 დღე</button>
+          <button class="sec" style="width:auto;padding:8px 12px" onclick="expQuick('month')">თვე</button>
+          <button class="sec" style="width:auto;padding:8px 12px" onclick="expQuick('all')">ყველა</button>
+        </div>
+        <button onclick="expExportXlsx()" style="width:auto;background:linear-gradient(135deg,#059669,#047857);padding:9px 16px;font-size:.82rem">📥 Excel ექსპორტი</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+        <div class="subttl" style="margin:0">📊 ანალიტიკა — <span id="exp-range-label">ყველა</span></div>
+        <div class="muted">სულ: <b id="exp-range-total" style="color:#c2410c">0 ₾</b> · <span id="exp-range-count">0</span> ჩანაწერი</div>
+      </div>
+      <div id="exp-cat-bars"><div class="muted">მონაცემი არ არის</div></div>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="scrollx" style="border:none">
+        <table>
+          <thead><tr style="background:#fff7ed">
+            <th style="color:#7c2d12">📅 თარიღი</th><th style="color:#7c2d12">კატეგორია</th>
+            <th style="color:#7c2d12;text-align:right">თანხა</th><th style="color:#7c2d12">აღწერა</th>
+            <th style="color:#7c2d12;text-align:center">დოკ.</th><th></th></tr></thead>
+          <tbody id="exp-table-body"><tr><td colspan="6" class="muted" style="padding:22px;text-align:center">ჯერ ხარჯი არ არის დამატებული</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PROFIT ═══ -->
+  <div class="panel" id="p-profit">
+    <div id="sh-tab-profit"><div class="muted">იტვირთება…</div></div>
+  </div>
+
+  <!-- ═══ FORECAST CALC ═══ -->
+  <div class="panel" id="p-calc">
+    <div class="card">
+      <div class="subttl" style="color:#065f46">📊 პროგნოზის კალკულატორი</div>
+      <div class="muted" style="margin-bottom:10px">სავარაუდო შემოსავალი, ხარჯი და მოგება — კულტურისა და ფართობის მიხედვით.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div>
+          <label style="margin-top:0">კულტურა</label>
+          <select id="sh-culture">
+            <option>მოცვი</option><option>თხილი</option><option>ვაზი</option><option>ვაშლი</option>
+            <option>მსხალი</option><option>ატამი</option><option>ქლიავი</option><option>ალუბალი</option>
+            <option>მანდარინი</option><option>ფორთოხალი</option><option>ლიმონი</option><option>კივი</option>
+            <option>ბროწეული</option><option>მარწყვი</option><option>ჟოლო</option>
+            <option>კარტოფილი</option><option>სიმინდი</option><option>ხორბალი</option>
+            <option>პომიდორი</option><option>კიტრი</option><option>ბოსტნეული</option>
+          </select>
+          <label>ფართობი (ჰექტარი)</label><input id="sh-area" type="number" step="0.1" min="0.1" value="1">
+          <label>სავარ. მოსავლიანობა (კგ/ჰა)</label><input id="sh-yield" type="number" step="100" min="100" value="5000">
+          <label>სავარ. გამყიდველი ფასი (₾/კგ)</label><input id="sh-price" type="number" step="0.1" min="0.1" value="2.5">
+        </div>
+        <div>
+          <label style="margin-top:0">სასუქი & პრეპარატები (₾/ჰა)</label><input id="sh-cost-sasuki" type="number" step="10" min="0" value="800">
+          <label>შრომის ხარჯი — კრეფა, მოვლა (₾/ჰა)</label><input id="sh-cost-labor" type="number" step="10" min="0" value="1200">
+          <label>ტექნიკა & სარწყავი (₾/ჰა)</label><input id="sh-cost-tech" type="number" step="10" min="0" value="400">
+          <label>სხვა ხარჯები (₾/ჰა)</label><input id="sh-cost-other" type="number" step="10" min="0" value="200">
+        </div>
+      </div>
+      <button onclick="shCalculate()" style="background:linear-gradient(135deg,#10b981,#059669)">🧮 გამოთვლა</button>
+    </div>
+    <div id="sh-results" style="display:none">
+      <div class="stats">
+        <div class="stat" style="border-color:rgba(16,185,129,.3)"><div class="val" style="color:#065f46" id="sh-res-income">—</div><div class="lbl">სულ შემოსავალი ₾</div></div>
+        <div class="stat" style="border-color:rgba(234,88,12,.3)"><div class="val" style="color:#7c2d12" id="sh-res-cost">—</div><div class="lbl">სულ ხარჯი ₾</div></div>
+        <div class="stat" id="sh-res-profit-card" style="border-color:rgba(59,130,246,.3)"><div class="val" style="color:#1e40af" id="sh-res-profit">—</div><div class="lbl">მოგება / ზარალი ₾</div></div>
+      </div>
+      <div class="card" id="sh-ai-box" style="display:none;border-color:rgba(14,165,233,.25)">
+        <div class="subttl" style="color:#0369a1">🤖 AI ანალიზი & რეკომენდაცია</div>
+        <div id="sh-ai-text" style="font-size:.85rem;color:#1e3a5f;line-height:1.75;white-space:pre-wrap"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════ CONFIG (იგივე რაც awonva/index) ═══════════════════
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+const _AI_PROXY = SB_URL + '/functions/v1/ai-proxy';
+
+let sb=null, uid=null, activeTab='income';
+let SALES=[], PURCH=[], EXPS=[], PAYROLL=[];   // ღრუბლიდან ჩატვირთული (cloud-first)
+let expFilter={from:'', to:''};
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+function _today(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function _uuid(){ return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);}); }
+function num(v){ return +v||0; }
+function fmt(v){ v=Math.round((+v||0)*100)/100; return v.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function toast(m){ var t=document.getElementById('toast'); if(!t)return; t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},2600); }
+function elval(id){ var e=document.getElementById(id); return e?(''+e.value).trim():''; }
+
+// ── localStorage helpers (იგივე origin — index-ის ქეშთან თავსებადი) ──
+function nsKey(base){ return base+'__'+uid; }
+function readLS(key){ try{ var v=JSON.parse(localStorage.getItem(key)||'[]'); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+function writeLS(key,arr){ try{ localStorage.setItem(key, JSON.stringify(arr)); }catch(e){} }
+
+// ═══════════════════ LOGIN ═══════════════════
+async function doLogin(){
+  var e=document.getElementById('email').value.trim(), p=document.getElementById('pass').value, err=document.getElementById('loginErr');
+  err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+
+async function showApp(email){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('whoami').textContent=email||'—';
+  var d=document.getElementById('exp-date'); if(d && !d.value) d.value=_today();
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+  await loadAll();
+  shTab('income');
+}
+
+function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+// ═══════════════════ CLOUD LOAD (single source of truth) ═══════════════════
+async function loadAll(){
+  if(!sb||!uid) return;
+  try{
+    var res=await Promise.all([
+      sb.from('gv_sales').select('*').eq('user_id',uid).order('date',{ascending:false}),
+      sb.from('gv_purchases').select('*').eq('user_id',uid).order('date',{ascending:false}),
+      sb.from('agro_expenses').select('*').eq('user_id',uid),
+      sb.from('krepa_payroll').select('*').eq('user_id',uid)
+    ]);
+    SALES   = Array.isArray(res[0].data)?res[0].data:[];
+    PURCH   = Array.isArray(res[1].data)?res[1].data:[];
+    EXPS    = (Array.isArray(res[2].data)?res[2].data:[]).map(function(r){ return { id:r.id, date:r.date, category:r.category, crop:r.crop||'', amount:num(r.amount), note:r.note||'', doc:r.doc||null, created_at:r.created_at?new Date(r.created_at).getTime():Date.now() }; });
+    PAYROLL = Array.isArray(res[3].data)?res[3].data:[];
+    // ქეშირება localStorage-ში — index-ის იგივე გასაღებებით (origin თავსებადი)
+    try{ writeLS(nsKey('its_gv_sales'), SALES); writeLS(nsKey('its_gv_purchases'), PURCH); writeLS(nsKey('its_expenses'), EXPS); }catch(e){}
+  }catch(e){ console.warn('loadAll', e); toast('⚠️ ღრუბლიდან ჩატვირთვის შეცდომა'); }
+  renderDash(); renderIncome(); expRender(); renderProfit();
+}
+
+async function reloadExpenses(){
+  if(!sb||!uid) return;
+  try{
+    var r=await sb.from('agro_expenses').select('*').eq('user_id',uid);
+    if(!r.error && Array.isArray(r.data)){
+      EXPS = r.data.map(function(x){ return { id:x.id, date:x.date, category:x.category, crop:x.crop||'', amount:num(x.amount), note:x.note||'', doc:x.doc||null, created_at:x.created_at?new Date(x.created_at).getTime():Date.now() }; });
+      writeLS(nsKey('its_expenses'), EXPS);
+    }
+  }catch(e){ console.warn('reloadExpenses', e); }
+}
+
+// ═══════════════════ FORMULAS (index-ის ზუსტი ასლი) ═══════════════════
+// შემოსავალი = Σ გაყიდვები (total || kg*price) — მხოლოდ gv_sales.
+// შესყიდვები (gv_purchases) შემოსავალს არ აკლდება — ისინი ხარჯად ითვლება (double count-ის თავიდან აცილება).
+function gvEffPaid(r){
+  if(!r) return 0;
+  var t=+r.total||0, pd=+r.paid||0;
+  if(r.status==='გადახდილია') return t;
+  if(r.status==='გადაუხდელია') return 0;
+  if(!r.status) return pd;
+  return Math.min(pd,t);
+}
+function incomeTotal(){ return SALES.reduce(function(s,x){ return s + (num(x.total)||num(x.kg)*num(x.price)); },0); }
+function paidTotal(){ return SALES.reduce(function(s,x){ return s + gvEffPaid(x); },0); }
+function kgTotal(){ return SALES.reduce(function(s,x){ return s + num(x.kg); },0); }
+
+// მკრეფავების გადახდილი — krepa_payroll (paid cumulative), index-ის shKrepaPaidTotal
+function krepaPaidTotal(){
+  var s=0;
+  (PAYROLL||[]).forEach(function(r){
+    var pays=Array.isArray(r.payments)?r.payments:[];
+    if(!pays.length && (+r.amount||0)>0) pays=[{amount:+r.amount||0}];
+    s += pays.reduce(function(a,x){ return a+(+x.amount||0); },0);
+  });
+  return Math.round(s*100)/100;
+}
+// პრეპარატები — its_prepstore_purchases (localStorage, index-ის shPrepSpent fallback)
+function prepSpent(){ return Math.round(readLS(nsKey('its_prepstore_purchases')).reduce(function(s,x){ return s+(+x.total||0); },0)*100)/100; }
+// პერსონალის ხელფასი — its_personnel_pay (localStorage, index-ის shStaffPaidTotal)
+function staffPaidTotal(){ return Math.round(readLS(nsKey('its_personnel_pay')).reduce(function(s,p){ return s+(+p.amount||0); },0)*100)/100; }
+
+// ხარჯების ჩაშლა — index-ის shExpenseBreakdown-ის ზუსტი ლოგიკა
+function expenseBreakdown(){
+  var once=(EXPS||[]).reduce(function(s,x){ var c=''+((x&&x.category)||''); return s + ((/ხელფას|პრეპარატ|სასუქ/.test(c))?0:num(x.amount)); },0);
+  var purch=(PURCH||[]).reduce(function(s,x){ return s+(num(x.total)||num(x.kg)*num(x.price)||num(x.cost)); },0);
+  var prep=prepSpent(), krepa=krepaPaidTotal(), staff=staffPaidTotal();
+  var total=Math.round((once+purch+prep+krepa+staff)*100)/100;
+  return { once:Math.round(once*100)/100, purch:Math.round(purch*100)/100, prep:prep, krepa:krepa, staff:staff, total:total };
+}
+
+// ═══════════════════ TABS ═══════════════════
+function shTab(t){
+  activeTab=t;
+  var map={income:'#10b981',expense:'#ea580c',profit:'#0ea5e9',calc:'#059669'};
+  document.querySelectorAll('.tab').forEach(function(b){ var on=b.getAttribute('data-t')===t; b.classList.toggle('active',on); b.style.background=on?(map[t]||'#059669'):'#fff'; b.style.color=on?'#fff':'#475569'; });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.toggle('active', p.id==='p-'+t); });
+  if(t==='income') renderIncome();
+  if(t==='expense'){ var d=document.getElementById('exp-date'); if(d&&!d.value) d.value=_today(); expRender(); }
+  if(t==='profit') renderProfit();
+  renderDash();
+}
+
+// ═══════════════════ DASHBOARD (income − expense − profit) ═══════════════════
+function renderDash(){
+  var box=document.getElementById('sh-dash'); if(!box) return;
+  var inc=incomeTotal(), eb=expenseBreakdown(), net=inc-eb.total;
+  function big(l,v,grad){ return '<div class="big" style="background:'+grad+'"><div class="l">'+l+'</div><div class="v">'+fmt(v)+' ₾</div></div>'; }
+  function chip(l,v,c){ return '<span class="chip"><span class="dot" style="background:'+c+'"></span>'+l+': <b style="color:#1e293b">'+fmt(v)+' ₾</b></span>'; }
+  box.innerHTML =
+    '<div class="stats" style="margin-bottom:10px">'
+    + big('💰 შემოსავალი', inc, 'linear-gradient(135deg,#059669,#047857)')
+    + big('🧾 ხარჯი (სულ)', eb.total, 'linear-gradient(135deg,#dc2626,#b91c1c)')
+    + big((net>=0?'📈 მოგება':'📉 ზარალი'), net, net>=0?'linear-gradient(135deg,#0ea5e9,#0369a1)':'linear-gradient(135deg,#f97316,#c2410c)')
+    + '</div>'
+    + '<div style="display:flex;flex-wrap:wrap;align-items:center"><span class="muted" style="margin-right:2px">ხარჯის წყაროები:</span>'
+    + chip('ერთჯერადი', eb.once, '#ea580c') + chip('შესყიდვები', eb.purch, '#7c3aed') + chip('პრეპარატები', eb.prep, '#0d9488') + chip('მკრეფავები', eb.krepa, '#16a34a') + chip('პერსონალი', eb.staff, '#f59e0b')
+    + '</div>';
+}
+
+// ═══════════════════ INCOME TAB ═══════════════════
+function renderIncome(){
+  var box=document.getElementById('sh-tab-income'); if(!box) return;
+  var inc=incomeTotal(), paid=paidTotal(), unpaid=Math.max(0,inc-paid), kg=kgTotal();
+  var eb=expenseBreakdown(), net=inc-eb.total;
+  function card(l,v,c){ return '<div class="stat"><div class="val" style="color:'+c+'">'+v+'</div><div class="lbl">'+l+'</div></div>'; }
+  var cards='<div class="stats">'
+    + card('შემოსავალი ₾', fmt(inc), '#059669')
+    + card('ხარჯი ₾', fmt(eb.total), '#dc2626')
+    + card('მკრეფ. გადახდილი ₾', fmt(eb.krepa), '#16a34a')
+    + card('მოგება ₾', fmt(net), net>=0?'#059669':'#dc2626')
+    + card('მყიდვ. გადახდ./ვალი ₾', fmt(paid)+' / '+fmt(unpaid), '#0ea5e9')
+    + card('გაყიდული კგ', fmt(kg), '#7c3aed')
+    + '</div>';
+  var breakdown='<div class="muted" style="margin:-4px 0 12px">ხარჯი = ერთჯერადი ('+fmt(eb.once)+' ₾) + შესყიდვები ('+fmt(eb.purch)+' ₾) + პრეპარატები ('+fmt(eb.prep)+' ₾) + მკრეფავები ('+fmt(eb.krepa)+' ₾) + პერსონალი ('+fmt(eb.staff)+' ₾)</div>';
+  var rows=SALES.slice().sort(function(a,b){ return (''+(b.date||'')).localeCompare(''+(a.date||'')); }).map(function(s){
+    var st=esc(s.status||''); var stc=/გადახდ/.test(st)?'#059669':(/ნაწ/.test(st)?'#ea580c':'#64748b');
+    return '<tr><td style="color:#475569">'+esc(s.date||'')+'</td>'
+      +'<td>'+esc(s.product||'')+'</td>'
+      +'<td style="text-align:right;color:#475569">'+fmt(num(s.kg))+'</td>'
+      +'<td style="text-align:right;color:#475569">'+fmt(num(s.price))+'</td>'
+      +'<td style="text-align:right;font-weight:600;color:#059669">'+fmt(num(s.total)||num(s.kg)*num(s.price))+'</td>'
+      +'<td>'+esc(s.buyerName||s.buyer||'')+'</td>'
+      +'<td style="color:'+stc+'">'+st+'</td></tr>';
+  }).join('');
+  if(!rows) rows='<tr><td colspan="7" class="muted" style="padding:18px;text-align:center">— ჯერ გაყიდვა არ არის (გაყიდვები დაემატება „საწყობი და რეალიზაცია"-ში) —</td></tr>';
+  var table='<div class="scrollx"><table><thead><tr style="background:#f8fafc"><th>თარიღი</th><th>პროდუქტი</th><th style="text-align:right">კგ</th><th style="text-align:right">ფასი</th><th style="text-align:right">სულ ₾</th><th>მყიდველი</th><th>სტ.</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  box.innerHTML='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px"><div class="subttl" style="margin:0;color:#0f766e">💰 რეალური შემოსავალი — ყველა გაყიდვიდან</div><button onclick="incExportXlsx()" style="width:auto;background:#059669;padding:8px 14px;font-size:.82rem">📊 Excel-ში ექსპორტი</button></div>'+cards+breakdown+table+'</div>';
+}
+
+function incExportXlsx(){
+  if(typeof XLSX==='undefined'){ toast('⚠️ Excel ბიბლიოთეკა ვერ ჩაიტვირთა'); return; }
+  if(!SALES.length){ toast('⚠️ გაყიდვები არ არის'); return; }
+  var asc=SALES.slice().sort(function(a,b){ return (''+(a.date||'')).localeCompare(''+(b.date||'')); });
+  var rows=[['თარიღი','პროდუქტი','კგ','ფასი/კგ','სულ ₾','მყიდველი','სტატუსი']];
+  asc.forEach(function(s){ rows.push([s.date||'', s.product||'', num(s.kg), num(s.price), +(num(s.total)||num(s.kg)*num(s.price)).toFixed(2), s.buyerName||s.buyer||'', s.status||'']); });
+  rows.push([]); rows.push(['','','','','სულ:', +incomeTotal().toFixed(2), '']);
+  var WB=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:12},{wch:20},{wch:10},{wch:10},{wch:12},{wch:20},{wch:14}];
+  XLSX.utils.book_append_sheet(WB, ws, 'შემოსავალი');
+  xlStyleWB(WB); XLSX.writeFile(WB, 'shemosavali_'+_today()+'.xlsx');
+  toast('📥 Excel ჩამოიტვირთა');
+}
+
+// ═══════════════════ EXPENSES TAB (agro_expenses CRUD) ═══════════════════
+function expToggleAdd(){ var f=document.getElementById('exp-addform'); if(!f)return; var show=(f.style.display==='none'||!f.style.display); f.style.display=show?'block':'none'; if(show){ document.getElementById('exp-editid').value=''; document.getElementById('exp-savebtn').textContent='➕ ხარჯის დამატება'; } }
+function expList(){ return EXPS.slice().sort(function(x,y){ return (''+(y.date||'')).localeCompare(''+(x.date||'')) || (y.created_at||0)-(x.created_at||0); }); }
+function expInRange(r){ if(expFilter.from && (r.date||'')<expFilter.from) return false; if(expFilter.to && (r.date||'')>expFilter.to) return false; return true; }
+function expFiltered(){ return expList().filter(expInRange); }
+function expSum(arr){ return arr.reduce(function(s,r){ return s+(+r.amount||0); },0); }
+function expRangeLabel(){ if(!expFilter.from && !expFilter.to) return 'ყველა'; if(expFilter.from && expFilter.to) return expFilter.from===expFilter.to?expFilter.from:(expFilter.from+' — '+expFilter.to); if(expFilter.from) return expFilter.from+'-დან'; return expFilter.to+'-მდე'; }
+
+async function expSave(){
+  var editId=elval('exp-editid');
+  var date=elval('exp-date')||_today();
+  var cat=elval('exp-cat');
+  var amount=num(elval('exp-amount'));
+  var note=elval('exp-note');
+  var crop=elval('exp-crop');
+  if(!amount || amount<=0){ toast('⚠️ შეიყვანე თანხა'); return; }
+  var fileEl=document.getElementById('exp-doc'); var file=(fileEl&&fileEl.files&&fileEl.files[0])||null;
+  var id=editId||_uuid();
+  var created_at = editId ? (function(){ var e=EXPS.filter(function(x){return x.id===editId;})[0]; return e?e.created_at:Date.now(); })() : Date.now();
+  var rec={ id:id, date:date, category:cat, crop:crop||'', amount:amount, note:note, doc:(file?file.name:null), created_at:created_at };
+  // cloud upsert (user-scoped)
+  try{
+    if(sb&&uid){
+      await sb.from('agro_expenses').upsert({ id:id, user_id:uid, date:date, category:cat, crop:crop||null, amount:amount, note:note||null, created_at:new Date(created_at).toISOString() }, { onConflict:'id' });
+      if(file){ try{ await sb.storage.from('expense-documents').upload(uid+'/'+id+'-'+file.name, file, {upsert:true}); }catch(e){ console.warn('doc upload',e); } }
+    }
+  }catch(e){ console.warn('expSave upsert', e); toast('⚠️ ღრუბელში შენახვა ვერ მოხერხდა'); }
+  await reloadExpenses();
+  // reset form
+  ['exp-amount','exp-note'].forEach(function(k){ var el=document.getElementById(k); if(el) el.value=''; });
+  if(fileEl) fileEl.value=''; document.getElementById('exp-crop').value=''; document.getElementById('exp-editid').value='';
+  document.getElementById('exp-savebtn').textContent='➕ ხარჯის დამატება';
+  toast(editId?'✅ ხარჯი განახლდა':'✅ ხარჯი დაემატა');
+  expRender(); renderDash(); renderIncome(); renderProfit();
+}
+
+function expEdit(id){
+  var r=EXPS.filter(function(x){return x.id===id;})[0]; if(!r) return;
+  document.getElementById('exp-addform').style.display='block';
+  document.getElementById('exp-date').value=r.date||_today();
+  document.getElementById('exp-cat').value=r.category||'📦 სხვა';
+  document.getElementById('exp-amount').value=r.amount||'';
+  document.getElementById('exp-note').value=r.note||'';
+  document.getElementById('exp-crop').value=r.crop||'';
+  document.getElementById('exp-editid').value=id;
+  document.getElementById('exp-savebtn').textContent='💾 ცვლილების შენახვა';
+  try{ document.getElementById('exp-addform').scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){}
+}
+
+async function expDel(id){
+  if(!confirm('წავშალო ეს ხარჯი?')) return;
+  try{ if(sb&&uid) await sb.from('agro_expenses').delete().eq('id',id).eq('user_id',uid); }catch(e){ console.warn('expDel', e); }
+  await reloadExpenses();
+  toast('🗑️ წაიშალა');
+  expRender(); renderDash(); renderIncome(); renderProfit();
+}
+
+function expApplyFilter(){ expFilter.from=elval('exp-from'); expFilter.to=elval('exp-to'); expRender(); }
+function expQuick(type){
+  var t=_today(), from='', to=t;
+  if(type==='today') from=t;
+  else if(type==='week') from=new Date(Date.now()-6*864e5).toISOString().slice(0,10);
+  else if(type==='month') from=t.slice(0,7)+'-01';
+  else { from=''; to=''; }
+  var ef=document.getElementById('exp-from'), et=document.getElementById('exp-to');
+  if(ef) ef.value=from; if(et) et.value=to;
+  expFilter.from=from; expFilter.to=to; expRender();
+}
+
+function expRender(){
+  var tb=document.getElementById('exp-table-body'); if(!tb) return;
+  var all=expList(), today=_today(), month=today.slice(0,7);
+  var td=document.getElementById('exp-today-date'); if(td) td.textContent=today;
+  var tt=document.getElementById('exp-today-total'); if(tt) tt.textContent=fmt(expSum(all.filter(function(r){return r.date===today;})))+' ₾';
+  var mt=document.getElementById('exp-month-total'); if(mt) mt.textContent=fmt(expSum(all.filter(function(r){return (r.date||'').slice(0,7)===month;})))+' ₾';
+  var at=document.getElementById('exp-all-total'); if(at) at.textContent=fmt(expSum(all))+' ₾';
+
+  var data=expFiltered();
+  var rl=document.getElementById('exp-range-label'); if(rl) rl.textContent=expRangeLabel();
+  var rt=document.getElementById('exp-range-total'); if(rt) rt.textContent=fmt(expSum(data))+' ₾';
+  var rc=document.getElementById('exp-range-count'); if(rc) rc.textContent=data.length;
+  var bars=document.getElementById('exp-cat-bars');
+  if(bars){
+    if(!data.length){ bars.innerHTML='<div class="muted">მონაცემი არ არის</div>'; }
+    else{
+      var byCat={}; data.forEach(function(r){ byCat[r.category]=(byCat[r.category]||0)+(+r.amount||0); });
+      var arr=Object.keys(byCat).map(function(c){ return {c:c,v:byCat[c]}; }).sort(function(a,b){return b.v-a.v;});
+      var max=arr[0].v||1, tot=expSum(data)||1;
+      bars.innerHTML=arr.map(function(x){ var pct=Math.round(x.v/max*100), share=Math.round(x.v/tot*100);
+        return '<div class="barrow"><div class="nm">'+esc(x.c)+'</div><div class="track"><div class="fill" style="width:'+pct+'%"></div></div><div class="amt">'+fmt(x.v)+' ₾</div><div class="pc">'+share+'%</div></div>'; }).join('');
+    }
+  }
+
+  if(!data.length){ tb.innerHTML='<tr><td colspan="6" class="muted" style="padding:22px;text-align:center">ჩანაწერი არ მოიძებნა</td></tr>'; return; }
+  tb.innerHTML=data.map(function(r){
+    var doc=r.doc?'<span title="'+esc(r.doc)+'">📎</span>':'—';
+    return '<tr>'
+      +'<td>'+esc(r.date)+'</td>'
+      +'<td>'+esc(r.category)+'</td>'
+      +'<td style="text-align:right;font-weight:700;color:#c2410c">'+fmt(r.amount)+' ₾</td>'
+      +'<td style="color:#4a6a8a">'+esc(r.note||'—')+'</td>'
+      +'<td style="text-align:center">'+doc+'</td>'
+      +'<td style="text-align:center;white-space:nowrap"><button class="xdel" style="color:#0369a1;margin-right:8px" onclick="expEdit(\''+esc(r.id)+'\')">✏️</button><button class="xdel" onclick="expDel(\''+esc(r.id)+'\')">🗑️</button></td>'
+      +'</tr>';
+  }).join('');
+}
+
+function expExportXlsx(){
+  if(typeof XLSX==='undefined'){ toast('⚠️ Excel ბიბლიოთეკა ვერ ჩაიტვირთა'); return; }
+  var data=expFiltered();
+  if(!data.length){ toast('⚠️ ექსპორტისთვის ჩანაწერი არ არის'); return; }
+  var asc=data.slice().sort(function(a,b){ return (''+(a.date||'')).localeCompare(''+(b.date||'')); });
+  var rows=[
+    ['AgroInTechSol — ხარჯების ანგარიში'],
+    ['პერიოდი:', expRangeLabel(), '', 'სულ:', expSum(data).toFixed(2)+' ₾'],
+    [],
+    ['#','თარიღი','კატეგორია','კულტურა','თანხა (₾)','აღწერა','დოკუმენტი']
+  ];
+  asc.forEach(function(r,i){ rows.push([i+1, r.date, r.category, r.crop||'', +(+r.amount).toFixed(2), r.note||'', r.doc||'']); });
+  rows.push([]); rows.push(['','','','სულ', +expSum(data).toFixed(2), '', '']);
+  var byCat={}; data.forEach(function(r){ byCat[r.category]=(byCat[r.category]||0)+(+r.amount||0); });
+  var crows=[['კატეგორია','თანხა (₾)','წილი %']]; var tot=expSum(data)||1;
+  Object.keys(byCat).sort(function(a,b){return byCat[b]-byCat[a];}).forEach(function(c){ crows.push([c, +byCat[c].toFixed(2), Math.round(byCat[c]/tot*100)+'%']); });
+  var WB=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:5},{wch:12},{wch:22},{wch:18},{wch:12},{wch:36},{wch:20}];
+  XLSX.utils.book_append_sheet(WB, ws, 'ხარჯები');
+  var cws=XLSX.utils.aoa_to_sheet(crows); cws['!cols']=[{wch:24},{wch:14},{wch:10}];
+  XLSX.utils.book_append_sheet(WB, cws, 'კატეგორიები');
+  var fn='expenses_'+(expFilter.from||'all')+(expFilter.to?('_'+expFilter.to):'')+'.xlsx';
+  xlStyleWB(WB); XLSX.writeFile(WB, fn);
+  toast('📥 Excel ჩამოიტვირთა');
+}
+
+// ლურჯი-ჰედერიანი Excel სტილი — index-ის xlStyleWB-ის ზუსტი ასლი
+function xlStyleWB(WB){
+  try{
+    if(!WB || !WB.SheetNames) return WB;
+    WB.SheetNames.forEach(function(nm){
+      var ws=WB.Sheets[nm]; if(!ws || !ws['!ref']) return;
+      var R=XLSX.utils.decode_range(ws['!ref']);
+      var thin={style:'thin',color:{rgb:'D9D9D9'}}, border={top:thin,bottom:thin,left:thin,right:thin};
+      for(var r=R.s.r; r<=R.e.r; r++){
+        for(var c=R.s.c; c<=R.e.c; c++){
+          var a=XLSX.utils.encode_cell({r:r,c:c});
+          if(!ws[a]) ws[a]={t:'s',v:''};
+          var st={border:border};
+          if(r===R.s.r){ st.fill={fgColor:{rgb:'0369A1'}}; st.font={color:{rgb:'FFFFFF'},bold:true}; st.alignment={horizontal:'center'}; }
+          ws[a].s=Object.assign({}, ws[a].s||{}, st);
+        }
+      }
+    });
+  }catch(e){ console.warn('[xlStyleWB]', e); }
+  return WB;
+}
+
+// ═══════════════════ PROFIT TAB ═══════════════════
+function renderProfit(){
+  var box=document.getElementById('sh-tab-profit'); if(!box) return;
+  var inc=incomeTotal(), eb=expenseBreakdown(), net=inc-eb.total;
+  var margin = inc>0 ? Math.round(net/inc*1000)/10 : 0;
+  function big(l,v,grad){ return '<div class="big" style="background:'+grad+'"><div class="l">'+l+'</div><div class="v">'+fmt(v)+' ₾</div></div>'; }
+  function srcRow(l,v,c){ var pct=eb.total>0?Math.round(v/eb.total*100):0; return '<div class="barrow"><div class="nm">'+l+'</div><div class="track"><div class="fill" style="width:'+pct+'%;background:'+c+'"></div></div><div class="amt" style="color:#334155">'+fmt(v)+' ₾</div><div class="pc">'+pct+'%</div></div>'; }
+  box.innerHTML='<div class="card"><div class="subttl" style="color:#0369a1">📈 მოგება = შემოსავალი − ხარჯი</div>'
+    + '<div class="stats" style="margin-bottom:6px">'
+    + big('💰 შემოსავალი', inc, 'linear-gradient(135deg,#059669,#047857)')
+    + big('🧾 ხარჯი (სულ)', eb.total, 'linear-gradient(135deg,#dc2626,#b91c1c)')
+    + big((net>=0?'📈 მოგება':'📉 ზარალი'), net, net>=0?'linear-gradient(135deg,#0ea5e9,#0369a1)':'linear-gradient(135deg,#f97316,#c2410c)')
+    + '</div>'
+    + '<div class="muted">მოგების მარჟა: <b style="color:'+(net>=0?'#059669':'#dc2626')+'">'+margin+'%</b> · (მოგება / შემოსავალი)</div>'
+    + '</div>'
+    + '<div class="card"><div class="subttl">🧾 ხარჯების ჩაშლა წყაროების მიხედვით</div>'
+    + srcRow('ერთჯერადი ხარჯი', eb.once, '#ea580c')
+    + srcRow('შესყიდვები', eb.purch, '#7c3aed')
+    + srcRow('პრეპარატები', eb.prep, '#0d9488')
+    + srcRow('მკრეფავები', eb.krepa, '#16a34a')
+    + srcRow('პერსონალი', eb.staff, '#f59e0b')
+    + '<div class="muted" style="margin-top:12px">შენიშვნა: შემოსავალი მხოლოდ გაყიდვებიდან ითვლება (gv_sales). შესყიდვები (gv_purchases) ცალკე ხარჯად ითვლება — შემოსავალს არ აკლდება, ასე რომ ორმაგი დათვლა არ ხდება.</div>'
+    + '</div>';
+}
+
+// ═══════════════════ FORECAST CALC ═══════════════════
+async function shCalculate(){
+  var culture=elval('sh-culture');
+  var area=num(elval('sh-area'))||1;
+  var yld=num(elval('sh-yield'));
+  var price=num(elval('sh-price'));
+  var cSasuki=num(elval('sh-cost-sasuki')), cLabor=num(elval('sh-cost-labor')), cTech=num(elval('sh-cost-tech')), cOther=num(elval('sh-cost-other'));
+  var totalYield=yld*area, totalIncome=totalYield*price, totalCost=(cSasuki+cLabor+cTech+cOther)*area, profit=totalIncome-totalCost;
+  document.getElementById('sh-results').style.display='block';
+  document.getElementById('sh-res-income').textContent=totalIncome.toFixed(0)+' ₾';
+  document.getElementById('sh-res-cost').textContent=totalCost.toFixed(0)+' ₾';
+  var profEl=document.getElementById('sh-res-profit'), card=document.getElementById('sh-res-profit-card');
+  profEl.textContent=(profit>=0?'+':'')+profit.toFixed(0)+' ₾';
+  profEl.style.color=profit>=0?'#065f46':'#7f1d1d';
+  card.style.background=profit>=0?'#fff':'#fef2f2';
+  // AI ანალიზი — index-ის იგივე proxy (graceful fallback)
+  var aiBox=document.getElementById('sh-ai-box'), aiEl=document.getElementById('sh-ai-text');
+  aiBox.style.display='block'; aiEl.textContent='🤖 AI ანალიზი მუშავდება...';
+  try{
+    var p='შენ ხარ საქართველოს სოფლის მეურნეობის ექსპერტი. გააანალიზე:\n\nკულტ.: '+culture+', ფ.: '+area+' ჰა\nმოს.: '+yld+' კგ/ჰა (სულ '+totalYield+' კგ), ფ.: '+price+' ₾/კგ\nშემ.: '+totalIncome.toFixed(0)+' ₾, ხ.: '+totalCost.toFixed(0)+' ₾\nმოგ./ზ.: '+profit.toFixed(0)+' ₾\n\nქართულად: 1. შეაფასე — კარგია/ცუდი? 2. საბაზრო ფასები. 3. მოგების გაზრდის 3 რეკ. 4. ფინ. რისკები.';
+    var r=await fetch(_AI_PROXY,{ method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+SB_KEY}, body:JSON.stringify({prompt:p, max_tokens:800}) });
+    if(!r.ok) throw new Error('proxy '+r.status);
+    var d=await r.json().catch(function(){return {};});
+    var txt=d.text||d.answer||(d.content&&d.content[0]&&d.content[0].text)||'';
+    aiEl.textContent = txt || 'AI პასუხი ცარიელია.';
+  }catch(e){ aiEl.textContent='❌ AI სერვისთან კავშირი ვერ მოხერხდა — გამოთვლა მაინც ზემოთ ჩანს.'; }
+}
+
+// ═══════════════════ SESSION RESUME ═══════════════════
+(function(){
+  document.addEventListener('DOMContentLoaded', async function(){
+    var client=getSb(); if(!client) return;
+    try{
+      var r=await client.auth.getSession();
+      if(r && r.data && r.data.session && r.data.session.user){
+        uid=r.data.session.user.id;
+        showApp(r.data.session.user.email);
+      }
+    }catch(e){}
+  });
+})();
+</script>
+</body></html>
