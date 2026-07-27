@@ -21,6 +21,7 @@ on:
   push:
     branches:
       - main
+      - claude/naxe-logo-registration-d1wq17
     paths:
       - "ramimpex/**"
       - ".github/workflows/deploy-ramimpex.yml"
