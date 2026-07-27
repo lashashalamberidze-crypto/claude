@@ -160,25 +160,9 @@
     </div>
   </div>
 
-  <!-- ═══ PICKERS PAYROLL ═══ -->
+  <!-- ═══ PICKERS PAYROLL (მკრეფავები + გამომტანები) ═══ -->
   <div class="panel" id="p-krepa">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <div class="subttl" style="color:#16a34a;margin:0">🧺 მკრეფავების ანგარიშსწორება</div>
-        <button class="sec" style="width:auto;padding:8px 14px;font-size:.82rem" onclick="loadKrepaData(true)">🔄 განახლება</button>
-      </div>
-      <div class="muted" style="margin-top:8px">დარიცხული = კრეფა (კგ×ფასი — ჩაწერილი „earned") + ბონუსი + ბაზა×ნამუშევარი დღეები. გადახდილი — <b>krepa_payroll</b>-იდან. დარჩენილი = დარიცხული − გადახდილი.</div>
-    </div>
-    <div class="stats" id="krepa-totals"><div class="muted">გახსენი ტაბი ჩასატვირთად…</div></div>
-    <div class="card">
-      <input id="krepa-search" placeholder="🔍 ძებნა სახელით…" oninput="renderKrepaTable()">
-      <div class="scrollx" style="margin-top:10px">
-        <table>
-          <thead><tr style="background:#f8fafc"><th>მკრეფავი</th><th style="text-align:right">კგ</th><th style="text-align:right">დარიცხული</th><th style="text-align:right">გადახდილი</th><th style="text-align:right">დარჩენილი</th></tr></thead>
-          <tbody id="krepa-tbody"><tr><td colspan="5" class="muted" style="padding:18px;text-align:center">გახსენი ტაბი ჩასატვირთად…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
+    <div id="sh-tab-krepa"><div class="card muted">გახსენი ტაბი ჩასატვირთად…</div></div>
   </div>
 
   <!-- ═══ PROFIT ═══ -->
@@ -238,7 +222,8 @@ const _AI_PROXY = SB_URL + '/functions/v1/ai-proxy';
 
 let sb=null, uid=null, activeTab='income';
 let SALES=[], PURCH=[], EXPS=[], PAYROLL=[], PREP=[], STAFF=[];   // ღრუბლიდან ჩატვირთული (cloud-first)
-let KREPA_SESS=[], KREPA_BON=[], KREPA_BASE=0, krepaLoaded=false, krepaLoading=false;   // მკრეფავების ანგარიშსწორება (lazy)
+let KREPA_SESS=[], KREPA_BON=[], KREPA_BASE=0, KREPA_PICKERS=[], COMPANY={}, krepaLoaded=false, krepaLoading=false;   // მკრეფავების ანგარიშსწორება (lazy)
+let krepaFilter='all', krepaSearch='';
 let expFilter={from:'', to:''};
 
 function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
@@ -637,13 +622,12 @@ async function shCalculate(){
   }catch(e){ aiEl.textContent='❌ AI სერვისთან კავშირი ვერ მოხერხდა — გამოთვლა მაინც ზემოთ ჩანს.'; }
 }
 
-// ═══════════════════ PICKERS PAYROLL TAB (მკრეფავები) ═══════════════════
-// index-ის shKrepaCompute-ის ზუსტი ასლი, ღრუბლის ცხრილებზე:
-//   დარიცხული (earned) = Σ harvest_sessions.earned (group by picker_id)
-//                        + Σ krepa_bonuses.amount (by picker_uid)
-//                        + ბაზა (its_base) × distinct workdays
-//   გადახდილი (paid)   = krepa_payroll: Σ payments[].amount (ან amount თუ payments ცარიელია), by picker_uid
-//   დარჩენილი (remain) = max(0, earned − paid)
+// ═══════════════════ PICKERS PAYROLL TAB (მკრეფავები + გამომტანები) ═══════════════════
+// index-ის payroll მოდულის ერთგული პორტი, ღრუბლის ცხრილებზე (cloud-first, user-scoped):
+//   დარიცხული (owed) = Σ harvest_sessions.earned (by picker_id) + Σ krepa_bonuses.amount
+//                       + ბაზა (its_base) × distinct workdays; გამომტანები (carriers) — მხოლოდ ბონუსით
+//   გადახდილი (paid)  = krepa_payroll: Σ payments[].amount (ან amount თუ payments ცარიელია), by picker_uid
+//   დარჩენილი (remain)= max(0, owed − paid) · გადახდის ჩაწერა → upsert krepa_payroll (onConflict user_id,picker_uid)
 async function fetchHarvestSessions(){
   var all=[], from=0, STEP=1000;
   while(true){
@@ -659,30 +643,47 @@ async function loadKrepaData(force){
   if(krepaLoading) return;
   if(krepaLoaded && !force){ renderKrepa(); return; }
   krepaLoading=true;
+  var box=document.getElementById('sh-tab-krepa'); if(box && !krepaLoaded) box.innerHTML='<div class="card muted" style="text-align:center;padding:24px">⏳ იტვირთება ღრუბლიდან…</div>';
   try{
     var res=await Promise.all([
       fetchHarvestSessions(),
       sb.from('krepa_bonuses').select('picker_uid,bonus_date,amount').eq('user_id',uid),
-      sb.from('user_settings').select('sval').eq('user_id',uid).eq('skey','its_base').maybeSingle()
+      sb.from('user_settings').select('sval').eq('user_id',uid).eq('skey','its_base').maybeSingle(),
+      sb.from('krepa_pickers').select('*').eq('user_id',uid),
+      sb.from('gv_settings').select('company_cfg').eq('user_id',uid).maybeSingle()
     ]);
-    KREPA_SESS = Array.isArray(res[0])?res[0]:[];
-    KREPA_BON  = Array.isArray(res[1].data)?res[1].data:[];
-    KREPA_BASE = (res[2] && res[2].data) ? (parseFloat(res[2].data.sval)||0) : 0;
+    KREPA_SESS    = Array.isArray(res[0])?res[0]:[];
+    KREPA_BON     = Array.isArray(res[1].data)?res[1].data:[];
+    KREPA_BASE    = (res[2] && res[2].data) ? (parseFloat(res[2].data.sval)||0) : 0;
+    KREPA_PICKERS = Array.isArray(res[3].data)?res[3].data:[];
+    COMPANY       = (res[4] && res[4].data && res[4].data.company_cfg && typeof res[4].data.company_cfg==='object') ? res[4].data.company_cfg : {};
+    if(!COMPANY || !COMPANY.name){ try{ var lc=JSON.parse(localStorage.getItem('its_gv_company__'+uid)||'{}'); if(lc && lc.name) COMPANY=lc; }catch(e){} }
     krepaLoaded=true;
   }catch(e){ console.warn('loadKrepaData', e); toast('⚠️ მკრეფავების ჩატვირთვის შეცდომა'); }
   krepaLoading=false;
   renderKrepa();
 }
-// გადახდილი picker_uid-ის მიხედვით — PAYROLL (krepa_payroll), index-ის paidCum
-function krepaPaidMap(){
+async function reloadPayroll(){
+  if(!sb||!uid) return;
+  try{ var r=await sb.from('krepa_payroll').select('*').eq('user_id',uid); if(!r.error && Array.isArray(r.data)) PAYROLL=r.data; }catch(e){ console.warn('reloadPayroll', e); }
+}
+
+// ── გადახდის მდგომარეობა krepa_payroll-იდან (picker_uid → {name,phone,method,payments[],docName,docData}) ──
+function buildPayMap(){
   var m={};
   (PAYROLL||[]).forEach(function(r){
+    if(!r || r.picker_uid==null) return;
     var pays=Array.isArray(r.payments)?r.payments:[];
-    if(!pays.length && (+r.amount||0)>0) pays=[{amount:+r.amount||0}];
-    m[String(r.picker_uid)] = (m[String(r.picker_uid)]||0) + pays.reduce(function(a,x){ return a+(+x.amount||0); },0);
+    if(!pays.length && (+r.amount||0)>0) pays=[{amount:+r.amount||0, method:r.method||'ნაღდი', date:r.paid_date||''}];
+    m[String(r.picker_uid)]={ name:r.picker_name||'', phone:'', method:r.method||'ნაღდი', payments:pays, docName:r.doc_name||'', docData:r.doc_data||'' };
   });
   return m;
 }
+function paidCum(p){ if(!p||!Array.isArray(p.payments)) return 0; return Math.round(p.payments.reduce(function(s,x){ return s+(+x.amount||0); },0)*100)/100; }
+function krepaPickerById(u){ return (KREPA_PICKERS||[]).find(function(x){ return x && (String(x.uid)===String(u)||String(x.id)===String(u)); }); }
+function krepaPickerName(p){ return ((p.firstName||p.firstname||'')+' '+(p.lastName||p.lastname||'')).trim() || p.name || ''; }
+
+// index-ის shKrepaCompute-ის ზუსტი ლოგიკა (მკრეფავები + გამომტანები)
 function krepaCompute(){
   var by={};
   (KREPA_SESS||[]).forEach(function(s){
@@ -693,50 +694,210 @@ function krepaCompute(){
     if(s.date) by[k].days[s.date]=1;
     if(nm) by[k].name=nm; if(s.phone) by[k].phone=s.phone;
   });
-  // ბონუსი — krepa_bonuses (by picker_uid) — მხოლოდ არსებულ მკრეფავებს
+  // ბონუსი — krepa_bonuses (by picker_uid); არსებულ მკრეფავებს ემატება
   var bonByUid={};
   (KREPA_BON||[]).forEach(function(b){ if(!b) return; var u=String(b.picker_uid||''); if(!u) return; bonByUid[u]=(bonByUid[u]||0)+(+b.amount||0); });
   Object.keys(bonByUid).forEach(function(u){ if(by[u]) by[u].earned += bonByUid[u]; });
   // ბაზა × ნამუშევარი დღეები
   var base=Number(KREPA_BASE)||0;
   if(base>0){ Object.keys(by).forEach(function(u){ var nd=Object.keys(by[u].days||{}).length||1; by[u].earned += base*nd; }); }
-  var paid=krepaPaidMap();
+  // გამომტანები (carriers) — role==='carrier' picker სიიდან, მხოლოდ ბონუსით
+  var carRole={};
+  (KREPA_PICKERS||[]).forEach(function(p){ if(p && (p.role||'')==='carrier') carRole[String(p.uid)]=p; });
+  Object.keys(bonByUid).forEach(function(u){
+    if(carRole[u] && !by[u]){ var cp=carRole[u]; by[u]={uid:u, name:krepaPickerName(cp)||'გამომტანი', phone:cp.phone||'', earned:0, kg:0, days:{}, isCarrier:true}; }
+    if(carRole[u] && by[u] && by[u].isCarrier){ by[u].earned += bonByUid[u]; }
+  });
+  var pay=buildPayMap();
   var list=Object.keys(by).map(function(k){
+    var pk=krepaPickerById(k);
+    var phone=(pk && pk.phone)?pk.phone:by[k].phone;
     var earned=Math.round(by[k].earned*100)/100;
-    var pd=Math.round((paid[String(k)]||0)*100)/100;
-    var rem=Math.max(0, Math.round((earned-pd)*100)/100);
-    return { uid:by[k].uid, name:by[k].name, kg:Math.round(by[k].kg*100)/100, earned:earned, paid:pd, remain:rem };
-  }).filter(function(r){ return r.earned>0.001; }).sort(function(a,b){ return b.remain-a.remain || b.earned-a.earned; });
-  var tot={earned:0,paid:0,remain:0,kg:0};
-  list.forEach(function(r){ tot.earned+=r.earned; tot.paid+=r.paid; tot.remain+=r.remain; tot.kg+=r.kg; });
-  ['earned','paid','remain','kg'].forEach(function(k){ tot[k]=Math.round(tot[k]*100)/100; });
-  return { list:list, tot:tot };
+    var paid=paidCum(pay[k]||{});
+    var rem=Math.max(0, Math.round((earned-paid)*100)/100);
+    return { uid:by[k].uid, name:by[k].name, phone:phone, pid:(pk?(pk.id||pk.personal_id||''):''), bank:(pk?(pk.bank||''):''), kg:Math.round(by[k].kg*100)/100, owed:earned, paid:Math.round(paid*100)/100, remain:rem, isCarrier:!!by[k].isCarrier };
+  }).filter(function(r){ return r.owed>0.001; }).sort(function(a,b){ return b.remain-a.remain || b.owed-a.owed; });
+  var total=list.reduce(function(s,r){ return s+r.owed; },0);
+  return { list:list, total:Math.round(total*100)/100 };
 }
+function krepaPaidTotalAll(){ var pay=buildPayMap(), s=0; Object.keys(pay).forEach(function(k){ s+=paidCum(pay[k]); }); return Math.round(s*100)/100; }
+function krepaHistory(){
+  var pay=buildPayMap(), arr=[];
+  Object.keys(pay).forEach(function(k){ var p=pay[k]; if(p && Array.isArray(p.payments)) p.payments.forEach(function(x){ arr.push({ uid:k, name:p.name||'მკრეფავი', amount:+x.amount||0, method:x.method||'ნაღდი', date:x.date||'' }); }); });
+  arr.sort(function(a,b){ return (''+(b.date||'')).localeCompare(''+(a.date||'')); });
+  return arr;
+}
+
 function renderKrepa(){
-  var box=document.getElementById('krepa-totals'); if(!box) return;
-  if(!krepaLoaded){ box.innerHTML='<div class="muted">იტვირთება…</div>'; return; }
-  var d=krepaCompute();
+  var box=document.getElementById('sh-tab-krepa'); if(!box) return;
+  if(!krepaLoaded){ box.innerHTML='<div class="card muted" style="text-align:center;padding:24px">⏳ იტვირთება…</div>'; return; }
+  var data=krepaCompute(), pay=buildPayMap();
+  var paidTot=krepaPaidTotalAll(); var remain=Math.round((data.total-paidTot)*100)/100; if(remain<0) remain=0;
+  if(['all','pending','settled'].indexOf(krepaFilter)<0) krepaFilter='all';
+  var cAll=0,cPending=0,cSettled=0;
+  data.list.forEach(function(rr){ var bl=rr.remain; cAll++; if(bl<=0.001) cSettled++; else cPending++; });
   function stat(l,v,c){ return '<div class="stat"><div class="val" style="color:'+c+'">'+fmt(v)+' ₾</div><div class="lbl">'+l+'</div></div>'; }
-  box.innerHTML = stat('სულ დარიცხული', d.tot.earned, '#0d9488')
-    + stat('სულ გადახდილი', d.tot.paid, '#16a34a')
-    + stat('სულ დარჩენილი', d.tot.remain, d.tot.remain>0?'#dc2626':'#16a34a')
-    + '<div class="stat"><div class="val" style="color:#7c3aed">'+fmt(d.tot.kg)+'</div><div class="lbl">სულ კგ · '+d.list.length+' მკრეფავი</div></div>';
-  renderKrepaTable();
-}
-function renderKrepaTable(){
-  var body=document.getElementById('krepa-tbody'); if(!body) return;
-  if(!krepaLoaded){ body.innerHTML='<tr><td colspan="5" class="muted" style="padding:18px;text-align:center">იტვირთება…</td></tr>'; return; }
-  var d=krepaCompute();
-  var q=(elval('krepa-search')||'').toLowerCase();
-  var list=d.list.filter(function(r){ return !q || (''+(r.name||'')).toLowerCase().indexOf(q)>=0; });
-  if(!list.length){ body.innerHTML='<tr><td colspan="5" class="muted" style="padding:18px;text-align:center">— მკრეფავი არ მოიძებნა —</td></tr>'; return; }
-  body.innerHTML=list.map(function(r){
-    return '<tr><td>'+esc(r.name)+'</td>'
+  function chip(key,label,count,color){ var active=(krepaFilter===key); return '<button onclick="krepaSetFilter(\''+key+'\')" style="width:auto;margin:0;background:'+(active?color:'#fff')+';color:'+(active?'#fff':'#475569')+';border:1px solid '+(active?color:'#e2e8f0')+';border-radius:999px;padding:6px 13px;font-size:.78rem;font-weight:600">'+label+' ('+count+')</button>'; }
+  var head='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px"><div class="subttl" style="margin:0;color:#16a34a">🌾 მკრეფავების ანაზღაურება</div><div style="display:flex;gap:6px"><button class="sec" style="width:auto;padding:7px 12px;font-size:.8rem" onclick="loadKrepaData(true)">🔄</button><button style="width:auto;background:#16a34a;padding:7px 12px;font-size:.8rem" onclick="krepaExportXlsx()">📊 Excel</button></div></div>'
+    +'<div class="muted" style="margin:0 0 12px">დარიცხვა ავტომატურია კრეფიდან (კგ×ფასი + ბონუსი + ბაზა). „გადახდა" იხდის მიმდინარე ნაშთს და ჩაიწერება ისტორიაში. ხარჯში მხოლოდ გადახდილი ითვლება.</div>'
+    +'<div class="stats" style="margin-bottom:10px">'
+    + stat('სულ დასარიცხი', data.total, '#16a34a')
+    + stat('გადახდილი', paidTot, '#0ea5e9')
+    + stat('დარჩენილი', remain, remain>0?'#dc2626':'#059669')
+    + '</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">'+chip('all','ყველა',cAll,'#475569')+chip('pending','⏳ გადასახდელი',cPending,'#b45309')+chip('settled','✅ გადახდილი',cSettled,'#059669')+'</div>'
+    +'<input id="kpaySearch" oninput="krepaFilterRows(this.value)" value="'+esc(krepaSearch||'')+'" placeholder="🔍 ძებნა — სახელი ან ტელეფონი" style="max-width:340px"></div>';
+  var flist=data.list.filter(function(rr){ if(krepaFilter==='all') return true; var st=rr.remain<=0.001; return krepaFilter==='settled'?st:!st; });
+  var rows=flist.map(function(r){
+    var p=pay[r.uid]||{}; var paid=r.paid; var bal=r.remain; var settled=bal<=0.001; var method=p.method||'ნაღდი';
+    var pays=Array.isArray(p.payments)?p.payments:[]; var lastD=pays.length?(pays[pays.length-1].date||''):'';
+    var badge='<span style="display:inline-block;border-radius:999px;padding:4px 11px;font-size:.74rem;font-weight:600;'+(settled?'background:#dcfce7;color:#15803d':'background:#fef3c7;color:#b45309')+'">'+(settled?'✅ სრულად':'⏳ '+fmt(bal)+' ₾')+'</span>'+(lastD?'<div style="font-size:.66rem;color:#94a3b8;margin-top:3px">📅 '+esc(lastD)+'</div>':'');
+    var methodSel='<select onchange="krepaSetMethod(\''+esc(r.uid)+'\',this.value)" style="width:auto;padding:5px 8px;font-size:.76rem"><option value="ნაღდი"'+(method==='ნაღდი'?' selected':'')+'>💵 ნაღდი</option><option value="გადარიცხვა"'+(method==='გადარიცხვა'?' selected':'')+'>🏦 გადარიცხვა</option></select>';
+    var roleBadge=r.isCarrier?'<span style="display:inline-block;background:#fef3c7;color:#b45309;border-radius:999px;padding:2px 8px;font-size:.66rem;font-weight:600;white-space:nowrap">🚚 გამომტანი</span>':'<span style="display:inline-block;background:#dcfce7;color:#15803d;border-radius:999px;padding:2px 8px;font-size:.66rem;font-weight:600;white-space:nowrap">🧺 მკრეფავი</span>';
+    var payBtn=!settled?'<button onclick="krepaPay(\''+esc(r.uid)+'\')" style="width:auto;margin:0;background:#16a34a;padding:5px 11px;font-size:.74rem">💵 გადახდა ('+fmt(bal)+')</button>':'';
+    var undoBtn=paid>0.001?'<button onclick="krepaUndo(\''+esc(r.uid)+'\')" title="ბოლო გადახდის გაუქმება" style="width:auto;margin:0;border:1px solid #fecaca;background:#fff;color:#dc2626;padding:5px 8px;font-size:.74rem">↩</button>':'';
+    var docBtn=p.docName?'<button onclick="krepaViewDoc(\''+esc(r.uid)+'\')" title="'+esc(p.docName)+'" style="width:auto;margin:0;border:1px solid #bbf7d0;background:#f0fdf4;color:#15803d;padding:5px 9px;font-size:.74rem">📎</button>':'<label style="border:1px solid #dde8f5;background:#fff;color:#475569;border-radius:8px;padding:5px 9px;font-size:.74rem;cursor:pointer;display:inline-block">📎<input type="file" accept="image/*,application/pdf" style="display:none" onchange="krepaUploadDoc(\''+esc(r.uid)+'\',this)"></label>';
+    var printBtn='<button onclick="krepaPrintAct(\''+esc(r.uid)+'\')" title="ოქმი / აქტი" style="width:auto;margin:0;border:1px solid #c7d2fe;background:#eef2ff;color:#4338ca;padding:5px 9px;font-size:.74rem">🖨</button>';
+    return '<tr data-s="'+esc(((r.name||'')+' '+(r.phone||'')).toLowerCase())+'">'
+      +'<td>'+esc(r.name)+' '+roleBadge+'</td>'
+      +'<td style="color:#64748b">'+esc(r.phone||'—')+'</td>'
       +'<td style="text-align:right;color:#475569">'+fmt(r.kg)+'</td>'
-      +'<td style="text-align:right;font-weight:600;color:#0d9488">'+fmt(r.earned)+' ₾</td>'
-      +'<td style="text-align:right;color:#16a34a">'+fmt(r.paid)+' ₾</td>'
-      +'<td style="text-align:right;font-weight:700;color:'+(r.remain>0?'#dc2626':'#16a34a')+'">'+fmt(r.remain)+' ₾</td></tr>';
+      +'<td style="text-align:right;font-weight:700;color:#16a34a">'+fmt(r.owed)+'</td>'
+      +'<td style="text-align:right;color:#0ea5e9;font-weight:600">'+fmt(paid)+'</td>'
+      +'<td style="text-align:center">'+badge+'</td>'
+      +'<td style="text-align:center">'+methodSel+'</td>'
+      +'<td style="text-align:center;white-space:nowrap">'+payBtn+' '+undoBtn+' '+printBtn+' '+docBtn+'</td>'
+      +'</tr>';
   }).join('');
+  if(!rows){ var em=krepaFilter==='settled'?'— სრულად გადახდილი ჯერ არცერთი —':(krepaFilter==='pending'?'— ყველა სრულად გადახდილია 🎉 —':'— ჯერ არცერთი მკრეფავი არ აწონილა —'); rows='<tr><td colspan="8" class="muted" style="padding:20px;text-align:center">'+em+'</td></tr>'; }
+  var table='<div class="card" style="padding:0;overflow:hidden"><div class="scrollx" style="border:none"><table><thead><tr style="background:#f8fafc"><th>მკრეფავი</th><th>ტელ.</th><th style="text-align:right">კგ</th><th style="text-align:right">დარიცხ.</th><th style="text-align:right">გადახდ.</th><th style="text-align:center">ნაშთი</th><th style="text-align:center">ფორმა</th><th style="text-align:center">მოქმედება</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+  var hist=krepaHistory();
+  var hrows=hist.map(function(h){ return '<tr><td style="color:#475569">'+esc(h.date||'—')+'</td><td style="font-weight:600">'+esc(h.name)+'</td><td style="text-align:center;color:#475569">'+esc(h.method)+'</td><td style="text-align:right;font-weight:700;color:#0ea5e9">'+fmt(h.amount)+' ₾</td></tr>'; }).join('');
+  var histBlock = hrows ? ('<div class="card"><div class="subttl" style="color:#0369a1">🧾 ოქმები / გადახდების ისტორია (ვინ · რამდენი · როდის)</div><div class="scrollx"><table><thead><tr style="background:#f8fafc"><th>თარიღი</th><th>მკრეფავი</th><th style="text-align:center">ფორმა</th><th style="text-align:right">თანხა</th></tr></thead><tbody>'+hrows+'</tbody></table></div></div>') : '';
+  box.innerHTML = head + table + histBlock;
+  if(krepaSearch){ try{ krepaFilterRows(krepaSearch); }catch(e){} }
+}
+function krepaFilterRows(q){
+  krepaSearch=q||''; var qq=(q||'').toLowerCase().trim();
+  var box=document.getElementById('sh-tab-krepa'); if(!box) return;
+  Array.prototype.forEach.call(box.querySelectorAll('tr[data-s]'), function(tr){ tr.style.display=(!qq || (tr.getAttribute('data-s')||'').indexOf(qq)>-1)?'':'none'; });
+}
+function krepaSetFilter(v){ krepaFilter=v; renderKrepa(); }
+
+// ── გადახდის ჩაწერა → upsert krepa_payroll (row shape = index-ის _pushPayrollRow) ──
+async function upsertPayroll(pickerUid, p){
+  if(!sb||!uid) return;
+  var pays=Array.isArray(p.payments)?p.payments:[]; var last=pays[pays.length-1]||{}; var cum=paidCum({payments:pays});
+  var row={ user_id:uid, picker_uid:String(pickerUid), picker_name:p.name||'', amount:cum, method:(last.method||p.method||''), status:(cum>0?'გადახდილია':''), paid_date:(last.date||null), payments:pays, doc_name:(p.docName||''), doc_data:(p.docData||''), updated_at:new Date().toISOString() };
+  try{ await sb.from('krepa_payroll').upsert(row, { onConflict:'user_id,picker_uid' }); }catch(e){ console.warn('payroll upsert', e); toast('⚠️ ღრუბელში შენახვა ვერ მოხერხდა'); }
+  await reloadPayroll();
+  renderKrepa(); renderDash(); renderIncome(); renderProfit();
+}
+async function krepaPay(pickerUid){
+  var r=(krepaCompute().list||[]).find(function(x){ return String(x.uid)===String(pickerUid); }); if(!r) return;
+  var pay=buildPayMap(); var p=pay[pickerUid]||{payments:[]};
+  var bal=Math.round((r.owed-paidCum(p))*100)/100;
+  if(bal<=0.001){ toast('უკვე სრულად გადახდილია'); return; }
+  var inp=prompt('რამდენი გადაუხადე მკრეფავს „'+r.name+'"?\nდარჩენილი ნაშთი: '+bal+' ₾\n(ცარიელი = სრული ნაშთის გადახდა)', String(bal));
+  if(inp===null) return;
+  inp=(''+inp).trim().replace(',','.');
+  var amt=(inp==='')?bal:parseFloat(inp);
+  if(isNaN(amt)||amt<=0){ alert('არასწორი თანხა'); return; }
+  if(amt>bal+0.001){ if(!confirm('ნაშთზე ('+bal+' ₾) მეტს იხდი: '+amt+' ₾.\nსხვაობა ხარჯში ჩაიწერება. გავაგრძელო?')) return; }
+  amt=Math.round(amt*100)/100;
+  var method=p.method||'ნაღდი';
+  var payments=(Array.isArray(p.payments)?p.payments.slice():[]);
+  payments.push({ amount:amt, method:method, date:_today() });
+  await upsertPayroll(pickerUid, { name:r.name, method:method, payments:payments, docName:p.docName||'', docData:p.docData||'' });
+  toast('✅ გადახდა ჩაიწერა');
+}
+async function krepaUndo(pickerUid){
+  var p=buildPayMap()[pickerUid]; if(!p||!Array.isArray(p.payments)||!p.payments.length) return;
+  if(!confirm('ბოლო გადახდის გაუქმება?')) return;
+  var payments=p.payments.slice(); payments.pop();
+  await upsertPayroll(pickerUid, { name:p.name, method:p.method, payments:payments, docName:p.docName, docData:p.docData });
+  toast('↩ ბოლო გადახდა გაუქმდა');
+}
+async function krepaSetMethod(pickerUid, val){
+  var p=buildPayMap()[pickerUid]||{payments:[]};
+  await upsertPayroll(pickerUid, { name:p.name, method:val, payments:p.payments||[], docName:p.docName, docData:p.docData });
+}
+function krepaUploadDoc(pickerUid, inp){
+  var fl=inp.files&&inp.files[0]; if(!fl) return;
+  if(fl.size>1300*1024){ alert('დოკუმენტი ძალიან დიდია — მაქს. ~1.2MB'); inp.value=''; return; }
+  var rd=new FileReader(); rd.onload=function(){ var p=buildPayMap()[pickerUid]||{payments:[]}; upsertPayroll(pickerUid, { name:p.name, method:p.method, payments:p.payments||[], docName:fl.name, docData:rd.result }); toast('📎 დოკუმენტი ატვირთულია'); }; rd.readAsDataURL(fl);
+}
+function krepaViewDoc(pickerUid){
+  var p=buildPayMap()[pickerUid]; if(!p||!p.docData){ alert('დოკუმენტი არ არის ატვირთული'); return; }
+  var w=window.open('','_blank'); if(!w) return;
+  if((''+p.docData).indexOf('application/pdf')>-1) w.document.write('<iframe src="'+p.docData+'" style="border:0;width:100%;height:100vh"></iframe>');
+  else w.document.write('<img src="'+p.docData+'" style="max-width:100%">');
+  w.document.close();
+}
+function krepaExportXlsx(){
+  try{
+    if(typeof XLSX==='undefined'){ toast('⚠️ Excel ბიბლიოთეკა ვერ ჩაიტვირთა'); return; }
+    var data=krepaCompute(), pay=buildPayMap();
+    var rows=[['მკრეფავი','როლი','პ/ნ','ტელეფონი','საბანკო ანგარიში','კგ','დარიცხული ₾','გადახდილი ₾','ნაშთი ₾','ფორმა','ბოლო გადახდა']];
+    var tk=0,tp=0,tb=0;
+    (data.list||[]).forEach(function(r){
+      var p=pay[r.uid]||{}; var paid=r.paid; var bal=r.remain;
+      var pays=Array.isArray(p.payments)?p.payments:[]; var last=pays[pays.length-1]||{};
+      rows.push([r.name||'', r.isCarrier?'გამომტანი':'მკრეფავი', r.pid||'', r.phone||'', r.bank||'', r.kg, r.owed, paid, bal, last.method||p.method||'', last.date||'']);
+      tk+=r.owed; tp+=paid; tb+=bal;
+    });
+    rows.push(['ჯამი','','','','', '', Math.round(tk*100)/100, Math.round(tp*100)/100, Math.round(tb*100)/100, '','']);
+    var wb=XLSX.utils.book_new();
+    var ws1=XLSX.utils.aoa_to_sheet(rows); ws1['!cols']=[{wch:22},{wch:11},{wch:14},{wch:12},{wch:26},{wch:9},{wch:13},{wch:13},{wch:11},{wch:13},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws1, 'მკრეფავები');
+    var h=[['თარიღი','მკრეფავი','ფორმა','თანხა ₾']];
+    krepaHistory().forEach(function(x){ h.push([x.date||'', x.name||'', x.method||'', Math.round((+x.amount||0)*100)/100]); });
+    var ws2=XLSX.utils.aoa_to_sheet(h); ws2['!cols']=[{wch:12},{wch:22},{wch:13},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'გადახდები');
+    var dd=[['მკრეფავი','თარიღი','სუფთა კგ','დარიცხული ₾']];
+    (KREPA_SESS||[]).slice().sort(function(a,b){ return (''+(a.picker_name||'')).localeCompare(''+(b.picker_name||''),'ka')||(''+(b.date||'')).localeCompare(''+(a.date||'')); }).forEach(function(s){ if(!s) return; dd.push([ s.picker_name||'', s.date||'', Math.round((+s.weight||0)*1000)/1000, Math.round((+s.earned||0)*100)/100 ]); });
+    var ws3=XLSX.utils.aoa_to_sheet(dd); ws3['!cols']=[{wch:22},{wch:12},{wch:10},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws3, 'დეტალები');
+    xlStyleWB(wb); XLSX.writeFile(wb, 'mkrepavebis_xarji_'+_today()+'.xlsx');
+    toast('📊 Excel ჩამოიტვირთა');
+  }catch(e){ console.warn('krepaExportXlsx', e); toast('⚠️ ექსპორტი ვერ მოხერხდა'); }
+}
+// ოქმი — მიღება-ჩაბარების აქტი (index-ის shKrepaPrintAct-ის პორტი)
+function krepaPrintAct(pickerUid){
+  var data=krepaCompute(); var r=(data.list||[]).find(function(x){ return String(x.uid)===String(pickerUid); }); if(!r){ alert('მკრეფავი ვერ მოიძებნა'); return; }
+  var c=COMPANY||{}; var p=buildPayMap()[pickerUid]||{}; var today=_today();
+  var compName=esc(c.name||'—'), compId=esc(c.idnum||'—'), compDir=esc(c.director||c.name||'—'), compAddr=esc(c.addr||'—');
+  var pays=Array.isArray(p.payments)?p.payments:[]; var last=pays[pays.length-1]||null;
+  var paidSoFar=paidCum(p); var bal=Math.round((r.owed-paidSoFar)*100)/100; var settled=bal<=0.001;
+  var actAmount=settled && last ? (+last.amount||0) : Math.max(0,bal);
+  var method=esc(settled && last && last.method ? last.method : (p.method || (last&&last.method) || 'ნაღდი'));
+  var paidDate=esc(settled && last && last.date ? last.date : today);
+  var bank=r.bank?esc(r.bank):''; var isTransfer=method.indexOf('გადარიცხ')>=0;
+  var html='<!doctype html><html lang="ka"><head><meta charset="utf-8"><title>მიღება-ჩაბარების აქტი</title>'
+    +'<style>@page{size:A4;margin:18mm}body{font-family:"Sylfaen","DejaVu Sans",sans-serif;color:#111;line-height:1.7;font-size:13px}'
+    +'h1{text-align:center;font-size:18px;margin:0 0 4px}.sub{text-align:center;color:#555;margin-bottom:20px;font-size:12px}'
+    +'.row{display:flex;justify-content:space-between;margin:3px 0}.box{border:1px solid #ccc;border-radius:8px;padding:12px 14px;margin:12px 0}'
+    +'.amt{font-size:20px;font-weight:700}.sign{display:flex;justify-content:space-between;margin-top:48px}.sign div{width:45%;border-top:1px solid #333;padding-top:6px;text-align:center;font-size:12px;color:#333}'
+    +'table{width:100%;border-collapse:collapse;margin:10px 0}td,th{border:1px solid #ddd;padding:6px 8px;font-size:12px;text-align:left}</style></head><body>'
+    +'<h1>ანაზღაურების მიღება-ჩაბარების აქტი</h1>'
+    +'<div class="sub">ქ. _______________ &nbsp;·&nbsp; თარიღი: '+paidDate+'</div>'
+    +'<div class="box"><div class="row"><b>დამქირავებელი:</b><span>'+compName+'</span></div>'
+    +'<div class="row"><span>ს/კ ან პ.ნ.:</span><span>'+compId+'</span></div>'
+    +'<div class="row"><span>დირექტორი:</span><span>'+compDir+'</span></div>'
+    +'<div class="row"><span>მისამართი:</span><span>'+compAddr+'</span></div></div>'
+    +'<div class="box"><div class="row"><b>'+(r.isCarrier?'გამომტანი':'მკრეფავი')+' (შემსრულებელი):</b><span>'+esc(r.name)+'</span></div>'
+    +'<div class="row"><span>პირადი ნომერი:</span><span>'+esc(r.pid||'—')+'</span></div>'
+    +'<div class="row"><span>ტელეფონი:</span><span>'+esc(r.phone||'—')+'</span></div>'
+    +(bank?'<div class="row"><span><b>🏦 საბანკო ანგარიში:</b></span><span>'+bank+'</span></div>':(isTransfer?'<div class="row"><span><b>🏦 საბანკო ანგარიში:</b></span><span><i style="color:#c00">— IBAN არ შეყვანილა —</i></span></div>':''))
+    +'</div>'
+    +'<p>წინამდებარე აქტით დასტურდება, რომ დამქირავებელმა შემსრულებელს გადაუხადა მოსავლის კრეფის სამუშაოს ანაზღაურება, ხოლო შემსრულებელმა მიიღო თანხა.</p>'
+    +'<table><tr><th>ნაკრები წონა (კგ)</th><th>გადახდის ფორმა</th><th>თანხა</th></tr>'
+    +'<tr><td>'+fmt(r.kg)+'</td><td>'+method+(isTransfer?' <span style="color:#666;font-size:11px">(უნაღდო ანგარიშსწორება)</span>':'')+'</td><td class="amt">'+fmt(actAmount)+' ₾</td></tr></table>'
+    +'<p style="color:#555;font-size:12px">მხარეებს ერთმანეთის მიმართ პრეტენზია არ გააჩნიათ.</p>'
+    +'<div class="sign"><div>დამქირავებელი<br>'+compDir+'</div><div>შემსრულებელი<br>'+esc(r.name)+'</div></div>'
+    +'</body></html>';
+  var w=window.open('','_blank'); if(!w){ alert('გთხოვ დართე pop-up ბრაუზერში'); return; }
+  w.document.write(html); w.document.close(); w.focus(); setTimeout(function(){ try{ w.print(); }catch(e){} }, 350);
 }
 
 // ═══════════════════ SESSION RESUME ═══════════════════
