@@ -40,8 +40,10 @@
   .plrow .acts button{width:auto;margin:0;padding:5px 9px;font-size:.72rem}
   .badge{font-size:.65rem;font-weight:700;color:#059669;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);border-radius:20px;padding:3px 9px}
   /* map */
-  #plMap{height:clamp(480px,74vh,900px);border-radius:12px;overflow:hidden;margin-bottom:10px;border:1px solid #0f2845;background:#e2e8f0}
-  #plMap.plMap-full{position:fixed !important;inset:0 !important;width:100vw !important;height:100vh !important;height:100dvh !important;z-index:100000 !important;border-radius:0 !important;margin:0 !important}
+  #plMap,#structMap{height:clamp(480px,74vh,900px);border-radius:12px;overflow:hidden;margin-bottom:10px;border:1px solid #0f2845;background:#e2e8f0}
+  #plMap.plMap-full,#structMap.plMap-full{position:fixed !important;inset:0 !important;width:100vw !important;height:100vh !important;height:100dvh !important;z-index:100000 !important;border-radius:0 !important;margin:0 !important}
+  .drawbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#ecfdf5;border:1px solid rgba(16,185,129,.3);border-radius:10px;padding:9px 12px;margin-bottom:8px}
+  .drawbar button{width:auto;margin:0;padding:7px 13px;font-size:.82rem}
   .pl-vertex-ic{background:transparent;border:none}
   .maparea{color:#059669;font-weight:700;font-family:'Space Mono',ui-monospace,monospace}
   .toolrow{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
@@ -147,6 +149,12 @@
         <button class="gray" style="width:auto;padding:8px 14px;margin:0" onclick="showList()">← სია</button>
       </div>
       <div class="muted" id="structTotals" style="margin-top:6px"></div>
+
+      <div class="steplabel">🗺 ბლოკების რუკა</div>
+      <div class="hint">ბლოკი იხაზება ფერადი პოლიგონით პლანტაციის საზღვარზე. აირჩიე ბლოკი ქვემოთ და დააჭირე „🖊 რუკაზე დახაზვა" — დააკლიკე კუთხეებზე, ბოლოს „✓ დასრულება".</div>
+      <button type="button" id="structFullBtn" class="teal" style="font-size:1rem;padding:13px" onclick="structMapToggleFull()">⛶ რუკა სრულ ეკრანზე</button>
+      <div id="structDrawBar" class="drawbar" style="display:none"></div>
+      <div id="structMap"></div>
 
       <div class="steplabel">➕ ახალი ბლოკი / სექტორი</div>
       <div class="row2">
@@ -342,6 +350,7 @@ function showList(){
   document.getElementById('viewEdit').style.display='none';
   document.getElementById('viewStruct').style.display='none';
   if(plMap){ try{ plMap.remove(); }catch(e){} plMap=null; }
+  if(structMap){ try{ structMap.remove(); }catch(e){} structMap=null; structPolys={}; structBoundary=null; structDraw={active:false,blockId:null,pts:[],markers:[],poly:null}; }
   var el=document.getElementById('listItems');
   var activeId=window._activePl;
   if(!PLANTS.length){
@@ -458,8 +467,12 @@ async function del(id){
 // agro_blocks columns: id, user_id, name, variety, note, plantation_id, geojson
 // agro_rows   columns: id, user_id, block_id, name, variety, plant_count
 let STRUCT_PL=null, BLOCKS=[], ROWS=[], editBlockId=null, editRowId=null;
+let structMap=null, structPolys={}, structBoundary=null, structDraw={active:false,blockId:null,pts:[],markers:[],poly:null};
+const STRUCT_PAL=['#22c55e','#38bdf8','#f59e0b','#a78bfa','#f472b6','#fb7185','#2dd4bf','#facc15'];
 
 function _natSort(a,b){ return String(a==null?'':a).localeCompare(String(b==null?'':b),undefined,{numeric:true,sensitivity:'base'}); }
+// spherical polygon area in hectares — mirrors index.html polyAreaHa
+function polyAreaHa(c){ if(!c||c.length<3) return 0; var R=6378137,a=0; for(var i=0;i<c.length;i++){ var j=(i+1)%c.length; var la1=c[i][0]*Math.PI/180,lo1=c[i][1]*Math.PI/180,la2=c[j][0]*Math.PI/180,lo2=c[j][1]*Math.PI/180; a+=(lo2-lo1)*(2+Math.sin(la1)+Math.sin(la2)); } return Math.abs(a*R*R/2)/10000; }
 
 async function openStruct(plId){
   var p=PLANTS.find(function(x){ return x.id===plId; });
@@ -474,8 +487,10 @@ async function openStruct(plId){
   document.getElementById('blkVariety').value='';
   document.getElementById('blkNote').value='';
   document.getElementById('structList').innerHTML='<div class="muted">იტვირთება…</div>';
+  document.getElementById('structDrawBar').style.display='none';
   await loadStructure();
   renderStruct();
+  setTimeout(function(){ initStructMap(); },250);
 }
 
 async function loadStructure(){
@@ -501,8 +516,9 @@ function renderStruct(){
   var totPlants=0; ROWS.forEach(function(r){ totPlants+=(+r.plant_count||0); });
   document.getElementById('structTotals').textContent='📦 '+bs.length+' ბლოკი · 🌿 '+ROWS.length+' რიგი · 🌱 '+totPlants+' ნერგი';
   var el=document.getElementById('structList');
-  if(!bs.length){ el.innerHTML='<div class="muted" style="text-align:center;padding:18px 0">ბლოკი არ არის დამატებული.</div>'; return; }
-  el.innerHTML=bs.map(function(b){ return renderBlock(b); }).join('');
+  if(!bs.length){ el.innerHTML='<div class="muted" style="text-align:center;padding:18px 0">ბლოკი არ არის დამატებული.</div>'; }
+  else el.innerHTML=bs.map(function(b){ return renderBlock(b); }).join('');
+  if(structMap && !structDraw.active) renderStructPolys(false);
 }
 
 function renderBlock(b){
@@ -516,9 +532,12 @@ function renderBlock(b){
        '<div class="row2" style="margin-top:6px"><button class="teal" onclick="saveBlockEdit(\''+esc(b.id)+'\')">💾 შენახვა</button>'+
        '<button class="gray" onclick="editBlockId=null;renderStruct()">გაუქმება</button></div>';
   } else {
+    var hasGeo=!!(b.geojson&&b.geojson.coords&&b.geojson.coords.length>=3);
+    var areaHa=hasGeo?polyAreaHa(b.geojson.coords):0;
     h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
-       '<div style="flex:1;min-width:0"><div style="font-weight:700">🟩 '+esc(b.name||'')+(b.variety?' <span class="muted" style="font-weight:400">· '+esc(b.variety)+'</span>':'')+'</div>'+
+       '<div style="flex:1;min-width:0"><div style="font-weight:700">🟩 '+esc(b.name||'')+(hasGeo?' 🗺️':'')+(areaHa>0?' <span style="font-size:.7rem;color:#059669;font-weight:700">· '+areaHa.toFixed(2)+' ჰა</span>':'')+(b.variety?' <span class="muted" style="font-weight:400">· '+esc(b.variety)+'</span>':'')+'</div>'+
        '<div class="muted" style="font-size:.72rem">'+rows.length+' რიგი · '+rowPlants+' ნერგი'+(b.note?' · '+esc(b.note):'')+'</div></div>'+
+       '<button class="teal" style="width:auto;margin:0;padding:5px 9px;font-size:.72rem;white-space:nowrap" onclick="structStartDraw(\''+esc(b.id)+'\')">🖊 '+(hasGeo?'გადახაზვა':'რუკაზე დახაზვა')+'</button>'+
        '<button class="gray" style="width:auto;margin:0;padding:5px 9px;font-size:.72rem" onclick="editBlock(\''+esc(b.id)+'\')">✏️</button>'+
        '<button class="r" style="width:auto;margin:0;padding:5px 9px;font-size:.72rem" onclick="delBlock(\''+esc(b.id)+'\')">🗑️</button></div>';
   }
@@ -603,6 +622,132 @@ async function delRow(id){
   if(!confirm('წავშალო რიგი "'+r0.name+'"?')) return;
   try{ var r=await sb.from('agro_rows').delete().eq('id',id).eq('user_id',uid); if(r.error){ alert('❌ '+r.error.message); return; } }catch(e){ alert('❌ '+(e.message||e)); return; }
   await loadStructure(); renderStruct();
+}
+
+// ══ STRUCTURE MAP: block/sector polygons (agro_blocks.geojson = {coords:[[lat,lng],...]}) ══
+function initStructMap(){
+  if(structMap){ try{ structMap.remove(); }catch(e){} structMap=null; }
+  if(!window.L) return;
+  var el=document.getElementById('structMap');
+  if(!el||el.offsetWidth===0||el.offsetHeight===0){ setTimeout(initStructMap,200); return; }
+  // center on the plantation if it has coords/center, else Georgia
+  var p=PLANTS.find(function(x){ return x.id===STRUCT_PL; })||{};
+  var sc=(Array.isArray(p.mapCenter)&&p.mapCenter.length===2)?p.mapCenter:[41.8,44.8];
+  structMap=L.map('structMap').setView(sc,(Array.isArray(p.mapCenter)&&p.mapCenter.length===2)?14:9);
+  baseTiles(structMap);
+  structMap.on('click',function(e){ if(structDraw.active) structAddVertex(e.latlng); });
+  renderStructPolys(true);
+  setTimeout(function(){ try{ structMap.invalidateSize(false); }catch(e){} },300);
+  setTimeout(function(){ try{ structMap.invalidateSize(false); }catch(e){} },700);
+}
+function renderStructPolys(fit){
+  if(!structMap||!window.L) return;
+  Object.keys(structPolys).forEach(function(k){ try{ structMap.removeLayer(structPolys[k]); }catch(e){} });
+  structPolys={};
+  if(structBoundary){ try{ structMap.removeLayer(structBoundary); }catch(e){} structBoundary=null; }
+  // plantation boundary (dashed) for context
+  var p=PLANTS.find(function(x){ return x.id===STRUCT_PL; })||{};
+  if(Array.isArray(p.mapCoords)&&p.mapCoords.length>=3){
+    try{ structBoundary=L.polygon(p.mapCoords,{color:'#e2e8f0',weight:2,dashArray:'6',fill:false}).addTo(structMap); }catch(e){}
+  }
+  var bs=BLOCKS.slice().sort(function(a,b){ return _natSort(a.name,b.name); });
+  var any=null;
+  bs.forEach(function(b,i){
+    if(b.geojson&&b.geojson.coords&&b.geojson.coords.length>=3){
+      var color=STRUCT_PAL[i%STRUCT_PAL.length];
+      var rs=rowsFor(b.id); var pl=rs.reduce(function(s,r){ return s+(+r.plant_count||0); },0);
+      var poly=L.polygon(b.geojson.coords,{color:color,weight:2.5,fillColor:color,fillOpacity:.16}).addTo(structMap);
+      try{ poly.bindTooltip('🟩 '+esc(b.name)+(b.variety?' · '+esc(b.variety):'')+' · '+rs.length+' რიგი · '+pl+' ნერგი'+(polyAreaHa(b.geojson.coords)>0?' · '+polyAreaHa(b.geojson.coords).toFixed(2)+' ჰა':''),{permanent:false}); }catch(e){}
+      poly.on('click',function(ev){ if(structDraw.active) return; try{ L.DomEvent.stop(ev); }catch(e){} });
+      structPolys[b.id]=poly; any=poly;
+    }
+  });
+  if(fit){
+    try{
+      var layers=Object.keys(structPolys).map(function(k){ return structPolys[k]; });
+      if(structBoundary) layers.push(structBoundary);
+      if(layers.length){ var grp=L.featureGroup(layers); var bb=grp.getBounds(); if(bb&&bb.isValid&&bb.isValid()) structMap.fitBounds(bb,{padding:[25,25],maxZoom:17}); }
+    }catch(e){}
+  }
+}
+function structDrawBarRender(){
+  var db=document.getElementById('structDrawBar');
+  if(!db) return;
+  if(structDraw.active){
+    var b=BLOCKS.find(function(x){ return x.id===structDraw.blockId; })||{};
+    db.style.display='flex';
+    db.innerHTML='<span style="font-size:.82rem;color:#059669;font-weight:700">🖊 '+esc(b.name||'')+' — '+structDraw.pts.length+' წერტ.</span>'+
+      '<button class="gray" onclick="structUndoVertex()">↩ ბოლო</button>'+
+      '<button class="gray" onclick="structClearDraw()">🗑 გასუფთ.</button>'+
+      '<button class="teal" onclick="structFinishDraw()">✓ დასრულება</button>'+
+      '<button class="r" onclick="structCancelDraw()">✕ გაუქმება</button>';
+  } else { db.style.display='none'; db.innerHTML=''; }
+}
+function _structCleanupDrawLayers(){
+  if(structMap){
+    structDraw.markers.forEach(function(m){ try{ structMap.removeLayer(m); }catch(e){} });
+    if(structDraw.poly){ try{ structMap.removeLayer(structDraw.poly); }catch(e){} }
+  }
+  structDraw.markers=[]; structDraw.poly=null;
+}
+function structStartDraw(bid){
+  if(!structMap){ alert('🗺️ რუკა ჯერ ვერ ჩაიტვირთა'); return; }
+  _structCleanupDrawLayers();
+  structDraw={active:true,blockId:bid,pts:[],markers:[],poly:null};
+  structDrawBarRender();
+  try{ document.getElementById('structMap').scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){}
+}
+function structAddVertex(ll){
+  if(!structDraw.active||!structMap) return;
+  var m=L.circleMarker(ll,{radius:5,color:'#fff',fillColor:'#22c55e',fillOpacity:1,weight:2}).addTo(structMap);
+  structDraw.markers.push(m); structDraw.pts.push(ll);
+  if(structDraw.poly){ try{ structMap.removeLayer(structDraw.poly); }catch(e){} }
+  if(structDraw.pts.length>=2){ structDraw.poly=L.polygon(structDraw.pts,{color:'#22c55e',weight:2,fillOpacity:.12,dashArray:'5'}).addTo(structMap); }
+  structDrawBarRender();
+}
+function structUndoVertex(){
+  if(!structDraw.active||!structDraw.pts.length) return;
+  structDraw.pts.pop();
+  var m=structDraw.markers.pop(); if(m){ try{ structMap.removeLayer(m); }catch(e){} }
+  if(structDraw.poly){ try{ structMap.removeLayer(structDraw.poly); }catch(e){} structDraw.poly=null; }
+  if(structDraw.pts.length>=2){ structDraw.poly=L.polygon(structDraw.pts,{color:'#22c55e',weight:2,fillOpacity:.12,dashArray:'5'}).addTo(structMap); }
+  structDrawBarRender();
+}
+function structClearDraw(){
+  _structCleanupDrawLayers(); structDraw.pts=[]; structDrawBarRender();
+}
+function structCancelDraw(){
+  _structCleanupDrawLayers(); structDraw={active:false,blockId:null,pts:[],markers:[],poly:null};
+  structDrawBarRender(); renderStructPolys(false);
+}
+async function structFinishDraw(){
+  if(!structDraw.active) return;
+  if(structDraw.pts.length<3){ alert('⚠️ მინიმუმ 3 წერტილი დასჭირდება'); return; }
+  var coords=structDraw.pts.map(function(p){ return [p.lat,p.lng]; });
+  var bid=structDraw.blockId;
+  var b=BLOCKS.find(function(x){ return x.id===bid; }); if(!b){ structCancelDraw(); return; }
+  var rec={ id:bid, name:b.name, variety:b.variety, note:b.note, geojson:{coords:coords} };
+  _structCleanupDrawLayers(); structDraw={active:false,blockId:null,pts:[],markers:[],poly:null};
+  structDrawBarRender();
+  try{ var r=await _upsertBlock(rec); if(r.error){ alert('❌ '+r.error.message); return; } }catch(e){ alert('❌ '+(e.message||e)); return; }
+  await loadStructure(); renderStruct(); renderStructPolys(true);
+}
+function structMapToggleFull(){
+  var el=document.getElementById('structMap'); if(!el) return;
+  var on=el.classList.toggle('plMap-full');
+  var btn=document.getElementById('structFullBtn'); if(btn) btn.textContent=on?'⤢ პატარა რუკა':'⛶ რუკა სრულ ეკრანზე';
+  var close=document.getElementById('structMapFullClose');
+  if(on){
+    if(!close){
+      close=document.createElement('button');
+      close.id='structMapFullClose'; close.type='button'; close.textContent='✕ დახურვა';
+      close.style.cssText='position:fixed;top:14px;right:14px;z-index:100001;background:#dc2626;color:#fff;border:none;border-radius:10px;padding:10px 16px;font:700 14px system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35)';
+      close.onclick=structMapToggleFull;
+      document.body.appendChild(close);
+    }
+  } else if(close){ close.remove(); }
+  setTimeout(function(){ try{ if(structMap) structMap.invalidateSize(false); }catch(e){} },120);
+  setTimeout(function(){ try{ if(structMap) structMap.invalidateSize(false); }catch(e){} },350);
 }
 
 // ══ MAP (Leaflet polygon editor — mirrors index.html) ══
