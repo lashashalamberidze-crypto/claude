@@ -1,0 +1,55 @@
+# ============================================================================
+# ramimpex.com.ge — ავტომატური deploy (GitHub → cPanel FTP)
+#
+# ატვირთავს მხოლოდ `ramimpex/` საქაღალდის შიგთავსს (მთავარი საიტი + /mitsodeba).
+#
+# ── დაყენება (ერთხელ) ──────────────────────────────────────────────────────
+# 1) cPanel → "FTP Accounts" → შექმენი FTP ანგარიში, რომლის Directory იქნება
+#    ramimpex.com.ge-ის დოკ-ფესვი (მაგ. public_html ან public_html/ramimpex.com.ge).
+# 2) GitHub → Settings → Secrets and variables → Actions → New repository secret:
+#      RAMIMPEX_FTP_SERVER    — მაგ. ftp.ramimpex.com.ge  (ან სერვერის ჰოსტი)
+#      RAMIMPEX_FTP_USERNAME  — ის FTP მომხმარებელი
+#      RAMIMPEX_FTP_PASSWORD  — იმ ანგარიშის პაროლი
+# 3) Actions ტაბი → "Deploy to ramimpex.com.ge" → "Run workflow" (ან push main-ში).
+#
+# შენიშვნა: თუ FTP ანგარიში ზუსტად დომენის დოკ-ფესვზეა scoped, server-dir: ./ სწორია.
+# თუ იყენებ მთავარ ანგარიშს home-იდან, შეცვალე server-dir domain-ის საქაღალდეზე.
+# ============================================================================
+name: Deploy to ramimpex.com.ge
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "ramimpex/**"
+      - ".github/workflows/deploy-ramimpex.yml"
+  workflow_dispatch: {}   # Actions ტაბში ხელით გაშვების ღილაკი (ნებისმიერი ბრანჩი)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: FTP deploy (ramimpex/ → site root)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.RAMIMPEX_FTP_SERVER }}
+          username: ${{ secrets.RAMIMPEX_FTP_USERNAME }}
+          password: ${{ secrets.RAMIMPEX_FTP_PASSWORD }}
+          # protocol: ftps → დაშიფრული (cPanel-ის უმეტესობა უჭერს მხარს).
+          # თუ ვერ დაუკავშირდა, შეცვალე: ftp
+          protocol: ftps
+          port: 21
+          # ატვირთვის წყარო — მხოლოდ ramimpex/ საქაღალდის შიგთავსი:
+          local-dir: ./ramimpex/
+          # სამიზნე დირექტორია სერვერზე (იხ. შენიშვნა ზემოთ):
+          server-dir: ./
+          # exclude — რაც სერვერზე არ უნდა წავიდეს:
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/README*
+            **/*.md
