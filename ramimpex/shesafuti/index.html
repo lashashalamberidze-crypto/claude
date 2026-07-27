@@ -52,15 +52,15 @@
   .catsec-h .num{width:42px;height:42px;flex-shrink:0;border-radius:12px;background:var(--grad);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:1.05rem}
   .catsec-h h3{font-size:1.28rem;font-weight:800}
   .catsec-h .cnt{color:var(--muted);font-size:.82rem;font-weight:600}
-  .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:20px}
+  .fgrid{display:grid;grid-template-columns:1fr;gap:16px}
   .fcard{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:.2s}
   .fcard:hover{box-shadow:0 16px 38px rgba(15,138,77,.11);border-color:var(--green-l);transform:translateY(-2px)}
-  .fmedia{display:flex;gap:10px;height:180px;background:radial-gradient(120% 120% at 30% 20%,#fbfdfb 0,#eef6f4 70%,#e6f1ef 100%);padding:12px}
+  .fmedia{display:flex;gap:14px;height:196px;justify-content:center;background:radial-gradient(120% 120% at 30% 20%,#fbfdfb 0,#eef6f4 70%,#e6f1ef 100%);padding:14px}
   .fmedia .rimg,.fmedia .dimg{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0}
-  .fmedia .rimg{flex:1.5}
-  .fmedia .dimg{flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 6px 5px;gap:5px}
-  .fmedia .render{max-width:100%;max-height:152px;object-fit:contain;cursor:zoom-in;filter:drop-shadow(0 10px 16px rgba(20,45,30,.16))}
-  .fmedia .diagram{max-width:100%;max-height:118px;object-fit:contain;cursor:zoom-in}
+  .fmedia .rimg{flex:0 1 430px}
+  .fmedia .dimg{flex:0 1 300px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 8px 5px;gap:5px}
+  .fmedia .render{max-width:100%;max-height:168px;object-fit:contain;cursor:zoom-in;filter:drop-shadow(0 10px 16px rgba(20,45,30,.16))}
+  .fmedia .diagram{max-width:100%;max-height:150px;object-fit:contain;cursor:zoom-in}
   .fmedia .dlabel{font-size:.62rem;font-weight:800;color:var(--green-d);letter-spacing:.3px}
   .fmedia .noimg{color:#a9b8ae;font-size:.82rem;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
   .fbody{padding:15px 17px 17px;display:flex;flex-direction:column;gap:9px;flex:1}
@@ -136,7 +136,7 @@
   footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
   footer .brand .nm{color:#fff;font-size:1.05rem}
   footer a{color:#8fd6a8}
-  @media(max-width:600px){.cat-controls{top:46px}.brand .tg{display:none}.back span{display:none}}
+  @media(max-width:600px){.cat-controls{top:46px}.brand .tg{display:none}.back span{display:none}.fmedia{height:auto;flex-direction:column;gap:8px}.fmedia .rimg,.fmedia .dimg{flex:none;width:100%}.fmedia .dimg{max-width:220px;align-self:center}}
 </style>
 </head>
 <body>
@@ -241,7 +241,7 @@
       });
       sizesHtml+='</tbody></table></div></div>';
     });
-    var openCls=filtering?' open':'';
+    var openCls=' open';
     var el=document.createElement('div');el.className='fcard'+openCls;
     el.innerHTML='<div class="fmedia">'+media+'</div><div class="fbody"><h4>'+esc(p.title||('კონსტრუქცია '+idx))+'</h4>'+(fef?'<div class="ffefco">'+fef+'</div>':'')+'<div class="fmeta"><span>'+shownCount+' ზომა</span>'+(tps.length?'<span>·</span><span>'+tps.map(function(t){return '<span class="tp" data-t="'+t+'">'+t+'</span>';}).join(' ')+'</span>':'')+'</div><button class="sizes-btn">📐 ზომები და შეკვეთა ('+shownCount+') <svg class="chev" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 6 4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="sizes">'+sizesHtml+'</div></div>';
     el.querySelector('.sizes-btn').addEventListener('click',function(){el.classList.toggle('open');});
