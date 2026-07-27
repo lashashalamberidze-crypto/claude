@@ -18,22 +18,22 @@
   a{color:inherit;text-decoration:none}
   .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
   header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-  .nav{display:flex;align-items:center;gap:14px;height:54px}
+  .nav{display:flex;align-items:center;gap:14px;height:46px}
   .brand{display:flex;align-items:center;gap:10px;margin-right:auto}
-  .brand img{width:34px;height:34px}
-  .brand .nm{font-weight:800;font-size:1.1rem;letter-spacing:.5px;line-height:1}
+  .brand img{width:28px;height:28px}
+  .brand .nm{font-weight:800;font-size:1rem;letter-spacing:.5px;line-height:1}
   .brand .tg{font-size:.58rem;letter-spacing:2px;color:var(--green);text-transform:uppercase;font-weight:700;margin-top:3px}
   .back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-weight:600;font-size:.9rem;padding:8px 12px;border-radius:10px}
   .back:hover{background:var(--bg);color:var(--ink)}
-  .cartbtn{position:relative;display:inline-flex;align-items:center;gap:8px;background:var(--grad);color:#fff;border:none;font:inherit;font-weight:700;font-size:.9rem;padding:9px 16px;border-radius:12px;cursor:pointer;box-shadow:0 6px 16px rgba(15,138,77,.28)}
+  .cartbtn{position:relative;display:inline-flex;align-items:center;gap:7px;background:var(--grad);color:#fff;border:none;font:inherit;font-weight:700;font-size:.85rem;padding:7px 13px;border-radius:10px;cursor:pointer;box-shadow:0 6px 16px rgba(15,138,77,.28)}
   .cartbtn .badge{background:#fff;color:var(--green-d);font-size:.72rem;font-weight:800;min-width:20px;height:20px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
   .pagehead{background:radial-gradient(900px 380px at 85% -20%,#e7f7ee 0,rgba(231,247,238,0) 60%),radial-gradient(700px 360px at 0 0,#e4f4fa 0,rgba(228,244,250,0) 55%);border-bottom:1px solid var(--line)}
-  .pagehead .wrap{padding:11px 20px 9px}
-  .crumb{font-size:.82rem;color:var(--muted);margin-bottom:10px}
+  .pagehead .wrap{padding:7px 20px 6px}
+  .crumb{font-size:.76rem;color:var(--muted);margin-bottom:3px}
   .crumb a:hover{color:var(--green-d)}
-  h1{font-size:clamp(1.2rem,2.4vw,1.55rem);font-weight:800;letter-spacing:-.3px}
+  h1{font-size:clamp(1.02rem,2vw,1.25rem);font-weight:800;letter-spacing:-.3px}
   .pagehead p{color:var(--muted);margin-top:3px;font-size:.82rem;max-width:640px}
-  .cat-controls{position:sticky;top:54px;z-index:20;background:var(--bg);padding:8px 0 7px;border-bottom:1px solid var(--line)}
+  .cat-controls{position:sticky;top:46px;z-index:20;background:var(--bg);padding:8px 0 7px;border-bottom:1px solid var(--line)}
   .searchbar{display:flex;gap:9px;align-items:center;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:8px 13px;box-shadow:0 2px 10px rgba(20,38,28,.04)}
   .searchbar:focus-within{border-color:var(--green-l)}
   .searchbar svg{stroke:var(--muted);flex-shrink:0}
@@ -43,8 +43,9 @@
   .chip:hover{border-color:var(--green-l);color:var(--ink)}
   .chip.on{background:var(--grad);color:#fff;border-color:transparent}
   .chip.tg{font-size:.78rem;padding:5px 10px}
-  #secChips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:3px;scrollbar-width:none;-ms-overflow-style:none}
-  #secChips::-webkit-scrollbar{display:none}
+  .filterrow{display:flex;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap}
+  .selbox{border:1.5px solid var(--line);border-radius:10px;padding:6px 10px;font:inherit;font-size:.83rem;font-weight:600;color:var(--ink);background:#fff;cursor:pointer;max-width:100%}
+  .selbox:focus{outline:none;border-color:var(--green-l)}
   .cat-meta{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 2px 14px;font-size:.82rem;color:var(--muted);flex-wrap:wrap}
   .catsec{margin-bottom:38px;scroll-margin-top:150px}
   .catsec-h{display:flex;align-items:center;gap:13px;margin-bottom:18px}
@@ -135,7 +136,7 @@
   footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
   footer .brand .nm{color:#fff;font-size:1.05rem}
   footer a{color:#8fd6a8}
-  @media(max-width:600px){.cat-controls{top:54px}.brand .tg{display:none}.back span{display:none}}
+  @media(max-width:600px){.cat-controls{top:46px}.brand .tg{display:none}.back span{display:none}}
 </style>
 </head>
 <body>
@@ -146,16 +147,14 @@
 </div></header>
 
 <div class="pagehead"><div class="wrap">
-  <div class="crumb"><a href="../">მთავარი</a> · მუყაოს ყუთები</div>
+  <div class="crumb"><a href="../">მთავარი</a> · კატალოგი</div>
   <h1>მუყაოს ყუთები</h1>
-  <p>ფოტო + FEFCO სქემა. მონიშნე „➕"-ით და გამოგზავნე შეკვეთა.</p>
 </div></div>
 
 <section class="wrap" style="padding-top:8px">
   <div class="cat-controls">
     <div class="searchbar"><svg width="20" height="20" fill="none" stroke-width="2"><circle cx="9" cy="9" r="7"/><path d="m20 20-4-4" stroke-linecap="round"/></svg><input id="q" type="search" placeholder="ძებნა: შტამპის ნომერი ან ზომა… (მაგ. PL-0651 ან 395*295)" autocomplete="off"></div>
-    <div class="chips" id="secChips"></div>
-    <div class="chips" id="typeChips"></div>
+    <div class="filterrow"><select id="secSelect" class="selbox" aria-label="კატეგორია"></select><div class="chips" id="typeChips"></div></div>
   </div>
   <div class="cat-meta"><span id="resCount"></span><span>მუყაოს ტიპი: <b>B</b> · <b>E</b> · <b>C</b> · <b>CE</b> · <b>BC</b></span></div>
   <div id="catBody"></div>
@@ -206,10 +205,10 @@
   var TYPES=['B','E','C','CE','BC'];
   var cart={}; // key=stamp -> {s,d,t,title,qty}
 
-  var secChips=document.getElementById('secChips'),typeChips=document.getElementById('typeChips');
+  var secSelect=document.getElementById('secSelect'),typeChips=document.getElementById('typeChips');
   function shortTitle(t){return t.replace('შესაფუთი ','');}
-  function buildSecChips(){secChips.innerHTML='';function mk(id,label){var b=document.createElement('button');b.className='chip'+(state.sec===id?' on':'');b.textContent=label;b.onclick=function(){state.sec=id;syncSec();render();};return b;}secChips.appendChild(mk(0,'ყველა'));DATA.forEach(function(s){secChips.appendChild(mk(s.id,s.id+'. '+shortTitle(s.title)));});}
-  function syncSec(){Array.prototype.forEach.call(secChips.children,function(c,i){c.classList.toggle('on',i===state.sec);});}
+  function buildSecSelect(){secSelect.innerHTML='';var o=document.createElement('option');o.value='0';o.textContent='ყველა კატეგორია';secSelect.appendChild(o);DATA.forEach(function(s){var op=document.createElement('option');op.value=String(s.id);op.textContent=s.id+'. '+shortTitle(s.title);secSelect.appendChild(op);});secSelect.value=String(state.sec);}
+  secSelect.addEventListener('change',function(){state.sec=parseInt(this.value)||0;render();});
   function buildTypeChips(){typeChips.innerHTML='';var lab=document.createElement('span');lab.className='chip tg';lab.style.cssText='border:none;background:none;color:#5c6b62;cursor:default';lab.textContent='ტიპი:';typeChips.appendChild(lab);TYPES.forEach(function(t){var b=document.createElement('button');b.className='chip tg'+(state.types[t]?' on':'');b.textContent=t;b.onclick=function(){state.types[t]=!state.types[t];render();};typeChips.appendChild(b);});}
   document.getElementById('q').addEventListener('input',function(e){state.q=e.target.value.trim().toLowerCase();render();});
 
@@ -319,7 +318,7 @@
     window.location.href='mailto:'+EMAIL+'?subject='+encodeURIComponent('შეკვეთა — '+name+' ('+keys.length+' პოზ.)')+'&body='+encodeURIComponent(body);
   });
 
-  buildSecChips();buildTypeChips();render();updateCart();
+  buildSecSelect();buildTypeChips();render();updateCart();
 })();
 </script>
 </body>
