@@ -40,7 +40,7 @@
   .plrow .acts button{width:auto;margin:0;padding:5px 9px;font-size:.72rem}
   .badge{font-size:.65rem;font-weight:700;color:#059669;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);border-radius:20px;padding:3px 9px}
   /* map */
-  #plMap{height:clamp(360px,60vh,620px);border-radius:12px;overflow:hidden;margin-bottom:10px;border:1px solid #0f2845;background:#e2e8f0}
+  #plMap{height:clamp(480px,74vh,900px);border-radius:12px;overflow:hidden;margin-bottom:10px;border:1px solid #0f2845;background:#e2e8f0}
   #plMap.plMap-full{position:fixed !important;inset:0 !important;width:100vw !important;height:100vh !important;height:100dvh !important;z-index:100000 !important;border-radius:0 !important;margin:0 !important}
   .pl-vertex-ic{background:transparent;border:none}
   .maparea{color:#059669;font-weight:700;font-family:'Space Mono',ui-monospace,monospace}
@@ -80,7 +80,7 @@
     </div>
     <div class="card">
       <h2>🗺 რუკა</h2>
-      <div id="listMap" style="height:clamp(280px,42vh,460px);border-radius:12px;overflow:hidden;border:1px solid #0f2845;background:#e2e8f0"></div>
+      <div id="listMap" style="height:clamp(420px,62vh,760px);border-radius:12px;overflow:hidden;border:1px solid #0f2845;background:#e2e8f0"></div>
     </div>
   </div>
 
@@ -120,12 +120,12 @@
 
       <div class="steplabel">3 · კონტური რუკაზე (სურვილისამებრ)</div>
       <div class="hint">🖊 დააკლიკე რუკაზე კუთხეების დასამატებლად · 🟢 წერტილი გადაათრიე გადასაადგილებლად · დააჭირე წერტილს წასაშლელად · ორმაგი კლიკი — სრული გასუფთავება</div>
+      <button type="button" id="plFullBtn" class="teal" style="font-size:1rem;padding:13px" onclick="plMapToggleFull()">⛶ რუკა სრულ ეკრანზე</button>
       <div id="plMap"></div>
       <div style="font-size:.8rem;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <span class="muted">📐 ფართობი:</span><span id="plArea" class="maparea">—</span>
       </div>
       <div class="toolrow">
-        <button type="button" id="plFullBtn" class="sec" onclick="plMapToggleFull()">⛶ სრულ ეკრანზე</button>
         <button type="button" class="gray" onclick="window._plMapEdit&&window._plMapEdit.undo()">↩ ბოლო წერტილი</button>
         <button type="button" class="r" onclick="window._plMapEdit&&window._plMapEdit.clear()">🗑 გასუფთავება</button>
       </div>
@@ -136,6 +136,28 @@
       </div>
       <div class="muted" style="text-align:center;margin-top:8px">ფართობის გარეშე შენახვაც შესაძლებელია</div>
       <div id="saveMsg" class="err"></div>
+    </div>
+  </div>
+
+  <!-- ══ STRUCTURE VIEW (blocks/sectors + rows) ══ -->
+  <div id="viewStruct" style="display:none">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <h2 style="margin:0">🧱 სტრუქტურა — <span id="structPlName" style="color:#059669"></span></h2>
+        <button class="gray" style="width:auto;padding:8px 14px;margin:0" onclick="showList()">← სია</button>
+      </div>
+      <div class="muted" id="structTotals" style="margin-top:6px"></div>
+
+      <div class="steplabel">➕ ახალი ბლოკი / სექტორი</div>
+      <div class="row2">
+        <div><label>ბლოკის სახელი *</label><input type="text" id="blkName" placeholder="მაგ. ბლოკი A"></div>
+        <div><label>ჯიში / ვარიეტეტი</label><input type="text" id="blkVariety" placeholder="სურვ."></div>
+      </div>
+      <div><label>შენიშვნა</label><input type="text" id="blkNote" placeholder="დამატ. ინფო"></div>
+      <button class="teal" onclick="addBlock()">➕ ბლოკის დამატება</button>
+      <div id="blkMsg" class="err"></div>
+
+      <div id="structList" style="margin-top:14px"></div>
     </div>
   </div>
 </div>
@@ -318,6 +340,7 @@ async function loadPlantations(){
 function showList(){
   document.getElementById('viewList').style.display='block';
   document.getElementById('viewEdit').style.display='none';
+  document.getElementById('viewStruct').style.display='none';
   if(plMap){ try{ plMap.remove(); }catch(e){} plMap=null; }
   var el=document.getElementById('listItems');
   var activeId=window._activePl;
@@ -332,6 +355,7 @@ function showList(){
         '<div class="meta">'+esc(p.culture||'')+(p.region?' · '+esc(p.region):'')+(p.area>0?' · '+(+p.area).toFixed(2)+' ha':'')+'</div></div>'+
         '<div class="acts">'+
           (isActive?'<span class="badge">✓ აქტიური</span>':'<button class="sec" onclick="setActive(\''+esc(p.id)+'\')">გააქტიურება</button>')+
+          '<button class="teal" onclick="openStruct(\''+esc(p.id)+'\')">🧱</button>'+
           '<button class="gray" onclick="edit(\''+esc(p.id)+'\')">✏️</button>'+
           '<button class="r" onclick="del(\''+esc(p.id)+'\')">🗑️</button>'+
         '</div></div>';
@@ -353,6 +377,7 @@ function edit(id){
 }
 function startEdit(){
   document.getElementById('viewList').style.display='none';
+  document.getElementById('viewStruct').style.display='none';
   document.getElementById('viewEdit').style.display='block';
   document.getElementById('editTitle').textContent=editId?'✏️ რედაქტირება':'➕ ახალი პლანტაცია';
   document.getElementById('saveMsg').textContent='';
@@ -427,6 +452,157 @@ async function del(id){
   if(window._activePl===id){ window._activePl=''; saveSetting('its_active_pl',''); }
   await loadPlantations();
   showList();
+}
+
+// ══ STRUCTURE: ბლოკები/სექტორები + რიგები (agro_blocks / agro_rows) ══
+// agro_blocks columns: id, user_id, name, variety, note, plantation_id, geojson
+// agro_rows   columns: id, user_id, block_id, name, variety, plant_count
+let STRUCT_PL=null, BLOCKS=[], ROWS=[], editBlockId=null, editRowId=null;
+
+function _natSort(a,b){ return String(a==null?'':a).localeCompare(String(b==null?'':b),undefined,{numeric:true,sensitivity:'base'}); }
+
+async function openStruct(plId){
+  var p=PLANTS.find(function(x){ return x.id===plId; });
+  if(!p) return;
+  STRUCT_PL=plId; editBlockId=null; editRowId=null;
+  document.getElementById('viewList').style.display='none';
+  document.getElementById('viewEdit').style.display='none';
+  document.getElementById('viewStruct').style.display='block';
+  document.getElementById('structPlName').textContent=(p.cultureIcon||'🌱')+' '+p.name;
+  document.getElementById('blkMsg').textContent='';
+  document.getElementById('blkName').value='';
+  document.getElementById('blkVariety').value='';
+  document.getElementById('blkNote').value='';
+  document.getElementById('structList').innerHTML='<div class="muted">იტვირთება…</div>';
+  await loadStructure();
+  renderStruct();
+}
+
+async function loadStructure(){
+  BLOCKS=[]; ROWS=[];
+  if(!sb||!uid||!STRUCT_PL) return;
+  try{
+    var rb=await sb.from('agro_blocks').select('*').eq('user_id',uid).eq('plantation_id',STRUCT_PL);
+    if(!rb.error && rb.data) BLOCKS=rb.data;
+  }catch(e){ console.warn('loadStructure blocks',e); }
+  var ids=BLOCKS.map(function(b){ return b.id; });
+  if(ids.length){
+    try{
+      var rr=await sb.from('agro_rows').select('*').eq('user_id',uid).in('block_id',ids).range(0,9999);
+      if(!rr.error && rr.data) ROWS=rr.data;
+    }catch(e){ console.warn('loadStructure rows',e); }
+  }
+}
+
+function rowsFor(bid){ return ROWS.filter(function(r){ return r.block_id===bid; }).sort(function(a,b){ return _natSort(a.name,b.name); }); }
+
+function renderStruct(){
+  var bs=BLOCKS.slice().sort(function(a,b){ return _natSort(a.name,b.name); });
+  var totPlants=0; ROWS.forEach(function(r){ totPlants+=(+r.plant_count||0); });
+  document.getElementById('structTotals').textContent='📦 '+bs.length+' ბლოკი · 🌿 '+ROWS.length+' რიგი · 🌱 '+totPlants+' ნერგი';
+  var el=document.getElementById('structList');
+  if(!bs.length){ el.innerHTML='<div class="muted" style="text-align:center;padding:18px 0">ბლოკი არ არის დამატებული.</div>'; return; }
+  el.innerHTML=bs.map(function(b){ return renderBlock(b); }).join('');
+}
+
+function renderBlock(b){
+  var rows=rowsFor(b.id);
+  var rowPlants=0; rows.forEach(function(r){ rowPlants+=(+r.plant_count||0); });
+  var h='<div style="border:1.5px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:12px;background:#fff">';
+  if(editBlockId===b.id){
+    h+='<div class="row2"><div><label>ბლოკის სახელი</label><input type="text" id="ebName" value="'+esc(b.name||'')+'"></div>'+
+       '<div><label>ჯიში</label><input type="text" id="ebVariety" value="'+esc(b.variety||'')+'"></div></div>'+
+       '<div><label>შენიშვნა</label><input type="text" id="ebNote" value="'+esc(b.note||'')+'"></div>'+
+       '<div class="row2" style="margin-top:6px"><button class="teal" onclick="saveBlockEdit(\''+esc(b.id)+'\')">💾 შენახვა</button>'+
+       '<button class="gray" onclick="editBlockId=null;renderStruct()">გაუქმება</button></div>';
+  } else {
+    h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
+       '<div style="flex:1;min-width:0"><div style="font-weight:700">🟩 '+esc(b.name||'')+(b.variety?' <span class="muted" style="font-weight:400">· '+esc(b.variety)+'</span>':'')+'</div>'+
+       '<div class="muted" style="font-size:.72rem">'+rows.length+' რიგი · '+rowPlants+' ნერგი'+(b.note?' · '+esc(b.note):'')+'</div></div>'+
+       '<button class="gray" style="width:auto;margin:0;padding:5px 9px;font-size:.72rem" onclick="editBlock(\''+esc(b.id)+'\')">✏️</button>'+
+       '<button class="r" style="width:auto;margin:0;padding:5px 9px;font-size:.72rem" onclick="delBlock(\''+esc(b.id)+'\')">🗑️</button></div>';
+  }
+  // rows
+  h+='<div style="margin-top:9px;padding-left:6px">';
+  rows.forEach(function(r){
+    if(editRowId===r.id){
+      h+='<div style="border:1px solid #e2e8f0;border-radius:9px;padding:8px;margin-top:6px;background:#f8fafc">'+
+         '<div class="row2"><div><label>რიგი №/სახელი</label><input type="text" id="erName" value="'+esc(r.name||'')+'"></div>'+
+         '<div><label>ჯიში</label><input type="text" id="erVariety" value="'+esc(r.variety||'')+'"></div>'+
+         '<div><label>ნერგები</label><input type="number" id="erPlants" value="'+(+r.plant_count||0)+'" min="0"></div></div>'+
+         '<div class="row2" style="margin-top:6px"><button class="teal" onclick="saveRowEdit(\''+esc(r.id)+'\')">💾</button>'+
+         '<button class="gray" onclick="editRowId=null;renderStruct()">გაუქმება</button></div></div>';
+    } else {
+      h+='<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #f1f5f9">'+
+         '<span style="flex:1;font-size:.84rem">🌿 '+esc(r.name||'')+(r.variety?' <span class="muted">· '+esc(r.variety)+'</span>':'')+' <span class="muted">· '+(+r.plant_count||0)+' ნერგი</span></span>'+
+         '<button class="gray" style="width:auto;margin:0;padding:3px 8px;font-size:.7rem" onclick="editRow(\''+esc(r.id)+'\')">✏️</button>'+
+         '<button class="r" style="width:auto;margin:0;padding:3px 8px;font-size:.7rem" onclick="delRow(\''+esc(r.id)+'\')">🗑️</button></div>';
+    }
+  });
+  // add-row inline
+  h+='<div class="row2" style="margin-top:8px">'+
+     '<input type="text" id="nr_'+esc(b.id)+'_name" placeholder="რიგი № (მაგ. 1)" style="padding:8px">'+
+     '<input type="text" id="nr_'+esc(b.id)+'_var" placeholder="ჯიში (სურვ.)" style="padding:8px">'+
+     '<input type="number" id="nr_'+esc(b.id)+'_pl" placeholder="ნერგები" min="0" style="padding:8px">'+
+     '</div><button class="sec" style="margin-top:6px" onclick="addRow(\''+esc(b.id)+'\')">➕ რიგის დამატება</button>';
+  h+='</div></div>';
+  return h;
+}
+
+async function _upsertBlock(rec){
+  return sb.from('agro_blocks').upsert({ id:rec.id, user_id:uid, name:rec.name, variety:rec.variety||null, note:rec.note||null, plantation_id:STRUCT_PL, geojson:rec.geojson||null });
+}
+async function _upsertRow(rec){
+  return sb.from('agro_rows').upsert({ id:rec.id, user_id:uid, block_id:rec.block_id, name:rec.name, variety:rec.variety||null, plant_count:rec.plant_count||0 });
+}
+
+async function addBlock(){
+  var msg=document.getElementById('blkMsg'); msg.textContent='';
+  var name=document.getElementById('blkName').value.trim();
+  if(!name){ msg.textContent='❌ შეიყვანე ბლოკის სახელი'; return; }
+  var rec={ id:_uuid(), name:name, variety:document.getElementById('blkVariety').value.trim(), note:document.getElementById('blkNote').value.trim(), geojson:null };
+  try{ var r=await _upsertBlock(rec); if(r.error){ msg.textContent='❌ '+r.error.message; return; } }catch(e){ msg.textContent='❌ '+(e.message||e); return; }
+  document.getElementById('blkName').value=''; document.getElementById('blkVariety').value=''; document.getElementById('blkNote').value='';
+  await loadStructure(); renderStruct();
+}
+function editBlock(id){ editBlockId=id; editRowId=null; renderStruct(); }
+async function saveBlockEdit(id){
+  var b=BLOCKS.find(function(x){ return x.id===id; }); if(!b) return;
+  var rec={ id:id, name:document.getElementById('ebName').value.trim()||b.name, variety:document.getElementById('ebVariety').value.trim(), note:document.getElementById('ebNote').value.trim(), geojson:b.geojson||null };
+  try{ var r=await _upsertBlock(rec); if(r.error){ alert('❌ '+r.error.message); return; } }catch(e){ alert('❌ '+(e.message||e)); return; }
+  editBlockId=null; await loadStructure(); renderStruct();
+}
+async function delBlock(id){
+  var b=BLOCKS.find(function(x){ return x.id===id; }); if(!b) return;
+  if(!confirm('წავშალო ბლოკი "'+b.name+'" და მისი ყველა რიგი?')) return;
+  try{
+    await sb.from('agro_rows').delete().eq('user_id',uid).eq('block_id',id);
+    var r=await sb.from('agro_blocks').delete().eq('id',id).eq('user_id',uid);
+    if(r.error){ alert('❌ '+r.error.message); return; }
+  }catch(e){ alert('❌ '+(e.message||e)); return; }
+  if(editBlockId===id) editBlockId=null;
+  await loadStructure(); renderStruct();
+}
+
+async function addRow(bid){
+  var name=(document.getElementById('nr_'+bid+'_name').value||'').trim();
+  if(!name){ alert('⚠️ შეიყვანე რიგის სახელი/ნომერი'); return; }
+  var rec={ id:_uuid(), block_id:bid, name:name, variety:(document.getElementById('nr_'+bid+'_var').value||'').trim(), plant_count:Math.max(0,Math.round(+document.getElementById('nr_'+bid+'_pl').value||0)) };
+  try{ var r=await _upsertRow(rec); if(r.error){ alert('❌ '+r.error.message); return; } }catch(e){ alert('❌ '+(e.message||e)); return; }
+  await loadStructure(); renderStruct();
+}
+function editRow(id){ editRowId=id; editBlockId=null; renderStruct(); }
+async function saveRowEdit(id){
+  var r0=ROWS.find(function(x){ return x.id===id; }); if(!r0) return;
+  var rec={ id:id, block_id:r0.block_id, name:document.getElementById('erName').value.trim()||r0.name, variety:document.getElementById('erVariety').value.trim(), plant_count:Math.max(0,Math.round(+document.getElementById('erPlants').value||0)) };
+  try{ var r=await _upsertRow(rec); if(r.error){ alert('❌ '+r.error.message); return; } }catch(e){ alert('❌ '+(e.message||e)); return; }
+  editRowId=null; await loadStructure(); renderStruct();
+}
+async function delRow(id){
+  var r0=ROWS.find(function(x){ return x.id===id; }); if(!r0) return;
+  if(!confirm('წავშალო რიგი "'+r0.name+'"?')) return;
+  try{ var r=await sb.from('agro_rows').delete().eq('id',id).eq('user_id',uid); if(r.error){ alert('❌ '+r.error.message); return; } }catch(e){ alert('❌ '+(e.message||e)); return; }
+  await loadStructure(); renderStruct();
 }
 
 // ══ MAP (Leaflet polygon editor — mirrors index.html) ══
