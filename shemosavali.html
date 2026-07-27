@@ -215,7 +215,7 @@ const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI
 const _AI_PROXY = SB_URL + '/functions/v1/ai-proxy';
 
 let sb=null, uid=null, activeTab='income';
-let SALES=[], PURCH=[], EXPS=[], PAYROLL=[];   // ღრუბლიდან ჩატვირთული (cloud-first)
+let SALES=[], PURCH=[], EXPS=[], PAYROLL=[], PREP=[], STAFF=[];   // ღრუბლიდან ჩატვირთული (cloud-first)
 let expFilter={from:'', to:''};
 
 function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
@@ -266,12 +266,16 @@ async function loadAll(){
       sb.from('gv_sales').select('*').eq('user_id',uid).order('date',{ascending:false}),
       sb.from('gv_purchases').select('*').eq('user_id',uid).order('date',{ascending:false}),
       sb.from('agro_expenses').select('*').eq('user_id',uid),
-      sb.from('krepa_payroll').select('*').eq('user_id',uid)
+      sb.from('krepa_payroll').select('*').eq('user_id',uid),       // მკრეფავების ანაზღაურება (picker payroll)
+      sb.from('agro_prep_purchases').select('total').eq('user_id',uid),  // პრეპარატების შესყიდვები
+      sb.from('agro_payroll').select('amount').eq('user_id',uid)    // პერსონალის ხელფასი (distinct from krepa_payroll)
     ]);
     SALES   = Array.isArray(res[0].data)?res[0].data:[];
     PURCH   = Array.isArray(res[1].data)?res[1].data:[];
     EXPS    = (Array.isArray(res[2].data)?res[2].data:[]).map(function(r){ return { id:r.id, date:r.date, category:r.category, crop:r.crop||'', amount:num(r.amount), note:r.note||'', doc:r.doc||null, created_at:r.created_at?new Date(r.created_at).getTime():Date.now() }; });
     PAYROLL = Array.isArray(res[3].data)?res[3].data:[];
+    PREP    = Array.isArray(res[4].data)?res[4].data:[];
+    STAFF   = Array.isArray(res[5].data)?res[5].data:[];
     // ქეშირება localStorage-ში — index-ის იგივე გასაღებებით (origin თავსებადი)
     try{ writeLS(nsKey('its_gv_sales'), SALES); writeLS(nsKey('its_gv_purchases'), PURCH); writeLS(nsKey('its_expenses'), EXPS); }catch(e){}
   }catch(e){ console.warn('loadAll', e); toast('⚠️ ღრუბლიდან ჩატვირთვის შეცდომა'); }
@@ -314,10 +318,10 @@ function krepaPaidTotal(){
   });
   return Math.round(s*100)/100;
 }
-// პრეპარატები — its_prepstore_purchases (localStorage, index-ის shPrepSpent fallback)
-function prepSpent(){ return Math.round(readLS(nsKey('its_prepstore_purchases')).reduce(function(s,x){ return s+(+x.total||0); },0)*100)/100; }
-// პერსონალის ხელფასი — its_personnel_pay (localStorage, index-ის shStaffPaidTotal)
-function staffPaidTotal(){ return Math.round(readLS(nsKey('its_personnel_pay')).reduce(function(s,p){ return s+(+p.amount||0); },0)*100)/100; }
+// პრეპარატები — ღრუბლის ცხრილი agro_prep_purchases (Σ total)
+function prepSpent(){ return Math.round((PREP||[]).reduce(function(s,x){ return s+(+x.total||0); },0)*100)/100; }
+// პერსონალის ხელფასი — ღრუბლის ცხრილი agro_payroll (Σ amount) — krepa_payroll-ისგან განსხვავებული
+function staffPaidTotal(){ return Math.round((STAFF||[]).reduce(function(s,p){ return s+(+p.amount||0); },0)*100)/100; }
 
 // ხარჯების ჩაშლა — index-ის shExpenseBreakdown-ის ზუსტი ლოგიკა
 function expenseBreakdown(){
