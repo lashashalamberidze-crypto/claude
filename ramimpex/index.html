@@ -243,6 +243,7 @@
 <script>
 (function(){
   var DATA = JSON.parse(document.getElementById('catalog-data').textContent);
+  window.imgFail=function(img){if(img.classList.contains('diagram')){var l=img.previousElementSibling;if(l&&l.classList.contains('dlabel'))l.remove();img.remove();return;}var d=document.createElement('div');d.className='noimg';d.innerHTML='<svg width="40" height="40" fill="none" stroke="#a9b8ae" stroke-width="1.5"><rect x="4" y="7" width="32" height="26" rx="2"/><path d="M4 8l16 11L36 8"/></svg>ფოტო მალე';img.replaceWith(d);};
   var totalProducts=0;
   DATA.forEach(function(s){s.pages.forEach(function(p){p.groups.forEach(function(g){totalProducts+=g.rows.length;});});});
   document.getElementById('st-prod').textContent=totalProducts+'+';
@@ -295,9 +296,9 @@
     if(!filtering){fefcos=[];p.groups.forEach(function(g){if(g.fefco&&fefcos.indexOf(g.fefco)<0)fefcos.push(g.fefco);});}
     var totalRows=0;p.groups.forEach(function(g){totalRows+=g.rows.length;});
     var media='';
-    if(p.img&&p.img.r){media+='<img class="render" loading="lazy" src="'+p.img.r+'" alt="'+esc(p.title)+'" data-cap="'+esc(p.title)+'">';}
+    if(p.img&&p.img.r){media+='<img class="render" loading="lazy" onerror="imgFail(this)" src="'+p.img.r+'" alt="'+esc(p.title)+'" data-cap="'+esc(p.title)+'">';}
     else{media+='<div class="noimg"><svg width="40" height="40" fill="none" stroke="#a9b8ae" stroke-width="1.5"><rect x="4" y="7" width="32" height="26" rx="2"/><path d="M4 8l16 11L36 8"/></svg>ფოტო მალე</div>';}
-    if(p.img&&p.img.d){media+='<span class="dlabel">FEFCO სქემა</span><img class="diagram" loading="lazy" src="'+p.img.d+'" alt="FEFCO სქემა" data-cap="'+esc(p.title)+' — FEFCO სქემა">';}
+    if(p.img&&p.img.d){media+='<span class="dlabel">FEFCO სქემა</span><img class="diagram" loading="lazy" onerror="imgFail(this)" src="'+p.img.d+'" alt="FEFCO სქემა" data-cap="'+esc(p.title)+' — FEFCO სქემა">';}
     var fef=fefcos.map(function(f){return '<span>'+esc(f)+'</span>';}).join('');
     var tps=Object.keys(typeset).length?Object.keys(typeset):[];
     var shownCount = filtering?rowCount:totalRows;
