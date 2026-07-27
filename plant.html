@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌱 ჩემი პლანტაცია</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:760px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.95rem;margin:0 0 8px;color:#334155}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff;color:#0f172a}
+  input:focus,select:focus{outline:none;border-color:#059669}
+  button{background:#059669;color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:#059669;border:1.5px solid #059669}
+  button.teal{background:#0d9488}button.o{background:#ea580c}button.r{background:#dc2626}
+  button.gray{background:#fff;color:#475569;border:1.5px solid #cbd5e1}
+  button:active{transform:scale(.98)}
+  .row2{display:flex;gap:8px;flex-wrap:wrap}.row2>*{flex:1;min-width:140px}
+  .muted{font-size:.8rem;color:#64748b}
+  .ok{color:#16a34a;font-weight:700}.warn{color:#dc2626;font-weight:700}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+  /* culture grid */
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:9px;margin-bottom:6px}
+  .cult{border:1.5px solid #cbd5e1;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;background:#fff;transition:all .15s;user-select:none}
+  .cult:hover{border-color:#059669}
+  .cult.selected{border-color:#059669;background:#ecfdf5;box-shadow:0 0 0 2px rgba(5,150,105,.15)}
+  .cult .ic{font-size:1.6rem;line-height:1}
+  .cult small{display:block;font-size:.74rem;color:#475569;margin-top:5px;font-weight:600}
+  /* list */
+  .plrow{display:flex;align-items:center;gap:11px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 14px;margin-top:9px}
+  .plrow.active{border-color:rgba(16,185,129,.5);background:#ecfdf5}
+  .plrow .ic{font-size:1.5rem}
+  .plrow .nm{font-size:.9rem;font-weight:700;color:#0f172a}
+  .plrow .meta{font-size:.74rem;color:#64748b;margin-top:1px}
+  .plrow .acts{display:flex;gap:6px;margin-left:auto;align-items:center}
+  .plrow .acts button{width:auto;margin:0;padding:5px 9px;font-size:.72rem}
+  .badge{font-size:.65rem;font-weight:700;color:#059669;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);border-radius:20px;padding:3px 9px}
+  /* map */
+  #plMap{height:clamp(360px,60vh,620px);border-radius:12px;overflow:hidden;margin-bottom:10px;border:1px solid #0f2845;background:#e2e8f0}
+  #plMap.plMap-full{position:fixed !important;inset:0 !important;width:100vw !important;height:100vh !important;height:100dvh !important;z-index:100000 !important;border-radius:0 !important;margin:0 !important}
+  .pl-vertex-ic{background:transparent;border:none}
+  .maparea{color:#059669;font-weight:700;font-family:'Space Mono',ui-monospace,monospace}
+  .toolrow{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .toolrow button{flex:1;min-width:120px;margin:0;font-size:.8rem;padding:9px 12px}
+  .hint{font-size:.75rem;color:#1e4a7a;background:rgba(14,165,233,.06);border:1px solid rgba(14,165,233,.14);border-radius:9px;padding:10px 13px;margin-bottom:12px;line-height:1.5}
+  .steplabel{font-size:.72rem;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin:14px 0 8px;font-weight:700}
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>🌱 ჩემი პლანტაცია — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <h1>🌱 ჩემი პლანტაცია <span style="font-size:.6rem;background:#059669;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v1</span></h1>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#059669">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <!-- ══ LIST VIEW ══ -->
+  <div id="viewList">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <h2 style="margin:0">📋 ჩემი პლანტაციები</h2>
+        <button class="teal" style="width:auto;padding:8px 14px;margin:0" onclick="startNew()">➕ ახალი</button>
+      </div>
+      <div id="listItems"><div class="muted" style="padding:16px 0">იტვირთება…</div></div>
+    </div>
+    <div class="card">
+      <h2>🗺 რუკა</h2>
+      <div id="listMap" style="height:clamp(280px,42vh,460px);border-radius:12px;overflow:hidden;border:1px solid #0f2845;background:#e2e8f0"></div>
+    </div>
+  </div>
+
+  <!-- ══ EDIT VIEW ══ -->
+  <div id="viewEdit" style="display:none">
+    <div class="card">
+      <h2 id="editTitle">➕ ახალი პლანტაცია</h2>
+
+      <div class="steplabel">1 · კულტურა</div>
+      <div class="cgrid" id="cultGrid"></div>
+      <div id="custWrap" style="display:none">
+        <label>კულტურის სახელი</label>
+        <input type="text" id="plCustInput" placeholder="შეიყვანეთ კულტურა" oninput="onCustomCulture(this)">
+      </div>
+
+      <div class="steplabel">2 · ინფორმაცია</div>
+      <div class="row2">
+        <div><label>პლანტაციის სახელი *</label><input type="text" id="plName" placeholder="ჩემი პლანტაცია N1"></div>
+        <div><label>მფლობელი *</label><input type="text" id="plOwner" placeholder="სახელი გვარი"></div>
+      </div>
+      <div class="row2">
+        <div><label>რეგიონი</label>
+          <select id="plRegion" onchange="onRegionChange(this.value)"><option value="">— აირჩიეთ —</option></select>
+        </div>
+        <div><label>მუნიციპალიტეტი</label>
+          <select id="plMunic" onchange="onMunicChange()" disabled><option value="">— ჯერ რეგიონი —</option></select>
+        </div>
+      </div>
+      <div class="row2">
+        <div><label>სოფელი / დასახლება</label><input type="text" id="plVillage" placeholder="სოფლის სახელი" oninput="onVillageInput()"></div>
+        <div><label>დარგვის წელი</label><input type="number" id="plYear" placeholder="2020" min="1950" max="2035"></div>
+      </div>
+      <div class="row2">
+        <div><label>ნარგავების რ-ბა</label><input type="number" id="plPlants" placeholder="1500" min="1"></div>
+        <div><label>შენიშვნა</label><input type="text" id="plNote" placeholder="დამატ. ინფო"></div>
+      </div>
+
+      <div class="steplabel">3 · კონტური რუკაზე (სურვილისამებრ)</div>
+      <div class="hint">🖊 დააკლიკე რუკაზე კუთხეების დასამატებლად · 🟢 წერტილი გადაათრიე გადასაადგილებლად · დააჭირე წერტილს წასაშლელად · ორმაგი კლიკი — სრული გასუფთავება</div>
+      <div id="plMap"></div>
+      <div style="font-size:.8rem;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <span class="muted">📐 ფართობი:</span><span id="plArea" class="maparea">—</span>
+      </div>
+      <div class="toolrow">
+        <button type="button" id="plFullBtn" class="sec" onclick="plMapToggleFull()">⛶ სრულ ეკრანზე</button>
+        <button type="button" class="gray" onclick="window._plMapEdit&&window._plMapEdit.undo()">↩ ბოლო წერტილი</button>
+        <button type="button" class="r" onclick="window._plMapEdit&&window._plMapEdit.clear()">🗑 გასუფთავება</button>
+      </div>
+
+      <div class="row2" style="margin-top:6px">
+        <button class="gray" onclick="showList()">← უკან</button>
+        <button class="teal" onclick="save()">💾 შენახვა</button>
+      </div>
+      <div class="muted" style="text-align:center;margin-top:8px">ფართობის გარეშე შენახვაც შესაძლებელია</div>
+      <div id="saveMsg" class="err"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+let sb=null, uid=null, PLANTS=[], editId=null, plData={};
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+function _today(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function _uuid(){ try{ if(crypto&&crypto.randomUUID) return crypto.randomUUID(); }catch(e){} return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);}); }
+function _ensureUuid(v){ var s=String(v||'').trim(); return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:_uuid(); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+// ── settings persistence (cloud-first, same pattern as awonva) ──
+function saveSetting(key,val){
+  if(sb && uid){ try{ sb.from('user_settings').upsert({user_id:uid,skey:key,sval:String(val),updated_at:new Date().toISOString()},{onConflict:'user_id,skey'}); }catch(e){} }
+}
+async function loadSettings(){
+  try{ var r=await sb.from('user_settings').select('skey,sval').eq('user_id',uid).eq('skey','its_active_pl');
+    if(!r.error && r.data && r.data[0]) window._activePl=r.data[0].sval; }catch(e){}
+}
+
+// ── auth ──
+async function doLogin(){
+  var e=document.getElementById('email').value.trim(), p=document.getElementById('pass').value, err=document.getElementById('loginErr');
+  err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+
+function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+async function showApp(email){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('whoami').textContent=email||'—';
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+  buildCultGrid();
+  await loadSettings();
+  await loadPlantations();
+  showList();
+}
+
+// ══ CULTURES ══
+const CULTURES=[
+  {n:'მოცვი',i:'🫐'},{n:'ყურძენი',i:'🍇'},{n:'ვაშლი',i:'🍎'},{n:'სიმინდი',i:'🌽'},
+  {n:'მანდარინი',i:'🍊'},{n:'ბოსტნეული',i:'🥦'},{n:'თხილი',i:'🌰'}
+];
+const CULT_ICONS={'მოცვი':'🫐','ყურძენი':'🍇','ვაშლი':'🍎','სიმინდი':'🌽','მანდარინი':'🍊','ბოსტნეული':'🥦','თხილი':'🌰','ატამი':'🍑','ბალი':'🍒','მსხალი':'🍐','ქლიავი':'🟣','ჩაი':'🍵','ბროწეული':'🔴'};
+function buildCultGrid(){
+  var g=document.getElementById('cultGrid'); if(!g) return;
+  var h=CULTURES.map(function(c){ return '<div class="cult" data-name="'+esc(c.n)+'" onclick="pickCulture(this,\''+esc(c.n)+'\',\''+c.i+'\')"><span class="ic">'+c.i+'</span><small>'+esc(c.n)+'</small></div>'; }).join('');
+  h+='<div class="cult" id="custCard" onclick="pickCulture(this,\'__custom__\',\'✏️\')"><span class="ic">✏️</span><small>სხვა</small></div>';
+  g.innerHTML=h;
+}
+function pickCulture(el,name,icon){
+  document.querySelectorAll('.cult').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  var cw=document.getElementById('custWrap');
+  if(name==='__custom__'){
+    cw.style.display='block';
+    plData.culture=(document.getElementById('plCustInput').value||'').trim()||'__custom__';
+    plData.cultureIcon='✏️';
+    document.getElementById('plCustInput').focus();
+  } else {
+    cw.style.display='none';
+    plData.culture=name; plData.cultureIcon=icon;
+  }
+}
+function onCustomCulture(input){
+  var v=input.value.trim();
+  plData.culture=v||'__custom__'; plData.cultureIcon='✏️';
+  document.getElementById('custCard').classList.toggle('selected',v.length>0);
+}
+
+// ══ GEORGIAN MUNICIPALITIES ══
+const GEO_MUNICIPALITIES={
+  'კახეთი':['ახმეტა','გურჯაანი','დედოფლისწყარო','თელავი','თიანეთი','კახი','ლაგოდეხი','საგარეჯო','სიღნაღი','ყვარელი'],
+  'თბილისი':['თბილისი'],
+  'შიდა ქართლი':['გორი','კასპი','ქარელი','ხაშური','ცხინვალი'],
+  'ქვემო ქართლი':['ბოლნისი','დმანისი','გარდაბანი','თეთრიწყარო','მარნეული','რუსთავი','წალკა'],
+  'სამცხე-ჯავახეთი':['ადიგენი','ასპინძა','ახალქალაქი','ახალციხე','ბორჯომი','ნინოწმინდა'],
+  'აჭარა':['ბათუმი','ქედა','ქობულეთი','შუახევი','ხელვაჩაური','ხულო'],
+  'გურია':['ლანჩხუთი','ოზურგეთი','ჩოხატაური'],
+  'სამეგრელო-ზემო სვანეთი':['აბაშა','ზუგდიდი','კალა','მარტვილი','მესტია','სენაკი','ჩხოროწყუ','წალენჯიხა','ხობი'],
+  'რაჭა-ლეჩხუმი და ქვემო სვანეთი':['ამბროლაური','ლენტეხი','ონი','ცაგერი'],
+  'მცხეთა-მთიანეთი':['დუშეთი','თიანეთი','მცხეთა','ყაზბეგი','ახალგორი'],
+  'იმერეთი':['ბაღდათი','ვანი','ზესტაფონი','თერჯოლა','ქუთაისი','სამტრედია','საჩხერე','ტყიბული','წყალტუბო','ჭიათურა','ხარაგაული','ხონი'],
+  'სხვა':['სხვა']
+};
+function fillRegions(){
+  var r=document.getElementById('plRegion');
+  r.innerHTML='<option value="">— აირჩიეთ —</option>'+Object.keys(GEO_MUNICIPALITIES).map(function(k){ return '<option>'+esc(k)+'</option>'; }).join('');
+}
+function onRegionChange(region){
+  var sel=document.getElementById('plMunic');
+  sel.innerHTML='<option value="">— აირჩიეთ —</option>';
+  if(!region){ sel.disabled=true; return; }
+  (GEO_MUNICIPALITIES[region]||[]).forEach(function(m){ var o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
+  sel.disabled=false;
+  document.getElementById('plVillage').value='';
+  plData.munic=''; plData.village=''; updateAddress();
+}
+function onMunicChange(){ plData.munic=document.getElementById('plMunic').value; updateAddress(); }
+function onVillageInput(){ plData.village=document.getElementById('plVillage').value.trim(); updateAddress(); }
+function updateAddress(){ plData.address=[plData.village,plData.munic,document.getElementById('plRegion').value].filter(Boolean).join(', '); }
+
+// ══ DATA MODEL (mirror of index.html plantations table) ══
+function _normCoords(coords){
+  if(!Array.isArray(coords)) return [];
+  return coords.map(function(pt){
+    if(Array.isArray(pt)&&pt.length>=2) return [Number(pt[0])||0,Number(pt[1])||0];
+    if(pt&&typeof pt==='object'&&('lat' in pt)&&('lng' in pt)) return [Number(pt.lat)||0,Number(pt.lng)||0];
+    return null;
+  }).filter(Boolean);
+}
+function buildRow(pl){
+  var mapCoords=_normCoords(pl.mapCoords);
+  var mapCenter=(Array.isArray(pl.mapCenter)&&pl.mapCenter.length>=2)?[Number(pl.mapCenter[0])||0,Number(pl.mapCenter[1])||0]:null;
+  return {
+    id:_ensureUuid(pl.id),
+    user_id:uid,
+    name:pl.name||'',
+    culture:pl.culture||'',
+    area:parseFloat(pl.area)||0,
+    region:pl.region||'',
+    owner:pl.owner||'',
+    address:pl.address||'',
+    year:pl.year||null,
+    plants:pl.plants||null,
+    note:pl.note||'',
+    map_center:mapCenter,
+    map_coords:mapCoords,
+    meta:{
+      cultureIcon:pl.cultureIcon||pl.culture_icon||'🌱',
+      munic:pl.munic||'',
+      village:pl.village||'',
+      polygon:mapCoords,
+      contour:mapCoords,
+      center:mapCenter
+    }
+  };
+}
+function mapFromRow(r){
+  var meta=(r.meta&&typeof r.meta==='object')?r.meta:{};
+  var icon=r.culture_icon||meta.cultureIcon||CULT_ICONS[r.culture]||'🌱';
+  var coords=_normCoords(r.map_coords).length?_normCoords(r.map_coords)
+            :_normCoords(r.polygon).length?_normCoords(r.polygon)
+            :_normCoords(meta.polygon).length?_normCoords(meta.polygon)
+            :_normCoords(r.contour);
+  var center=(Array.isArray(r.map_center)&&r.map_center.length===2)?r.map_center
+            :(Array.isArray(r.center)&&r.center.length===2)?r.center
+            :(Array.isArray(meta.center)&&meta.center.length===2)?meta.center:null;
+  return {
+    id:r.id, name:r.name, culture:r.culture, cultureIcon:icon,
+    area:parseFloat(r.area)||0, region:r.region||'', owner:r.owner||'',
+    address:r.address||'', munic:r.munic||meta.munic||'', village:r.village||meta.village||'',
+    year:r.year||'', plants:r.plants||'', note:r.note||'',
+    mapCenter:center, mapCoords:coords
+  };
+}
+
+async function loadPlantations(){
+  if(!sb||!uid){ return; }
+  try{
+    var r=await sb.from('plantations').select('*').eq('user_id',uid);
+    if(r.error){ console.warn('loadPlantations',r.error); return; }
+    PLANTS=(r.data||[]).map(mapFromRow);
+  }catch(e){ console.warn('loadPlantations',e); }
+}
+
+// ══ LIST VIEW ══
+function showList(){
+  document.getElementById('viewList').style.display='block';
+  document.getElementById('viewEdit').style.display='none';
+  if(plMap){ try{ plMap.remove(); }catch(e){} plMap=null; }
+  var el=document.getElementById('listItems');
+  var activeId=window._activePl;
+  if(!PLANTS.length){
+    el.innerHTML='<div class="muted" style="text-align:center;padding:24px 0">პლანტაცია არ არის დამატებული.<br>დაამატეთ თქვენი პირველი ბაღი!</div>';
+  } else {
+    el.innerHTML=PLANTS.map(function(p){
+      var isActive=(p.id===activeId)||(!activeId&&PLANTS[0].id===p.id);
+      return '<div class="plrow'+(isActive?' active':'')+'">'+
+        '<span class="ic">'+esc(p.cultureIcon||'🌱')+'</span>'+
+        '<div style="min-width:0"><div class="nm">'+esc(p.name)+'</div>'+
+        '<div class="meta">'+esc(p.culture||'')+(p.region?' · '+esc(p.region):'')+(p.area>0?' · '+(+p.area).toFixed(2)+' ha':'')+'</div></div>'+
+        '<div class="acts">'+
+          (isActive?'<span class="badge">✓ აქტიური</span>':'<button class="sec" onclick="setActive(\''+esc(p.id)+'\')">გააქტიურება</button>')+
+          '<button class="gray" onclick="edit(\''+esc(p.id)+'\')">✏️</button>'+
+          '<button class="r" onclick="del(\''+esc(p.id)+'\')">🗑️</button>'+
+        '</div></div>';
+    }).join('');
+  }
+  renderListMap();
+}
+
+function setActive(id){
+  window._activePl=id; saveSetting('its_active_pl',id);
+  showList();
+}
+
+// ══ EDIT VIEW ══
+function startNew(){ plData={area:0,mapCoords:[]}; editId=null; startEdit(); }
+function edit(id){
+  var p=PLANTS.find(function(x){ return x.id===id; });
+  plData=Object.assign({},p||{}); editId=id; startEdit();
+}
+function startEdit(){
+  document.getElementById('viewList').style.display='none';
+  document.getElementById('viewEdit').style.display='block';
+  document.getElementById('editTitle').textContent=editId?'✏️ რედაქტირება':'➕ ახალი პლანტაცია';
+  document.getElementById('saveMsg').textContent='';
+  fillRegions();
+  prefill();
+  setTimeout(function(){ initMap(); },250);
+}
+function prefill(){
+  var d=plData;
+  document.querySelectorAll('.cult').forEach(function(el){ el.classList.remove('selected'); });
+  document.getElementById('custWrap').style.display='none';
+  document.getElementById('plCustInput').value='';
+  if(d.culture){
+    var known=CULTURES.some(function(c){ return c.n===d.culture; });
+    if(known){
+      document.querySelectorAll('.cult').forEach(function(el){ if(el.getAttribute('data-name')===d.culture) el.classList.add('selected'); });
+    } else {
+      var cc=document.getElementById('custCard'); cc.classList.add('selected');
+      document.getElementById('custWrap').style.display='block';
+      document.getElementById('plCustInput').value=d.culture;
+    }
+  }
+  document.getElementById('plName').value=d.name||'';
+  document.getElementById('plOwner').value=d.owner||'';
+  document.getElementById('plYear').value=d.year||'';
+  document.getElementById('plPlants').value=d.plants||'';
+  document.getElementById('plNote').value=d.note||'';
+  var reg=document.getElementById('plRegion');
+  reg.value=d.region||'';
+  if(d.region){ onRegionChange(d.region); var m=document.getElementById('plMunic'); if(d.munic){ m.value=d.munic; plData.munic=d.munic; } }
+  document.getElementById('plVillage').value=d.village||'';
+  plData.village=d.village||'';
+  var a=document.getElementById('plArea'); a.textContent=(d.area&&+d.area>0)?((+d.area).toFixed(2)+' ha'):'—';
+}
+
+function collectForm(){
+  plData.name=document.getElementById('plName').value.trim();
+  plData.owner=document.getElementById('plOwner').value.trim();
+  plData.region=document.getElementById('plRegion').value;
+  plData.munic=document.getElementById('plMunic').value;
+  plData.village=document.getElementById('plVillage').value.trim();
+  plData.year=document.getElementById('plYear').value;
+  plData.plants=document.getElementById('plPlants').value;
+  plData.note=document.getElementById('plNote').value.trim();
+  updateAddress();
+}
+
+async function save(){
+  var msg=document.getElementById('saveMsg'); msg.textContent='';
+  collectForm();
+  if(!plData.culture){ msg.textContent='❌ აირჩიეთ კულტურა'; return; }
+  if(!plData.name||!plData.owner){ msg.textContent='❌ შეავსეთ სახელი და მფლობელი'; return; }
+  if(!editId) plData.id=_ensureUuid(plData.id);
+  var row=buildRow(plData);
+  try{
+    var r=await sb.from('plantations').upsert(row,{onConflict:'id'});
+    if(r.error){ msg.textContent='❌ '+r.error.message; return; }
+  }catch(e){ msg.textContent='❌ '+(e.message||e); return; }
+  if(!editId && !window._activePl){ window._activePl=row.id; saveSetting('its_active_pl',row.id); }
+  await loadPlantations();
+  if(plMap){ try{ plMap.remove(); }catch(e){} plMap=null; }
+  showList();
+}
+
+async function del(id){
+  var p=PLANTS.find(function(x){ return x.id===id; });
+  if(!p||!confirm('წაიშალოს: '+p.name+'?')) return;
+  try{
+    var r=await sb.from('plantations').delete().eq('id',id).eq('user_id',uid);
+    if(r.error){ alert('❌ '+r.error.message); return; }
+  }catch(e){ alert('❌ '+(e.message||e)); return; }
+  if(window._activePl===id){ window._activePl=''; saveSetting('its_active_pl',''); }
+  await loadPlantations();
+  showList();
+}
+
+// ══ MAP (Leaflet polygon editor — mirrors index.html) ══
+let plMap=null, listMap=null;
+function baseTiles(map){
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
+    attribution:'Esri World Imagery',maxZoom:19,maxNativeZoom:19
+  }).addTo(map);
+  if(!map.getPane('labels')) map.createPane('labels');
+  map.getPane('labels').style.zIndex=650;
+  map.getPane('labels').style.pointerEvents='none';
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',{
+    attribution:'© OpenStreetMap, © CARTO',maxZoom:20,opacity:1,pane:'labels'
+  }).addTo(map);
+}
+function initMap(){
+  if(plMap){ try{ plMap.remove(); }catch(e){} plMap=null; }
+  if(!window.L) return;
+  var el=document.getElementById('plMap');
+  if(!el||el.offsetWidth===0||el.offsetHeight===0){ setTimeout(initMap,200); return; }
+  var sc=(Array.isArray(plData.mapCenter)&&plData.mapCenter.length===2)?plData.mapCenter:[41.8,44.8];
+  plMap=L.map('plMap').setView(sc,(Array.isArray(plData.mapCenter)&&plData.mapCenter.length===2)?14:9);
+  baseTiles(plMap);
+
+  var pts=[],poly=null,markers=[];
+  function vIcon(){ return L.divIcon({className:'pl-vertex-ic',html:'<div style="width:14px;height:14px;border-radius:50%;background:#10b981;border:2px solid #fff;box-shadow:0 0 0 1px rgba(16,185,129,.9)"></div>',iconSize:[14,14],iconAnchor:[7,7]}); }
+  function calcArea(p){ var a=0; for(var i=0;i<p.length;i++){ var j=(i+1)%p.length; a+=p[i].lat*p[j].lng-p[j].lat*p[i].lng; } return Math.abs(a)*0.5*111320*111320; }
+  function syncState(){
+    var areaEl=document.getElementById('plArea');
+    if(pts.length>=3&&poly){
+      var ha=(calcArea(pts)/10000).toFixed(2);
+      plData.area=ha;
+      plData.mapCenter=[poly.getBounds().getCenter().lat,poly.getBounds().getCenter().lng];
+      plData.mapCoords=pts.map(function(p){ return [p.lat,p.lng]; });
+      if(areaEl) areaEl.textContent=ha+' ha';
+    } else {
+      plData.mapCoords=pts.map(function(p){ return [p.lat,p.lng]; });
+      plData.area=0;
+      if(areaEl) areaEl.textContent='—';
+    }
+  }
+  function drawPoly(){
+    if(poly){ plMap.removeLayer(poly); poly=null; }
+    if(pts.length>=3) poly=L.polygon(pts,{color:'#10b981',fillOpacity:.15,weight:2}).addTo(plMap);
+    syncState();
+  }
+  function rebuild(){
+    markers.forEach(function(m){ plMap.removeLayer(m); }); markers=[];
+    pts.forEach(function(ll,i){
+      var m=L.marker(ll,{draggable:true,icon:vIcon(),zIndexOffset:1000}).addTo(plMap);
+      m.on('drag',function(ev){ pts[i]=ev.target.getLatLng(); drawPoly(); });
+      m.on('dragend',function(){ drawPoly(); });
+      m.on('click',function(ev){ if(ev&&ev.originalEvent){ try{ L.DomEvent.stop(ev.originalEvent); }catch(e){} } pts.splice(i,1); rebuild(); });
+      markers.push(m);
+    });
+    drawPoly();
+    if(window._plMapEdit) window._plMapEdit._count=pts.length;
+  }
+  plMap.on('click',function(e){ pts.push(e.latlng); rebuild(); });
+  plMap.on('dblclick',function(e){ if(e.originalEvent) e.originalEvent.preventDefault(); pts=[]; rebuild(); });
+
+  if(plData.mapCoords&&plData.mapCoords.length>=2){
+    plData.mapCoords.forEach(function(c){ pts.push(L.latLng(c[0],c[1])); });
+    rebuild();
+    if(poly){ try{ plMap.fitBounds(poly.getBounds(),{padding:[20,20]}); }catch(e){} }
+  } else { rebuild(); }
+
+  window._plMapEdit={
+    _count:pts.length,
+    undo:function(){ if(!pts.length) return; pts.pop(); rebuild(); },
+    clear:function(){ pts=[]; rebuild(); },
+    count:function(){ return pts.length; }
+  };
+  setTimeout(function(){ try{ plMap.invalidateSize(false); }catch(e){} },300);
+  setTimeout(function(){ try{ plMap.invalidateSize(false); }catch(e){} },700);
+}
+
+function plMapToggleFull(){
+  var el=document.getElementById('plMap'); if(!el) return;
+  var on=el.classList.toggle('plMap-full');
+  var b=document.getElementById('plFullBtn'); if(b) b.textContent=on?'⤢ პატარა რუკა':'⛶ სრულ ეკრანზე';
+  var close=document.getElementById('plMapFullClose');
+  if(on){
+    if(!close){
+      close=document.createElement('button');
+      close.id='plMapFullClose'; close.type='button'; close.textContent='✕ დახურვა';
+      close.style.cssText='position:fixed;top:14px;right:14px;z-index:100001;background:#dc2626;color:#fff;border:none;border-radius:10px;padding:10px 16px;font:700 14px system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35)';
+      close.onclick=plMapToggleFull;
+      document.body.appendChild(close);
+    }
+  } else if(close){ close.remove(); }
+  setTimeout(function(){ try{ if(plMap) plMap.invalidateSize(false); }catch(e){} },120);
+  setTimeout(function(){ try{ if(plMap) plMap.invalidateSize(false); }catch(e){} },350);
+}
+
+function renderListMap(){
+  var el=document.getElementById('listMap'); if(!el||!window.L) return;
+  if(listMap){ try{ listMap.remove(); }catch(e){} listMap=null; }
+  setTimeout(function(){
+    if(el.offsetWidth===0){ return; }
+    listMap=L.map('listMap').setView([41.8,44.8],7);
+    baseTiles(listMap);
+    var fg=L.featureGroup().addTo(listMap);
+    PLANTS.forEach(function(p){
+      if(Array.isArray(p.mapCoords)&&p.mapCoords.length>=3){
+        try{
+          var pg=L.polygon(p.mapCoords,{color:'#10b981',fillOpacity:.18,weight:2}).addTo(listMap);
+          pg.bindPopup('<b>'+esc(p.name||'პლანტაცია')+'</b><br>'+esc(p.culture||'')+(p.area>0?' · '+(+p.area).toFixed(2)+' ha':''));
+          fg.addLayer(pg);
+        }catch(e){}
+      } else if(Array.isArray(p.mapCenter)&&p.mapCenter.length===2){
+        try{
+          var icon=L.divIcon({html:'<div style="background:#0ea5e9;width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>',iconSize:[26,26],iconAnchor:[13,26],className:''});
+          var mk=L.marker(p.mapCenter,{icon:icon}).addTo(listMap);
+          mk.bindPopup('<b>'+esc(p.name||'პლანტაცია')+'</b><br>'+esc(p.culture||''));
+          fg.addLayer(mk);
+        }catch(e){}
+      }
+    });
+    setTimeout(function(){
+      try{ listMap.invalidateSize(false); var b=fg.getBounds(); if(b&&b.isValid&&b.isValid()) listMap.fitBounds(b,{padding:[40,40],maxZoom:13,animate:false}); }catch(e){}
+    },250);
+  },160);
+}
+
+// ══ session resume on load ══
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; showApp(s.data.session.user.email); } }catch(e){} })();
+</script>
+</body></html>
