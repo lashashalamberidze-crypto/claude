@@ -3571,6 +3571,7 @@ const accessToken = session?.access_token;
   <div class="header-right">
     <!-- Shown when logged out -->
     <button onclick="installPWA()" id="hdrPwaBtn" title="აპლიკაციის გადმოწერა მოწყობილობაზე" style="font-size:.75rem;font-weight:600;color:#fff;background:linear-gradient(135deg,#0ea5e9,#059669);border:none;padding:7px 14px;border-radius:7px;white-space:nowrap;margin-right:6px;cursor:pointer;box-shadow:0 2px 8px rgba(14,165,233,.3);transition:all .2s;display:inline-flex;align-items:center;gap:6px;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 14px rgba(14,165,233,.45)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 8px rgba(14,165,233,.3)'">📱 აპის გადმოწერა</button>
+    <button onclick="openGuideModal()" title="გზამკვლევი — როგორ მუშაობს პლატფორმა" style="font-size:.75rem;font-weight:600;color:#fff;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border:none;padding:7px 14px;border-radius:7px;white-space:nowrap;margin-right:6px;cursor:pointer;box-shadow:0 2px 8px rgba(59,130,246,.3);transition:all .2s;display:inline-flex;align-items:center;gap:6px;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 14px rgba(59,130,246,.45)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 8px rgba(59,130,246,.3)'">📘 გზამკვლევი</button>
     <a href="https://intechsol.ge" style="font-size:.75rem;font-weight:400;color:rgba(255,255,255,.7);text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,.2);border-radius:7px;white-space:nowrap;margin-right:8px">🌐 intechsol.ge</a><div id="authBtns" style="display:none"></div>
     <!-- Shown when logged in -->
     <div class="user-chip" id="userChip">
@@ -23700,10 +23701,13 @@ window.cpDirectorName=function(){ try{ var c=cpReadCfg()||{}; return (c.director
 window.cpOnLogo=function(inp){ var f=inp.files&&inp.files[0]; if(!f) return; if(f.size>800*1024){ alert('ლოგო ძალიან დიდია — მაქს. ~800KB'); inp.value=''; return; } var r=new FileReader(); r.onload=function(){ var img=document.getElementById('cp-logo-preview'); if(img){ img.src=r.result; img.style.display='block'; img.dataset.logo=r.result; } }; r.readAsDataURL(f); };
 window.openCompanyProfile=function(){ var cfg=cpReadCfg(); function set(id,v){var e=document.getElementById(id); if(e) e.value=(v||''); } set('cp-type',cfg.type||'ინდ. მეწარმე'); set('cp-name',cfg.name); set('cp-idnum',cfg.idnum); set('cp-director',cfg.director); set('cp-addr',cfg.addr); set('cp-phone',cfg.phone); set('cp-email',cfg.email); set('cp-bank',cfg.bank); set('cp-iban',cfg.iban); var img=document.getElementById('cp-logo-preview'); if(img){ if(cfg.logo){ img.src=cfg.logo; img.style.display='block'; img.dataset.logo=cfg.logo; } else { img.style.display='none'; img.removeAttribute('data-logo'); img.src=''; } } var lf=document.getElementById('cp-logo-file'); if(lf) lf.value=''; var o=document.getElementById('companyOverlay'); if(o) o.style.display='flex'; };
 
-// 📘 გზამკვლევის გახსნა — PDF ცალკე ფანჯარაში
+// 📘 გზამკვლევის გახსნა — შიდა სრული გზამკვლევი (helpModal)
 window.openGuideModal=function(){
-  try{ window.open('gzamkvlevi.pdf','_blank','noopener'); }
-  catch(e){ alert('გზამკვლევის ფაილი ვერ მოიძებნა. დაგვიკავშირდი: info@intechsol.ge'); }
+  // ვცადოთ შიდა HTML გზამკვლევი (ყოველთვის ხელმისაწვდომია, PDF-ს არ სჭირდება)
+  try{
+    if(typeof openHelpModal==='function'){ openHelpModal(); }
+    else { window.open('gzamkvlevi.pdf','_blank','noopener'); }
+  }catch(e){ alert('გზამკვლევი დროებით მიუწვდომელია. დაგვიკავშირდი: info@intechsol.ge'); }
   // აღნიშნე რომ მომხმარებელმა ნახა, რომ welcome banner აღარ გამოჩნდეს
   try{ localStorage.setItem('its_guide_seen','1'); var b=document.getElementById('agroGuideBanner'); if(b) b.style.display='none'; }catch(e){}
 };
