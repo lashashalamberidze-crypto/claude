@@ -23701,13 +23701,16 @@ window.cpDirectorName=function(){ try{ var c=cpReadCfg()||{}; return (c.director
 window.cpOnLogo=function(inp){ var f=inp.files&&inp.files[0]; if(!f) return; if(f.size>800*1024){ alert('ლოგო ძალიან დიდია — მაქს. ~800KB'); inp.value=''; return; } var r=new FileReader(); r.onload=function(){ var img=document.getElementById('cp-logo-preview'); if(img){ img.src=r.result; img.style.display='block'; img.dataset.logo=r.result; } }; r.readAsDataURL(f); };
 window.openCompanyProfile=function(){ var cfg=cpReadCfg(); function set(id,v){var e=document.getElementById(id); if(e) e.value=(v||''); } set('cp-type',cfg.type||'ინდ. მეწარმე'); set('cp-name',cfg.name); set('cp-idnum',cfg.idnum); set('cp-director',cfg.director); set('cp-addr',cfg.addr); set('cp-phone',cfg.phone); set('cp-email',cfg.email); set('cp-bank',cfg.bank); set('cp-iban',cfg.iban); var img=document.getElementById('cp-logo-preview'); if(img){ if(cfg.logo){ img.src=cfg.logo; img.style.display='block'; img.dataset.logo=cfg.logo; } else { img.style.display='none'; img.removeAttribute('data-logo'); img.src=''; } } var lf=document.getElementById('cp-logo-file'); if(lf) lf.value=''; var o=document.getElementById('companyOverlay'); if(o) o.style.display='flex'; };
 
-// 📘 გზამკვლევის გახსნა — შიდა სრული გზამკვლევი (helpModal)
+// 📘 გზამკვლევის გახსნა — PDF ცალკე ფანჯარაში (fallback: შიდა helpModal)
 window.openGuideModal=function(){
-  // ვცადოთ შიდა HTML გზამკვლევი (ყოველთვის ხელმისაწვდომია, PDF-ს არ სჭირდება)
   try{
+    var w = window.open('gzamkvlevi.pdf','_blank','noopener');
+    // თუ popup დაიბლოკა ან ვერ გაიხსნა — შიდა HTML გზამკვლევზე გადავიდეთ
+    if(!w && typeof openHelpModal==='function'){ openHelpModal(); }
+  }catch(e){
     if(typeof openHelpModal==='function'){ openHelpModal(); }
-    else { window.open('gzamkvlevi.pdf','_blank','noopener'); }
-  }catch(e){ alert('გზამკვლევი დროებით მიუწვდომელია. დაგვიკავშირდი: info@intechsol.ge'); }
+    else { alert('გზამკვლევი დროებით მიუწვდომელია. დაგვიკავშირდი: info@intechsol.ge'); }
+  }
   // აღნიშნე რომ მომხმარებელმა ნახა, რომ welcome banner აღარ გამოჩნდეს
   try{ localStorage.setItem('its_guide_seen','1'); var b=document.getElementById('agroGuideBanner'); if(b) b.style.display='none'; }catch(e){}
 };
