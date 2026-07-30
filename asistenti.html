@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>👨‍🌾 AI აგრო ასისტენტი</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;font-family:"Noto Sans Georgian",system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:760px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.95rem;margin:0 0 8px;color:#334155}
+  h3{font-size:1.05rem;margin:0 0 6px;color:#3f6212}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select,textarea{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff;color:#0f172a;font-family:inherit}
+  textarea{min-height:110px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:#84cc16}
+  button{background:#84cc16;color:#1a2e05;border:none;padding:12px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:#4d7c0f;border:1.5px solid #84cc16}
+  button:active{transform:scale(.98)}
+  button:disabled{opacity:.55;cursor:not-allowed}
+  .muted{font-size:.8rem;color:#64748b}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+  .badge{display:inline-block;font-size:.7rem;font-weight:700;color:#3f6212;background:rgba(132,204,22,.16);border:1px solid rgba(132,204,22,.3);border-radius:20px;padding:4px 11px;margin-bottom:8px}
+  .intro{font-size:.85rem;color:#475569;line-height:1.6;margin:0 0 6px}
+  .grid2{display:flex;gap:12px;flex-wrap:wrap}.grid2>*{flex:1;min-width:200px}
+  .filenote{font-size:.75rem;color:#64748b;margin-top:6px}
+  .agroMsg{font-size:.85rem;font-weight:600;color:#4d7c0f;margin:6px 0}
+  /* AI result panel */
+  #agroAiResult{display:none;margin-top:14px;border:1px solid rgba(132,204,22,.35);background:linear-gradient(180deg,#f7fee7,#ffffff);border-radius:14px;padding:16px}
+  #agroAiResult.show{display:block}
+  .agro-ai-result-title{font-size:.95rem;font-weight:700;color:#3f6212;margin-bottom:8px}
+  .agro-ai-result-body{font-size:.92rem;line-height:1.75;color:#0f172a;white-space:pre-wrap}
+  .agro-ai-result-warn{margin-top:12px;padding:10px 12px;border-radius:10px;background:#fef3c7;border:1px solid #fde68a;color:#92400e;font-size:.84rem;line-height:1.55}
+  .agro-ai-result-note{margin-top:12px;font-size:.78rem;color:#64748b;line-height:1.6;border-top:1px dashed #e2e8f0;padding-top:10px}
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>👨‍🌾 AI აგრო ასისტენტი — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <h1>👨‍🌾 AI აგრო ასისტენტი <span style="font-size:.6rem;background:#84cc16;color:#1a2e05;border-radius:8px;padding:1px 6px;vertical-align:middle">v2</span></h1>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#4d7c0f">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <div class="card">
+    <span class="badge">მყისიერი AI მხარდაჭერა</span>
+    <h3>AI აგრო ასისტენტი</h3>
+    <p class="intro">შეავსე ფორმა, მიუთითე კულტურა, ატვირთე ფოტო ან ფაილი და მიიღე მყისიერი AI რეკომენდაცია. ზუსტი გადაწყვეტილებისათვის ბოლოს ყოველთვის გამოჩნდება რჩევა აგრონომთან დაკავშირებაზე.</p>
+
+    <div class="grid2">
+      <div>
+        <label for="agroCulture">კულტურა</label>
+        <select id="agroCulture">
+          <option value="">აირჩიეთ კულტურა</option>
+          <option>მოცვი</option><option>ვაზი</option><option>თხილი</option><option>ვაშლი</option>
+          <option>მსხალი</option><option>ატამი</option><option>ქლიავი</option><option>ალუბალი</option>
+          <option>მანდარინი</option><option>ფორთოხალი</option><option>ლიმონი</option><option>კივი</option>
+          <option>ბროწეული</option><option>მარწყვი</option><option>ჟოლო</option>
+          <option>კარტოფილი</option><option>სიმინდი</option><option>ხორბალი</option>
+          <option>პომიდორი</option><option>კიტრი</option><option>ბოსტნეული</option><option>სხვა</option>
+        </select>
+      </div>
+      <div>
+        <label for="agroCategory">პრობლემის კატეგორია</label>
+        <select id="agroCategory">
+          <option value="">აირჩიეთ კატეგორია</option>
+          <option>დაავადება</option><option>მავნებელი</option><option>სასუქი / კვება</option>
+          <option>მორწყვა</option><option>ნიადაგი</option><option>მოსავლის ხარისხი</option><option>სხვა</option>
+        </select>
+      </div>
+    </div>
+
+    <label for="agroQuestion">კითხვის აღწერა</label>
+    <textarea id="agroQuestion" placeholder="დაწერე დეტალურად რა პრობლემა გაქვს..."></textarea>
+
+    <label for="agroAttachment">ფაილი / ფოტო</label>
+    <input id="agroAttachment" type="file" accept="image/*,.pdf,.doc,.docx" onchange="agroHandleFileSelect(this)">
+    <div id="agroFilePreview" style="display:none;margin-top:8px;padding:10px;background:rgba(132,204,22,.08);border:1px solid rgba(132,204,22,.25);border-radius:10px;font-size:.82rem;color:#3f6212">
+      <div id="agroFileInfo" style="margin-bottom:6px;word-break:break-all"></div>
+      <img id="agroImagePreview" style="display:none;max-width:100%;max-height:220px;border-radius:8px;border:1px solid rgba(132,204,22,.25)">
+    </div>
+    <div class="filenote">შეგიძლია ატვირთო ფოტო, PDF ან დოკუმენტი (მაქს. 10 MB)</div>
+    <div class="filenote" style="color:#0f766e">მყისიერი პასუხი ინფორმაციული ხასიათისაა. საბოლოო და ზუსტი გადაწყვეტილებისთვის სასურველია აგრონომთან გადაამოწმო.</div>
+
+    <div id="agroFormMsg" class="agroMsg"></div>
+    <button id="agroSendBtn" type="button" onclick="submitAgronomRequest()">მყისიერი პასუხის მიღება</button>
+
+    <div id="agroAiResult">
+      <div class="agro-ai-result-title">AI რეკომენდაცია</div>
+      <div id="agroAiResultBody" class="agro-ai-result-body"></div>
+      <div id="agroAiResultWarn" class="agro-ai-result-warn" style="display:none"></div>
+      <div class="agro-ai-result-note">ეს პასუხი არის პირველადი AI რეკომენდაცია. ზუსტი დიაგნოზისა და პრეპარატის საბოლოო შერჩევისთვის დაუკავშირდი აგრონომს.</div>
+    </div>
+
+    <div style="margin-top:10px;font-size:.78rem;color:#64748b;line-height:1.6">ინფორმაცია შეიძლება მომზადდეს AI ტექნოლოგიის დახმარებით. <strong>Powered by OpenAI</strong></div>
+  </div>
+</div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+let sb=null, uid=null, currentUserEmail='';
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+
+// ── auth ──
+async function doLogin(){
+  var e=document.getElementById('email').value.trim(), p=document.getElementById('pass').value, err=document.getElementById('loginErr');
+  err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+
+function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+function showApp(email){
+  currentUserEmail=email||'';
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('whoami').textContent=email||'—';
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+}
+
+// ══════════════════════════════════════════════════
+// AI AGRO ASSISTANT — ported from index.html openAgronomModal
+// ══════════════════════════════════════════════════
+function agronomGetCurrentUserData(){
+  return {full_name:'',email:currentUserEmail||'',phone:'',user_id:uid||null,is_demo:false};
+}
+function agroSetAiResult(text, warn){
+  warn=warn||'';
+  const wrap=document.getElementById('agroAiResult');
+  const body=document.getElementById('agroAiResultBody');
+  const warnEl=document.getElementById('agroAiResultWarn');
+  if(!wrap || !body) return;
+  // #14: დავტოვოთ ერთი disclaimer (სტატიკური note) — მოდელის გამეორებული აგრონომის ფრაზა ამოვჭრათ
+  var _t=(text||'');
+  try{
+    var _parts=_t.split('. ');
+    var _kept=_parts.filter(function(s){ return !(/აგრონომ/.test(s) && /(რეკომენდაცი|დიაგნოზ|ვიზიტ|შერჩევ|დაუკავშირ)/.test(s)); });
+    var _r=_kept.join('. ').trim();
+    if(_r) _t=_r;
+  }catch(e){}
+  body.textContent=_t||text||'';
+  if(warnEl){
+    // მხოლოდ რეალური (შეცდომის) warning გამოჩნდეს; გენერიკული „დაუკავშირდი აგრონომს" ჩაიხშოს (სტატიკური note ფარავს)
+    var _w=(warn||'');
+    var _isErr=/ვერ მოხერხდა|შეცდომა|დაკავშირება ვერ|ვერ მომზადდა/.test(_w);
+    var _isGeneric=/აგრონომ/.test(_w) && /(რეკომენდაცი|დიაგნოზ|ინფორმაცი|ვიზიტ)/.test(_w);
+    if(_w && (_isErr || !_isGeneric)){ warnEl.style.display='block'; warnEl.textContent=_w; }
+    else { warnEl.style.display='none'; warnEl.textContent=''; }
+  }
+  wrap.classList.add('show');
+}
+function agroClearAiResult(){
+  const wrap=document.getElementById('agroAiResult');
+  const body=document.getElementById('agroAiResultBody');
+  const warnEl=document.getElementById('agroAiResultWarn');
+  if(wrap) wrap.classList.remove('show');
+  if(body) body.textContent='';
+  if(warnEl){ warnEl.style.display='none'; warnEl.textContent=''; }
+}
+
+// ─── File preview + validation ───
+const AGRO_MAX_FILE_MB = 10;
+const AGRO_IMAGE_MAX_DIM = 1600;
+
+function agroHandleFileSelect(input){
+  const file=input && input.files && input.files[0];
+  const prev=document.getElementById('agroFilePreview');
+  const info=document.getElementById('agroFileInfo');
+  const imgEl=document.getElementById('agroImagePreview');
+  const msg=document.getElementById('agroFormMsg');
+  if(!file){ if(prev) prev.style.display='none'; return; }
+  const sizeMB=file.size/1024/1024;
+  if(sizeMB>AGRO_MAX_FILE_MB){
+    if(msg) msg.textContent='⚠️ ფაილი ძალიან დიდია ('+sizeMB.toFixed(1)+' MB). მაქსიმუმ '+AGRO_MAX_FILE_MB+' MB.';
+    input.value='';
+    if(prev) prev.style.display='none';
+    return;
+  }
+  if(msg) msg.textContent='';
+  if(prev) prev.style.display='block';
+  if(info) info.textContent='📎 '+file.name+' ('+sizeMB.toFixed(2)+' MB)';
+  if(imgEl){
+    if(file.type && file.type.startsWith('image/')){
+      const url=URL.createObjectURL(file);
+      imgEl.src=url;
+      imgEl.style.display='block';
+      imgEl.onload=function(){ try{ URL.revokeObjectURL(url); }catch(_e){} };
+    } else {
+      imgEl.style.display='none';
+      imgEl.removeAttribute('src');
+    }
+  }
+}
+window.agroHandleFileSelect=agroHandleFileSelect;
+
+// Prepare image for Vision API. Keeps quality high enough for the model
+// to actually resolve leaf details (a too-small thumbnail returns generic answers).
+async function agroPrepareImage(file){
+  if(!file || !file.type || !file.type.startsWith('image/')) return null;
+  try{
+    const bmp=await createImageBitmap(file);
+    const maxDim=Math.max(bmp.width,bmp.height);
+    const minDim=Math.min(bmp.width,bmp.height);
+    let w=bmp.width, h=bmp.height;
+    // Downscale only if image is huge (Vision API caps around 2048px)
+    if(maxDim>1600){
+      const s=1600/maxDim;
+      w=Math.round(bmp.width*s); h=Math.round(bmp.height*s);
+    }
+    // Upscale tiny images so the model gets something useful (ex: 300px thumbnails)
+    else if(minDim<768 && maxDim<1024){
+      const s=Math.min(1024/maxDim, 768/minDim);
+      w=Math.round(bmp.width*s); h=Math.round(bmp.height*s);
+    }
+    const canvas=document.createElement('canvas');
+    canvas.width=w; canvas.height=h;
+    const ctx=canvas.getContext('2d');
+    ctx.imageSmoothingEnabled=true;
+    ctx.imageSmoothingQuality='high';
+    ctx.drawImage(bmp,0,0,w,h);
+    try{ bmp.close&&bmp.close(); }catch(_e){}
+    // Higher quality (0.92) keeps diagnostic details like lesions, veins, spots
+    const dataUrl=canvas.toDataURL('image/jpeg',0.92);
+    const base64=dataUrl.split(',')[1]||'';
+    console.log('[agroPrepareImage]',w+'x'+h,'base64 chars:',base64.length);
+    return { mime:'image/jpeg', base64, dataUrl, width:w, height:h };
+  }catch(e){ console.warn('image prepare failed',e); return null; }
+}
+
+// ─── Rate limiting helpers ───
+const AGRO_COOLDOWN_MS  = 30 * 1000;   // 30 seconds between requests
+const AGRO_DAILY_LIMIT  = 20;          // 20 AI requests per user per day
+
+function agroRateCheck(userId){
+  const todayKey = 'agro_rate_'+(userId||'anon')+'_'+new Date().toISOString().slice(0,10);
+  const lastKey  = 'agro_last_'+(userId||'anon');
+  const now = Date.now();
+
+  const last = Number(localStorage.getItem(lastKey)||0);
+  if(last && (now - last) < AGRO_COOLDOWN_MS){
+    const remainSec = Math.ceil((AGRO_COOLDOWN_MS - (now - last))/1000);
+    return { ok:false, reason:'⏱ გთხოვთ დაიცადოთ '+remainSec+' წამი შემდეგ მოთხოვნამდე' };
+  }
+
+  const used = Number(localStorage.getItem(todayKey)||0);
+  if(used >= AGRO_DAILY_LIMIT){
+    return { ok:false, reason:'⚠️ დღიური ლიმიტი ამოიწურა ('+AGRO_DAILY_LIMIT+' მოთხოვნა). გთხოვთ, სცადოთ ხვალ ან დაუკავშირდით აგრონომს პირდაპირ.' };
+  }
+
+  return { ok:true, used, todayKey, lastKey };
+}
+function agroRateCommit(rate){
+  try{
+    localStorage.setItem(rate.lastKey, String(Date.now()));
+    localStorage.setItem(rate.todayKey, String((rate.used||0)+1));
+  }catch(_e){}
+}
+
+async function submitAgronomRequest(){
+  const msg=document.getElementById('agroFormMsg');
+  const btn=document.getElementById('agroSendBtn');
+  const current=agronomGetCurrentUserData();
+
+  // Resolve the authenticated user id fresh from Supabase (critical for RLS)
+  let authUserId = null;
+  try{
+    if(sb && sb.auth){
+      const { data } = await sb.auth.getUser();
+      authUserId = (data && data.user && data.user.id) || null;
+    }
+  }catch(_e){}
+  if(!authUserId) authUserId = current.user_id || null;
+
+  const payload={
+    full_name:((document.getElementById('agroFullName')||{}).value||current.full_name||'').trim(),
+    phone:((document.getElementById('agroPhone')||{}).value||current.phone||'').trim(),
+    email:((document.getElementById('agroEmail')||{}).value||current.email||'').trim(),
+    culture:((document.getElementById('agroCulture')||{}).value||'').trim(),
+    category:((document.getElementById('agroCategory')||{}).value||'').trim(),
+    priority:((document.getElementById('agroPriority')||{}).value||'ჩვეულებრივი').trim(),
+    subject:((document.getElementById('agroSubject')||{}).value||(document.getElementById('agroCategory')||{}).value||'AI აგრო კითხვა').trim(),
+    question:((document.getElementById('agroQuestion')||{}).value||'').trim(),
+    status:'ახალი',
+    created_at:new Date().toISOString(),
+    user_id: authUserId,
+    is_demo: !!current.is_demo
+  };
+
+  const fileInput=document.getElementById('agroAttachment');
+  const file=(fileInput && fileInput.files && fileInput.files[0])||null;
+
+  if(!payload.culture || !payload.question){
+    if(msg) msg.textContent='⚠️ გთხოვ შეავსო აუცილებელი ველები';
+    agroClearAiResult();
+    return;
+  }
+
+  // Rate limit check — prevent accidental spam + casual abuse
+  const rate = agroRateCheck(authUserId);
+  if(!rate.ok){
+    if(msg) msg.textContent = rate.reason;
+    agroClearAiResult();
+    return;
+  }
+
+  btn.disabled=true;
+  agroSetAiResult('მუშავდება... რამდენიმე წამში მიიღებ პირველადი AI რეკომენდაციას.');
+  if(msg) msg.textContent='იგზავნება და მუშავდება...';
+
+  try{
+    // prepare image client-side so the Vision model can see it (no storage upload / no DB write)
+    let imageForAI=null;
+    let attachment_name='';
+    if(file){
+      imageForAI = await agroPrepareImage(file);
+      attachment_name = file.name;
+    }
+
+    const requestRow={...payload, attachment_url:'', attachment_name};
+
+    // call AI edge function — include base64 image so Vision model can see it
+    const aiPayload={
+      ...requestRow,
+      request_id:null,
+      image_base64: (imageForAI && imageForAI.base64) || null,
+      image_mime:   (imageForAI && imageForAI.mime)   || null,
+      image_data_url: (imageForAI && imageForAI.dataUrl) || null
+    };
+
+    let aiText='ამ ეტაპზე პირველადი პასუხი ვერ დამუშავდა. გთხოვ სცადო თავიდან ან დაუკავშირდე აგრონომს.';
+    let aiWarn='ზუსტი ინფორმაციისთვის დაუკავშირდი აგრონომს.';
+    try{
+      const headers={'Content-Type':'application/json'};
+      try{
+        const { data:{ session } } = await sb.auth.getSession();
+        if(session && session.access_token) headers['Authorization']='Bearer '+session.access_token;
+        else headers['Authorization']='Bearer '+SB_KEY;
+      }catch(_e){ headers['Authorization']='Bearer '+SB_KEY; }
+
+      const res=await fetch(SB_URL+'/functions/v1/agro-ai-advice',{
+        method:'POST', headers, body:JSON.stringify(aiPayload)
+      });
+      const data=await res.json().catch(function(){ return {}; });
+      if(!res.ok) throw new Error((data && data.error)||('AI response failed ('+res.status+')'));
+      aiText=((data && data.answer)||'').trim()||aiText;
+      aiWarn=((data && data.warning)||'').trim()||aiWarn;
+    }catch(aiErr){
+      console.error('agro ai error', aiErr);
+      aiWarn='AI სერვისთან დაკავშირება ვერ მოხერხდა. გთხოვ დაუკავშირდი აგრონომს.';
+    }
+    agroSetAiResult(aiText, aiWarn);
+    agroRateCommit(rate);
+    if(msg) msg.textContent='✅ მყისიერი პასუხი მომზადდა';
+  }catch(err){
+    console.error(err);
+    agroSetAiResult('პასუხის მომზადება ვერ მოხერხდა: '+((err && err.message)||'უცნობი შეცდომა'),'ზუსტი ინფორმაციისთვის დაუკავშირდი აგრონომს.');
+    if(msg) msg.textContent='❌ '+((err && err.message)||'დაფიქსირდა შეცდომა');
+  }finally{ btn.disabled=false; }
+}
+window.submitAgronomRequest=submitAgronomRequest;
+
+// ── AI PROXY (verbatim from index.html) ──
+const _AI_SB_PROXY = SB_URL + '/functions/v1/ai-proxy';
+async function callClaudeAI(prompt, maxTokens) {
+  maxTokens = maxTokens || 800;
+  try {
+    const r = await fetch(_AI_SB_PROXY, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SB_KEY
+      },
+      body: JSON.stringify({ prompt: prompt, max_tokens: maxTokens })
+    });
+    if (!r.ok) throw new Error('proxy ' + r.status);
+    const d = await r.json().catch(()=>({}));
+    return d.text || d.answer || (d.content && d.content[0] && d.content[0].text) || '';
+  } catch(e) {
+    const r2 = await fetch(SB_URL + '/functions/v1/agro-ai-advice', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SB_KEY
+      },
+      body: JSON.stringify({ question: prompt, culture: '', category: 'general' })
+    });
+    if (!r2.ok) throw new Error('fallback ' + r2.status);
+    const d2 = await r2.json().catch(()=>({}));
+    return d2.answer || d2.text || '';
+  }
+}
+window.callClaudeAI=callClaudeAI;
+
+// ── session resume on load ──
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; showApp(s.data.session.user.email); } }catch(e){} })();
+</script>
+</body></html>
