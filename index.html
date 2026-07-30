@@ -3723,15 +3723,15 @@ const accessToken = session?.access_token;
       </div>
     </div>
 
-    <div class="module-card card-blue clickable" id="mod-krepa" onclick="tryOpenModule('krepa')">
+    <div class="module-card card-blue clickable" id="mod-krepa" onclick="window.open('./krefa.html','_blank')">
       <div class="module-status status-active" id="status-krepa">✓ აქტიური</div>
-      <div class="card-icon-wrap">🌾</div>
-      <div class="card-title">კულტურის კრეფის მოდული</div>
-      <div class="card-desc">მკრეფავების რეგისტრაცია, კულტურის არჩევა, QR სტიკერები, USB სასწორი, Excel ანგარიში, SMS.</div>
-      <div class="card-tags"><span class="tag">🌱 კულტურა</span><span class="tag">🏷️ QR</span><span class="tag">⚖️ სასწორი</span><span class="tag">📊 Excel</span></div>
+      <div class="card-icon-wrap">📊</div>
+      <div class="card-title">კრეფის ანგარიშები</div>
+      <div class="card-desc">კრეფის სრული ანგარიშები — დღიური კრეფა, მკრეფავებისა და რიგების მიხედვით, ყუთ-ყუთობით, Excel-ში. (აწონვა ცალკე ბარათშია.)</div>
+      <div class="card-tags"><span class="tag">📊 Excel</span><span class="tag">📅 დღიური</span><span class="tag">🧺 მკრეფავები</span><span class="tag">📈 ჯამები</span></div>
       <div class="card-footer">
-        <button class="open-btn" id="btn-krepa" style="background:rgba(14,165,233,.15);color:#0369a1;border-color:rgba(14,165,233,.3)">გახსნა <span class="card-open-arrow">→</span></button>
-        <span class="card-ver">v3.0 · 1000₾/წელ</span>
+        <button class="open-btn" id="btn-krepa" onclick="event.stopPropagation();window.open('./krefa.html','_blank')" style="background:rgba(14,165,233,.15);color:#0369a1;border-color:rgba(14,165,233,.3)">📊 ანგარიშები <span class="card-open-arrow">→</span></button>
+        <span class="card-ver">v3.0 · ცალკე გვერდი</span>
       </div>
     </div>
 
