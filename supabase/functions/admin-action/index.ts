@@ -39,7 +39,8 @@ serve(async (req) => {
     if (requesterError || !requester)
       return json({ error: "Admin profile not found" }, 403);
 
-    const isAdmin = requester.role === "admin" || requester.email === "intechsolltd@gmail.com";
+    const ADMIN_EMAILS = ["lasha.shalamberidze@gmail.com", "intechsolltd@gmail.com"];
+    const isAdmin = requester.role === "admin" || ADMIN_EMAILS.includes((requester.email || "").toLowerCase());
     if (!isAdmin) return json({ error: "Forbidden: admin only" }, 403);
 
     const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);

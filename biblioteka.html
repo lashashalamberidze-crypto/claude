@@ -254,7 +254,7 @@
 <script>
 const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
 let sb=null, uid=null, userEmail=null, isAdmin=false;
-const ADMIN_EMAIL='intechsolltd@gmail.com';
+const ADMIN_EMAILS=['lasha.shalamberidze@gmail.com','intechsolltd@gmail.com'];
 
 const PH_DOCS_KEY='its_ph_docs';
 const PH_PARTNERS_KEY='its_ph_partners';
@@ -297,7 +297,7 @@ async function showApp(email){
 
 // ── ადმინის დადგენა: users.role==='admin' ან ცნობილი ადმინ-მეილი ──
 async function detectAdmin(){
-  isAdmin = (String(userEmail||'').toLowerCase() === ADMIN_EMAIL);
+  isAdmin = ADMIN_EMAILS.indexOf(String(userEmail||'').toLowerCase()) >= 0;
   try{
     if(sb && uid){
       var r = await sb.from('users').select('role').eq('id', uid).single();
