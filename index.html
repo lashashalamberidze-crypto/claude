@@ -3781,27 +3781,27 @@ const accessToken = session?.access_token;
       </div>
     </div>
 
-    <div class="module-card card-rose clickable" id="mod-phenocal" onclick="tryOpenModule('phenocal')">
+    <div class="module-card card-rose clickable" id="mod-phenocal" onclick="window.open('./phenocal.html','_blank')">
       <div class="module-status status-active" id="status-phenocal">✓ აქტიური</div>
       <div class="card-icon-wrap">🌸</div>
       <div class="card-title">ფენოლოგიური კალენდარი</div>
-      <div class="card-desc">პლანტაციის ფენოფაზების მართვა — კვირტი, ყვავილობა, მომწიფება, მოსავლის ვადები, მოვლის განრიგი.</div>
+      <div class="card-desc">პლანტაციის ფენოფაზების მართვა — კვირტი, ყვავილობა, მომწიფება, მოსავლის ვადები, მოვლის განრიგი. ცალკე გვერდი, ღრუბელში.</div>
       <div class="card-tags"><span class="tag">🌿 ფაზები</span><span class="tag">📅 განრიგი</span><span class="tag">🔔 შეხსენება</span><span class="tag">📊 ისტორია</span></div>
       <div class="card-footer">
-        <button class="open-btn" id="btn-phenocal" style="background:rgba(52,211,153,.15);color:#059669;border-color:rgba(52,211,153,.3)">გახსნა <span class="card-open-arrow">→</span></button>
-        <span class="card-ver">v1.0</span>
+        <button class="open-btn" id="btn-phenocal" onclick="event.stopPropagation();window.open('./phenocal.html','_blank')" style="background:rgba(52,211,153,.15);color:#059669;border-color:rgba(52,211,153,.3)">🌸 გახსნა <span class="card-open-arrow">→</span></button>
+        <span class="card-ver">v2.0 · ცალკე გვერდი</span>
       </div>
     </div>
 
-    <div class="module-card card-teal clickable" id="mod-plantmon" onclick="tryOpenModule('plantmon')">
+    <div class="module-card card-teal clickable" id="mod-plantmon" onclick="window.open('./plantmon.html','_blank')">
       <div class="module-status status-active" id="status-plantmon">✓ აქტიური</div>
       <div class="card-icon-wrap">🌱</div>
       <div class="card-title">პლანტაციის მდგომარეობა</div>
-      <div class="card-desc">საველე მონიტორინგი — რიგისა და უბნის მიხედვით შეფასება (კარგი/საშუალო/ცუდი), ფოტო, შენიშვნა და ბეჭდვა. პლანშეტით ეტაპობრივი შემოწმებისთვის.</div>
+      <div class="card-desc">საველე მონიტორინგი — რიგისა და უბნის მიხედვით შეფასება (კარგი/საშუალო/ცუდი), ფოტო, შენიშვნა და ბეჭდვა. ცალკე გვერდი, ღრუბელში.</div>
       <div class="card-tags"><span class="tag">🟢 შეფასება</span><span class="tag">📷 ფოტო</span><span class="tag">📍 GPS</span><span class="tag">🖨️ ბეჭდვა</span></div>
       <div class="card-footer">
-        <button class="open-btn" id="btn-plantmon" style="background:rgba(6,182,212,.15);color:#0e7490;border-color:rgba(6,182,212,.3)">გახსნა <span class="card-open-arrow">→</span></button>
-        <span class="card-ver">v1.0</span>
+        <button class="open-btn" id="btn-plantmon" onclick="event.stopPropagation();window.open('./plantmon.html','_blank')" style="background:rgba(6,182,212,.15);color:#0e7490;border-color:rgba(6,182,212,.3)">🌱 გახსნა <span class="card-open-arrow">→</span></button>
+        <span class="card-ver">v2.0 · ცალკე გვერდი</span>
       </div>
     </div>
 

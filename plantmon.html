@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌱 პლანტაციის მდგომარეობა</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;font-family:'Noto Sans Georgian',system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:820px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.95rem;margin:0 0 8px;color:#334155}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select,textarea{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff;color:#0f172a}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:#06b6d4}
+  button{background:#06b6d4;color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:#0891b2;border:1.5px solid #06b6d4}
+  button.teal{background:#0d9488}button.o{background:#ea580c}button.r{background:#dc2626}
+  button.gray{background:#fff;color:#475569;border:1.5px solid #cbd5e1}
+  button:active{transform:scale(.98)}
+  .row2{display:flex;gap:8px;flex-wrap:wrap}.row2>*{flex:1;min-width:150px}
+  .muted{font-size:.8rem;color:#64748b}
+  .ok{color:#16a34a;font-weight:700}.warn{color:#dc2626;font-weight:700}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#cffafe;color:#155e75}.off{background:#fef3c7;color:#92400e}
+  /* tabs */
+  .tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .tab{flex:1;min-width:120px;background:#fff;border:1.5px solid #cbd5e1;color:#475569;border-radius:10px;padding:10px 12px;font-size:.85rem;font-weight:700;cursor:pointer;margin:0;width:auto}
+  .tab.active{background:#06b6d4;border-color:#06b6d4;color:#fff}
+  /* condition chips */
+  .condrow{display:flex;gap:8px}
+  .condrow button{flex:1;margin:0;background:#fff;border:1.5px solid #cbd5e1;color:#0f172a;font-weight:700;padding:13px}
+  .condrow button.on-good{background:#16a34a;border-color:#16a34a;color:#fff}
+  .condrow button.on-medium{background:#f59e0b;border-color:#f59e0b;color:#fff}
+  .condrow button.on-bad{background:#dc2626;border-color:#dc2626;color:#fff}
+  /* record list */
+  .rec{background:#fff;border:1px solid #e2e8f0;border-left:4px solid #94a3b8;border-radius:12px;padding:12px 14px;margin-top:9px}
+  .rec .top{display:flex;align-items:center;gap:10px}
+  .rec .ic{font-size:1.35rem}
+  .rec .nm{font-size:.9rem;font-weight:700;color:#0f172a}
+  .rec .meta{font-size:.72rem;color:#64748b;margin-top:2px}
+  .rec .acts{display:flex;gap:6px;margin-left:auto}
+  .rec .acts button{width:auto;margin:0;padding:5px 9px;font-size:.72rem}
+  .chips{margin-top:8px;display:flex;flex-wrap:wrap;gap:5px}
+  .chip{font-size:.68rem;background:rgba(6,182,212,.09);border:1px solid rgba(6,182,212,.22);border-radius:7px;padding:3px 9px;color:#0891b2;font-weight:600}
+  .thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+  .thumbs img{width:60px;height:60px;object-fit:cover;border-radius:9px;border:1px solid #e2e8f0}
+  .thumbwrap{position:relative}
+  .thumbwrap button{position:absolute;top:-7px;right:-7px;width:22px;height:22px;padding:0;margin:0;border-radius:50%;background:#dc2626;font-size:.72rem;line-height:1}
+  .steplabel{font-size:.72rem;color:#64748b;text-transform:uppercase;letter-spacing:.7px;margin:14px 0 8px;font-weight:700}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:11px 20px;border-radius:12px;font-size:.86rem;font-weight:600;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.25);opacity:0;transition:opacity .2s;pointer-events:none}
+  .toast.show{opacity:1}
+  .badge{font-size:.65rem;font-weight:700;border-radius:20px;padding:3px 9px}
+  .b-good{color:#166534;background:#dcfce7;border:1px solid #bbf7d0}
+  .b-medium{color:#92400e;background:#fef3c7;border:1px solid #fde68a}
+  .b-bad{color:#991b1b;background:#fee2e2;border:1px solid #fecaca}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  @media(max-width:560px){ .grid2{grid-template-columns:1fr} }
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>🌱 პლანტაციის მდგომარეობა — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <h1>🌱 პლანტაციის მდგომარეობა <span style="font-size:.6rem;background:#06b6d4;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v1</span></h1>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0891b2">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tabBtnList" onclick="switchTab('list')">📋 ჩანაწერები</button>
+    <button class="tab" id="tabBtnAdd" onclick="switchTab('add')">➕ ახალი შემოწმება</button>
+  </div>
+
+  <!-- ══ LIST ══ -->
+  <div id="viewList">
+    <div class="card">
+      <div class="row2" style="margin-bottom:4px">
+        <input id="pmFilterPlot" oninput="pmRender()" placeholder="🔍 უბანი / ბლოკი...">
+        <select id="pmFilterCond" onchange="pmRender()">
+          <option value="">⚪ ყველა მდგომარეობა</option>
+          <option value="good">🟢 კარგი</option>
+          <option value="medium">🟡 საშუალო</option>
+          <option value="bad">🔴 ცუდი</option>
+        </select>
+      </div>
+      <div class="row2" style="margin-top:6px">
+        <select id="pmFilterPlantation" onchange="pmRender()">
+          <option value="">🫐 ყველა პლანტაცია</option>
+        </select>
+        <select id="pmFilterStatus" onchange="pmRender()">
+          <option value="">📄 ყველა სტატუსი</option>
+          <option value="logged">📋 დაფიქსირდა</option>
+          <option value="inprogress">🔄 მუშავდება</option>
+          <option value="resolved">✅ მოგვარდა</option>
+        </select>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <h2 style="margin:0">📋 შემოწმებები</h2>
+        <button class="teal" style="width:auto;padding:8px 14px;margin:0" onclick="pmPrintAll()">🖨️ ბეჭდვა</button>
+      </div>
+      <div id="pmList"></div>
+      <div id="pmEmpty" style="text-align:center;color:#64748b;padding:34px 0;font-size:.88rem">ჩანაწერები არ არის. დაამატეთ ➕ ახალი შემოწმება.</div>
+    </div>
+  </div>
+
+  <!-- ══ ADD / EDIT ══ -->
+  <div id="viewAdd" style="display:none">
+    <div class="card">
+      <h2 id="pmFormTitle">➕ ახალი შემოწმება</h2>
+
+      <div class="steplabel">1 · მდებარეობა</div>
+      <div class="grid2">
+        <div>
+          <label>პლანტაცია</label>
+          <select id="pmPlantation" onchange="pmFillBlocks()"><option value="">— აირჩიეთ —</option></select>
+        </div>
+        <div>
+          <label>უბანი / ბლოკი *</label>
+          <div id="pmPlotSelWrap">
+            <select id="pmPlot" onchange="pmFillRows()"><option value="">🟩 აირჩიე ბლოკი</option></select>
+          </div>
+          <div id="pmPlotTextWrap" style="display:none">
+            <input type="text" id="pmPlotText" placeholder="უბანი / ბლოკი">
+          </div>
+          <div class="muted" style="margin-top:3px"><a href="#" onclick="pmTogglePlotManual();return false" id="pmPlotToggle" style="color:#0891b2;font-size:.74rem">✍️ ხელით ჩაწერა</a></div>
+        </div>
+        <div>
+          <label>რიგის ნომერი</label>
+          <div id="pmRowSelWrap">
+            <select id="pmRow"><option value="">📍 რიგი (არასავ.)</option></select>
+          </div>
+          <div id="pmRowTextWrap" style="display:none">
+            <input type="text" id="pmRowText" placeholder="რიგი № (მაგ. 5)">
+          </div>
+          <div class="muted" style="margin-top:3px"><a href="#" onclick="pmToggleRowManual();return false" id="pmRowToggle" style="color:#0891b2;font-size:.74rem">✍️ ხელით ჩაწერა</a></div>
+        </div>
+        <div>
+          <label>ინსპექტორი (ვინ ამოწმებს)</label>
+          <input type="text" id="pmInspector" placeholder="სახელი">
+        </div>
+        <div>
+          <label>თარიღი</label>
+          <input type="date" id="pmDate">
+        </div>
+        <div>
+          <label>სტატუსი</label>
+          <select id="pmStatus">
+            <option value="logged">📋 დაფიქსირდა</option>
+            <option value="inprogress">🔄 მუშავდება</option>
+            <option value="resolved">✅ მოგვარდა</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="steplabel">2 · მდგომარეობა *</div>
+      <input type="hidden" id="pmCondition" value="">
+      <div class="condrow">
+        <button type="button" id="pmCond_good" onclick="pmSetCond('good')">🟢 კარგი</button>
+        <button type="button" id="pmCond_medium" onclick="pmSetCond('medium')">🟡 საშუალო</button>
+        <button type="button" id="pmCond_bad" onclick="pmSetCond('bad')">🔴 ცუდი</button>
+      </div>
+
+      <!-- Problem details (shown when not good) -->
+      <div id="pmProblemBlock" style="display:none">
+        <div class="steplabel" style="color:#0891b2">⚠️ პრობლემის დეტალი</div>
+        <div class="grid2">
+          <div>
+            <label>პრობლემის ტიპი</label>
+            <select id="pmProblem">
+              <option value="">— აირჩიეთ —</option>
+              <option value="pest">🐛 მავნებელი</option>
+              <option value="disease">🍂 დაავადება</option>
+              <option value="water">💧 წყლის დეფიციტი</option>
+              <option value="nutrition">🌿 კვების ნაკლებობა</option>
+              <option value="mechanical">🔧 მექანიკური დაზიანება</option>
+              <option value="weed">🌱 სარეველა</option>
+              <option value="other">• სხვა</option>
+            </select>
+          </div>
+          <div>
+            <label>სიმძიმე</label>
+            <select id="pmSeverity">
+              <option value="">— აირჩიეთ —</option>
+              <option value="light">მსუბუქი</option>
+              <option value="medium">საშუალო</option>
+              <option value="heavy">მძიმე</option>
+            </select>
+          </div>
+        </div>
+        <label>გავრცელება (რამდენ მცენარეზე/რიგზე)</label>
+        <input type="text" id="pmSpread" placeholder="მაგ: 5-6 მცენარე, რიგის ბოლოს">
+        <label>რეკომენდებული ქმედება</label>
+        <input type="text" id="pmAction" placeholder="მაგ: შესხურება, მორწყვა, განოყიერება">
+      </div>
+
+      <div class="steplabel">3 · დამატებითი</div>
+      <label>📍 GPS კოორდინატი (არასავალდებულო)</label>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="pmGps" placeholder="გრძედი, განედი" style="flex:1;min-width:0">
+        <button type="button" onclick="pmGetGps()" class="sec" style="width:auto;margin:0;padding:0 16px">📍</button>
+      </div>
+
+      <label style="margin-top:10px">📷 ფოტო</label>
+      <input type="file" id="pmPhotoInput" accept="image/*" capture="environment" multiple style="display:none" onchange="pmAddPhotos(this)">
+      <button type="button" class="gray" onclick="document.getElementById('pmPhotoInput').click()">📷 ფოტოს გადაღება / არჩევა</button>
+      <div id="pmPhotoThumbs" class="thumbs"></div>
+
+      <label style="margin-top:10px">შენიშვნა / დაკვირვება</label>
+      <input type="text" id="pmNote" placeholder="დამატებითი ინფორმაცია">
+
+      <div class="row2" style="margin-top:14px">
+        <button id="pmCancelBtn" class="gray" onclick="pmCancelEdit()">← უკან</button>
+        <button id="pmSaveBtn" class="teal" onclick="pmAdd()">💾 შემოწმების შენახვა</button>
+      </div>
+      <div id="pmSaveMsg" class="err"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+let sb=null, uid=null, userEmail='';
+let PLANTATIONS=[], BLOCKS=[], ROWS=[];
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+function _today(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function safeAttr(s){ return String(s==null?'':s).replace(/"/g,'&quot;'); }
+function toast(m){ var t=document.getElementById('toast'); if(!t)return; t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},2600); }
+
+// ── constants ──
+const PM_COND = {
+  good:   {label:'კარგი',   icon:'🟢', color:'#16a34a'},
+  medium: {label:'საშუალო', icon:'🟡', color:'#f59e0b'},
+  bad:    {label:'ცუდი',    icon:'🔴', color:'#dc2626'}
+};
+const PM_PROBLEM = {
+  pest:'🐛 მავნებელი', disease:'🍂 დაავადება', water:'💧 წყლის დეფიციტი',
+  nutrition:'🌿 კვების ნაკლებობა', mechanical:'🔧 მექანიკური დაზიანება',
+  weed:'🌱 სარეველა', other:'• სხვა'
+};
+const PM_SEVERITY = { light:'მსუბუქი', medium:'საშუალო', heavy:'მძიმე' };
+const PM_STATUS = { logged:'📋 დაფიქსირდა', inprogress:'🔄 მუშავდება', resolved:'✅ მოგვარდა' };
+
+window._pmPhotos = [];
+window._pmEditId = null;
+window._pmPlotManual = false;
+window._pmRowManual = false;
+
+// ── auth ──
+async function doLogin(){
+  var e=document.getElementById('email').value.trim(), p=document.getElementById('pass').value, err=document.getElementById('loginErr');
+  err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+
+function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+async function showApp(email){
+  userEmail=email||'';
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('whoami').textContent=email||'—';
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+  pmResetForm();
+  switchTab('list');
+  await loadReference();
+  await pmLoadFromSupabase();
+  pmRender();
+}
+
+// ══ reference data (plantations / blocks / rows) ══
+async function loadReference(){
+  if(!sb||!uid) return;
+  try{ var rp=await sb.from('plantations').select('id,user_id,name,culture').eq('user_id',uid);
+    if(!rp.error && rp.data) PLANTATIONS=rp.data; }catch(e){ console.warn('plantations',e); }
+  try{ var rb=await sb.from('agro_blocks').select('*').eq('user_id',uid);
+    if(!rb.error && rb.data) BLOCKS=rb.data; }catch(e){ console.warn('agro_blocks',e); }
+  var ids=BLOCKS.map(function(b){ return b.id; });
+  if(ids.length){
+    try{ var rr=await sb.from('agro_rows').select('*').eq('user_id',uid).in('block_id',ids).range(0,9999);
+      if(!rr.error && rr.data) ROWS=rr.data; }catch(e){ console.warn('agro_rows',e); }
+  }
+  fillPlantationSelectors();
+  pmFillBlocks();
+}
+function fillPlantationSelectors(){
+  var opts='<option value="">— აირჩიეთ —</option>'+PLANTATIONS.map(function(p){ return '<option value="'+safeAttr(p.id)+'">'+esc(p.name||'')+(p.culture?' · '+esc(p.culture):'')+'</option>'; }).join('');
+  var sel=document.getElementById('pmPlantation'); if(sel){ var cur=sel.value; sel.innerHTML=opts; sel.value=cur; }
+  var f=document.getElementById('pmFilterPlantation');
+  if(f){ var curf=f.value; f.innerHTML='<option value="">🫐 ყველა პლანტაცია</option>'+PLANTATIONS.map(function(p){ return '<option value="'+safeAttr(p.id)+'">'+esc(p.name||'')+'</option>'; }).join(''); f.value=curf; }
+}
+
+// ══ localStorage mirror ══
+function pmGetAll(){ try{ return JSON.parse(localStorage.getItem('its_plantmon')||'[]'); }catch(e){ return []; } }
+function pmSaveLocal(arr){ try{ localStorage.setItem('its_plantmon', JSON.stringify(arr)); }catch(e){ console.warn('pm local save (quota?)', e); } }
+
+// ══ camelCase <-> snake_case mapping (mirrors index.html pmToRow / pmFromRow) ══
+function pmToRow(e, userId){
+  return {
+    id:e.id, user_id:userId, plantation_id:e.plantationId||null,
+    plot:e.plot||'', row_no:e.row||'', inspector:e.inspector||'',
+    inspected_at:e.date||'', condition:e.condition||'', problem:e.problem||'',
+    severity:e.severity||'', spread:e.spread||'', action:e.action||'',
+    status:e.status||'logged', gps:e.gps||'', note:e.note||'', photos:e.photos||[]
+  };
+}
+function pmFromRow(r){
+  return {
+    id:r.id, plantationId:r.plantation_id||'', plot:r.plot||'', row:r.row_no||'',
+    inspector:r.inspector||'', date:r.inspected_at||'', condition:r.condition||'',
+    problem:r.problem||'', severity:r.severity||'', spread:r.spread||'', action:r.action||'',
+    status:r.status||'logged', gps:r.gps||'', note:r.note||'', photos:r.photos||[]
+  };
+}
+
+// ══ cloud save (mandatory) with minimal-upsert fallback ══
+function pmSaveRecord(e){
+  var arr=pmGetAll();
+  var i=arr.findIndex(function(x){ return String(x.id)===String(e.id); });
+  if(i>=0) arr[i]=e; else arr.push(e);
+  arr.sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); });
+  pmSaveLocal(arr);
+  if(sb && uid){
+    try{
+      var full=pmToRow(e,uid);
+      sb.from('plantmon_records').upsert(full).then(function(res){
+        if(res&&res.error){
+          console.warn('plantmon full upsert failed:', res.error.message);
+          var min={id:e.id,user_id:uid,plot:e.plot||'',row_no:e.row||'',inspector:e.inspector||'',inspected_at:e.date||'',condition:e.condition||'',status:e.status||'logged',note:e.note||''};
+          return sb.from('plantmon_records').upsert(min).then(function(r2){ if(r2&&r2.error){ console.warn('plantmon min upsert failed:', r2.error.message); toast('⚠️ ღრუბელში შენახვა ვერ მოხერხდა'); } });
+        }
+      }).catch(function(err){ console.warn('plantmon save', err); toast('⚠️ ღრუბელში შენახვა ვერ მოხერხდა'); });
+    }catch(err){ console.warn('plantmon save ex', err); }
+  }
+}
+
+async function pmLoadFromSupabase(){
+  if(!sb || !uid) return;
+  try{
+    var res=await sb.from('plantmon_records').select('*').eq('user_id',uid).order('inspected_at',{ascending:false});
+    if(res.error) throw res.error;
+    pmSaveLocal((res.data||[]).map(pmFromRow));
+  }catch(e){ console.warn('pmLoadFromSupabase', e); toast('⚠️ ღრუბლიდან ჩატვირთვის შეცდომა'); }
+}
+
+// ══ tabs ══
+function switchTab(tab){
+  document.getElementById('viewList').style.display=(tab==='list')?'block':'none';
+  document.getElementById('viewAdd').style.display=(tab==='add')?'block':'none';
+  document.getElementById('tabBtnList').classList.toggle('active',tab==='list');
+  document.getElementById('tabBtnAdd').classList.toggle('active',tab==='add');
+  if(tab==='list') pmRender();
+}
+
+// ══ block/row selectors ══
+function pmFillBlocks(){
+  var sel=document.getElementById('pmPlot'); if(!sel) return;
+  var plId=(document.getElementById('pmPlantation')||{}).value||'';
+  var cur=sel.value;
+  var bs=BLOCKS.filter(function(b){ return !plId || String(b.plantation_id)===String(plId); });
+  var html='<option value="">🟩 აირჩიე ბლოკი</option>';
+  bs.forEach(function(b){ html+='<option value="'+safeAttr(b.name||'')+'" data-bid="'+safeAttr(b.id||'')+'">'+esc(b.name||'')+(b.variety?' · '+esc(b.variety):'')+'</option>'; });
+  if(!bs.length) html+='<option value="" disabled>— ბლოკი არ არის —</option>';
+  sel.innerHTML=html; if(cur) sel.value=cur;
+  pmFillRows();
+}
+function pmFillRows(){
+  var bsel=document.getElementById('pmPlot'), rsel=document.getElementById('pmRow');
+  if(!rsel) return;
+  var opt=bsel&&bsel.options[bsel.selectedIndex]; var bid=opt?opt.getAttribute('data-bid'):'';
+  var rows=ROWS.filter(function(r){ return bid && String(r.block_id)===String(bid); }).sort(function(a,b){ return String(a.name==null?'':a.name).localeCompare(String(b.name==null?'':b.name),undefined,{numeric:true}); });
+  var cur=rsel.value;
+  var html='<option value="">📍 რიგი (არასავ.)</option>';
+  rows.forEach(function(r){ html+='<option value="'+safeAttr(r.name||'')+'">'+esc(r.name||'')+(r.plant_count?' · '+r.plant_count+' ნერგი':'')+'</option>'; });
+  rsel.innerHTML=html; if(cur) rsel.value=cur;
+}
+function pmTogglePlotManual(){
+  window._pmPlotManual=!window._pmPlotManual;
+  document.getElementById('pmPlotSelWrap').style.display=window._pmPlotManual?'none':'block';
+  document.getElementById('pmPlotTextWrap').style.display=window._pmPlotManual?'block':'none';
+  document.getElementById('pmPlotToggle').textContent=window._pmPlotManual?'📋 სიიდან არჩევა':'✍️ ხელით ჩაწერა';
+}
+function pmToggleRowManual(){
+  window._pmRowManual=!window._pmRowManual;
+  document.getElementById('pmRowSelWrap').style.display=window._pmRowManual?'none':'block';
+  document.getElementById('pmRowTextWrap').style.display=window._pmRowManual?'block':'none';
+  document.getElementById('pmRowToggle').textContent=window._pmRowManual?'📋 სიიდან არჩევა':'✍️ ხელით ჩაწერა';
+}
+function _pmGetPlot(){ return window._pmPlotManual ? (document.getElementById('pmPlotText').value||'').trim() : (document.getElementById('pmPlot').value||'').trim(); }
+function _pmGetRow(){ return window._pmRowManual ? (document.getElementById('pmRowText').value||'').trim() : (document.getElementById('pmRow').value||'').trim(); }
+
+// ══ condition chips ══
+function pmSetCond(v){
+  var el=document.getElementById('pmCondition'); if(el) el.value=v;
+  ['good','medium','bad'].forEach(function(k){
+    var b=document.getElementById('pmCond_'+k); if(!b) return;
+    b.className=''; if(k===v) b.classList.add('on-'+k);
+  });
+  var pb=document.getElementById('pmProblemBlock'); if(pb) pb.style.display=(v && v!=='good')?'block':'none';
+}
+
+// ══ photos ══
+function pmDownscale(file, cb){
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var img=new Image();
+    img.onload=function(){
+      var w=img.width, h=img.height, max=1024;
+      if(w>max||h>max){ var r=Math.min(max/w,max/h); w=Math.round(w*r); h=Math.round(h*r); }
+      try{
+        var c=document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        cb(c.toDataURL('image/jpeg',0.7));
+      }catch(_e){ cb(ev.target.result); }
+    };
+    img.onerror=function(){ cb(ev.target.result); };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function pmAddPhotos(input){
+  var files=Array.prototype.slice.call(input.files||[]);
+  files.forEach(function(f){ pmDownscale(f,function(d){ window._pmPhotos.push(d); pmRenderPhotos(); }); });
+  input.value='';
+}
+function pmRenderPhotos(){
+  var box=document.getElementById('pmPhotoThumbs'); if(!box) return;
+  box.innerHTML=window._pmPhotos.map(function(p,i){ return '<div class="thumbwrap"><img src="'+safeAttr(p)+'"><button type="button" onclick="pmRemovePhoto('+i+')">✕</button></div>'; }).join('');
+}
+function pmRemovePhoto(i){ window._pmPhotos.splice(i,1); pmRenderPhotos(); }
+
+// ══ GPS ══
+function pmGetGps(){
+  if(!navigator.geolocation){ alert('GPS მიუწვდომელია ამ მოწყობილობაზე'); return; }
+  navigator.geolocation.getCurrentPosition(function(p){
+    var v=p.coords.latitude.toFixed(6)+', '+p.coords.longitude.toFixed(6);
+    var el=document.getElementById('pmGps'); if(el) el.value=v;
+    toast('📍 მდებარეობა დაფიქსირდა');
+  }, function(){ alert('მდებარეობა ვერ მოიძებნა'); }, {enableHighAccuracy:true,timeout:8000});
+}
+
+// ══ form ══
+function pmResetForm(){
+  ['pmInspector','pmProblem','pmSeverity','pmSpread','pmAction','pmGps','pmNote','pmPlotText','pmRowText'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  var plt=document.getElementById('pmPlantation'); if(plt) plt.value='';
+  var plot=document.getElementById('pmPlot'); if(plot) plot.value='';
+  var row=document.getElementById('pmRow'); if(row) row.value='';
+  var st=document.getElementById('pmStatus'); if(st) st.value='logged';
+  var cond=document.getElementById('pmCondition'); if(cond) cond.value='';
+  pmSetCond('');
+  window._pmPhotos=[]; pmRenderPhotos();
+  window._pmEditId=null;
+  if(window._pmPlotManual) pmTogglePlotManual();
+  if(window._pmRowManual) pmToggleRowManual();
+  var d=document.getElementById('pmDate'); if(d) d.value=_today();
+  var insp=document.getElementById('pmInspector'); if(insp && userEmail) insp.value='';
+  document.getElementById('pmFormTitle').textContent='➕ ახალი შემოწმება';
+  document.getElementById('pmSaveBtn').innerHTML='💾 შემოწმების შენახვა';
+  document.getElementById('pmSaveMsg').textContent='';
+  pmFillBlocks();
+}
+
+function pmAdd(){
+  var msg=document.getElementById('pmSaveMsg'); msg.textContent='';
+  var plot=_pmGetPlot();
+  var condition=(document.getElementById('pmCondition')||{}).value||'';
+  var date=(document.getElementById('pmDate')||{}).value||_today();
+  if(!plot){ msg.textContent='❌ მიუთითეთ უბანი / ბლოკი'; return; }
+  if(!condition){ msg.textContent='❌ აირჩიეთ მდგომარეობა (კარგი / საშუალო / ცუდი)'; return; }
+  var g=function(id){ return ((document.getElementById(id)||{}).value||''); };
+  var rec={
+    plantationId:(document.getElementById('pmPlantation')||{}).value||'',
+    plot:plot, row:_pmGetRow(), inspector:g('pmInspector').trim(), date:date,
+    condition:condition, problem:g('pmProblem'), severity:g('pmSeverity'),
+    spread:g('pmSpread').trim(), action:g('pmAction').trim(), status:g('pmStatus')||'logged',
+    gps:g('pmGps').trim(), note:g('pmNote').trim(), photos:(window._pmPhotos||[]).slice()
+  };
+  var editId=window._pmEditId;
+  rec.id = editId || ('pm_'+Date.now()+'_'+Math.random().toString(36).slice(2,6));
+  pmSaveRecord(rec);
+  pmResetForm();
+  toast(editId?'✅ შემოწმება განახლდა':'✅ შემოწმება დაემატა');
+  switchTab('list');
+}
+
+function pmEdit(id){
+  var e=pmGetAll().find(function(x){ return String(x.id)===String(id); });
+  if(!e) return;
+  window._pmEditId=e.id;
+  switchTab('add');
+  var plt=document.getElementById('pmPlantation'); if(plt) plt.value=e.plantationId||'';
+  pmFillBlocks();
+  // plot
+  var plotSel=document.getElementById('pmPlot');
+  var hasBlock=e.plot && Array.prototype.some.call(plotSel.options,function(o){ return o.value===e.plot; });
+  if(hasBlock){ if(window._pmPlotManual) pmTogglePlotManual(); plotSel.value=e.plot; pmFillRows(); }
+  else { if(!window._pmPlotManual) pmTogglePlotManual(); document.getElementById('pmPlotText').value=e.plot||''; }
+  // row
+  var rowSel=document.getElementById('pmRow');
+  var hasRow=e.row && Array.prototype.some.call(rowSel.options,function(o){ return o.value===e.row; });
+  if(hasRow){ if(window._pmRowManual) pmToggleRowManual(); rowSel.value=e.row; }
+  else if(e.row){ if(!window._pmRowManual) pmToggleRowManual(); document.getElementById('pmRowText').value=e.row||''; }
+  var set=function(elid,val){ var el=document.getElementById(elid); if(el) el.value=(val==null?'':val); };
+  set('pmInspector',e.inspector); set('pmDate',e.date||_today());
+  set('pmProblem',e.problem); set('pmSeverity',e.severity); set('pmSpread',e.spread);
+  set('pmAction',e.action); set('pmStatus',e.status||'logged'); set('pmGps',e.gps); set('pmNote',e.note);
+  pmSetCond(e.condition||'');
+  window._pmPhotos=(e.photos||[]).slice(); pmRenderPhotos();
+  document.getElementById('pmFormTitle').textContent='✏️ შემოწმების რედაქტირება';
+  document.getElementById('pmSaveBtn').innerHTML='💾 ცვლილების შენახვა';
+}
+
+function pmCancelEdit(){ pmResetForm(); switchTab('list'); }
+
+function pmDelete(id){
+  var e=pmGetAll().find(function(x){ return String(x.id)===String(id); });
+  if(!confirm('წაიშალოს ეს შემოწმება?')) return;
+  pmSaveLocal(pmGetAll().filter(function(x){ return String(x.id)!==String(id); }));
+  if(sb && uid){
+    try{ sb.from('plantmon_records').delete().eq('id',id).eq('user_id',uid).then(function(r){ if(r&&r.error){ console.warn('pm del',r.error); toast('⚠️ ღრუბელში წაშლა ვერ მოხერხდა'); } }).catch(function(er){ console.warn('pm del',er); }); }catch(er){}
+  }
+  toast('🗑️ წაიშალა');
+  pmRender();
+}
+
+// ══ list rendering ══
+function pmFiltered(){
+  var plotF=((document.getElementById('pmFilterPlot')||{}).value||'').toLowerCase().trim();
+  var condF=(document.getElementById('pmFilterCond')||{}).value||'';
+  var stF=(document.getElementById('pmFilterStatus')||{}).value||'';
+  var plF=(document.getElementById('pmFilterPlantation')||{}).value||'';
+  return pmGetAll().filter(function(e){
+    if(plotF && String(e.plot||'').toLowerCase().indexOf(plotF)<0) return false;
+    if(condF && e.condition!==condF) return false;
+    if(stF && e.status!==stF) return false;
+    if(plF && String(e.plantationId||'')!==String(plF)) return false;
+    return true;
+  }).sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
+}
+
+function _plantationName(id){ var p=PLANTATIONS.find(function(x){ return String(x.id)===String(id); }); return p?p.name:''; }
+
+function pmRender(){
+  var list=document.getElementById('pmList');
+  var empty=document.getElementById('pmEmpty');
+  if(!list) return;
+  var rows=pmFiltered();
+  if(!rows.length){ list.innerHTML=''; if(empty) empty.style.display='block'; return; }
+  if(empty) empty.style.display='none';
+  list.innerHTML=rows.map(function(e){
+    var c=PM_COND[e.condition]||{label:e.condition||'—',icon:'⚪',color:'#94a3b8'};
+    var stL=PM_STATUS[e.status]||e.status||'';
+    var plName=_plantationName(e.plantationId);
+    var chips=[];
+    if(e.problem) chips.push(PM_PROBLEM[e.problem]||e.problem);
+    if(e.severity) chips.push('სიმძიმე: '+(PM_SEVERITY[e.severity]||e.severity));
+    if(e.spread) chips.push('📊 '+e.spread);
+    if(e.action) chips.push('➡️ '+e.action);
+    if(e.gps) chips.push('📍 '+e.gps);
+    var chipHtml=chips.length?'<div class="chips">'+chips.map(function(t){ return '<span class="chip">'+esc(t)+'</span>'; }).join('')+'</div>':'';
+    var photoHtml=(e.photos&&e.photos.length)?'<div class="thumbs">'+e.photos.map(function(p){ return '<img src="'+safeAttr(p)+'">'; }).join('')+'</div>':'';
+    return '<div class="rec" style="border-left-color:'+c.color+'">'
+      + '<div class="top">'
+        + '<span class="ic">'+c.icon+'</span>'
+        + '<div style="min-width:0;flex:1">'
+          + '<div class="nm">'+esc(e.plot||'—')+(e.row?' · რიგი '+esc(e.row):'')+' <span class="badge b-'+esc(e.condition)+'">'+esc(c.label)+'</span></div>'
+          + '<div class="meta">'+esc(String(e.date||''))+(e.inspector?' · 👤 '+esc(e.inspector):'')+' · '+esc(stL)+(plName?' · 🫐 '+esc(plName):'')+'</div>'
+        + '</div>'
+        + '<div class="acts">'
+          + '<button class="sec" onclick="pmPrintOne(\''+safeAttr(e.id)+'\')" title="ბეჭდვა">🖨️</button>'
+          + '<button class="sec" onclick="pmEdit(\''+safeAttr(e.id)+'\')" title="რედაქტირება">✏️</button>'
+          + '<button class="r" onclick="pmDelete(\''+safeAttr(e.id)+'\')" title="წაშლა">🗑️</button>'
+        + '</div>'
+      + '</div>'
+      + chipHtml
+      + (e.note?'<div class="meta" style="margin-top:7px">📝 '+esc(e.note)+'</div>':'')
+      + photoHtml
+    + '</div>';
+  }).join('');
+}
+
+// ══ print single record ══
+function pmPrintOne(id){
+  var e=pmGetAll().find(function(x){ return String(x.id)===String(id); });
+  if(!e){ alert('ჩანაწერი ვერ მოიძებნა'); return; }
+  var c=PM_COND[e.condition]||{label:e.condition||'',icon:'⚪'};
+  var plName=_plantationName(e.plantationId);
+  var rowHtml=function(k,v){ return v?('<tr><th>'+esc(k)+'</th><td>'+esc(v)+'</td></tr>'):''; };
+  var photos=(e.photos&&e.photos.length)?('<div class="ph">'+e.photos.map(function(p){ return '<img src="'+p+'">'; }).join('')+'</div>'):'';
+  var html='<!doctype html><html lang="ka"><head><meta charset="utf-8"><title>შემოწმება — '+esc(e.plot||'')+'</title><style>'
+    +'@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:"Noto Sans Georgian",Arial,sans-serif;color:#123;margin:0;font-size:13px}'
+    +'.hd{border-bottom:2px solid #06b6d4;padding-bottom:8px;margin-bottom:14px}.brand{font-size:16px;font-weight:800;color:#0891b2}'
+    +'.sub{font-size:12px;color:#475569;margin-top:3px}table{width:100%;border-collapse:collapse;margin-bottom:14px}'
+    +'th,td{border:1px solid #cbd5e1;padding:8px 10px;text-align:left;vertical-align:top}th{background:#ecfeff;width:180px;font-weight:700}'
+    +'.ph{display:flex;gap:10px;flex-wrap:wrap}.ph img{width:200px;border-radius:8px;border:1px solid #cbd5e1}'
+    +'.sign{display:flex;justify-content:space-between;margin-top:30px;font-size:12px}</style></head><body>'
+    +'<div class="hd"><div class="brand">🌱 პლანტაციის მდგომარეობა — საველე შემოწმება</div>'
+    +'<div class="sub">დაბეჭდვა: '+esc(new Date().toLocaleString('ka-GE'))+'</div></div>'
+    +'<table>'
+    +rowHtml('პლანტაცია', plName)
+    +rowHtml('უბანი / ბლოკი', e.plot)
+    +rowHtml('რიგი', e.row)
+    +rowHtml('თარიღი', e.date)
+    +rowHtml('ინსპექტორი', e.inspector)
+    +'<tr><th>მდგომარეობა</th><td>'+c.icon+' '+esc(c.label)+'</td></tr>'
+    +rowHtml('სტატუსი', (PM_STATUS[e.status]||e.status||'').replace(/[^Ⴀ-ჿ \w]/g,'').trim())
+    +rowHtml('პრობლემა', PM_PROBLEM[e.problem]||e.problem)
+    +rowHtml('სიმძიმე', PM_SEVERITY[e.severity]||e.severity)
+    +rowHtml('გავრცელება', e.spread)
+    +rowHtml('რეკომენდებული ქმედება', e.action)
+    +rowHtml('GPS', e.gps)
+    +rowHtml('შენიშვნა', e.note)
+    +'</table>'
+    +photos
+    +'<div class="sign"><div>ინსპექტორი / აგრონომი: ______________</div><div>ხელმოწერა: __________ თარიღი: ______</div></div>'
+    +'<scr'+'ipt>setTimeout(function(){window.print();},400);</scr'+'ipt></body></html>';
+  var w=window.open('','_blank');
+  if(!w){ alert('Popup დაიბლოკა — დართეთ popup-ები ბრაუზერში'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+}
+
+// ══ print all (filtered) ══
+function pmPrintAll(){
+  var rows=pmFiltered();
+  if(!rows.length){ alert('ჩანაწერები არ არის'); return; }
+  var body=rows.map(function(e,i){
+    var c=PM_COND[e.condition]||{label:e.condition||''};
+    return '<tr><td>'+(i+1)+'</td><td>'+esc(String(e.date||''))+'</td><td>'+esc(_plantationName(e.plantationId))+'</td><td>'+esc(e.plot||'')+'</td><td>'+esc(e.row||'')+'</td>'
+      +'<td>'+esc(c.label)+'</td><td>'+esc(PM_PROBLEM[e.problem]||e.problem||'')+'</td><td>'+esc(PM_SEVERITY[e.severity]||e.severity||'')+'</td>'
+      +'<td>'+esc(e.action||'')+'</td><td>'+esc((PM_STATUS[e.status]||e.status||'').replace(/[^Ⴀ-ჿ \w]/g,'').trim())+'</td><td>'+esc(e.inspector||'')+'</td><td>'+esc(e.note||'')+'</td></tr>';
+  }).join('');
+  var css='@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{font-family:"Noto Sans Georgian",Arial,sans-serif;color:#123;margin:0;font-size:11px}'
+    +'.hd{border-bottom:2px solid #06b6d4;padding-bottom:8px;margin-bottom:12px}.brand{font-size:15px;font-weight:800;color:#0891b2}'
+    +'table{width:100%;border-collapse:collapse}th,td{border:1px solid #94a3b8;padding:5px 6px;text-align:left;vertical-align:top}'
+    +'th{background:#ecfeff;font-size:10px}td{font-size:10px}tr:nth-child(even) td{background:#f8fafc}';
+  var html='<!doctype html><html lang="ka"><head><meta charset="utf-8"><title>პლანტაციის მდგომარეობა</title><style>'+css+'</style></head><body>'
+    +'<div class="hd"><div class="brand">🌱 პლანტაციის მდგომარეობა — საველე მონიტორინგი</div>'
+    +'<div style="font-size:11px;color:#475569">დაბეჭდვა: '+esc(new Date().toLocaleString('ka-GE'))+'</div></div>'
+    +'<table><thead><tr><th>№</th><th>თარიღი</th><th>პლანტაცია</th><th>უბანი</th><th>რიგი</th><th>მდგომარეობა</th><th>პრობლემა</th><th>სიმძიმე</th><th>ქმედება</th><th>სტატუსი</th><th>ინსპექტორი</th><th>შენიშვნა</th></tr></thead><tbody>'+body+'</tbody></table>'
+    +'<scr'+'ipt>setTimeout(function(){window.print();},400);</scr'+'ipt></body></html>';
+  var w=window.open('','_blank');
+  if(!w){ alert('Popup დაიბლოკა — დართეთ popup-ები ბრაუზერში'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+}
+
+// ══ session resume on load ══
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; showApp(s.data.session.user.email); } }catch(e){} })();
+</script>
+</body></html>

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌸 ფენოლოგიური კალენდარი</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;font-family:"Noto Sans Georgian",system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:860px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.95rem;margin:0 0 8px;color:#334155}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff;color:#0f172a}
+  input:focus,select:focus{outline:none;border-color:#f43f5e}
+  button{background:#059669;color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:#059669;border:1.5px solid #059669}
+  button.rose{background:linear-gradient(135deg,#f43f5e,#e11d48)}
+  button.teal{background:#0d9488}button.o{background:#ea580c}button.r{background:#dc2626}
+  button.gray{background:#fff;color:#475569;border:1.5px solid #cbd5e1}
+  button:active{transform:scale(.98)}
+  .row2{display:flex;gap:8px;flex-wrap:wrap}.row2>*{flex:1;min-width:140px}
+  .muted{font-size:.8rem;color:#64748b}
+  .ok{color:#16a34a;font-weight:700}.warn{color:#dc2626;font-weight:700}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+  /* header */
+  .apphead{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(244,63,94,.08),rgba(52,211,153,.08));border:1px solid #fbcfe8;border-radius:14px;padding:14px 16px;margin-bottom:13px}
+  .apphead .ic{font-size:2rem;line-height:1}
+  .apphead .ti{font-size:1.05rem;font-weight:700;color:#0f172a}
+  .apphead .su{font-size:.74rem;color:#64748b;margin-top:2px}
+  /* tabs */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px}
+  .tab{flex:1;min-width:110px;background:#fff;color:#475569;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 10px;font-size:.82rem;font-weight:600;cursor:pointer;margin:0}
+  .tab.active{background:linear-gradient(135deg,#f43f5e,#e11d48);color:#fff;border-color:transparent}
+  /* form grid */
+  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  .fgrid .full{grid-column:1/-1}
+  .fg{margin-bottom:2px}
+  /* chem rows */
+  .chem-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;border:1px solid #e2e8f0;border-radius:9px;padding:9px;background:#f8fafc;margin-top:6px}
+  .chem-row input{padding:8px 10px;font-size:.85rem;min-width:0}
+  .chem-row .cdel{grid-column:span 2;justify-self:end;background:none;border:none;color:#e11d48;width:auto;margin:0;padding:2px 6px;font-size:.78rem}
+  /* log entry */
+  .logrow{background:#fff;border:1px solid #e2e8f0;border-left:4px solid #e2e8f0;border-radius:11px;padding:11px 13px;margin-top:9px}
+  .logrow .top{display:flex;align-items:center;gap:9px}
+  .logrow .em{font-size:1.4rem;line-height:1}
+  .logrow .lbl{font-size:.9rem;font-weight:700;color:#0f172a}
+  .logrow.done .lbl{color:#94a3b8;text-decoration:line-through}
+  .logrow .sub{font-size:.72rem;color:#64748b;margin-top:1px}
+  .logrow .acts{margin-left:auto;display:flex;gap:5px;align-items:center}
+  .logrow .acts button{width:auto;margin:0;padding:4px 9px;font-size:.72rem}
+  .chip{font-size:.68rem;border-radius:7px;padding:2px 8px;display:inline-block}
+  .chip.chem{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.28);color:#059669}
+  .chip.trace{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.28);color:#0284c7}
+  .chiprow{margin-top:7px;display:flex;flex-wrap:wrap;gap:4px}
+  .advice{margin-top:7px;font-size:.7rem;background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.18);border-radius:8px;padding:6px 9px;color:#059669;line-height:1.5}
+  .stbtn{border-radius:8px;padding:4px 10px;font-size:.7rem;font-weight:700;white-space:nowrap;width:auto;margin:0}
+  .st-planned{background:rgba(148,163,184,.15);color:#64748b;border:1px solid rgba(148,163,184,.4)}
+  .st-active{background:rgba(251,191,36,.15);color:#b45309;border:1px solid rgba(251,191,36,.5)}
+  .st-done{background:rgba(16,185,129,.15);color:#047857;border:1px solid rgba(16,185,129,.5)}
+  /* calendar grid */
+  .calgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+  .calcell{background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:9px 10px;min-height:86px}
+  .calcell.cur{background:rgba(52,211,153,.06);border-color:rgba(52,211,153,.45)}
+  .calcell .mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .calcell .mn{font-size:.72rem;font-weight:700;color:#334155}
+  .calcell.cur .mn{color:#059669}
+  .calcell .cnt{font-size:.6rem;color:#64748b;background:#f1f5f9;border-radius:8px;padding:1px 6px}
+  .calitem{display:flex;align-items:flex-start;gap:5px;margin-bottom:4px;padding:4px 6px;background:#f8fafc;border-left:2px solid #e2e8f0;border-radius:5px}
+  .calitem .cl{font-size:.66rem;font-weight:600;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .calitem .cd{font-size:.58rem;color:#94a3b8}
+  .empty{text-align:center;color:#64748b;padding:34px 0;font-size:.85rem}
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:11px 20px;border-radius:12px;font-size:.85rem;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:all .25s;z-index:9999;max-width:90vw;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media(max-width:560px){.fgrid{grid-template-columns:1fr}.calgrid{grid-template-columns:repeat(2,1fr)}}
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>🌸 ფენოლოგიური კალენდარი — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button class="rose" onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+
+  <div class="apphead">
+    <div class="ic">🌸</div>
+    <div style="min-width:0">
+      <div class="ti">ფენოლოგიური კალენდარი</div>
+      <div class="su" id="phSubtitle">პლანტაციის ვეგეტაციური ფაზების მართვა</div>
+    </div>
+    <div style="margin-left:auto;text-align:right">
+      <div style="font-size:.72rem">შესული: <b id="whoami" style="color:#e11d48">…</b></div>
+      <button class="sec" style="width:auto;padding:5px 10px;margin:4px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
+    </div>
+  </div>
+
+  <!-- Plantation context selector (optional, read-only) -->
+  <div class="card" id="phPlantCard" style="display:none;padding:11px 15px">
+    <label style="margin-top:0">🌱 პლანტაცია (კონტექსტი)</label>
+    <select id="phPlant" onchange="phOnPlantChange()"></select>
+  </div>
+
+  <div class="tabs" id="phTabs">
+    <button class="tab active" data-tab="calendar" onclick="phSwitchTab('calendar',this)">📅 კალენდარი</button>
+    <button class="tab" data-tab="log" onclick="phSwitchTab('log',this)">📋 ჩანაწერები</button>
+    <button class="tab" data-tab="add" onclick="phSwitchTab('add',this)">➕ დამატება</button>
+  </div>
+
+  <!-- CALENDAR -->
+  <div id="phTabCalendar" class="card">
+    <h2>📅 ვეგეტაციური ციკლი — თვეების მიხედვით</h2>
+    <div id="phTimeline"></div>
+  </div>
+
+  <!-- LOG -->
+  <div id="phTabLog" class="card" style="display:none">
+    <h2>📋 ჩანაწერები</h2>
+    <div id="phLogList"></div>
+    <div id="phLogEmpty" class="empty">ჩანაწერები არ არის. დაამატეთ პირველი ➕ ჩანართში.</div>
+  </div>
+
+  <!-- ADD / EDIT -->
+  <div id="phTabAdd" class="card" style="display:none">
+    <h2 id="phAddTitle">➕ ახალი ჩანაწერი</h2>
+    <div class="fgrid">
+      <div class="fg full">
+        <label>ფაზა / ოპერაცია *</label>
+        <select id="phPhase" onchange="phOnPhaseChange()"></select>
+      </div>
+      <div class="fg full" id="phPhaseCustomWrap" style="display:none">
+        <label>ფაზის დასახელება (თავისუფალი ტექსტი)</label>
+        <input type="text" id="phPhaseCustom" placeholder="მაგ: ფოთლის ანალიზი">
+      </div>
+      <div class="fg">
+        <label>თარიღი დან *</label>
+        <input type="date" id="phDate">
+      </div>
+      <div class="fg">
+        <label>თარიღი მდე</label>
+        <input type="date" id="phDateTo">
+      </div>
+      <div class="fg">
+        <label>მდგომარეობა</label>
+        <select id="phStatus">
+          <option value="planned">📋 დაგეგმილი</option>
+          <option value="active">🔄 მიმდინარე</option>
+          <option value="done">✅ დასრულებული</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>ჯიში</label>
+        <input type="text" id="phVariety" placeholder="მაგ: საფერავი">
+      </div>
+      <div class="fg">
+        <label>შემსრულებელი (ვინ)</label>
+        <input type="text" id="phOperator" placeholder="სახელი / ბრიგადა">
+      </div>
+      <div class="fg">
+        <label>ტექნიკა / აღჭურვილობა</label>
+        <input type="text" id="phEquipment" placeholder="მაგ: ტრაქტორი + 600ლ ბაკი">
+      </div>
+      <div class="fg">
+        <label>ამინდი (ტემპ./ქარი/ტენი)</label>
+        <input type="text" id="phWeather" placeholder="მაგ: 22°C, ქარი 3 მ/წმ">
+      </div>
+      <div class="fg">
+        <label>შეხსენება (დღით ადრე)</label>
+        <input type="number" id="phRemind" placeholder="3" min="0" max="30">
+      </div>
+      <div class="fg full">
+        <label>შენიშვნა / დაკვირვება</label>
+        <input type="text" id="phNote" placeholder="მაგ: ყვავილობა 60%-ზე, ამინდი კარგი">
+      </div>
+      <!-- Harvest block -->
+      <div id="phHarvestBlock" class="full" style="display:none;border-top:1px dashed #cbd5e1;margin-top:6px;padding-top:8px">
+        <div style="font-size:.75rem;color:#0284c7;font-weight:700;margin-bottom:4px">🌾 კრეფა / პარტია</div>
+        <div class="fgrid">
+          <div class="fg"><label>მოსავალი (კგ)</label><input type="number" id="phHarvestKg" placeholder="1250" min="0" step="0.1"></div>
+          <div class="fg"><label>პარტიის / ლოტის №</label><input type="text" id="phLotNo" placeholder="LOT-2026-014"></div>
+          <div class="fg full"><label>დანიშნულება / მყიდველი</label><input type="text" id="phDestination" placeholder="საწყობი / მყიდველი"></div>
+        </div>
+      </div>
+      <!-- Chemicals -->
+      <div class="fg full">
+        <label style="display:flex;align-items:center;justify-content:space-between">
+          <span>💊 პრეპარატები / სასუქები <span class="muted" style="font-weight:400">(მოქმ.ნივთ. · დოზა · მეთოდი · სამიზნე · PHI)</span></span>
+          <button type="button" class="sec" style="width:auto;margin:0;padding:3px 11px;font-size:.72rem" onclick="phAddChemRow()">+ დამატება</button>
+        </label>
+        <div id="phChemRows"></div>
+      </div>
+    </div>
+    <div class="row2" style="margin-top:10px">
+      <button id="phCancelBtn" class="gray" style="display:none;flex:0 0 auto;min-width:120px" onclick="phCancelEdit()">გაუქმება</button>
+      <button id="phSaveBtn" class="rose" onclick="phAddEntry()">➕ ჩანაწერის დამატება</button>
+    </div>
+    <div id="phAddMsg" class="err"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+let sb=null, uid=null, ENTRIES=[], PLANTS=[], _phEditId=null;
+const LS_KEY='its_phenocal';
+
+const PH_PHASES = {
+  dormancy:  {label:'სიმშვიდის პერიოდი', icon:'❄️', color:'#94a3b8'},
+  budswell:  {label:'კვირტის გაბერება',  icon:'🌱', color:'#86efac'},
+  budbreak:  {label:'კვირტის გახსნა',    icon:'🌿', color:'#4ade80'},
+  flowering: {label:'ყვავილობა',         icon:'🌸', color:'#f472b6'},
+  fruitset:  {label:'ნაყოფის შეკვრა',    icon:'🍇', color:'#c084fc'},
+  veraison:  {label:'ფერის ცვლილება',    icon:'🎨', color:'#fb923c'},
+  ripening:  {label:'მომწიფება',         icon:'🌞', color:'#f59e0b'},
+  harvest:   {label:'მოსავლის კრეფა',    icon:'🌾', color:'#10b981'},
+  posthar:   {label:'კრეფის შემდეგი მოვლა', icon:'🍂', color:'#a78bfa'},
+  pruning:   {label:'გასხვლა',           icon:'✂️', color:'#22d3ee'},
+  fertilize: {label:'განოყიერება',       icon:'🌿', color:'#34d399'},
+  spray:     {label:'შესხურება',         icon:'🛠️', color:'#38bdf8'},
+  irrigation:{label:'მორწყვა',           icon:'🚿', color:'#0ea5e9'},
+  other:     {label:'სხვა',              icon:'📝', color:'#cbd5e1'}
+};
+const PH_ADVICE = {
+  dormancy:  '💤 მოსვენების პერიოდი — შეამოწმეთ ვაზი/ხე ზამთრის ზიანზე. გასხვლა დასაშვებია.',
+  budbreak:  '🌱 კვირტის გახსნა — ჭრაქის პირველი დამუშავება. სასუქი: აზოტი (N).',
+  budswell:  '🌱 კვირტის გაბერება — მოამზადეთ ტექნიკა და პრეპარატები.',
+  flowering: '🌸 ყვავილობა — ფუტკრის დაცვა! არ დაასხუროთ ინსექტიციდი. ბორი + კალციუმი.',
+  fruitset:  '🍇 ნაყოფის შეკვრა — ნაყოფის ნორმირება. ანტრაქნოზი — ფუნგიციდი.',
+  veraison:  '🎨 სიმწიფის დასაწყისი — ფოსფორ-კალიუმი (PK). წყლის რეჟიმის კონტროლი.',
+  ripening:  '🌞 მომწიფება — შეამცირეთ მორწყვა, აკონტროლეთ შაქრიანობა.',
+  harvest:   '🌾 კრეფა — ფიზ. სიმწიფე + შაქარი. ტემპერატურა + ნალექი გაითვალისწინეთ.',
+  posthar:   '🍂 კრეფის შემდეგ — სასუქი: კალიუმი (K). პოსტ-ჰარვ. დამუშავება.',
+  pruning:   '✂️ გასხვლა — ჭრილობების დაფარვა: სპილენძის სულფატი ან სპეც. პასტა.',
+  spray:     '🛠️ დამუშავება — ქარი/ტემპ. გაითვალისწინეთ, სველ ფოთოლს ნუ დაასხურებთ.',
+  fertilize: '🌿 სასუქის შეტანა — NPK +Mg+Zn. ნიადაგის ანალიზი — ოპტიმალურად.',
+  irrigation:'🚿 მორწყვა — წვეთოვანი 20–30 ლ/მ². სტრეს-პერიოდში ხშირად.',
+  other:     ''
+};
+const GEO_MONS=['იანვარი','თებერვალი','მარტი','აპრილი','მაისი','ივნისი','ივლისი','აგვისტო','სექტემბერი','ოქტომბერი','ნოემბერი','დეკემბერი'];
+const MS_SHORT=['იანვ','თებ','მარ','აპრ','მაი','ივნ','ივლ','აგვ','სექ','ოქტ','ნოე','დეკ'];
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+function _today(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function _uuid(){ try{ if(crypto&&crypto.randomUUID) return crypto.randomUUID(); }catch(e){} return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);}); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function geoDate(d){ d=d||new Date(); if(isNaN(d)) return ''; return d.getDate()+' '+GEO_MONS[d.getMonth()]+' '+d.getFullYear(); }
+function g(id){ var el=document.getElementById(id); return el?(el.value||''):''; }
+
+let _toastTimer=null;
+function toast(msg){ var t=document.getElementById('toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); clearTimeout(_toastTimer); _toastTimer=setTimeout(function(){ t.classList.remove('show'); },2400); }
+
+// ── auth ──
+async function doLogin(){
+  var e=document.getElementById('email').value.trim(), p=document.getElementById('pass').value, err=document.getElementById('loginErr');
+  err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+async function showApp(email){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('whoami').textContent=email||'—';
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+  buildPhaseSelect();
+  phResetAddForm();
+  ENTRIES=phGetLocal();
+  renderPhCalendar(); renderPhLog();
+  await loadPlantations();
+  await phLoadFromCloud();
+  phSwitchTab('calendar', document.querySelector('#phTabs .tab'));
+}
+
+// ── plantations (optional read-only context) ──
+async function loadPlantations(){
+  if(!sb||!uid) return;
+  try{
+    var r=await sb.from('plantations').select('id,user_id,name,culture').eq('user_id',uid);
+    if(r.error){ console.warn('plantations',r.error); return; }
+    PLANTS=r.data||[];
+  }catch(e){ console.warn('plantations',e); }
+  var card=document.getElementById('phPlantCard'), sel=document.getElementById('phPlant');
+  if(!PLANTS.length){ card.style.display='none'; return; }
+  card.style.display='block';
+  sel.innerHTML='<option value="">— ყველა / კონტექსტის გარეშე —</option>'+PLANTS.map(function(p){
+    return '<option value="'+esc(p.id)+'">'+esc(p.name||'უსახელო')+(p.culture?' · '+esc(p.culture):'')+'</option>';
+  }).join('');
+  phOnPlantChange();
+}
+function phOnPlantChange(){
+  var sel=document.getElementById('phPlant'); if(!sel) return;
+  var p=PLANTS.find(function(x){ return String(x.id)===String(sel.value); });
+  var sub=document.getElementById('phSubtitle');
+  if(p&&sub) sub.textContent=(p.name||'პლანტაცია')+(p.culture?' · '+p.culture:'')+' — ვეგეტაციური ფაზები';
+  else if(sub) sub.textContent='პლანტაციის ვეგეტაციური ფაზების მართვა';
+}
+
+// ── phase select ──
+function buildPhaseSelect(){
+  var sel=document.getElementById('phPhase'); if(!sel) return;
+  var h='<option value="">— აირჩიეთ ფაზა —</option>';
+  Object.keys(PH_PHASES).forEach(function(k){
+    var v=PH_PHASES[k];
+    h+='<option value="'+k+'">'+v.icon+' '+esc(v.label)+'</option>';
+  });
+  h+='<option value="__custom__">✏️ სხვა (თავისუფალი ტექსტი)</option>';
+  sel.innerHTML=h;
+}
+function phLookup(phase){
+  if(PH_PHASES[phase]) return PH_PHASES[phase];
+  return {label:phase||'—', icon:'📝', color:'#cbd5e1'};
+}
+
+// ── local + cloud data ──
+// CLOUD table phenocal_entries has EXACTLY 6 columns: id,user_id,phase,date,note,status.
+// All extra structured fields are serialized as JSON inside `note`.
+function phGetLocal(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'[]')||[]; }catch(e){ return []; } }
+function phSaveLocal(arr){ try{ localStorage.setItem(LS_KEY, JSON.stringify(arr)); }catch(e){} }
+
+function packNote(rec){
+  var payload={ t:rec.note||'', dt:rec.dateTo||'', rm:Number(rec.remind)||0,
+    va:rec.variety||'', op:rec.operator||'', eq:rec.equipment||'', we:rec.weather||'',
+    hk:(rec.harvestKg===''||rec.harvestKg==null)?'':rec.harvestKg, ln:rec.lotNo||'', de:rec.destination||'',
+    ch:Array.isArray(rec.chems)?rec.chems:[] };
+  return JSON.stringify(payload);
+}
+function unpackNote(noteStr){
+  var base={ note:'', dateTo:'', remind:0, variety:'', operator:'', equipment:'', weather:'', harvestKg:'', lotNo:'', destination:'', chems:[] };
+  var s=String(noteStr==null?'':noteStr);
+  if(s && s.charAt(0)==='{'){
+    try{ var o=JSON.parse(s);
+      return { note:o.t||'', dateTo:o.dt||'', remind:Number(o.rm)||0, variety:o.va||'', operator:o.op||'',
+        equipment:o.eq||'', weather:o.we||'', harvestKg:(o.hk==null?'':o.hk), lotNo:o.ln||'', destination:o.de||'',
+        chems:Array.isArray(o.ch)?o.ch:[] };
+    }catch(e){ base.note=s; return base; }
+  }
+  base.note=s; return base;
+}
+function toRow(rec){ return { id:rec.id, user_id:uid, phase:rec.phase||'', date:rec.date||'', note:packNote(rec), status:rec.status||'planned' }; }
+function fromRow(r){
+  var ex=unpackNote(r.note);
+  return { id:r.id, phase:r.phase||'', date:r.date||'', status:r.status||'planned',
+    note:ex.note, dateTo:ex.dateTo||r.date||'', remind:ex.remind, variety:ex.variety, operator:ex.operator,
+    equipment:ex.equipment, weather:ex.weather, harvestKg:ex.harvestKg, lotNo:ex.lotNo, destination:ex.destination, chems:ex.chems };
+}
+
+async function phLoadFromCloud(){
+  if(!sb||!uid) return;
+  try{
+    var r=await sb.from('phenocal_entries').select('*').eq('user_id',uid).order('date');
+    if(r.error){ console.warn('phLoadFromCloud',r.error); return; }
+    ENTRIES=(r.data||[]).map(fromRow);
+    phSaveLocal(ENTRIES);
+    renderPhCalendar(); renderPhLog();
+  }catch(e){ console.warn('phLoadFromCloud',e); }
+}
+async function sbUpsertEntry(rec){
+  if(!sb||!uid) return {error:{message:'ავტორიზაცია საჭიროა'}};
+  try{ return await sb.from('phenocal_entries').upsert(toRow(rec)); }
+  catch(e){ return {error:{message:(e&&e.message)||String(e)}}; }
+}
+async function sbDeleteEntry(id){
+  if(!sb||!uid) return;
+  try{ await sb.from('phenocal_entries').delete().eq('id',id).eq('user_id',uid); }
+  catch(e){ console.warn('sbDeleteEntry',e); }
+}
+
+// ── tabs ──
+function phSwitchTab(tab, btn){
+  var map={calendar:'phTabCalendar', log:'phTabLog', add:'phTabAdd'};
+  Object.keys(map).forEach(function(k){ var el=document.getElementById(map[k]); if(el) el.style.display=(k===tab)?'block':'none'; });
+  document.querySelectorAll('#phTabs .tab').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  else { var d=document.querySelector('#phTabs .tab[data-tab="'+tab+'"]'); if(d) d.classList.add('active'); }
+  if(tab==='calendar') renderPhCalendar();
+  if(tab==='log') renderPhLog();
+}
+
+// ── add form ──
+function phOnPhaseChange(){
+  var ph=g('phPhase');
+  var hb=document.getElementById('phHarvestBlock'); if(hb) hb.style.display=(ph==='harvest')?'block':'none';
+  var cw=document.getElementById('phPhaseCustomWrap'); if(cw) cw.style.display=(ph==='__custom__')?'block':'none';
+}
+function phAddChemRow(prefill){
+  prefill=prefill||{};
+  var row=document.createElement('div');
+  row.className='chem-row';
+  row.innerHTML=
+      '<input type="text" placeholder="💊 პრეპარატი / სასუქი" class="ch-name" style="grid-column:span 2" value="'+esc(prefill.name||'')+'">'
+    + '<input type="number" min="0" step="0.01" placeholder="📦 რაოდენობა" class="ch-qty" value="'+esc(prefill.qty||'')+'">'
+    + '<input type="text" placeholder="მოქმედი ნივთ. / NPK" class="ch-active" value="'+esc(prefill.active||'')+'">'
+    + '<input type="text" placeholder="დოზა (2 ლ/ha)" class="ch-dose" value="'+esc(prefill.dose||'')+'">'
+    + '<input type="text" placeholder="მეთოდი" class="ch-method" value="'+esc(prefill.method||'')+'">'
+    + '<input type="text" placeholder="სამიზნე (მავნებელი/მიზანი)" class="ch-target" value="'+esc(prefill.target||'')+'">'
+    + '<input type="number" min="0" max="120" placeholder="⏳ PHI (დღე)" class="ch-phi" value="'+esc(prefill.phi||'')+'">'
+    + '<button type="button" class="cdel" onclick="this.closest(\'.chem-row\').remove()">🗑 წაშლა</button>';
+  document.getElementById('phChemRows').appendChild(row);
+}
+function phCollectChems(){
+  var chems=[];
+  document.querySelectorAll('#phChemRows .chem-row').forEach(function(row){
+    var v=function(cls){ var el=row.querySelector(cls); return el?(el.value||''):''; };
+    var name=v('.ch-name').trim();
+    var qty=v('.ch-qty');
+    var active=v('.ch-active').trim(), dose=v('.ch-dose').trim(), method=v('.ch-method').trim(), target=v('.ch-target').trim(), phi=v('.ch-phi');
+    if(name||active||dose) chems.push({name:name, qty:parseFloat(qty)||0, active:active, dose:dose, method:method, target:target, phi:phi});
+  });
+  return chems;
+}
+
+async function phAddEntry(){
+  var msg=document.getElementById('phAddMsg'); msg.textContent='';
+  var phase=g('phPhase');
+  if(phase==='__custom__'){ phase=g('phPhaseCustom').trim(); }
+  var date=g('phDate');
+  if(!phase||!date){ msg.textContent='❌ აირჩიეთ ფაზა/ოპერაცია და თარიღი'; return; }
+  var rec={
+    phase:phase, date:date, dateTo:g('phDateTo')||date, status:g('phStatus')||'planned',
+    note:g('phNote').trim(), remind:g('phRemind')||0,
+    variety:g('phVariety').trim(), operator:g('phOperator').trim(), equipment:g('phEquipment').trim(), weather:g('phWeather').trim(),
+    harvestKg:g('phHarvestKg'), lotNo:g('phLotNo').trim(), destination:g('phDestination').trim(),
+    chems:phCollectChems()
+  };
+  if(_phEditId){
+    var i=ENTRIES.findIndex(function(x){ return String(x.id)===String(_phEditId); });
+    if(i>=0){ rec.id=ENTRIES[i].id; ENTRIES[i]=rec; } else { rec.id=_uuid(); ENTRIES.push(rec); }
+  } else { rec.id=_uuid(); ENTRIES.push(rec); }
+  ENTRIES.sort(function(a,b){ return String(a.date).localeCompare(String(b.date)); });
+  phSaveLocal(ENTRIES);
+  var btn=document.getElementById('phSaveBtn'); var wasEdit=!!_phEditId;
+  btn.disabled=true; btn.textContent='⏳ ინახება...';
+  var res=await sbUpsertEntry(rec);
+  btn.disabled=false;
+  if(res&&res.error){ msg.textContent='⚠️ ლოკალურად შენახულია, ღრუბელში ვერ აიტვირთა: '+res.error.message; }
+  phResetAddForm();
+  renderPhLog(); renderPhCalendar();
+  toast(wasEdit?'✅ ჩანაწერი განახლდა':'✅ ჩანაწერი დაემატა');
+  phSwitchTab('log', document.querySelector('#phTabs .tab[data-tab="log"]'));
+}
+
+function phResetAddForm(){
+  ['phPhaseCustom','phDate','phDateTo','phNote','phRemind','phVariety','phOperator','phEquipment','phWeather','phHarvestKg','phLotNo','phDestination'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  var ph=document.getElementById('phPhase'); if(ph) ph.value='';
+  var st=document.getElementById('phStatus'); if(st) st.value='planned';
+  var cr=document.getElementById('phChemRows'); if(cr) cr.innerHTML='';
+  document.getElementById('phDate').value=_today();
+  document.getElementById('phDateTo').value=_today();
+  _phEditId=null;
+  var btn=document.getElementById('phSaveBtn'); if(btn){ btn.textContent='➕ ჩანაწერის დამატება'; btn.disabled=false; }
+  var cancel=document.getElementById('phCancelBtn'); if(cancel) cancel.style.display='none';
+  var t=document.getElementById('phAddTitle'); if(t) t.textContent='➕ ახალი ჩანაწერი';
+  document.getElementById('phAddMsg').textContent='';
+  phOnPhaseChange();
+}
+
+function phEditEntry(id){
+  var e=ENTRIES.find(function(x){ return String(x.id)===String(id); });
+  if(!e) return;
+  _phEditId=e.id;
+  var set=function(elid,val){ var el=document.getElementById(elid); if(el) el.value=(val==null?'':val); };
+  var phaseKnown=!!PH_PHASES[e.phase];
+  set('phPhase', phaseKnown?e.phase:'__custom__');
+  set('phPhaseCustom', phaseKnown?'':e.phase);
+  set('phDate', e.date); set('phDateTo', e.dateTo||e.date);
+  set('phStatus', e.status||'planned'); set('phNote', e.note); set('phRemind', e.remind||'');
+  set('phVariety', e.variety); set('phOperator', e.operator); set('phEquipment', e.equipment); set('phWeather', e.weather);
+  set('phHarvestKg', e.harvestKg); set('phLotNo', e.lotNo); set('phDestination', e.destination);
+  var cr=document.getElementById('phChemRows'); if(cr){ cr.innerHTML=''; (e.chems||[]).forEach(function(c){ phAddChemRow(c); }); }
+  phOnPhaseChange();
+  var btn=document.getElementById('phSaveBtn'); if(btn) btn.textContent='💾 ცვლილების შენახვა';
+  var cancel=document.getElementById('phCancelBtn'); if(cancel) cancel.style.display='block';
+  var t=document.getElementById('phAddTitle'); if(t) t.textContent='✏️ ჩანაწერის რედაქტირება';
+  phSwitchTab('add', document.querySelector('#phTabs .tab[data-tab="add"]'));
+}
+function phCancelEdit(){ phResetAddForm(); phSwitchTab('log', document.querySelector('#phTabs .tab[data-tab="log"]')); }
+
+async function phToggleStatus(id){
+  var e=ENTRIES.find(function(x){ return String(x.id)===String(id); });
+  if(!e) return;
+  var cycle={planned:'active', active:'done', done:'planned'};
+  e.status=cycle[e.status]||'done';
+  phSaveLocal(ENTRIES);
+  renderPhLog(); renderPhCalendar();
+  var res=await sbUpsertEntry(e);
+  if(res&&res.error) toast('⚠️ ღრუბელში ვერ განახლდა');
+}
+
+async function phDeleteEntry(id){
+  var e=ENTRIES.find(function(x){ return String(x.id)===String(id); });
+  if(!e) return;
+  if(!confirm('წაიშალოს ჩანაწერი: '+phLookup(e.phase).label+' ('+e.date+')?')) return;
+  ENTRIES=ENTRIES.filter(function(x){ return String(x.id)!==String(id); });
+  phSaveLocal(ENTRIES);
+  renderPhLog(); renderPhCalendar();
+  await sbDeleteEntry(id);
+  toast('🗑 ჩანაწერი წაიშალა');
+}
+
+// ── render: log ──
+function renderPhLog(){
+  var list=document.getElementById('phLogList'), empty=document.getElementById('phLogEmpty');
+  if(!list) return;
+  var arr=ENTRIES.slice().sort(function(a,b){ return String(a.date).localeCompare(String(b.date)); });
+  if(!arr.length){ list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  var sLabel={planned:'📋 დაგეგმილი',active:'🔄 მიმდინარე',done:'✅ შესრულდა'};
+  var stCls={planned:'st-planned',active:'st-active',done:'st-done'};
+  var todayStr=_today();
+  list.innerHTML=arr.map(function(e){
+    var ph=phLookup(e.phase);
+    var dLabel=geoDate(new Date(e.date));
+    if(e.dateTo&&e.dateTo!==e.date) dLabel+=' → '+geoDate(new Date(e.dateTo));
+    var chemHtml='';
+    if(e.chems&&e.chems.length){
+      chemHtml='<div class="chiprow">'+e.chems.map(function(c){
+        return '<span class="chip chem">💊 <b>'+esc(c.name||'—')+'</b>'+(c.active?' · '+esc(c.active):'')+(c.dose?' · '+esc(c.dose):'')+(c.method?' · '+esc(c.method):'')+(c.target?' · 🎯'+esc(c.target):'')+((c.phi!==''&&c.phi!=null)?' · ⏳PHI '+esc(c.phi):'')+'</span>';
+      }).join('')+'</div>';
+    }
+    var tc=[];
+    if(e.variety) tc.push('🍇 '+esc(e.variety));
+    if(e.operator) tc.push('👤 '+esc(e.operator));
+    if(e.equipment) tc.push('🚜 '+esc(e.equipment));
+    if(e.weather) tc.push('🌤️ '+esc(e.weather));
+    if(e.harvestKg!==''&&e.harvestKg!=null) tc.push('⚖️ '+esc(e.harvestKg)+' კგ');
+    if(e.lotNo) tc.push('🏷️ '+esc(e.lotNo));
+    if(e.destination) tc.push('📦 '+esc(e.destination));
+    var traceHtml=tc.length?'<div class="chiprow">'+tc.map(function(t){ return '<span class="chip trace">'+t+'</span>'; }).join('')+'</div>':'';
+    var advice=PH_ADVICE[e.phase]||'';
+    var upcoming=(e.status!=='done'&&e.date>=todayStr);
+    return '<div class="logrow'+(e.status==='done'?' done':'')+'" style="border-left-color:'+ph.color+'">'
+      +'<div class="top">'
+        +'<span class="em">'+ph.icon+'</span>'
+        +'<div style="min-width:0;flex:1">'
+          +'<div class="lbl">'+esc(ph.label)+(upcoming?' <span style="font-size:.6rem;color:#e11d48;font-weight:700">• მომავალი</span>':'')+'</div>'
+          +'<div class="sub">'+esc(dLabel)+(e.note?' · '+esc(e.note):'')+'</div>'
+        +'</div>'
+        +'<div class="acts">'
+          +'<button class="sec" onclick="phEditEntry(\''+esc(e.id)+'\')">✏️</button>'
+          +'<button class="stbtn '+(stCls[e.status]||'st-planned')+'" onclick="phToggleStatus(\''+esc(e.id)+'\')">'+(sLabel[e.status]||e.status)+'</button>'
+          +'<button class="r" onclick="phDeleteEntry(\''+esc(e.id)+'\')">🗑</button>'
+        +'</div>'
+      +'</div>'
+      +chemHtml+traceHtml
+      +(advice?'<div class="advice">💡 '+esc(advice)+'</div>':'')
+    +'</div>';
+  }).join('');
+}
+
+// ── render: calendar ──
+function renderPhCalendar(){
+  var el=document.getElementById('phTimeline'); if(!el) return;
+  if(!ENTRIES.length){ el.innerHTML='<div class="empty">➕ „დამატება" ჩანართში შეიყვანეთ ფაზები კალენდარში სანახავად</div>'; return; }
+  var sMark={planned:'📋',active:'🔄',done:'✅'};
+  var grid={};
+  ENTRIES.forEach(function(e){
+    var d=new Date(e.date); if(isNaN(d)) return;
+    var m=d.getMonth();
+    if(!grid[m]) grid[m]=[];
+    var ph=phLookup(e.phase);
+    grid[m].push({icon:ph.icon,color:ph.color,label:ph.label,note:e.note,status:e.status,date:e.date});
+  });
+  var now=new Date().getMonth();
+  var h='<div class="calgrid">';
+  for(var i=0;i<12;i++){
+    var items=grid[i]||[];
+    var cur=(i===now);
+    h+='<div class="calcell'+(cur?' cur':'')+'">';
+    h+='<div class="mh"><span class="mn">'+MS_SHORT[i].toUpperCase()+'</span>';
+    if(items.length) h+='<span class="cnt">'+items.length+'</span>';
+    h+='</div>';
+    if(items.length){
+      items.forEach(function(p){
+        h+='<div class="calitem" style="border-left-color:'+p.color+'">';
+        h+='<span style="font-size:1rem;line-height:1.1">'+p.icon+'</span>';
+        h+='<div style="min-width:0;flex:1"><div class="cl">'+esc(p.label)+'</div>';
+        if(p.date) h+='<div class="cd">'+esc(String(p.date).slice(5))+' '+(sMark[p.status]||'')+'</div>';
+        h+='</div></div>';
+      });
+    } else {
+      h+='<div style="text-align:center;color:#cbd5e1;padding:8px 0;font-size:.7rem">—</div>';
+    }
+    h+='</div>';
+  }
+  h+='</div>';
+  h+='<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px 12px;justify-content:center">';
+  Object.keys(PH_PHASES).slice(0,10).forEach(function(k){
+    var v=PH_PHASES[k];
+    h+='<span class="muted" style="font-size:.7rem"><span style="color:'+v.color+'">'+v.icon+'</span> '+esc(v.label)+'</span>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+
+// ── session resume ──
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; showApp(s.data.session.user.email); } }catch(e){} })();
+</script>
+</body></html>
