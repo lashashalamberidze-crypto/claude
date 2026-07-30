@@ -3579,7 +3579,6 @@ const accessToken = session?.access_token;
       <span class="user-name" id="userName">—</span>
       <span class="user-plan-badge" id="userPlanBadge">—</span>
       <button onclick="openCompanyProfile()" style="background:none;border:1px solid rgba(15,118,110,.3);color:#0f766e;padding:5px 12px;border-radius:7px;font-family:inherit;font-size:.72rem;cursor:pointer;margin-right:6px;transition:all .2s;" onmouseover="this.style.background='rgba(15,118,110,.08)'" onmouseout="this.style.background='none'">🏢 ჩემი კომპანია</button>
-      <button onclick="openGuideModal()" title="ვრცელი გზამკვლევი — როგორ ვისარგებლო პლატფორმით" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);border:none;color:#fff;padding:5px 12px;border-radius:7px;font-family:inherit;font-size:.72rem;cursor:pointer;margin-right:6px;font-weight:600;box-shadow:0 2px 6px rgba(59,130,246,.25);transition:all .2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">📘 გზამკვლევი</button>
       <button onclick="openChangePassModal()" style="background:none;border:1px solid rgba(14,165,233,.3);color:var(--acc);padding:5px 12px;border-radius:7px;font-family:inherit;font-size:.72rem;cursor:pointer;margin-right:6px;transition:all .2s;" onmouseover="this.style.background='rgba(14,165,233,.08)'" onmouseout="this.style.background='none'">🔑 პაროლი</button>
       <button class="btn-logout" onclick="doLogout()">გასვლა</button>
     </div>
@@ -3687,7 +3686,6 @@ const accessToken = session?.access_token;
         <div class="price-module"><span class="pm-icon">🛒</span><span>აგრო მაღაზიები & ტექნიკა</span><span class="pm-check yes">✓</span></div>
         <div class="price-module"><span class="pm-icon">💰</span><span>შემოსავალი / ხარჯები</span><span class="pm-check yes">✓</span></div>
         <div class="price-module"><span class="pm-icon">🧪</span><span>სასუქის & პრეპარატის ცნობარი</span><span class="pm-check yes">✓</span></div>
-        <div class="price-module"><span class="pm-icon">🤖</span><span>AI რეპორტები</span><span class="pm-check yes">✓</span></div>
         <div class="price-module"><span class="pm-icon">👥</span><span>თანამშრომლები / მუშახელი</span><span class="pm-check yes">✓</span></div>
         <div class="price-module"><span class="pm-icon">📁</span><span>დოკუმენტების არქივი</span><span class="pm-check yes">✓</span></div>
         <div class="price-module"><span class="pm-icon">🗂️</span><span>ინვენტარი და პრეპარატები</span><span class="pm-check yes">✓</span></div>
@@ -3871,15 +3869,6 @@ const accessToken = session?.access_token;
 
 
 
-
-    <div class="module-card card-lime clickable" id="mod-aireports" onclick="tryOpenModule('aireports')">
-      <div class="module-status status-active" id="status-aireports">✓ აქტიური</div>
-      <div class="card-icon-wrap">🤖</div>
-      <div class="card-title">AI რეპორტები</div>
-      <div class="card-desc">დღის, კვირის და თვიური შეჯამება — კრეფა, პალეტები, მაცივარი, გაყიდვები და რეკომენდაციები.</div>
-      <div class="card-tags"><span class="tag">📄 ანგარიში</span><span class="tag">📊 ანალიზი</span><span class="tag">🖨️ ბეჭდვა</span></div>
-      <div class="card-footer"><button class="open-btn" id="btn-aireports">გახსნა <span class="card-open-arrow">→</span></button><span class="card-ver">v0.1 · სრული</span></div>
-    </div>
 
     <div class="module-card card-teal clickable" id="mod-docsarchive" onclick="tryOpenModule('docsarchive')">
       <div class="module-status status-active" id="status-docsarchive">✓ აქტიური</div>
@@ -5837,10 +5826,10 @@ document.addEventListener('keydown', function(e){
 // ══════════════════════════════════════════════
 let currentUser = null; // { name, email, plan, demoStart, isDemo }
 const PLANS = {
-  demo:   { label:'დემო',   badge:'ubadge-demo',  modules:['krepa','plantacia','phenocal','plantmon','amindi','sacwyobi','gayvida','agroshop','agronom','shemosavali','sasuki','aireports','employees','docsarchive','inventoryqr','analytics'] },
+  demo:   { label:'დემო',   badge:'ubadge-demo',  modules:['krepa','plantacia','phenocal','plantmon','amindi','sacwyobi','gayvida','agroshop','agronom','shemosavali','sasuki','employees','docsarchive','inventoryqr','analytics'] },
   krepa:  { label:'1000₾',  badge:'ubadge-krepa', modules:['plantacia','phenocal','plantmon','amindi'] },
   combo:  { label:'1500₾',  badge:'ubadge-combo', modules:['plantacia','phenocal','plantmon','amindi','agronom','agroshop','shemosavali','sasuki','analytics'] },
-  full:   { label:'2500₾', badge:'ubadge-full',  modules:['krepa','plantacia','phenocal','plantmon','amindi','agronom','sacwyobi','gayvida','agroshop','shemosavali','sasuki','aireports','employees','docsarchive','inventoryqr','analytics'] },
+  full:   { label:'2500₾', badge:'ubadge-full',  modules:['krepa','plantacia','phenocal','plantmon','amindi','agronom','sacwyobi','gayvida','agroshop','shemosavali','sasuki','employees','docsarchive','inventoryqr','analytics'] },
 };
 
 // ── Georgian date helpers (avoids OS locale issues / Chinese chars) ──
@@ -6496,7 +6485,7 @@ function onLogin(u, autoRestore){
 
 function updateModuleCards(u){
   const allowedMods = u ? ((u.isDemo || u.plan==='demo') ? (PLANS.full && PLANS.full.modules ? PLANS.full.modules : PLANS.demo.modules) : (PLANS[u.plan]||PLANS.demo).modules) : [];
-  const allMods=['krepa','plantacia','phenocal','plantmon','amindi','sacwyobi','gayvida','agroshop','agronom','shemosavali','sasuki','aireports','employees','docsarchive','inventoryqr'];
+  const allMods=['krepa','plantacia','phenocal','plantmon','amindi','sacwyobi','gayvida','agroshop','agronom','shemosavali','sasuki','employees','docsarchive','inventoryqr'];
   allMods.forEach(mod=>{
     const card=document.getElementById('mod-'+mod);
     if(!card) return;
@@ -20647,13 +20636,13 @@ window.addEventListener('DOMContentLoaded', function(){
   window.mvpSaveInvCheckV43=function(code,status){var items=read(key('inventory'));var item=items.find(function(x){return x.code===code});var loc=val('invCheckLoc');var note=val('invCheckNote');if(item){if(loc)item.loc=loc;if(status==='დაზიანებულია')item.status='დაზიანებული';if(status==='სერვისშია')item.status='სერვისი სჭირდება';write(key('inventory'),items)}var checks=read(key('inventory_checks'));checks.unshift({id:uid(),code:code,status:status,loc:loc,note:note,at:new Date().toLocaleString('ka-GE'),iso:new Date().toISOString(),by:(window.currentUser&& (window.currentUser.email||window.currentUser.name))||'demo'});write(key('inventory_checks'),checks);openInventory();setTimeout(function(){var inp=g('invCheckCode');if(inp)inp.value=code;mvpFindInvV43(code)},80)}
   window.mvpCheckInvV39=function(code){mvpFindInvV43(code)}
   function openInventory(){var a=read(key('inventory'));var checks=read(key('inventory_checks'));var rows=a.map(function(x){var last=invLatestCheckV43(x.code);return '<tr><td><button class="mvp-btn" onclick="mvpShowQrV39(\''+esc(x.code)+'\')">'+esc(x.code)+'</button></td><td>'+esc(x.name)+'</td><td>'+esc(x.cat)+'</td><td>'+esc(x.loc)+'</td><td>'+esc(x.responsible)+'</td><td>'+esc(x.status)+'</td><td>'+(last?esc(last.status+' · '+last.at):'—')+'</td></tr>'}).join('')||'<tr><td colspan="7" class="mvp-empty">ინვენტარი ჯერ არ არის დამატებული</td></tr>';var hist=checks.slice(0,20).map(function(c){return '<tr><td>'+esc(c.at)+'</td><td>'+esc(c.code)+'</td><td>'+esc(c.status)+'</td><td>'+esc(c.loc||'—')+'</td><td>'+esc(c.note||'—')+'</td></tr>'}).join('')||'<tr><td colspan="5" class="mvp-empty">შემოწმების ისტორია ჯერ არ არის</td></tr>';setModal('🏷️ ტექნიკა / ინვენტარი QR','რეგისტრაცია, QR ბეჭდვა, შემოწმება, ისტორია და თვიური ინვენტარიზაციის ანგარიში',invSummaryHtmlV43()+'<div class="mvp-actions"><button class="mvp-btn blue" onclick="mvpStartInvSessionV43()">📋 ახალი ინვენტარიზაციის დაწყება</button></div><h3 style="margin:18px 0 10px;color:#15375c">1) ინვენტარის დამატება</h3><div class="mvp-grid"><div class="mvp-field"><label>QR კოდი</label><input id="invCode" placeholder="ცარიელი = ავტომატურად"></div><div class="mvp-field"><label>ნივთი / ტექნიკა</label><input id="invName"></div><div class="mvp-field"><label>კატეგორია</label><select id="invCat" onchange="mvpInvOtherV39()"><option>ტექნიკა</option><option>ინვენტარი</option><option>სასწორი / სკანერი</option><option>სხვა</option></select></div><div class="mvp-field" id="invCatOtherWrap" style="display:none"><label>სხვა კატეგორია</label><input id="invCatOther"></div><div class="mvp-field"><label>მდებარეობა</label><input id="invLoc"></div><div class="mvp-field"><label>პასუხისმგებელი</label><input id="invResp"></div><div class="mvp-field"><label>მდგომარეობა</label><select id="invStatus"><option>მუშა</option><option>სერვისი სჭირდება</option><option>დაზიანებული</option><option>გაცემულია</option></select></div></div><div class="mvp-actions"><button class="mvp-btn green" onclick="mvpSaveInvV39()">+ დამატება</button></div><div id="invQrPreview" class="mvp-qr-box">QR სანახავად დააჭირე კოდს ან დაამატე ახალი ნივთი.</div><h3 style="margin:18px 0 10px;color:#15375c">2) QR შემოწმება / ინვენტარიზაცია</h3><div class="mvp-grid" style="grid-template-columns:1fr auto"><div class="mvp-field"><label>QR კოდი / სკანირებული კოდი</label><input id="invCheckCode" placeholder="მაგ: INV-2026-0001"></div><div class="mvp-field" style="justify-content:end"><button class="mvp-btn blue" onclick="mvpFindInvV43()">🔎 მოძებნა</button></div></div><div id="invCheckResult" style="margin-top:10px"></div><h3 style="margin:18px 0 10px;color:#15375c">3) ინვენტარის სია</h3><div class="mvp-table-wrap"><table class="mvp-table"><thead><tr><th>QR</th><th>ნივთი</th><th>კატ.</th><th>მდებ.</th><th>პასუხ.</th><th>მდგომ.</th><th>ბოლო შემოწმება</th></tr></thead><tbody>'+rows+'</tbody></table></div><h3 style="margin:18px 0 10px;color:#15375c">4) შემოწმების ისტორია</h3><div class="mvp-table-wrap"><table class="mvp-table"><thead><tr><th>თარიღი</th><th>QR</th><th>სტატუსი</th><th>მდებარეობა</th><th>კომენტარი</th></tr></thead><tbody>'+hist+'</tbody></table></div>')}
-  window.mvpOpenModuleV39=function(mod){if(mod==='aireports')return openAI();if(mod==='employees')return openEmployees();if(mod==='docsarchive')return openDocs();if(mod==='inventoryqr')return openInventory()}
+  window.mvpOpenModuleV39=function(mod){if(mod==='employees')return openEmployees();if(mod==='docsarchive')return openDocs();if(mod==='inventoryqr')return openInventory()}
   // v42 DEMO ACCESS FIX — top-level PLANS is a const, not window.PLANS. Use PLANS directly.
-  try{ if(typeof PLANS!=='undefined'){ window.PLANS = PLANS; ['demo','full'].forEach(function(p){if(PLANS[p]&&PLANS[p].modules){['aireports','employees','docsarchive','inventoryqr'].forEach(function(m){if(PLANS[p].modules.indexOf(m)<0)PLANS[p].modules.push(m)})}}); } }catch(e){}
+  try{ if(typeof PLANS!=='undefined'){ window.PLANS = PLANS; ['demo','full'].forEach(function(p){if(PLANS[p]&&PLANS[p].modules){['employees','docsarchive','inventoryqr'].forEach(function(m){if(PLANS[p].modules.indexOf(m)<0)PLANS[p].modules.push(m)})}}); } }catch(e){}
   var oldTry=window.tryOpenModule;
   window.tryOpenModule=function(mod){
     if(mod==='krepa'){ window.open('./krefa.html','_blank'); return; }
-    if(['aireports','employees','docsarchive','inventoryqr'].indexOf(mod)>=0){
+    if(['employees','docsarchive','inventoryqr'].indexOf(mod)>=0){
       var u=window.currentUser||currentUser||null;
       if(!u){if(typeof openAuth==='function')openAuth('login');return}
       if(u.isDemo || u.plan==='demo') return window.mvpOpenModuleV39(mod);
@@ -23736,8 +23725,8 @@ window.openGuideModal=function(){
       }
     }catch(e){ console.warn('guide banner',e); }
   }
-  if(document.readyState==='complete'||document.readyState==='interactive'){ setTimeout(showBanner, 2500); }
-  else { window.addEventListener('DOMContentLoaded', function(){ setTimeout(showBanner, 2500); }); }
+  // welcome-ბანერი გამორთულია — ჰედერში უკვე დევს ხილული „📘 გზამკვლევი" ღილაკი (ორმაგი ინფო აღარ ჩნდება)
+  void showBanner;
 })();
 window.closeCompanyProfile=function(){ var o=document.getElementById('companyOverlay'); if(o) o.style.display='none'; };
 window.saveCompanyProfile=function(){ function g(id){var e=document.getElementById(id); return e?(''+e.value).trim():''; } var img=document.getElementById('cp-logo-preview'); var logo=(img&&img.dataset&&img.dataset.logo)||''; var cfg={ type:g('cp-type'), name:g('cp-name'), idnum:g('cp-idnum'), director:g('cp-director'), addr:g('cp-addr'), phone:g('cp-phone'), email:g('cp-email'), bank:g('cp-bank'), iban:g('cp-iban'), logo:logo }; if(!cfg.name){ alert('შეავსე დასახელება'); return; } try{ localStorage.setItem(cpCompanyKey(), JSON.stringify(cfg)); }catch(e){ alert('შენახვა ვერ მოხერხდა — ლოგო შესაძლოა ძალიან დიდია'); return; } try{ var _u=(typeof currentUser!=='undefined'&&currentUser)?currentUser:(window.currentUser||null); if(typeof _sb!=='undefined' && _u && _u.id && !_u.isDemo){ _sb.from('gv_settings').upsert({ user_id:_u.id, company_cfg: cfg }, { onConflict:'user_id' }).then(function(){},function(){}); } }catch(e){} try{ if(typeof gvLoadSettings==='function') gvLoadSettings(); }catch(e){} try{ if(typeof showHubToast==='function') showHubToast('✅ კომპანიის მონაცემები შენახულია'); }catch(e){} closeCompanyProfile(); };
