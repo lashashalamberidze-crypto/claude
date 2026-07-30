@@ -3818,15 +3818,15 @@ const accessToken = session?.access_token;
     </div>
 
     
-    <div class="module-card card-indigo clickable" id="mod-analytics" onclick="tryOpenModule('analytics')">
+    <div class="module-card card-indigo clickable" id="mod-analytics" onclick="window.open('./analitika.html','_blank')">
       <div class="module-status status-active">✓ აქტიური</div>
       <div class="card-icon-wrap">📈</div>
       <div class="card-title">გრაფიკები & ანალიტიკა</div>
-      <div class="card-desc">ვიზუალური ტრენდები: კრეფის დინამიკა, შემოსავალი vs ხარჯი, მოგების ტრენდი, ხარჯების სტრუქტურა — თვეების მიხედვით.</div>
+      <div class="card-desc">ვიზუალური ტრენდები: კრეფის დინამიკა, შემოსავალი vs ხარჯი, მოგების ტრენდი, ხარჯების სტრუქტურა — თვეების მიხედვით. ცალკე გვერდი, ღრუბლიდან.</div>
       <div class="card-tags"><span class="tag">📊 ჩარტები</span><span class="tag">📈 ტრენდები</span><span class="tag">🥧 სტრუქტურა</span></div>
       <div class="card-footer">
-        <button class="open-btn" style="background:rgba(99,102,241,.15);color:#6366f1;border-color:rgba(99,102,241,.3)">გახსნა <span class="card-open-arrow">→</span></button>
-        <span class="card-ver">v1.0</span>
+        <button class="open-btn" onclick="event.stopPropagation();window.open('./analitika.html','_blank')" style="background:rgba(99,102,241,.15);color:#6366f1;border-color:rgba(99,102,241,.3)">📈 გახსნა <span class="card-open-arrow">→</span></button>
+        <span class="card-ver">v2.0 · ცალკე გვერდი</span>
       </div>
     </div>
     <div class="module-card card-emerald clickable" id="mod-biblioteka" onclick="window.open('./biblioteka.html','_blank')">
@@ -3841,29 +3841,29 @@ const accessToken = session?.access_token;
       </div>
     </div>
 
-    <div class="module-card card-orange clickable" id="mod-agroshop" onclick="tryOpenModule('agroshop')">
+    <div class="module-card card-orange clickable" id="mod-agroshop" onclick="window.open('./maghaziebi.html','_blank')">
       <div class="module-status status-active" id="status-agroshop">✓ აქტიური</div>
       <div class="card-icon-wrap">🏪</div>
       <div class="card-title">აგრო მაღაზიები & ტექნიკა</div>
-      <div class="card-desc">ახლომდებარე აგრო მაღაზიები, სასუქები, სპრეები. ტექნიკის გაქირავება რეგიონების მიხედვით, ფასები.</div>
+      <div class="card-desc">ახლომდებარე აგრო მაღაზიები, სასუქები, სპრეები. ტექნიკის გაქირავება რეგიონების მიხედვით, ფასები, რუკა. ცალკე გვერდი, ღრუბელში.</div>
       <div class="card-tags"><span class="tag">🏪 მაღაზიები</span><span class="tag">🚜 ტექნიკა</span><span class="tag">📍 რუქა</span><span class="tag">📞 კონტაქტი</span></div>
       <div class="card-footer">
-        <button class="open-btn" id="btn-agroshop">გახსნა <span class="card-open-arrow">→</span></button>
-        <span class="card-ver">v1.0 · სრულ პაკეტში</span>
+        <button class="open-btn" id="btn-agroshop" onclick="event.stopPropagation();window.open('./maghaziebi.html','_blank')">🏪 გახსნა <span class="card-open-arrow">→</span></button>
+        <span class="card-ver">v2.0 · ცალკე გვერდი</span>
       </div>
     </div>
 
     <!-- ── NEW MODULES ── -->
 
-        <div class="module-card card-emerald clickable" id="mod-sasuki" onclick="tryOpenModule('sasuki')">
+        <div class="module-card card-emerald clickable" id="mod-sasuki" onclick="window.open('./sasuqi.html','_blank')">
       <div class="module-status status-active" id="status-sasuki">✓ აქტიური</div>
       <div class="card-icon-wrap">🧪</div>
       <div class="card-title">სასუქის & პრეპარატის ცნობარი</div>
-      <div class="card-desc">სასუქების, პესტიციდების, ჰერბიციდების ცნობარი კულტურების მიხედვით. გამოყენების დოზები, ვადები, AI რეკომენდაცია.</div>
+      <div class="card-desc">სასუქების, პესტიციდების, ჰერბიციდების ცნობარი კულტურების მიხედვით. გამოყენების დოზები, ვადები, AI რეკომენდაცია. ცალკე გვერდი.</div>
       <div class="card-tags"><span class="tag">🌱 სასუქი</span><span class="tag">💊 პრეპ.</span><span class="tag">📋 ცნობარი</span><span class="tag">🤖 AI</span></div>
       <div class="card-footer">
-        <button class="open-btn" id="btn-sasuki" style="background:rgba(245,158,11,.15);color:#92400e;border-color:rgba(245,158,11,.3)">გახსნა <span class="card-open-arrow">→</span></button>
-        <span class="card-ver">v1.0 · სრული</span>
+        <button class="open-btn" id="btn-sasuki" onclick="event.stopPropagation();window.open('./sasuqi.html','_blank')" style="background:rgba(245,158,11,.15);color:#92400e;border-color:rgba(245,158,11,.3)">🧪 გახსნა <span class="card-open-arrow">→</span></button>
+        <span class="card-ver">v2.0 · ცალკე გვერდი</span>
       </div>
     </div>
 

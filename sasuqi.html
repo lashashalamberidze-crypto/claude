@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧪 სასუქის & პრეპარატის ცნობარი</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;font-family:"Noto Sans Georgian",system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:900px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.95rem;margin:0 0 8px;color:#334155}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff;color:#0f172a}
+  input:focus,select:focus{outline:none;border-color:#059669}
+  button{background:#059669;color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:#059669;border:1.5px solid #059669}
+  button:active{transform:scale(.98)}
+  button:disabled{opacity:.6;cursor:not-allowed}
+  .muted{font-size:.8rem;color:#64748b}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>🧪 სასუქის & პრეპარატის ცნობარი — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <h1>🧪 სასუქის & პრეპარატის ცნობარი <span style="font-size:.6rem;background:#059669;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v1</span></h1>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#059669">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <div class="card">
+    <!-- Filter -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+      <select id="sk-culture" onchange="skRender()" style="flex:1;min-width:160px;padding:9px 14px;background:#fff;border:1px solid #dde8f5;border-radius:10px;font-family:inherit;font-size:.85rem;color:#1e3a5f;outline:none">
+        <option value="">🌾 ყველა კულტურა</option>
+        <option>მოცვი</option><option>თხილი</option><option>ვაზი</option><option>ვაშლი</option>
+        <option>მსხალი</option><option>ატამი</option><option>ქლიავი</option><option>ალუბალი</option>
+        <option>მანდარინი</option><option>ფორთოხალი</option><option>ლიმონი</option><option>კივი</option>
+        <option>ბროწეული</option><option>მარწყვი</option><option>ჟოლო</option>
+        <option>კარტოფილი</option><option>სიმინდი</option><option>ხორბალი</option>
+        <option>პომიდორი</option><option>კიტრი</option><option>ბოსტნეული</option>
+      </select>
+      <select id="sk-type" onchange="skRender()" style="padding:9px 14px;background:#fff;border:1px solid #dde8f5;border-radius:10px;font-family:inherit;font-size:.85rem;color:#1e3a5f;outline:none">
+        <option value="">📦 ყველა ტიპი</option>
+        <option value="sasuki">🌱 სასუქი</option>
+        <option value="pesticidi">🐛 პესტიციდი</option>
+        <option value="fungicidi">🦠 ფუნგიციდი</option>
+        <option value="herbicidi">🌿 ჰერბიციდი</option>
+      </select>
+      <input id="sk-search" placeholder="🔍 ძებნა..." oninput="skRender()" style="flex:1;min-width:140px;padding:9px 14px;background:#fff;border:1px solid #dde8f5;border-radius:10px;font-family:inherit;font-size:.85rem;color:#1e3a5f;outline:none">
+    </div>
+
+    <div id="sk-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:20px"></div>
+
+    <!-- AI Ask -->
+    <div style="background:#fff;border:1px solid rgba(245,158,11,.2);border-radius:16px;padding:20px;margin-top:8px">
+      <div style="font-size:.9rem;font-weight:600;color:#92400e;margin-bottom:12px">🤖 AI-ს კითხვა — სასუქი & პრეპარატი</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <select id="sk-ai-culture" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;font-family:inherit;font-size:.83rem;color:#1e3a5f;outline:none">
+          <option value="">კულტურა</option>
+          <option>მოცვი</option><option>თხილი</option><option>ვაზი</option><option>ვაშლი</option>
+          <option>მსხალი</option><option>ატამი</option><option>ქლიავი</option><option>ალუბალი</option>
+          <option>მანდარინი</option><option>ფორთოხალი</option><option>ლიმონი</option><option>კივი</option>
+          <option>ბროწეული</option><option>მარწყვი</option><option>ჟოლო</option>
+          <option>კარტოფილი</option><option>სიმინდი</option><option>ხორბალი</option>
+          <option>პომიდორი</option><option>კიტრი</option><option>ბოსტნეული</option>
+        </select>
+        <input id="sk-ai-q" placeholder="მაგ: რა სასუქი ვიყენო მოცვის გამოყვავილების პერიოდში?" style="flex:1;min-width:200px;padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;font-family:inherit;font-size:.83rem;color:#1e3a5f;outline:none">
+        <button id="sk-ai-btn" onclick="skAskAI()" style="width:auto;margin:0;padding:8px 18px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:8px;color:#fff;font-family:inherit;font-size:.83rem;cursor:pointer;white-space:nowrap">🤖 AI პასუხი</button>
+      </div>
+      <div id="sk-ai-result" style="display:none;background:#fffbeb;border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:14px;font-size:.85rem;line-height:1.75;color:#1e3a5f;white-space:pre-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+let sb=null, uid=null;
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+
+// ── auth ──
+async function doLogin(){
+  var e=document.getElementById('email').value.trim(), p=document.getElementById('pass').value, err=document.getElementById('loginErr');
+  err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+
+function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+async function showApp(email){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('whoami').textContent=email||'—';
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+  skRender();
+}
+
+// ══ AI proxy (mirrors index.html callClaudeAI) ══
+const _AI_SB_PROXY = SB_URL + '/functions/v1/ai-proxy';
+async function callClaudeAI(prompt, maxTokens) {
+  maxTokens = maxTokens || 800;
+  try {
+    const r = await fetch(_AI_SB_PROXY, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SB_KEY
+      },
+      body: JSON.stringify({ prompt: prompt, max_tokens: maxTokens })
+    });
+    if (!r.ok) throw new Error('proxy ' + r.status);
+    const d = await r.json().catch(()=>({}));
+    return d.text || d.answer || d.content?.[0]?.text || '';
+  } catch(e) {
+    const r2 = await fetch(SB_URL + '/functions/v1/agro-ai-advice', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SB_KEY
+      },
+      body: JSON.stringify({ question: prompt, culture: '', category: 'general' })
+    });
+    if (!r2.ok) throw new Error('fallback ' + r2.status);
+    const d2 = await r2.json().catch(()=>({}));
+    return d2.answer || d2.text || '';
+  }
+}
+
+// ══ სასუქის ცნობარი — static catalog ══
+const SK_DATA = [
+  {name:'NPK 15-15-15 (სრული)', type:'sasuki', cultures:['ყველა'], dose:'200-300 კგ/ჰა', time:'გაზაფხულზე ვეგეტაციის დასაწყისში', note:'უნივერსალური — დათესსვის წინ ან ადრე გაზაფხულზე'},
+  {name:'კარბამიდი (46% N)', type:'sasuki', cultures:['სიმინდი','ხორბალი','ბოსტნეული','კარტოფილი'], dose:'150-250 კგ/ჰა', time:'ვეგეტაციის პერიოდში', note:'აზოტოვანი სასუქი. ფოლიარული კვებაც შესაძლებელია'},
+  {name:'სუპერფოსფატი', type:'sasuki', cultures:['ვაზი','ვაშლი','კარტოფილი','ხეხილი'], dose:'100-200 კგ/ჰა', time:'შემოდგომა / გაზაფხული', note:'ფესვის სისტემის განვითარებას უწყობს ხელს'},
+  {name:'კალიუმის სულფატი', type:'sasuki', cultures:['მოცვი','ვაზი','ხეხილი','კარტოფილი'], dose:'100-150 კგ/ჰა', time:'ნაყოფის ფორმირების პერიოდში', note:'ხარისხს, წონას და სიტკბოს ზრდის'},
+  {name:'ამონიუმის სელიტრა (34% N)', type:'sasuki', cultures:['სიმინდი','ხორბალი','ბოსტნეული'], dose:'100-200 კგ/ჰა', time:'გაზაფხულზე კვებისთვის', note:'სწრაფმოქმედი აზოტოვანი სასუქი. pH-ს ამცირებს'},
+  {name:'ამონიუმის სულფატი (მოცვისთვის)', type:'sasuki', cultures:['მოცვი','ჟოლო','მარწყვი'], dose:'50-100 კგ/ჰა', time:'აპრილი–მაისი', note:'pH 4.5-5.5 — ოპტიმალურია მოცვისთვის'},
+  {name:'კალციუმი + ბორი (ფოლიარული სასუქი)', type:'sasuki', cultures:['ვაშლი','მსხალი','ატამი','ქლიავი'], dose:'0.3% ხსნარი', time:'ყვავილობა + ნაყოფის ფორმირება', note:'ნაყოფის ხარისხს და დაცემას ამცირებს'},
+  {name:'ბორდოს სითხე (1%)', type:'fungicidi', cultures:['ვაზი','ვაშლი','მსხალი','ატამი','ქლიავი'], dose:'10 ლ / 100 ლ წყალზე', time:'ყვავილობის წინ და შემდეგ', note:'მილდიუ, ყვავილის სიდამპლე, ანტრაქნოზი'},
+  {name:'Chorus (ციპროდინილი)', type:'fungicidi', cultures:['ვაზი','ვაშლი','ატამი'], dose:'0.3-0.5 კგ/ჰა', time:'ყვავილობის პერიოდში', note:'Botrytis და Monilinia-ს წინააღმდეგ'},
+  {name:'Copper Oxychloride', type:'fungicidi', cultures:['მოცვი','ვაზი','ციტრუსები','კივი'], dose:'3-4 კგ/ჰა', time:'ადრე გაზაფხულზე', note:'ბაქტერიული და სოკოვანი დაავადებები — Downy Mildew'},
+  {name:'Karate Zeon', type:'pesticidi', cultures:['ვაზი','ხეხილი','ბოსტნეული'], dose:'0.1-0.15 ლ/ჰა', time:'მავნებლების გამოჩენიდან 10 დღეში', note:'ფართო სპექტრის საინსექტიციდო პრეპარატი'},
+  {name:'Actara (თიამეტოქსამი)', type:'pesticidi', cultures:['კარტოფილი','სიმინდი','ბოსტნეული'], dose:'0.1-0.14 კგ/ჰა', time:'ვეგეტაციის პერიოდში', note:'კოლორადოს ხოჭო, ბუგრები, თრიფსები'},
+  {name:'Confidor (იმიდაკლოპრიდი)', type:'pesticidi', cultures:['მოცვი','მარწყვი','ჟოლო'], dose:'0.3-0.5 ლ/ჰა', time:'კვირტის შეშუპებისას', note:'ბუგრები, თრიფსები, ბუბუნა ბუზი'},
+  {name:'Roundup (გლიფოსატი)', type:'herbicidi', cultures:['სარეველა — ყველა'], dose:'3-6 ლ/ჰა', time:'სარეველების აღმოცენებისას', note:'სელექციური არ არის — ყველა სარეველაზე მოქმედებს'},
+  {name:'Stomp (პენდიმეთალინი)', type:'herbicidi', cultures:['სიმინდი','ბოსტნეული'], dose:'3-5 ლ/ჰა', time:'დათესვის წინ ან დათესვის შემდეგ', note:'ნიადაგის ჰერბიციდი — ბალახოვანი სარეველების წინააღმდეგ'},
+];
+function skRender(){
+  const culture = document.getElementById('sk-culture')?.value||'';
+  const type    = document.getElementById('sk-type')?.value||'';
+  const search  = (document.getElementById('sk-search')?.value||'').toLowerCase();
+  const grid    = document.getElementById('sk-grid');
+  if(!grid) return;
+  const filtered = SK_DATA.filter(d=>{
+    if(culture && !d.cultures.some(c=>c.includes(culture)||culture.includes(c)||c==='ყველა'||c.includes('ყველა'))) return false;
+    if(type && d.type!==type) return false;
+    if(search && !d.name.toLowerCase().includes(search) && !d.note.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  const tC = {sasuki:'rgba(34,197,94,.12)',pesticidi:'rgba(239,68,68,.1)',fungicidi:'rgba(14,165,233,.1)',herbicidi:'rgba(245,158,11,.1)'};
+  const tL = {sasuki:'🌱 სასუქი',pesticidi:'🐛 პესტ.',fungicidi:'🦠 ფუნგ.',herbicidi:'🌿 ჰერბ.'};
+  grid.innerHTML = filtered.map(d=>`
+    <div style="background:#fff;border:1px solid #dde8f5;border-radius:14px;padding:16px">
+      <div style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:.68rem;font-weight:600;background:${tC[d.type]||'#f7fafd'};margin-bottom:8px;color:#1e3a5f">${tL[d.type]||d.type}</div>
+      <div style="font-size:.88rem;font-weight:600;color:#1e3a5f;margin-bottom:6px">${d.name}</div>
+      <div style="font-size:.76rem;color:#4a6a8a;margin-bottom:3px">📐 <b>${d.dose}</b> &nbsp;📅 ${d.time}</div>
+      <div style="font-size:.73rem;color:#4a6a8a;margin-bottom:6px;line-height:1.5">${d.note}</div>
+      <div style="font-size:.68rem;color:#059669">🌿 ${d.cultures.join(', ')}</div>
+    </div>`).join('') || '<div style="padding:24px;text-align:center;color:#4a6a8a">ვერ მ.</div>';
+}
+window.skRender = skRender;
+
+async function skAskAI(){
+  const q = document.getElementById('sk-ai-q')?.value?.trim();
+  const c = document.getElementById('sk-ai-culture')?.value||'';
+  if(!q){ alert('შეიყვანეთ კითხვა!'); return; }
+  const res = document.getElementById('sk-ai-result');
+  const btn = document.getElementById('sk-ai-btn');
+  res.style.display='block'; res.textContent='🤖 მ...';
+  if(btn){ btn.disabled=true; btn.textContent='⏳ ...'; }
+  try{
+    const _p = `შენ ხარ სასოფლო-სამეურნეო ქიმიის ექსპერტი საქართველოში. ${c?'კულტ.: '+c+'.':''} კითხვა: ${q}\n\nუპასუხე ქართულად, კონკრეტულად: პრეპარატის სახელი, დოზა, ვადა, სიხშირე. თუ მსგავსი ალტ. არსებობს — განახსენე. ბოლოს — უსაფრთხოების ზომები.`;
+    res.textContent = await callClaudeAI(_p, 600);
+  }catch(e){ res.textContent = '❌ კავშირის შეცდომა. სცადე ხელახლა.'; }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='🤖 AI პასუხი'; } }
+}
+window.skAskAI = skAskAI;
+
+// ══ session resume on load ══
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; showApp(s.data.session.user.email); } }catch(e){} })();
+</script>
+</body></html>

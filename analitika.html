@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📈 ანალიტიკა</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *{box-sizing:border-box;font-family:'Noto Sans Georgian',system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f7fafd;color:#0f172a;padding:14px;max-width:1040px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.95rem;margin:0 0 8px;color:#334155}
+  .card{background:#fff;border:1px solid #e7eef7;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff;color:#0f172a}
+  input:focus,select:focus{outline:none;border-color:#6366f1}
+  button{background:#6366f1;color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px;font-family:inherit}
+  button.sec{background:#fff;color:#6366f1;border:1.5px solid #6366f1}
+  button:active{transform:scale(.98)}
+  .muted{font-size:.8rem;color:#64748b}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#e0e7ff;color:#3730a3}.off{background:#fef3c7;color:#92400e}
+  .perbtn{padding:6px 13px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;width:auto;margin:0}
+  .perbtn.on{background:#6366f1;color:#fff;border-color:#6366f1}
+  .kpi{flex:1;min-width:130px;background:#fff;border:1px solid #e7eef7;border-radius:12px;padding:11px 13px}
+  .kpi .kl{font-size:.72rem;color:#64748b;font-weight:600}
+  .kpi .kv{font-size:1.25rem;font-weight:800;margin-top:3px}
+  .chartcard{background:#fff;border:1px solid #e7eef7;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+  .chartcard .ct{font-size:.9rem;font-weight:700;color:#334155;margin-bottom:10px}
+  .ana-cw{position:relative;height:240px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+  @media print{ #netbar,#topbar,#periodBar,.noprint{display:none!important} body{background:#fff;padding:0} }
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>📈 ანალიტიკა — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+
+  <div id="topbar" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <div>
+      <h1 style="color:#4f46e5">📈 გრაფიკები & ანალიტიკა</h1>
+      <div id="anaPlantInfo" class="muted"></div>
+    </div>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#6366f1">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <div id="periodBar" class="card" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <span style="font-size:.82rem;color:#64748b;font-weight:600">პერიოდი:</span>
+    <button id="anaM6" class="perbtn on" onclick="setAnaMonths(6)">6 თვე</button>
+    <button id="anaM12" class="perbtn" onclick="setAnaMonths(12)">12 თვე</button>
+    <button id="anaD30" class="perbtn" onclick="setAnaDays(30)">📅 30 დღე</button>
+    <button class="perbtn noprint" style="margin-left:auto" onclick="window.print()">🖨 ბეჭდვა / PDF</button>
+    <button id="reloadBtn" class="perbtn noprint" onclick="reloadData()">🔄 განახლება</button>
+  </div>
+
+  <div id="loadMsg" class="muted" style="text-align:center;padding:6px 0">⏳ იტვირთება ღრუბლიდან…</div>
+
+  <div id="anaKpi" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"></div>
+
+  <div class="grid" id="anaGrid">
+    <div class="chartcard"><div class="ct">📊 კრეფის დინამიკა (კგ)</div><div class="ana-cw" data-cv="anaHarvest"><canvas id="anaHarvest"></canvas></div></div>
+    <div class="chartcard"><div class="ct">💰 შემოსავალი vs ხარჯი (₾)</div><div class="ana-cw" data-cv="anaFin"><canvas id="anaFin"></canvas></div></div>
+    <div class="chartcard"><div class="ct">📈 მოგების ტრენდი (₾)</div><div class="ana-cw" data-cv="anaProfit"><canvas id="anaProfit"></canvas></div></div>
+    <div class="chartcard"><div class="ct">🥧 ხარჯების სტრუქტურა</div><div class="ana-cw" data-cv="anaExpCat"><canvas id="anaExpCat"></canvas></div></div>
+    <div class="chartcard"><div class="ct">🌾 კრეფა კულტურის მიხედვით</div><div class="ana-cw" data-cv="anaCulture"><canvas id="anaCulture"></canvas></div></div>
+    <div class="chartcard"><div class="ct">👷 ტოპ მკრეფავები (კგ)</div><div class="ana-cw" data-cv="anaPickers"><canvas id="anaPickers"></canvas></div></div>
+    <div class="chartcard"><div class="ct">🏆 ტოპ 10 რიგი (ბლოკით)</div><div class="ana-cw" data-cv="anaTopRows"><canvas id="anaTopRows"></canvas></div></div>
+    <div class="chartcard"><div class="ct">🧱 სექტორების განაწილება (კგ)</div><div class="ana-cw" data-cv="anaSectors"><canvas id="anaSectors"></canvas></div></div>
+    <div class="chartcard"><div class="ct">🛒 გაყიდვები პროდუქტით (₾)</div><div class="ana-cw" data-cv="anaSalesProd"><canvas id="anaSalesProd"></canvas></div></div>
+    <div class="chartcard"><div class="ct">👥 ტოპ მყიდველები (₾)</div><div class="ana-cw" data-cv="anaBuyers"><canvas id="anaBuyers"></canvas></div></div>
+    <div class="chartcard"><div class="ct">🧪 პრეპარატების მოხმარება</div><div class="ana-cw" data-cv="anaPrepUse"><canvas id="anaPrepUse"></canvas></div></div>
+  </div>
+</div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+let sb=null, uid=null;
+// cloud data caches (READ-ONLY — visualization only)
+let HARV=[], SALES=[], PURCH=[], EXPS=[], PREPUSE=[];
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+
+// ── auth ──
+async function doLogin(){
+  var e=document.getElementById('email').value.trim(), p=document.getElementById('pass').value, err=document.getElementById('loginErr');
+  err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+
+function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+async function showApp(email){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('whoami').textContent=email||'—';
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+  await loadAllData();
+}
+
+async function reloadData(){
+  var b=document.getElementById('reloadBtn'); if(b) b.textContent='⏳ …';
+  await loadAllData();
+  if(b) b.textContent='🔄 განახლება';
+}
+
+// ══════════ CLOUD LOAD (read-only) ══════════
+// harvest_sessions — paginated (mirrors index.html loader, 1000-row chunks)
+async function loadHarvest(){
+  var out=[];
+  try{
+    var from=0, step=1000;
+    while(true){
+      var r=await sb.from('harvest_sessions').select('*').eq('user_id',uid).order('date',{ascending:false}).order('id',{ascending:false}).range(from, from+step-1);
+      if(r.error){ console.warn('harvest_sessions',r.error); break; }
+      var chunk=r.data||[];
+      out=out.concat(chunk);
+      if(chunk.length<step) break;
+      from+=step;
+      if(from>300000) break;
+    }
+  }catch(e){ console.warn('loadHarvest',e); }
+  // normalize snake_case cloud rows into analytics shape (mirror of index.html mapping)
+  HARV=out.map(function(r){
+    return {
+      id:r.id,
+      source:r.source||'',
+      pickerName:r.picker_name||r.pickerName||r.name||'',
+      row:r.row||r.row_num||'',
+      quarter:r.quarter||'',
+      blockName:r.block_name||'',
+      culture:r.culture||r.product||r.crop||'',
+      weight:parseFloat(r.weight||r.kg||0),
+      date:r.date||''
+    };
+  });
+}
+
+async function loadRest(){
+  try{
+    var res=await Promise.all([
+      sb.from('gv_sales').select('*').eq('user_id',uid).order('date',{ascending:false}),
+      sb.from('gv_purchases').select('*').eq('user_id',uid).order('date',{ascending:false}),
+      sb.from('agro_expenses').select('*').eq('user_id',uid),
+      sb.from('agro_prep_usage').select('*').eq('user_id',uid)
+    ]);
+    SALES=Array.isArray(res[0].data)?res[0].data:[];
+    PURCH=Array.isArray(res[1].data)?res[1].data:[];
+    EXPS=(Array.isArray(res[2].data)?res[2].data:[]).map(function(r){ return { id:r.id, date:r.date, category:r.category, crop:r.crop||'', amount:+r.amount||0, note:r.note||'' }; });
+    PREPUSE=(Array.isArray(res[3].data)?res[3].data:[]).map(function(r){ return { id:r.id, itemId:r.item_id, qty:+r.qty||0, date:r.date }; });
+  }catch(e){ console.warn('loadRest',e); }
+}
+
+async function loadAllData(){
+  var lm=document.getElementById('loadMsg'); if(lm){ lm.style.display='block'; lm.textContent='⏳ იტვირთება ღრუბლიდან…'; }
+  try{ await Promise.all([ loadHarvest(), loadRest() ]); }catch(e){ console.warn('loadAllData',e); }
+  if(lm){
+    var total=HARV.length+SALES.length+PURCH.length+EXPS.length+PREPUSE.length;
+    if(total===0){ lm.textContent='📭 ღრუბელში ჯერ მონაცემი არ არის'; lm.style.display='block'; }
+    else lm.style.display='none';
+  }
+  try{ renderAnalyticsCharts(); }catch(e){ console.warn('ana',e); }
+}
+
+// ══════════ PERIOD TOGGLES ══════════
+window._anaMode='month'; window._anaMonths=6; window._anaDays=30;
+window._anaBtnStyle=function(activeId){ ['anaM6','anaM12','anaD30'].forEach(function(id){ var el=document.getElementById(id); if(!el) return; el.classList.toggle('on', id===activeId); }); };
+window.setAnaMonths=function(m){ window._anaMode='month'; window._anaMonths=m; window._anaBtnStyle(m===6?'anaM6':'anaM12'); try{ renderAnalyticsCharts(); }catch(e){} };
+window.setAnaDays=function(d){ window._anaMode='day'; window._anaDays=d; window._anaBtnStyle('anaD30'); try{ renderAnalyticsCharts(); }catch(e){} };
+
+// ══════════ CHARTS (ported verbatim from index.html renderAnalyticsCharts) ══════════
+window.renderAnalyticsCharts=function(){
+  if(typeof Chart==='undefined') return;
+  try{ if(Chart.defaults){ Chart.defaults.animation=false; Chart.defaults.responsive=true; Chart.defaults.maintainAspectRatio=false; } }catch(e){}
+  try{ (window._anaCharts||[]).forEach(function(c){ try{ c.destroy(); }catch(e){} }); }catch(e){} window._anaCharts=[];
+  var n=function(v){return +v||0;};
+  // cloud sources (READ-ONLY): harvest excludes sms_phantom rows, same as the app
+  var harv=HARV.filter(function(s){ return s && s.source!=='sms_phantom'; });
+  var sales=SALES, purch=PURCH, exps=EXPS;
+  var _mode=window._anaMode||'month', now=new Date(), months=[], labels=[], _sl=7;
+  if(_mode==='day'){
+    var D=window._anaDays||30; _sl=10;
+    for(var i=D-1;i>=0;i--){ var d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i); var key=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); months.push(key); labels.push(('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)); }
+  } else {
+    var M=window._anaMonths||6;
+    for(var i=M-1;i>=0;i--){ var d=new Date(now.getFullYear(), now.getMonth()-i, 1); var key=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2); months.push(key); labels.push(('0'+(d.getMonth()+1)).slice(-2)+'/'+String(d.getFullYear()).slice(2)); }
+  }
+  function idx(dateStr){ return months.indexOf(String(dateStr||'').slice(0,_sl)); }
+  var hKg=months.map(function(){return 0;}), inc=months.map(function(){return 0;}), exp=months.map(function(){return 0;});
+  harv.forEach(function(s){ var j=idx(s.date); if(j>=0) hKg[j]+=n(s.weight); });
+  sales.forEach(function(s){ var j=idx(s.date); if(j>=0) inc[j]+=(n(s.total)||n(s.kg)*n(s.price)); });
+  exps.forEach(function(e){ var j=idx(e.date); if(j>=0) exp[j]+=n(e.amount); });
+  purch.forEach(function(p){ var j=idx(p.date); if(j>=0) exp[j]+=(n(p.total)||n(p.kg)*n(p.price)); });
+  var profit=months.map(function(_,k){ return inc[k]-exp[k]; });
+  // expense categories
+  var catMap={}; exps.forEach(function(e){ if(idx(e.date)>=0){ var c=e.category||'სხვა'; catMap[c]=(catMap[c]||0)+n(e.amount); } });
+  var catL=Object.keys(catMap), catV=catL.map(function(c){return catMap[c];});
+  if(!catL.length){ catL=['—']; catV=[0]; }
+  function _cfgEmpty(cfg){ try{ var ds=cfg.data.datasets||[]; return !ds.some(function(d){ return (d.data||[]).some(function(v){ return (+v||0)!==0; }); }); }catch(e){ return false; } }
+  function mk(id,cfg){
+    var wrap=document.querySelector('[data-cv="'+id+'"]');
+    if(!wrap){ var c0=document.getElementById(id); wrap=c0?c0.parentNode:null; }
+    if(!wrap) return;
+    wrap.innerHTML='<canvas id="'+id+'"></canvas>';
+    if(_cfgEmpty(cfg)){ wrap.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:.85rem">📭 ჯერ მონაცემი არ არის</div>'; return; }
+    var el=document.getElementById(id); if(!el) return;
+    try{ window._anaCharts.push(new Chart(el.getContext('2d'), cfg)); }catch(e){ console.warn('chart',id,e); wrap.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:.82rem">— ვერ დაიხატა —</div>'; }
+  }
+  mk('anaHarvest',{type:'bar',data:{labels:labels,datasets:[{label:'კრეფა კგ',data:hKg,backgroundColor:'#16a34a'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  mk('anaFin',{type:'bar',data:{labels:labels,datasets:[{label:'შემოსავალი',data:inc,backgroundColor:'#059669'},{label:'ხარჯი',data:exp,backgroundColor:'#dc2626'}]},options:{responsive:true,maintainAspectRatio:false}});
+  mk('anaProfit',{type:'line',data:{labels:labels,datasets:[{label:'მოგება ₾',data:profit,borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.12)',fill:true,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  mk('anaExpCat',{type:'doughnut',data:{labels:catL,datasets:[{data:catV,backgroundColor:['#6366f1','#f59e0b','#16a34a','#dc2626','#0ea5e9','#8b5cf6','#84cc16','#ec4899','#14b8a6','#f97316']}]},options:{responsive:true,maintainAspectRatio:false}});
+
+  // ── დამატებითი ანალიტიკა ──
+  function inPeriod(d){ return idx(d)>=0; }
+  // კრეფა კულტურით
+  var cultMap={}; harv.forEach(function(s){ if(inPeriod(s.date)){ var c=s.culture||'სხვა'; cultMap[c]=(cultMap[c]||0)+n(s.weight); } });
+  var cultL=Object.keys(cultMap), cultV=cultL.map(function(c){return Math.round(cultMap[c]*10)/10;}); if(!cultL.length){cultL=['—'];cultV=[0];}
+  mk('anaCulture',{type:'doughnut',data:{labels:cultL,datasets:[{data:cultV,backgroundColor:['#16a34a','#0ea5e9','#f59e0b','#8b5cf6','#dc2626','#14b8a6','#ec4899','#84cc16']}]},options:{responsive:true,maintainAspectRatio:false}});
+  // ტოპ მკრეფავები
+  var pkMap={}; harv.forEach(function(s){ if(inPeriod(s.date)){ var nm=s.pickerName||'—'; pkMap[nm]=(pkMap[nm]||0)+n(s.weight); } });
+  var pkArr=Object.keys(pkMap).map(function(k){return [k,pkMap[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
+  mk('anaPickers',{type:'bar',data:{labels:pkArr.map(function(x){return x[0];}),datasets:[{label:'კგ',data:pkArr.map(function(x){return Math.round(x[1]*10)/10;}),backgroundColor:'#0ea5e9'}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  var rowMap={}; harv.forEach(function(s){ if(inPeriod(s.date)){ var rw=s.row||s.rowLabel; if(!rw) return; var bl=s.quarter||s.blockName||'?'; var key='ბლ '+bl+' · რ'+rw; rowMap[key]=(rowMap[key]||0)+n(s.weight); } });
+  var rowArr=Object.keys(rowMap).map(function(k){return [k,rowMap[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
+  mk('anaTopRows',{type:'bar',data:{labels:rowArr.map(function(x){return x[0];}),datasets:[{label:'კგ',data:rowArr.map(function(x){return Math.round(x[1]*10)/10;}),backgroundColor:'#16a34a'}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  var secMap={}; harv.forEach(function(s){ if(inPeriod(s.date)){ var q=s.quarter||s.blockName||'—'; secMap[q]=(secMap[q]||0)+n(s.weight); } });
+  var secL=Object.keys(secMap).sort(), secV=secL.map(function(k){return Math.round(secMap[k]*10)/10;}); if(!secL.length){secL=['—'];secV=[0];}
+  mk('anaSectors',{type:'doughnut',data:{labels:secL.map(function(x){return 'სექტ. '+x;}),datasets:[{data:secV,backgroundColor:['#16a34a','#0ea5e9','#f59e0b','#8b5cf6','#dc2626','#14b8a6','#ec4899','#84cc16','#6366f1','#f97316']}]},options:{responsive:true,maintainAspectRatio:false}});
+  // გაყიდვები პროდუქტით
+  var spMap={}; sales.forEach(function(s){ if(inPeriod(s.date)){ var pr=s.product||'—'; spMap[pr]=(spMap[pr]||0)+(n(s.total)||n(s.kg)*n(s.price)); } });
+  var spL=Object.keys(spMap), spV=spL.map(function(k){return Math.round(spMap[k]);}); if(!spL.length){spL=['—'];spV=[0];}
+  mk('anaSalesProd',{type:'doughnut',data:{labels:spL,datasets:[{data:spV,backgroundColor:['#059669','#6366f1','#f59e0b','#dc2626','#0ea5e9','#8b5cf6','#84cc16','#ec4899']}]},options:{responsive:true,maintainAspectRatio:false}});
+  // ტოპ მყიდველები
+  var byMap={}; sales.forEach(function(s){ if(inPeriod(s.date)){ var nm=s.buyerName||'—'; byMap[nm]=(byMap[nm]||0)+(n(s.total)||n(s.kg)*n(s.price)); } });
+  var byArr=Object.keys(byMap).map(function(k){return [k,byMap[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  mk('anaBuyers',{type:'bar',data:{labels:byArr.map(function(x){return x[0];}),datasets:[{label:'₾',data:byArr.map(function(x){return Math.round(x[1]);}),backgroundColor:'#8b5cf6'}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  // პრეპარატების მოხმარება დროში
+  var puArr=months.map(function(){return 0;}); PREPUSE.forEach(function(u){ var j=idx(u.date); if(j>=0) puArr[j]+=n(u.qty); });
+  mk('anaPrepUse',{type:'bar',data:{labels:labels,datasets:[{label:'მოხმარება',data:puArr.map(function(x){return Math.round(x*100)/100;}),backgroundColor:'#0d9488'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+
+  // KPI ბარათები
+  var totH=hKg.reduce(function(s,x){return s+x;},0), totI=inc.reduce(function(s,x){return s+x;},0), totE=exp.reduce(function(s,x){return s+x;},0), totP=totI-totE;
+  var soldKg=0; sales.forEach(function(s){ if(inPeriod(s.date)) soldKg+=n(s.kg); });
+  var avgPrice=soldKg>0?(totI/soldKg):0;
+  var pickerCount=Object.keys(pkMap).length, salesCount=sales.filter(function(s){return inPeriod(s.date);}).length;
+  var fm=function(v){return Math.round(+v||0).toLocaleString('en-US');};
+  function kc(icon,lbl,val,color){ return '<div class="kpi"><div class="kl">'+icon+' '+lbl+'</div><div class="kv" style="color:'+color+'">'+val+'</div></div>'; }
+  var kpi=document.getElementById('anaKpi');
+  if(kpi) kpi.innerHTML=kc('🌾','კრეფა',(Math.round(totH*10)/10).toLocaleString('en-US')+' კგ','#16a34a')
+    +kc('💰','შემოსავალი',fm(totI)+' ₾','#059669')
+    +kc('🧾','ხარჯი',fm(totE)+' ₾','#dc2626')
+    +kc('📈','მოგება',fm(totP)+' ₾',totP>=0?'#059669':'#dc2626')
+    +kc('⚖️','საშ. ფასი',(Math.round(avgPrice*100)/100)+' ₾/კგ','#6366f1')
+    +kc('👷','მკრეფავი',pickerCount+'','#0ea5e9')
+    +kc('🧾','გაყიდვა',salesCount+'','#8b5cf6');
+  try{ requestAnimationFrame(function(){ (window._anaCharts||[]).forEach(function(c){ try{ c.resize(); c.update('none'); }catch(e){} }); }); }catch(e){}
+  setTimeout(function(){ (window._anaCharts||[]).forEach(function(c){ try{ c.resize(); }catch(e){} }); }, 250);
+};
+
+// ══ session resume on load ══
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; showApp(s.data.session.user.email); } }catch(e){} })();
+</script>
+</body></html>

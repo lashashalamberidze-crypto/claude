@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏪 აგრო მაღაზიები & ტექნიკა</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;font-family:'Noto Sans Georgian',system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:980px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.95rem;margin:0 0 8px;color:#334155}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select,textarea{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff;color:#0f172a;font-family:inherit}
+  textarea{resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:#f97316}
+  button{background:#f97316;color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:#f97316;border:1.5px solid #f97316}
+  button.o{background:#ea580c}button.r{background:#dc2626}
+  button.gray{background:#fff;color:#475569;border:1.5px solid #cbd5e1}
+  button:active{transform:scale(.98)}
+  .row2{display:flex;gap:8px;flex-wrap:wrap}.row2>*{flex:1;min-width:140px}
+  .muted{font-size:.8rem;color:#64748b}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#ffedd5;color:#9a3412}.off{background:#fef3c7;color:#92400e}
+  /* tabs */
+  #as-tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .as-tab{padding:9px 18px;background:#fff;border:1.5px solid #fed7aa;border-radius:20px;color:#9a3412;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;width:auto;margin:0}
+  .as-tab.active{background:#ffedd5;border-color:#f97316;color:#9a3412;box-shadow:0 4px 12px rgba(249,115,22,.12)}
+  .as-page{display:block}
+  /* filters */
+  .as-filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+  .as-filters input,.as-filters select{padding:9px 14px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:.85rem;background:#fff;color:#0f172a;width:auto}
+  .as-filters input#as-search{flex:1;min-width:160px}
+  /* cards */
+  #as-shops-grid,#as-equip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .as-shop-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:16px;position:relative;transition:border-color .2s,box-shadow .2s}
+  .as-shop-card:hover{border-color:#fdba74;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+  .as-shop-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.7rem;font-weight:700;margin-bottom:8px}
+  .as-shop-badge.shop{background:#dcfce7;color:#15803d;border:1px solid rgba(34,197,94,.25)}
+  .as-shop-badge.equip{background:#fef3c7;color:#b45309;border:1px solid rgba(245,158,11,.25)}
+  .as-card-acts{display:flex;gap:6px;position:absolute;top:12px;right:12px}
+  .as-card-acts button{width:auto;margin:0;padding:4px 8px;font-size:.68rem}
+  /* map */
+  #asMap{height:clamp(420px,60vh,720px);border-radius:14px;overflow:hidden;border:1px solid #e2e8f0;background:#e2e8f0}
+  #asAdminMap{height:340px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;background:#e2e8f0}
+  .as-map-filter{padding:7px 14px;background:#fff;border:1.5px solid #cbd5e1;border-radius:20px;color:#0f172a;font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s;width:auto;margin:0}
+  .as-map-filter.active{background:#ffedd5;border-color:#f97316;color:#9a3412}
+  .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:720px){.admin-grid{grid-template-columns:1fr}}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .form-grid .full{grid-column:1/-1}
+  .adm-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px}
+  .leaflet-popup-content-wrapper{border-radius:10px!important;box-shadow:0 4px 20px rgba(0,0,0,.2)!important}
+  .leaflet-popup-content{margin:12px 16px!important;font-family:'Noto Sans Georgian',sans-serif!important;color:#1a2a3a!important}
+  /* toast */
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:700;box-shadow:0 8px 28px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:all .28s;z-index:100002;max-width:90vw;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>🏪 აგრო მაღაზიები & ტექნიკა — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <h1>🏪 აგრო მაღაზიები & ტექნიკა <span style="font-size:.6rem;background:#f97316;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v1</span></h1>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#f97316">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <!-- TABS -->
+  <div id="as-tabs">
+    <button class="as-tab active" onclick="asTab('map',this)">📍 რუქა</button>
+    <button class="as-tab" onclick="asTab('shops',this)">🏪 მაღაზიები</button>
+    <button class="as-tab" onclick="asTab('equipment',this)">🚜 ტექნიკა</button>
+    <button class="as-tab" onclick="asTab('admin',this)">➕ დამატება</button>
+  </div>
+
+  <!-- ── TAB: MAP ── -->
+  <div id="as-page-map" class="as-page card">
+    <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="as-map-filter active" onclick="asMapFilter('all',this)">📍 ყველა</button>
+      <button class="as-map-filter" onclick="asMapFilter('shop',this)">🏪 მაღ.</button>
+      <button class="as-map-filter" onclick="asMapFilter('equip',this)">🚜 ტექ.</button>
+    </div>
+    <div id="asMap"></div>
+  </div>
+
+  <!-- ── TAB: SHOPS ── -->
+  <div id="as-page-shops" class="as-page card" style="display:none">
+    <div class="as-filters">
+      <input id="as-search" placeholder="🔍 ძებნა..." oninput="asRenderShops()">
+      <select id="as-filter-region" onchange="asRenderShops()">
+        <option value="">🗺️ ყველა რეგიონი</option>
+        <option>თბილისი</option><option>კახეთი</option><option>შიდა ქართლი</option><option>ქვემო ქართლი</option>
+        <option>მცხეთა-მთიანეთი</option><option>სამცხე-ჯავახეთი</option><option>გურია</option><option>სამეგრელო-ზემო სვანეთი</option>
+        <option>იმერეთი</option><option>რაჭა-ლეჩხუმი</option><option>აჭარა</option>
+      </select>
+      <select id="as-filter-type" onchange="asRenderShops()">
+        <option value="">📦 ყველა ტიპი</option>
+        <option value="shop">🏪 მაღაზია</option>
+        <option value="equip">🚜 ტექნიკის გაქირავება</option>
+      </select>
+    </div>
+    <div id="as-shops-grid"></div>
+  </div>
+
+  <!-- ── TAB: EQUIPMENT ── -->
+  <div id="as-page-equipment" class="as-page card" style="display:none">
+    <div class="as-filters">
+      <select id="as-eq-region" onchange="asRenderEquip()">
+        <option value="">🗺️ ყველა რეგიონი</option>
+        <option>თბილისი</option><option>კახეთი</option><option>შიდა ქართლი</option><option>ქვემო ქართლი</option>
+        <option>მცხეთა-მთიანეთი</option><option>სამცხე-ჯავახეთი</option><option>გურია</option><option>სამეგრელო-ზემო სვანეთი</option>
+        <option>იმერეთი</option><option>რაჭა-ლეჩხუმი</option><option>აჭარა</option>
+      </select>
+      <select id="as-eq-type" onchange="asRenderEquip()">
+        <option value="">🚜 ყველა ტექნიკა</option>
+        <option>ტრაქტორი</option><option>კომბაინი</option><option>სპრეიერი</option><option>სხვა</option>
+      </select>
+    </div>
+    <div id="as-equip-grid"></div>
+  </div>
+
+  <!-- ── TAB: ADMIN (add/edit) ── -->
+  <div id="as-page-admin" class="as-page" style="display:none">
+    <div class="admin-grid">
+
+      <!-- ADD/EDIT FORM -->
+      <div class="card" style="margin:0">
+        <div style="font-size:.95rem;font-weight:700;color:#ea580c;margin-bottom:12px" id="as-form-title">➕ ახალი ობიექტის დამატება</div>
+        <div class="form-grid">
+          <div class="full"><label>ტიპი *</label>
+            <select id="as-new-type" onchange="asToggleEquipFields()">
+              <option value="shop">🏪 აგრო მაღაზია</option>
+              <option value="equip">🚜 ტექნიკის გაქირავება</option>
+            </select>
+          </div>
+          <div class="full"><label>სახელი *</label>
+            <input id="as-new-name" placeholder="მაგ: აგრო-კავკასია">
+          </div>
+          <div><label>რეგიონი *</label>
+            <select id="as-new-region">
+              <option>თბილისი</option><option>კახეთი</option><option>შიდა ქართლი</option><option>ქვემო ქართლი</option>
+              <option>მცხეთა-მთიანეთი</option><option>სამცხე-ჯავახეთი</option><option>გურია</option><option>სამეგრელო-ზემო სვანეთი</option>
+              <option>იმერეთი</option><option>რაჭა-ლეჩხუმი</option><option>აჭარა</option>
+            </select>
+          </div>
+          <div><label>ტელეფონი</label>
+            <input id="as-new-phone" placeholder="555 123 456">
+          </div>
+          <div class="full"><label>მისამართი</label>
+            <input id="as-new-addr" placeholder="ქ. თელავი, ლენინის 14">
+          </div>
+          <div class="full"><label>ელ.ფოსტა</label>
+            <input id="as-new-email" type="email" placeholder="info@shop.ge">
+          </div>
+          <div class="full"><label>საქმიანობა / აღწერა</label>
+            <textarea id="as-new-info" placeholder="სასუქები, სპრეები, ნერგები..." rows="2"></textarea>
+          </div>
+          <div id="as-equip-only" class="full" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div><label>ტექნიკის ტიპი</label>
+              <select id="as-new-eqtype">
+                <option>ტრაქტორი</option><option>კომბაინი</option><option>სპრეიერი</option><option>სხვა</option>
+              </select>
+            </div>
+            <div><label>ფასი (₾/დღ.)</label>
+              <input id="as-new-price" type="number" placeholder="150" min="0">
+            </div>
+          </div>
+          <div><label>Lat (განედი)</label>
+            <input id="as-new-lat" type="number" placeholder="41.69" step="0.0001">
+          </div>
+          <div><label>Lng (გრძედი)</label>
+            <input id="as-new-lng" type="number" placeholder="44.83" step="0.0001">
+          </div>
+          <div class="full" style="display:flex;gap:8px;margin-top:4px">
+            <button class="o" onclick="asSubmitEntry()" id="as-submit-btn" style="flex:1">✅ დამატება</button>
+            <button class="gray" onclick="asClearForm()" style="width:auto">🗑</button>
+          </div>
+          <div class="full err" id="as-form-err"></div>
+        </div>
+      </div>
+
+      <!-- PIN ON MAP -->
+      <div class="card" style="margin:0">
+        <div style="font-size:.95rem;font-weight:700;color:#0369a1;margin-bottom:8px">📍 პინის განთავსება რუქაზე</div>
+        <div class="muted" style="margin-bottom:10px">კლიკი რუქაზე → კოორდინატები ავტომატურად შეივსება</div>
+        <div id="asAdminMap"></div>
+      </div>
+    </div>
+
+    <!-- LIST -->
+    <div class="card" style="margin-top:16px">
+      <div style="font-size:.9rem;font-weight:700;color:#0f172a;margin-bottom:14px">📋 ჩამატებული ობიექტები (<span id="as-count">0</span>)</div>
+      <div id="as-admin-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+const AS_KEY='its_agroshop_entries';
+let sb=null, uid=null, asEntries=[], asEditId=null;
+let asMainMap=null, asAdminPinMap=null, asMapMarkers=[], asCurrentMapFilter='all';
+let asAdminTmpMarker=null;
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function toast(m){ var t=document.getElementById('toast'); if(!t)return; t.textContent=m; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove('show'); },2600); }
+function normalizePhone(phone){
+  var raw=String(phone||'').trim(); if(!raw) return '';
+  var digits=raw.replace(/\D/g,''); if(!digits) return '';
+  if(digits.startsWith('995')) return '+'+digits;
+  if(digits.startsWith('0')) return '+995'+digits.slice(1);
+  if(digits.length===9) return '+995'+digits;
+  return '+'+digits;
+}
+
+// ── auth ──
+async function doLogin(){
+  var e=document.getElementById('email').value.trim(), p=document.getElementById('pass').value, err=document.getElementById('loginErr');
+  err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+
+function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+async function showApp(email){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('whoami').textContent=email||'—';
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+  asToggleEquipFields();
+  asLoadLocal();
+  asRenderShops(); asRenderEquip(); asRenderAdminList();
+  await agrosLoadFromSupabase();
+  asRenderShops(); asRenderEquip(); asRenderAdminList();
+  // map tab is active by default
+  setTimeout(asInitMainMap,150);
+}
+
+// ══ DATA ══
+function asLoadLocal(){
+  try{ asEntries=JSON.parse(localStorage.getItem(AS_KEY)||'[]'); }catch(e){ asEntries=[]; }
+  if(!Array.isArray(asEntries)) asEntries=[];
+}
+function asSaveLocal(){ try{ localStorage.setItem(AS_KEY, JSON.stringify(asEntries)); }catch(e){} }
+
+// mirror of index.html agrosLoadFromSupabase — cloud is source of truth, filtered by user_id
+async function agrosLoadFromSupabase(){
+  if(!sb||!uid) return;
+  try{
+    var r=await sb.from('agroshop_entries').select('*').eq('user_id',uid).order('id',{ascending:false});
+    if(r.error){ console.warn('agrosLoadFromSupabase',r.error); return; }
+    asEntries=(r.data||[]).map(asNormalize);
+    asSaveLocal();
+  }catch(e){ console.warn('agrosLoadFromSupabase',e); }
+}
+function asNormalize(e){
+  return {
+    id:e.id, type:e.type||'shop', name:e.name||'', region:e.region||'',
+    phone:e.phone||'', addr:e.addr||'', email:e.email||'', info:e.info||'',
+    eqtype:e.eqtype||'', price:(e.price==null?'':e.price),
+    lat:(e.lat==null||e.lat==='')?null:Number(e.lat),
+    lng:(e.lng==null||e.lng==='')?null:Number(e.lng)
+  };
+}
+function asRowForCloud(e){
+  return {
+    id:e.id, user_id:uid, type:e.type, name:e.name, region:e.region,
+    phone:e.phone, addr:e.addr, email:e.email, info:e.info,
+    eqtype:e.eqtype||'', price:(e.price===''||e.price==null)?null:e.price,
+    lat:e.lat, lng:e.lng
+  };
+}
+async function asUpsertCloud(e){
+  if(!sb||!uid) return;
+  try{ var r=await sb.from('agroshop_entries').upsert(asRowForCloud(e),{onConflict:'id'}); if(r.error) console.warn('asUpsertCloud',r.error); }
+  catch(err){ console.warn('asUpsertCloud',err); }
+}
+
+// ══ TABS ══
+window.asTab=function(name,btn){
+  document.querySelectorAll('#app .as-page').forEach(function(p){ p.style.display='none'; });
+  document.querySelectorAll('#as-tabs .as-tab').forEach(function(t){ t.classList.remove('active'); });
+  var pg=document.getElementById('as-page-'+name);
+  if(pg) pg.style.display='block';
+  if(btn) btn.classList.add('active');
+  if(name==='shops') asRenderShops();
+  if(name==='equipment') asRenderEquip();
+  if(name==='map'){ setTimeout(asInitMainMap,100); }
+  if(name==='admin'){ setTimeout(asInitAdminMap,100); asRenderAdminList(); }
+};
+
+// ══ SHOPS GRID ══
+window.asRenderShops=function(){
+  var grid=document.getElementById('as-shops-grid'); if(!grid) return;
+  var q=(document.getElementById('as-search')||{}).value||'';
+  var region=(document.getElementById('as-filter-region')||{}).value||'';
+  var type=(document.getElementById('as-filter-type')||{}).value||'';
+  var list=asEntries.filter(function(e){
+    if(type && e.type!==type) return false;
+    if(region && e.region!==region) return false;
+    if(q && !((e.name||'')+(e.addr||'')+(e.info||'')+(e.region||'')).toLowerCase().includes(q.toLowerCase())) return false;
+    return true;
+  });
+  if(!list.length){ grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:40px;font-size:.85rem">— ობიექტი არ მოიძებნა —</div>'; return; }
+  grid.innerHTML=list.map(asCardHTML).join('');
+};
+
+// ══ EQUIP GRID ══
+window.asRenderEquip=function(){
+  var grid=document.getElementById('as-equip-grid'); if(!grid) return;
+  var region=(document.getElementById('as-eq-region')||{}).value||'';
+  var eqtype=(document.getElementById('as-eq-type')||{}).value||'';
+  var list=asEntries.filter(function(e){
+    if(e.type!=='equip') return false;
+    if(region && e.region!==region) return false;
+    if(eqtype && e.eqtype!==eqtype) return false;
+    return true;
+  });
+  if(!list.length){ grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:40px;font-size:.85rem">— ტექნიკა ვერ მოიძებნა —</div>'; return; }
+  grid.innerHTML=list.map(asCardHTML).join('');
+};
+
+function asCardHTML(e){
+  var isEquip=e.type==='equip';
+  var color=isEquip?'#b45309':'#15803d';
+  var safePhone=normalizePhone(e.phone);
+  return '<div class="as-shop-card">'+
+    '<div class="as-card-acts">'+
+      '<button class="gray" onclick="asEditEntry(\''+esc(e.id)+'\')">✏️</button>'+
+      '<button class="r" onclick="asDeleteEntry(\''+esc(e.id)+'\')">🗑</button>'+
+    '</div>'+
+    '<span class="as-shop-badge '+esc(e.type)+'">'+(isEquip?'🚜 ტექნიკა':'🏪 მაღაზია')+'</span>'+
+    (e.region?'<span style="float:right;margin-right:64px;font-size:.72rem;color:#0f2440;background:#e0edf9;padding:2px 8px;border-radius:10px;font-weight:600">📍 '+esc(e.region)+'</span>':'')+
+    '<div style="font-weight:700;color:'+color+';font-size:.95rem;margin:6px 0">'+esc(e.name)+'</div>'+
+    (e.addr?'<div style="font-size:.78rem;color:#334155;margin-bottom:4px;font-weight:600">📌 '+esc(e.addr)+'</div>':'')+
+    (isEquip&&e.eqtype?'<div style="font-size:.78rem;color:#b45309;margin-bottom:4px;font-weight:600">🔧 '+esc(e.eqtype)+(e.price?' · <strong>'+esc(e.price)+'₾/დღ.</strong>':'')+'</div>':'')+
+    (e.info?'<div style="font-size:.78rem;color:#475569;margin-bottom:8px;line-height:1.5">'+esc(e.info)+'</div>':'')+
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">'+
+    (safePhone?'<a href="tel:'+esc(safePhone)+'" style="font-size:.78rem;color:#0369a1;text-decoration:none;font-weight:600">📞 '+esc(e.phone)+'</a>':'')+
+    (e.email?'<a href="mailto:'+esc(e.email)+'" style="font-size:.78rem;color:#6d28d9;text-decoration:none;font-weight:600">✉️ '+esc(e.email)+'</a>':'')+
+    '</div></div>';
+}
+
+// ══ MAIN MAP ══
+function asBaseTiles(map){
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'© Esri'}).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:20,opacity:.9,attribution:'© CARTO'}).addTo(map);
+}
+function asInitMainMap(){
+  if(!window.L) return;
+  if(!asMainMap){
+    var el=document.getElementById('asMap');
+    if(!el||el.offsetWidth===0||el.offsetHeight===0){ setTimeout(asInitMainMap,200); return; }
+    asMainMap=L.map('asMap').setView([41.9,44.0],7);
+    asBaseTiles(asMainMap);
+  } else { try{ asMainMap.invalidateSize(); }catch(_e){} }
+  asRenderMapPins();
+  setTimeout(function(){ try{ asMainMap.invalidateSize(); }catch(_e){} },300);
+}
+function asRenderMapPins(){
+  if(!asMainMap) return;
+  try{ asMapMarkers.forEach(function(m){ try{ asMainMap.removeLayer(m); }catch(_e){} }); }catch(_e){}
+  asMapMarkers=[];
+  var bounds=[];
+  var filtered=(asEntries||[]).filter(function(e){
+    var lat=Number(e&&e.lat), lng=Number(e&&e.lng);
+    if(!Number.isFinite(lat)||!Number.isFinite(lng)) return false;
+    if(asCurrentMapFilter!=='all' && e.type!==asCurrentMapFilter) return false;
+    return true;
+  });
+  filtered.forEach(function(e){
+    try{
+      var isEquip=e.type==='equip';
+      var lat=Number(e.lat), lng=Number(e.lng);
+      var html='<div style="background:'+(isEquip?'#f59e0b':'#22c55e')+';width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>';
+      var icon=L.divIcon({html:html,className:'',iconSize:[14,14],iconAnchor:[7,7]});
+      var m=L.marker([lat,lng],{icon:icon}).addTo(asMainMap);
+      var safePhone=normalizePhone(e.phone);
+      var popup='<div style="font-family:\'Noto Sans Georgian\',sans-serif;font-size:.82rem;min-width:180px;color:#1a2a3a">'+
+        '<strong style="color:'+(isEquip?'#b45309':'#15803d')+'">'+esc(e.name)+'</strong><br>'+
+        (e.region?'<span style="color:#334155">📍 '+esc(e.region)+'</span><br>':'')+
+        (e.addr?'<span style="color:#334155">📌 '+esc(e.addr)+'</span><br>':'')+
+        (isEquip&&e.eqtype?'<span style="color:#92400e">🔧 '+esc(e.eqtype)+(e.price?' · <strong>'+esc(e.price)+'₾/დღ.</strong>':'')+'</span><br>':'')+
+        (e.info?'<span style="color:#475569">'+esc(e.info)+'</span><br>':'')+
+        (safePhone?'📞 <a href="tel:'+esc(safePhone)+'" style="color:#0369a1;font-weight:600">'+esc(e.phone)+'</a><br>':'')+
+        (e.email?'✉️ <a href="mailto:'+esc(e.email)+'" style="color:#6d28d9">'+esc(e.email)+'</a>':'')+
+        '</div>';
+      m.bindPopup(popup);
+      asMapMarkers.push(m); bounds.push([lat,lng]);
+    }catch(_e){ console.warn('asRenderMapPins skipped marker',_e); }
+  });
+  try{
+    if(bounds.length===1) asMainMap.setView(bounds[0],11);
+    else if(bounds.length>1) asMainMap.fitBounds(bounds,{padding:[30,30],maxZoom:13});
+  }catch(_e){}
+}
+window.asMapFilter=function(f,btn){
+  asCurrentMapFilter=f;
+  document.querySelectorAll('.as-map-filter').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  asRenderMapPins();
+};
+
+// ══ ADMIN MAP (pin picker) ══
+function asInitAdminMap(){
+  if(!window.L) return;
+  if(!asAdminPinMap){
+    var el=document.getElementById('asAdminMap');
+    if(!el||el.offsetWidth===0||el.offsetHeight===0){ setTimeout(asInitAdminMap,200); return; }
+    asAdminPinMap=L.map('asAdminMap').setView([41.9,44.0],7);
+    asBaseTiles(asAdminPinMap);
+    asAdminPinMap.on('click',function(ev){
+      if(asAdminTmpMarker) asAdminPinMap.removeLayer(asAdminTmpMarker);
+      asAdminTmpMarker=L.marker(ev.latlng).addTo(asAdminPinMap);
+      var latEl=document.getElementById('as-new-lat'), lngEl=document.getElementById('as-new-lng');
+      if(latEl) latEl.value=ev.latlng.lat.toFixed(5);
+      if(lngEl) lngEl.value=ev.latlng.lng.toFixed(5);
+    });
+  } else { try{ asAdminPinMap.invalidateSize(); }catch(_e){} }
+  setTimeout(function(){ try{ asAdminPinMap.invalidateSize(); }catch(_e){} },300);
+}
+
+// ══ ADMIN: form ══
+window.asToggleEquipFields=function(){
+  var t=(document.getElementById('as-new-type')||{}).value;
+  var el=document.getElementById('as-equip-only');
+  if(el) el.style.display=(t==='equip')?'grid':'none';
+};
+
+window.asSubmitEntry=async function(){
+  var err=document.getElementById('as-form-err'); err.textContent='';
+  var type=document.getElementById('as-new-type').value;
+  var name=(document.getElementById('as-new-name').value||'').trim();
+  var region=document.getElementById('as-new-region').value;
+  var phone=(document.getElementById('as-new-phone').value||'').trim();
+  var addr=(document.getElementById('as-new-addr').value||'').trim();
+  var email=(document.getElementById('as-new-email').value||'').trim();
+  var info=(document.getElementById('as-new-info').value||'').trim();
+  var eqtype=document.getElementById('as-new-eqtype').value;
+  var price=document.getElementById('as-new-price').value;
+  var lat=parseFloat(document.getElementById('as-new-lat').value||'');
+  var lng=parseFloat(document.getElementById('as-new-lng').value||'');
+  if(!name){ err.textContent='❌ სახელი სავალდებულოა'; return; }
+  var entry={
+    id: asEditId || ('as_'+Date.now()),
+    type:type, name:name, region:region, phone:phone, addr:addr, email:email, info:info,
+    eqtype: type==='equip'?eqtype:'',
+    price: type==='equip'?(+price||''):'',
+    lat: isNaN(lat)?null:lat,
+    lng: isNaN(lng)?null:lng
+  };
+  if(asEditId){
+    asEntries=asEntries.map(function(x){ return x.id===asEditId?entry:x; });
+  } else {
+    asEntries.push(entry);
+  }
+  asSaveLocal();
+  await asUpsertCloud(entry);
+  var wasEdit=!!asEditId;
+  asClearForm();
+  asRenderAdminList(); asRenderShops(); asRenderEquip();
+  if(asMainMap) asRenderMapPins();
+  toast((wasEdit?'✏️ '+name+' — განახლდა':'✅ '+name+' — დაემატა'));
+};
+
+window.asClearForm=function(){
+  asEditId=null;
+  ['as-new-name','as-new-phone','as-new-addr','as-new-email','as-new-info','as-new-price','as-new-lat','as-new-lng'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('as-new-type').value='shop';
+  asToggleEquipFields();
+  document.getElementById('as-form-title').textContent='➕ ახალი ობიექტის დამატება';
+  document.getElementById('as-submit-btn').textContent='✅ დამატება';
+  document.getElementById('as-form-err').textContent='';
+  if(asAdminTmpMarker&&asAdminPinMap){ try{ asAdminPinMap.removeLayer(asAdminTmpMarker); }catch(_e){} asAdminTmpMarker=null; }
+};
+
+window.asEditEntry=function(id){
+  var e=asEntries.find(function(x){ return x.id===id; }); if(!e) return;
+  asEditId=id;
+  document.getElementById('as-new-type').value=e.type||'shop';
+  asToggleEquipFields();
+  document.getElementById('as-new-name').value=e.name||'';
+  document.getElementById('as-new-region').value=e.region||'თბილისი';
+  document.getElementById('as-new-phone').value=e.phone||'';
+  document.getElementById('as-new-addr').value=e.addr||'';
+  document.getElementById('as-new-email').value=e.email||'';
+  document.getElementById('as-new-info').value=e.info||'';
+  document.getElementById('as-new-eqtype').value=e.eqtype||'ტრაქტორი';
+  document.getElementById('as-new-price').value=(e.price==null?'':e.price);
+  document.getElementById('as-new-lat').value=(e.lat==null?'':e.lat);
+  document.getElementById('as-new-lng').value=(e.lng==null?'':e.lng);
+  document.getElementById('as-form-title').textContent='✏️ რედაქტირება';
+  document.getElementById('as-submit-btn').textContent='💾 შენახვა';
+  document.getElementById('as-form-err').textContent='';
+  // switch to admin tab
+  asTab('admin', document.querySelector('#as-tabs .as-tab[onclick*="admin"]'));
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+window.asDeleteEntry=async function(id){
+  var e=asEntries.find(function(x){ return x.id===id; });
+  if(!e||!confirm('წაშლა: '+e.name+'?')) return;
+  asEntries=asEntries.filter(function(x){ return x.id!==id; });
+  asSaveLocal();
+  asRenderAdminList(); asRenderShops(); asRenderEquip();
+  if(asMainMap) asRenderMapPins();
+  if(sb&&uid){
+    try{ var r=await sb.from('agroshop_entries').delete().eq('id',id).eq('user_id',uid); if(r.error) console.warn('asDeleteEntry',r.error); }
+    catch(err){ console.warn('asDeleteEntry',err); }
+  }
+  if(asEditId===id) asClearForm();
+  toast('🗑 წაიშალა');
+};
+
+function asRenderAdminList(){
+  var box=document.getElementById('as-admin-list'), cnt=document.getElementById('as-count');
+  if(!box) return;
+  if(cnt) cnt.textContent=asEntries.length;
+  if(!asEntries.length){ box.innerHTML='<div style="color:#94a3b8;font-size:.82rem;text-align:center;padding:20px">— ჩანაწერი არ არის —</div>'; return; }
+  box.innerHTML=asEntries.slice().reverse().map(function(e){
+    var isEq=e.type==='equip';
+    return '<div class="adm-row">'+
+      '<span style="font-size:1.1rem">'+(isEq?'🚜':'🏪')+'</span>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-weight:700;color:#0f172a;font-size:.85rem">'+esc(e.name)+'</div>'+
+        '<div style="font-size:.75rem;color:#64748b">'+esc(e.region||'')+(e.addr?' · '+esc(e.addr):'')+(isEq&&e.price?' · '+esc(e.price)+'₾/დღ.':'')+'</div>'+
+      '</div>'+
+      ((e.lat!=null&&e.lng!=null)?'<span style="font-size:.68rem;color:#0369a1;background:rgba(56,189,248,.12);padding:2px 8px;border-radius:8px">📍'+Number(e.lat).toFixed(3)+','+Number(e.lng).toFixed(3)+'</span>':'')+
+      '<button class="sec" style="width:auto;margin:0;padding:5px 10px;font-size:.72rem" onclick="asEditEntry(\''+esc(e.id)+'\')">✏️</button>'+
+      '<button class="r" style="width:auto;margin:0;padding:5px 10px;font-size:.72rem" onclick="asDeleteEntry(\''+esc(e.id)+'\')">🗑</button>'+
+    '</div>';
+  }).join('');
+}
+
+// ══ session resume on load ══
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; showApp(s.data.session.user.email); } }catch(e){} })();
+</script>
+</body></html>
