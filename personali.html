@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>👥 თანამშრომლები</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;font-family:"Noto Sans Georgian",system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:1040px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.95rem;margin:0 0 8px;color:#334155}
+  h3{font-size:.9rem;margin:0 0 10px;color:#15375c}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select,textarea{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff;color:#0f172a;font-family:inherit}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:#f97316}
+  input[type=file]{padding:8px;font-size:.85rem}
+  button{background:#f97316;color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:#ea580c;border:1.5px solid #f97316}
+  button.green{background:#16a34a}button.o{background:#ea580c}button.r{background:#dc2626}button.blue{background:#2563eb}
+  button.gray{background:#fff;color:#475569;border:1.5px solid #cbd5e1}
+  button:active{transform:scale(.98)}
+  button:disabled{opacity:.55;cursor:not-allowed}
+  .muted{font-size:.8rem;color:#64748b}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+  /* form grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px 12px}
+  .field{display:flex;flex-direction:column}
+  .field.full{grid-column:1/-1}
+  .form-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .edit-badge{display:none;font-size:.7rem;font-weight:700;color:#ea580c;background:#fff7ed;border:1px solid #fdba74;border-radius:20px;padding:3px 10px}
+  .editing .edit-badge{display:inline-block}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .actions button{width:auto;margin:0;padding:10px 16px}
+  /* table */
+  .table-wrap{overflow-x:auto;border:1px solid #e2e8f0;border-radius:12px}
+  table.tbl{width:100%;border-collapse:collapse;font-size:.84rem;min-width:760px}
+  table.tbl th{background:#fff7ed;color:#9a3412;text-align:left;padding:9px 11px;font-weight:700;white-space:nowrap;border-bottom:1px solid #fed7aa}
+  table.tbl td{padding:9px 11px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+  table.tbl tr:last-child td{border-bottom:none}
+  table.tbl tr:hover td{background:#fffbf5}
+  .empty{text-align:center;color:#94a3b8;padding:22px 0}
+  .mini-actions{display:flex;gap:5px;flex-wrap:wrap}
+  .mini-actions button{width:auto;margin:0;padding:5px 9px;font-size:.72rem}
+  .pill{display:inline-block;font-size:.68rem;font-weight:700;border-radius:20px;padding:2px 9px;white-space:nowrap}
+  .pill.a{background:#dcfce7;color:#166534}.pill.s{background:#fef9c3;color:#854d0e}.pill.g{background:#fee2e2;color:#991b1b}
+  /* toast */
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;font-size:.85rem;font-weight:600;padding:11px 18px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:.25s;z-index:100002;max-width:90vw;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.ok{background:#15803d}#toast.bad{background:#b91c1c}
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>👥 თანამშრომლები — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <h1>👥 თანამშრომლები / მუშახელი <span style="font-size:.6rem;background:#f97316;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v1</span></h1>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#ea580c">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <!-- FORM -->
+  <div class="card">
+    <div id="empFormBox">
+      <div class="form-title">
+        <h3 style="margin:0 0 4px">თანამშრომლის დამატება / რედაქტირება</h3>
+        <span class="edit-badge">რედაქტირების რეჟიმი</span>
+      </div>
+      <div class="muted" style="margin-bottom:10px">თანამშრომლების რეესტრი, დოკუმენტები და ხელფასის საბაზისო აღრიცხვა.</div>
+      <input type="hidden" id="empEditId">
+      <div class="grid">
+        <div class="field"><label>სახელი და გვარი</label><input id="empName" placeholder="სახელი გვარი"></div>
+        <div class="field"><label>პირადი №</label><input id="empPid"></div>
+        <div class="field"><label>დაბადების თარიღი</label><input type="date" id="empBirth"></div>
+        <div class="field"><label>ტელეფონი</label><input id="empPhone" placeholder="5xx xx xx xx"></div>
+        <div class="field full"><label>მისამართი</label><input id="empAddress"></div>
+        <div class="field"><label>როლი</label>
+          <select id="empRole" onchange="empRoleOther()">
+            <option>მკრეფავი</option><option>ოპერატორი</option><option>აგრონომი</option>
+            <option>საწყობის თანამშრომელი</option><option>მძღოლი</option><option>მენეჯერი</option><option>სხვა</option>
+          </select>
+        </div>
+        <div class="field" id="empRoleOtherWrap" style="display:none"><label>სხვა როლი</label><input id="empRoleOther"></div>
+        <div class="field"><label>ანაზღაურება</label><input type="number" id="empRate" step="0.01" min="0" placeholder="0"></div>
+        <div class="field"><label>ტიპი</label>
+          <select id="empRateType"><option>დღიური</option><option>საათობრივი</option><option>კგ-ზე</option><option>თვიური</option></select>
+        </div>
+        <div class="field"><label>ბანკის ანგარიში</label><input id="empBank" placeholder="GExx..."></div>
+        <div class="field"><label>სტატუსი</label>
+          <select id="empStatus"><option>აქტიური</option><option>დროებით შეჩერებული</option><option>გათავისუფლებული</option></select>
+        </div>
+        <div class="field"><label>ფოტო</label><input type="file" id="empPhoto" accept="image/*"></div>
+        <div class="field"><label>პირადობის ფაილი</label><input type="file" id="empIdFile"></div>
+        <div class="field"><label>ხელშეკრულება</label><input type="file" id="empContractFile"></div>
+        <div class="field"><label>ხელფასის უწყისი</label><input type="file" id="empPayrollFile"></div>
+      </div>
+      <div class="actions">
+        <button id="empSaveBtn" class="green" onclick="saveEmployee()">+ დამატება</button>
+        <button class="gray" onclick="clearEmployeeForm()">გასუფთავება</button>
+      </div>
+      <div id="empMsg" class="err"></div>
+    </div>
+  </div>
+
+  <!-- LIST -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <h3 style="margin:0">თანამშრომლების სია</h3>
+      <span class="muted" id="empCount"></span>
+    </div>
+    <div class="table-wrap">
+      <table class="tbl">
+        <thead><tr><th>სახელი</th><th>პირადი №</th><th>როლი</th><th>ტელ.</th><th>მისამართი</th><th>ანაზღ.</th><th>სტატუსი</th><th>ფაილები</th><th>მოქმედება</th></tr></thead>
+        <tbody id="empRows"><tr><td colspan="9" class="empty">იტვირთება…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+const BUCKET="employee-documents";
+let sb=null, uid=null, EMPLOYEES=[];
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+
+// ── helpers (ported from index.html) ──
+function g(id){ return document.getElementById(id); }
+function val(id){ var e=g(id); return e?String(e.value||'').trim():''; }
+function setVal(id,v){ var e=g(id); if(e) e.value=(v==null?'':v); }
+function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function q(v){ return String(v==null?'':v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n'); }
+function uid7(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function firstFile(id){ var e=g(id); return e&&e.files&&e.files[0]?e.files[0]:null; }
+function safeName(n){ return String(n||'file').replace(/[^A-Za-z0-9._-]+/g,'_').slice(-120); }
+function splitName(name){ var p=String(name||'').trim().split(/\s+/); return {first:p.shift()||'',last:p.join(' ')||''}; }
+function fullName(r){ return [r.first_name,r.last_name].filter(Boolean).join(' '); }
+
+// localStorage mirror (cache; cloud is source of truth)
+function lsKey(){ return 'its_personali_employees__'+(uid||'anon'); }
+function readCache(){ try{ var v=JSON.parse(localStorage.getItem(lsKey())||'[]'); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+function writeCache(a){ try{ localStorage.setItem(lsKey(),JSON.stringify(a||[])); }catch(e){} }
+
+// toast
+let _toastT=null;
+function toast(msg,kind){
+  var t=g('toast'); if(!t) return;
+  t.textContent=msg; t.className='show'+(kind?' '+kind:'');
+  if(_toastT) clearTimeout(_toastT);
+  _toastT=setTimeout(function(){ t.className=''; },2600);
+}
+
+// ── Supabase storage helpers ──
+async function upload(folder, file){
+  if(!file || !sb || !uid) return null;
+  var path=uid+'/'+folder+'/'+Date.now()+'_'+safeName(file.name);
+  var res=await sb.storage.from(BUCKET).upload(path,file,{upsert:true,contentType:file.type||undefined});
+  if(res.error){ console.warn('upload failed',res.error); toast('ფაილის ატვირთვა ვერ მოხერხდა: '+res.error.message,'bad'); return null; }
+  return {path:path,name:file.name,type:file.type||'',size:file.size||0};
+}
+async function openEmpFile(path){
+  if(!path || !sb){ toast('ფაილის გზა ვერ მოიძებნა.','bad'); return; }
+  var res=await sb.storage.from(BUCKET).createSignedUrl(path,600);
+  if(res.error || !res.data || !res.data.signedUrl){
+    try{ var pub=sb.storage.from(BUCKET).getPublicUrl(path); if(pub&&pub.data&&pub.data.publicUrl){ window.open(pub.data.publicUrl,'_blank'); return; } }catch(e){}
+    toast('ფაილის გახსნა ვერ მოხერხდა.','bad'); return;
+  }
+  window.open(res.data.signedUrl,'_blank');
+}
+window.openEmpFile=openEmpFile;
+
+// ── auth ──
+async function doLogin(){
+  var e=val('email'), p=g('pass').value, err=g('loginErr'); err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{
+    var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+
+function updateNet(){ var b=g('netbar'); if(!b) return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+async function showApp(email){
+  g('loginCard').style.display='none';
+  g('app').style.display='block';
+  g('whoami').textContent=email||'—';
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+  // render cache first for instant feel
+  EMPLOYEES=readCache();
+  renderEmployees();
+  await loadEmployees();
+}
+
+// ── load from cloud ──
+async function loadEmployees(){
+  if(!sb || !uid) return;
+  try{
+    var r=await sb.from('agro_employees').select('*').eq('user_id',uid).order('created_at',{ascending:false});
+    if(r.error){ console.warn('loadEmployees',r.error); toast('სია ჩამოტვირთვა ვერ მოხერხდა: '+r.error.message,'bad'); return; }
+    EMPLOYEES=r.data||[];
+    writeCache(EMPLOYEES);
+    renderEmployees();
+  }catch(e){ console.warn('loadEmployees',e); toast('სია ჩამოტვირთვა ვერ მოხერხდა.','bad'); }
+}
+
+// ── render ──
+function statusPill(s){
+  var cls='a'; if(s==='დროებით შეჩერებული') cls='s'; else if(s==='გათავისუფლებული') cls='g';
+  return '<span class="pill '+cls+'">'+esc(s||'—')+'</span>';
+}
+function fileBtn(path,label){
+  if(!path) return '';
+  return '<button class="sec" onclick="openEmpFile(\''+q(path)+'\')">👁️ '+esc(label)+'</button>';
+}
+function renderEmployees(){
+  var tb=g('empRows'); if(!tb) return;
+  g('empCount').textContent=EMPLOYEES.length?(EMPLOYEES.length+' თანამშრომელი'):'';
+  if(!EMPLOYEES.length){ tb.innerHTML='<tr><td colspan="9" class="empty">თანამშრომელი ჯერ არ არის დამატებული</td></tr>'; return; }
+  tb.innerHTML=EMPLOYEES.map(function(x){
+    var rate=(x.rate?esc(x.rate)+' ₾ / '+esc(x.rate_type||'დღიური'):'—');
+    var files=fileBtn(x.photo_path,'ფოტო')+fileBtn(x.id_document_path,'პირადობა')+fileBtn(x.contract_path,'ხელშეკრ.')+fileBtn(x.payroll_sheet_path,'უწყისი');
+    return '<tr>'+
+      '<td>'+esc(fullName(x)||'—')+'</td>'+
+      '<td>'+esc(x.personal_id||'—')+'</td>'+
+      '<td>'+esc(x.role||'—')+'</td>'+
+      '<td>'+esc(x.phone||'—')+'</td>'+
+      '<td>'+esc(x.address||'—')+'</td>'+
+      '<td>'+rate+'</td>'+
+      '<td>'+statusPill(x.status)+'</td>'+
+      '<td><div class="mini-actions">'+(files||'—')+'</div></td>'+
+      '<td><div class="mini-actions">'+
+        '<button class="o" onclick="editEmployee(\''+q(x.id)+'\')">✏️ რედაქტ.</button>'+
+        '<button class="r" onclick="deleteEmployee(\''+q(x.id)+'\')">🗑️ წაშლა</button>'+
+      '</div></td></tr>';
+  }).join('');
+}
+
+// ── form ──
+window.empRoleOther=function(){ var r=g('empRoleOtherWrap'); if(r) r.style.display=(val('empRole')==='სხვა')?'flex':'none'; };
+function clearEmployeeForm(){
+  ['empEditId','empName','empPid','empBirth','empPhone','empAddress','empRoleOther','empRate','empBank'].forEach(function(id){ setVal(id,''); });
+  setVal('empRole','მკრეფავი'); setVal('empRateType','დღიური'); setVal('empStatus','აქტიური');
+  ['empPhoto','empIdFile','empContractFile','empPayrollFile'].forEach(function(id){ var e=g(id); if(e) e.value=''; });
+  var box=g('empFormBox'), btn=g('empSaveBtn'); if(box) box.classList.remove('editing'); if(btn) btn.textContent='+ დამატება';
+  g('empMsg').textContent='';
+  empRoleOther();
+}
+window.clearEmployeeForm=clearEmployeeForm;
+
+function editEmployee(id){
+  var x=EMPLOYEES.find(function(e){ return String(e.id)===String(id); }); if(!x) return;
+  setVal('empEditId',x.id);
+  setVal('empName',fullName(x));
+  setVal('empPid',x.personal_id);
+  setVal('empBirth',x.birth_date);
+  setVal('empPhone',x.phone);
+  setVal('empAddress',x.address);
+  var roles=['მკრეფავი','ოპერატორი','აგრონომი','საწყობის თანამშრომელი','მძღოლი','მენეჯერი'];
+  if(roles.indexOf(x.role)>=0){ setVal('empRole',x.role); setVal('empRoleOther',''); }
+  else { setVal('empRole','სხვა'); setVal('empRoleOther',x.role||''); }
+  setVal('empRate',x.rate); setVal('empRateType',x.rate_type||'დღიური');
+  setVal('empBank',x.bank_account); setVal('empStatus',x.status||'აქტიური');
+  ['empPhoto','empIdFile','empContractFile','empPayrollFile'].forEach(function(fid){ var e=g(fid); if(e) e.value=''; });
+  var box=g('empFormBox'), btn=g('empSaveBtn'); if(box) box.classList.add('editing'); if(btn) btn.textContent='💾 განახლება';
+  empRoleOther();
+  g('empMsg').textContent='';
+  g('empFormBox').scrollIntoView({behavior:'smooth',block:'start'});
+}
+window.editEmployee=editEmployee;
+
+async function saveEmployee(){
+  var msg=g('empMsg'); msg.textContent='';
+  if(!sb || !uid){ msg.textContent='❌ არ ხართ ავტორიზებული'; return; }
+  var name=val('empName');
+  if(!name){ msg.textContent='❌ შეიყვანე სახელი'; toast('შეიყვანე სახელი','bad'); return; }
+  var editId=val('empEditId');
+  var role=(val('empRole')==='სხვა')?val('empRoleOther'):val('empRole');
+  var existing=editId?EMPLOYEES.find(function(e){ return String(e.id)===String(editId); }):null;
+
+  var btn=g('empSaveBtn'); btn.disabled=true; var origTxt=btn.textContent; btn.textContent='⏳ ინახება…';
+  try{
+    var folder='employees/'+(editId||uid7());
+    var upPhoto=await upload(folder+'/photo',firstFile('empPhoto'));
+    var upId=await upload(folder+'/id',firstFile('empIdFile'));
+    var upContract=await upload(folder+'/contract',firstFile('empContractFile'));
+    var upPayroll=await upload(folder+'/payroll',firstFile('empPayrollFile'));
+
+    var nm=splitName(name);
+    var payload={
+      user_id:uid,
+      first_name:nm.first,
+      last_name:nm.last,
+      personal_id:val('empPid')||null,
+      birth_date:val('empBirth')||null,
+      phone:val('empPhone')||null,
+      address:val('empAddress')||null,
+      role:role||null,
+      rate:val('empRate')?Number(val('empRate')):0,
+      rate_type:val('empRateType')||'დღიური',
+      bank_account:val('empBank')||null,
+      status:val('empStatus')||'აქტიური'
+    };
+    if(upPhoto) payload.photo_path=upPhoto.path;
+    if(upId) payload.id_document_path=upId.path;
+    if(upContract) payload.contract_path=upContract.path;
+    if(upPayroll) payload.payroll_sheet_path=upPayroll.path;
+
+    var res;
+    if(editId && existing){
+      res=await sb.from('agro_employees').update(payload).eq('id',editId).eq('user_id',uid).select().single();
+    } else {
+      res=await sb.from('agro_employees').insert(payload).select().single();
+    }
+    if(res.error){ msg.textContent='❌ '+res.error.message; toast('შენახვა ვერ მოხერხდა','bad'); return; }
+    toast(editId?'✅ განახლდა':'✅ დაემატა','ok');
+    clearEmployeeForm();
+    await loadEmployees();
+  }catch(e){
+    msg.textContent='❌ '+(e.message||e); toast('შენახვა ვერ მოხერხდა','bad');
+  }finally{
+    btn.disabled=false; btn.textContent=origTxt;
+  }
+}
+window.saveEmployee=saveEmployee;
+
+async function deleteEmployee(id){
+  if(!confirm('ნამდვილად წავშალო თანამშრომელი?')) return;
+  if(!sb || !uid) return;
+  try{
+    var res=await sb.from('agro_employees').delete().eq('id',id).eq('user_id',uid);
+    if(res.error){ toast('წაშლა ვერ მოხერხდა: '+res.error.message,'bad'); return; }
+    toast('🗑️ წაიშალა','ok');
+    await loadEmployees();
+  }catch(e){ toast('წაშლა ვერ მოხერხდა','bad'); }
+}
+window.deleteEmployee=deleteEmployee;
+
+// ── session resume on load ──
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; showApp(s.data.session.user.email); } }catch(e){} })();
+</script>
+</body></html>

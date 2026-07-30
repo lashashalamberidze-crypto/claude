@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🗂️ ინვენტარი / ტექნიკა</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" onerror="this.onerror=null;this.src='https://unpkg.com/jsqr@1.4.0/dist/jsQR.js'"></script>
+<style>
+  *{box-sizing:border-box;font-family:'Noto Sans Georgian',system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:960px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.95rem;margin:0 0 8px;color:#334155}
+  h3{font-size:.9rem;margin:16px 0 8px;color:#334155}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select,textarea{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff;color:#0f172a;font-family:inherit}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:#f43f5e}
+  textarea{min-height:60px;resize:vertical}
+  button{background:#f43f5e;color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:#f43f5e;border:1.5px solid #f43f5e}
+  button.blue{background:#2563eb}button.green{background:#16a34a}button.o{background:#ea580c}button.r{background:#dc2626}
+  button.gray{background:#fff;color:#475569;border:1.5px solid #cbd5e1}
+  button:active{transform:scale(.98)}
+  button.small{width:auto;margin:0;padding:6px 11px;font-size:.75rem}
+  .row2{display:flex;gap:8px;flex-wrap:wrap}.row2>*{flex:1;min-width:150px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+  .fld{display:flex;flex-direction:column}
+  .fld.full{grid-column:1/-1}
+  .muted{font-size:.8rem;color:#64748b}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .actions button{width:auto;margin:0}
+  .mini{display:flex;gap:6px;flex-wrap:wrap}
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:6px}
+  .stat{background:#fff5f6;border:1px solid #fecdd3;border-radius:12px;padding:12px 10px;text-align:center}
+  .stat b{display:block;font-size:1.25rem;color:#e11d48;font-weight:800}
+  .stat span{font-size:.72rem;color:#64748b;font-weight:600}
+  /* table */
+  .twrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid #e2e8f0}
+  table{border-collapse:collapse;width:100%;min-width:640px;font-size:.82rem}
+  th,td{padding:9px 11px;text-align:left;border-bottom:1px solid #eef2f7;white-space:nowrap}
+  th{background:#f8fafc;color:#475569;font-weight:700;font-size:.74rem;position:sticky;top:0}
+  td{color:#0f172a}
+  .empty{text-align:center;color:#94a3b8;padding:18px}
+  .pill{display:inline-block;font-size:.68rem;font-weight:700;border-radius:20px;padding:2px 9px}
+  .pill.ok{background:#dcfce7;color:#166534}.pill.warn{background:#fef3c7;color:#92400e}.pill.bad{background:#fee2e2;color:#991b1b}.pill.out{background:#e0e7ff;color:#3730a3}
+  .thumb{width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0}
+  /* qr */
+  .qrbox{margin-top:12px;padding:16px;border:1.5px dashed #fecdd3;border-radius:12px;background:#fff5f6;text-align:center;font-size:.82rem;color:#64748b}
+  .qrbox #qrCanvas{margin:10px auto;display:inline-block}
+  .camera-box{display:none;margin-top:12px;text-align:center}
+  .camera-box video{width:100%;max-width:420px;border-radius:12px;border:2px solid #f43f5e;background:#000}
+  .preview{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;padding:14px;border:1.5px solid #e2e8f0;border-radius:12px;background:#fff}
+  .preview img{width:110px;height:110px;object-fit:cover;border-radius:10px;border:1px solid #e2e8f0}
+  .note{border-radius:10px;padding:11px 13px;font-size:.82rem;line-height:1.6;margin-bottom:12px}
+  .note.info{background:#fff5f6;border:1px solid #fecdd3;color:#9f1239}
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>🗂️ ინვენტარი / ტექნიკა — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <h1>🗂️ ინვენტარი / ტექნიკა <span style="font-size:.6rem;background:#f43f5e;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v1</span></h1>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#e11d48">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="card">
+    <h2>📊 მიმოხილვა</h2>
+    <div class="stats" id="statsRow"></div>
+  </div>
+
+  <!-- ADD / EDIT -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <h2 id="formTitle" style="margin:0">➕ ინვენტარის დამატება</h2>
+      <span id="editBadge" class="pill out" style="display:none">✏️ რედაქტირების რეჟიმი</span>
+    </div>
+    <input type="hidden" id="invEditId">
+    <div class="grid" style="margin-top:10px">
+      <div class="fld"><label>QR კოდი</label><input id="invCode" placeholder="ცარიელი = ავტომატურად"></div>
+      <div class="fld"><label>ნივთი / ტექნიკა *</label><input id="invName" placeholder="მაგ: სატვირთო სასწორი"></div>
+      <div class="fld"><label>კატეგორია</label>
+        <select id="invCat" onchange="invCatOther()">
+          <option>ტექნიკა</option><option>ინვენტარი</option><option>სასწორი / სკანერი</option>
+          <option>სამაცივრე მოწყობილობა</option><option>საწყობის მოწყობილობა</option><option>ტრანსპორტი</option><option>სხვა</option>
+        </select>
+      </div>
+      <div class="fld" id="invCatOtherWrap" style="display:none"><label>სხვა კატეგორია</label><input id="invCatOther"></div>
+      <div class="fld"><label>სერიული №</label><input id="invSerial"></div>
+      <div class="fld"><label>მდებარეობა</label><input id="invLoc" placeholder="მაგ: საწყობი A"></div>
+      <div class="fld"><label>პასუხისმგებელი</label><input id="invResp"></div>
+      <div class="fld"><label>მდგომარეობა</label>
+        <select id="invStatus"><option>მუშა</option><option>სერვისი სჭირდება</option><option>დაზიანებული</option><option>გაცემულია</option></select>
+      </div>
+      <div class="fld"><label>ღირებულება (₾)</label><input id="invValue" type="number" min="0" step="0.01" placeholder="მაგ: 3500"></div>
+      <div class="fld"><label>შესყიდვის თარიღი</label><input id="invDate" type="date"></div>
+      <div class="fld full"><label>ინვენტარის ფოტო</label><input type="file" id="invPhoto" accept="image/*" capture="environment"></div>
+    </div>
+    <div class="actions">
+      <button id="invSaveBtn" class="green" onclick="saveInv()">➕ დამატება</button>
+      <button class="gray" onclick="clearForm()">გასუფთავება</button>
+    </div>
+    <div id="invMsg" class="err"></div>
+    <div id="invQrPreview" class="qrbox">QR სანახავად დააჭირე კოდს სიაში, ან დაამატე ახალი ნივთი.</div>
+  </div>
+
+  <!-- QR CHECK / SCAN -->
+  <div class="card">
+    <h2>🔎 QR შემოწმება / ინვენტარიზაცია</h2>
+    <div class="note info">დაასკანერე QR კამერით, ატვირთე QR-ის ფოტო, ან ხელით ჩაწერე კოდი და მოძებნე ნივთი. შემოწმება ინახება ისტორიაში.</div>
+    <div class="row2">
+      <div class="fld" style="flex:2"><label>QR კოდი / სკანირებული კოდი</label><input id="invCheckCode" placeholder="მაგ: INV-2026-0001"></div>
+      <div class="fld"><label>&nbsp;</label><button class="blue" onclick="findInv()">🔎 მოძებნა</button></div>
+      <div class="fld"><label>&nbsp;</label><button class="green" onclick="startCamera()">📷 კამერა</button></div>
+    </div>
+    <div class="row2" style="margin-top:6px">
+      <div class="fld" style="flex:2"><label>QR ფოტოს ატვირთვა</label><input type="file" id="invQrImage" accept="image/*" capture="environment"></div>
+      <div class="fld"><label>&nbsp;</label><button class="gray" onclick="readQrImage()">🖼️ ფოტოდან წაკითხვა</button></div>
+    </div>
+    <div id="invCameraBox" class="camera-box">
+      <video id="invCamVideo" playsinline></video>
+      <button class="gray" style="max-width:280px;margin:8px auto 0" onclick="stopCamera()">⏹️ კამერის გაჩერება</button>
+    </div>
+    <div id="invCheckResult" style="margin-top:12px"></div>
+  </div>
+
+  <!-- LIST -->
+  <div class="card">
+    <h2>📋 ინვენტარის სია</h2>
+    <div class="twrap">
+      <table>
+        <thead><tr><th>QR</th><th>ფოტო</th><th>ნივთი</th><th>კატ.</th><th>მდებ.</th><th>პასუხ.</th><th>მდგომ.</th><th>ღირებ.</th><th>ბოლო შემოწმება</th><th>მოქმედება</th></tr></thead>
+        <tbody id="invRows"><tr><td colspan="10" class="empty">იტვირთება…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="card">
+    <h2>🕓 შემოწმების ისტორია</h2>
+    <div class="twrap">
+      <table>
+        <thead><tr><th>თარიღი</th><th>QR</th><th>სტატუსი</th><th>მდებარეობა</th><th>კომენტარი</th></tr></thead>
+        <tbody id="histRows"><tr><td colspan="5" class="empty">—</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+const INV_BUCKET="inventory-files";
+let sb=null, uid=null, userEmail='', INV=[], CHECKS=[];
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function q(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function g(id){ return document.getElementById(id); }
+function val(id){ var e=g(id); return e?String(e.value||'').trim():''; }
+function setVal(id,v){ var e=g(id); if(e) e.value=(v==null?'':v); }
+function locChecksKey(){ return 'agro_inv_checks__'+(uid||'anon'); }
+
+// ── auth ──
+async function doLogin(){
+  var e=val('email'), p=g('pass').value, err=g('loginErr'); err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; userEmail=r.data.user.email; showApp();
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+function updateNet(){ var b=g('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+async function showApp(){
+  g('loginCard').style.display='none';
+  g('app').style.display='block';
+  g('whoami').textContent=userEmail||'—';
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+  await loadInv();
+  render();
+}
+
+// ── storage helpers ──
+function safeName(n){ return String(n||'file').replace(/[^A-Za-z0-9._-]+/g,'_').slice(-120); }
+function firstFile(id){ var e=g(id); return e && e.files && e.files[0] ? e.files[0] : null; }
+async function upload(bucket, folder, file){
+  if(!file || !sb) return null;
+  var path=uid+'/'+folder+'/'+Date.now()+'_'+safeName(file.name);
+  var res=await sb.storage.from(bucket).upload(path,file,{upsert:true,contentType:file.type||undefined});
+  if(res.error){ console.warn('upload failed',res.error); alert('ფაილის ატვირთვა ვერ მოხერხდა: '+res.error.message); return null; }
+  return {path:path,name:file.name,type:file.type||'',size:file.size||0,bucket:bucket};
+}
+async function openStorage(bucket,path){
+  if(!path || !sb) return alert('ფაილის გზა ვერ მოიძებნა.');
+  var res=await sb.storage.from(bucket).createSignedUrl(path,600);
+  if(res.error || !res.data || !res.data.signedUrl) return alert('ფაილის გახსნა ვერ მოხერხდა.');
+  window.open(res.data.signedUrl,'_blank');
+}
+window.openStoredFile=function(bucket,path){ openStorage(bucket,path); };
+function photoHtml(p){
+  if(!p) return '—';
+  if(p.path) return '<button class="small sec" onclick="openStoredFile(\''+q(p.bucket||INV_BUCKET)+'\',\''+q(p.path)+'\')">👁️ ფოტო</button>';
+  if(p.url) return '<img class="thumb" src="'+esc(p.url)+'" alt="">';
+  return '—';
+}
+
+// ── data load ──
+function mapItem(r){
+  return { id:r.id, code:r.qr_code||'', name:r.item_name||'', cat:r.category_other||r.category||'',
+    serial:r.serial_no||'', loc:r.location||'', responsible:r.responsible_person||'',
+    status:r.condition||'', value:(+r.purchase_price||0), purchaseDate:r.purchase_date||'',
+    photo:r.photo_path?{path:r.photo_path,bucket:INV_BUCKET}:null, note:r.note||'' };
+}
+function mapCheck(r){
+  return { id:r.id, code:r.qr_code, status:r.check_status, loc:r.check_location||'', note:r.comment||'',
+    at:r.checked_at?new Date(r.checked_at).toLocaleString('ka-GE'):'', iso:r.checked_at||'', by:r.checked_by||'' };
+}
+function loadLocalChecks(){ try{ return JSON.parse(localStorage.getItem(locChecksKey())||'[]'); }catch(e){ return []; } }
+function saveLocalChecks(arr){ try{ localStorage.setItem(locChecksKey(), JSON.stringify(arr||[])); }catch(e){} }
+
+async function loadInv(){
+  if(!sb||!uid) return;
+  try{
+    var r=await sb.from('agro_inventory_items').select('*').eq('user_id',uid);
+    if(r.error){ console.warn('load inv',r.error); } else { INV=(r.data||[]).map(mapItem); }
+  }catch(e){ console.warn('load inv',e); }
+  var cloudOk=false;
+  try{
+    var c=await sb.from('agro_inventory_checks').select('*').eq('user_id',uid).order('checked_at',{ascending:false});
+    if(!c.error){ CHECKS=(c.data||[]).map(mapCheck); cloudOk=true; saveLocalChecks(CHECKS); }
+  }catch(e){ console.warn('load checks',e); }
+  if(!cloudOk) CHECKS=loadLocalChecks();
+}
+
+function latestCheck(code){
+  return CHECKS.filter(function(c){ return c.code===code; })
+    .sort(function(a,b){ return String(b.iso||'').localeCompare(String(a.iso||'')); })[0];
+}
+function itemByCode(code){
+  code=String(code||'').trim().toUpperCase();
+  return INV.find(function(x){ return String(x.code||'').toUpperCase()===code; });
+}
+
+// ── render ──
+const STATUS_PILL={'მუშა':'ok','სერვისი სჭირდება':'warn','დაზიანებული':'bad','გაცემულია':'out'};
+function statusPill(s){ var cls=STATUS_PILL[s]||'out'; return '<span class="pill '+cls+'">'+esc(s||'—')+'</span>'; }
+
+function render(){
+  // stats
+  var working=INV.filter(function(x){ return x.status==='მუშა'; }).length;
+  var service=INV.filter(function(x){ return x.status==='სერვისი სჭირდება'||x.status==='დაზიანებული'; }).length;
+  var total=INV.reduce(function(s,i){ return s+(+i.value||0); },0);
+  g('statsRow').innerHTML=
+    '<div class="stat"><b>'+INV.length+'</b><span>ნივთი</span></div>'+
+    '<div class="stat"><b>'+working+'</b><span>მუშა</span></div>'+
+    '<div class="stat"><b>'+service+'</b><span>სერვისი / დაზიანება</span></div>'+
+    '<div class="stat"><b>'+CHECKS.length+'</b><span>შემოწმება</span></div>'+
+    '<div class="stat"><b>'+total.toLocaleString()+' ₾</b><span>სულ ღირებულება</span></div>';
+
+  // list
+  var rows=INV.map(function(x){
+    var last=latestCheck(x.code);
+    return '<tr>'+
+      '<td><button class="small sec" onclick="showQr(\''+q(x.code)+'\')">'+esc(x.code)+'</button></td>'+
+      '<td>'+photoHtml(x.photo)+'</td>'+
+      '<td>'+esc(x.name)+'</td>'+
+      '<td>'+esc(x.cat)+'</td>'+
+      '<td>'+esc(x.loc||'—')+'</td>'+
+      '<td>'+esc(x.responsible||'—')+'</td>'+
+      '<td>'+statusPill(x.status)+'</td>'+
+      '<td>'+((+x.value||0)?(+x.value).toLocaleString()+' ₾':'—')+'</td>'+
+      '<td>'+(last?esc(last.status+' · '+last.at):'—')+'</td>'+
+      '<td><div class="mini"><button class="small o" onclick="editInv(\''+q(x.id)+'\')">✏️</button>'+
+        '<button class="small r" onclick="delInv(\''+q(x.id)+'\')">🗑️</button></div></td>'+
+    '</tr>';
+  }).join('')||'<tr><td colspan="10" class="empty">ინვენტარი ჯერ არ არის დამატებული</td></tr>';
+  g('invRows').innerHTML=rows;
+
+  // history
+  var hist=CHECKS.slice(0,30).map(function(c){
+    return '<tr><td>'+esc(c.at)+'</td><td>'+esc(c.code)+'</td><td>'+statusPill(c.status)+'</td><td>'+esc(c.loc||'—')+'</td><td>'+esc(c.note||'—')+'</td></tr>';
+  }).join('')||'<tr><td colspan="5" class="empty">შემოწმების ისტორია ჯერ არ არის</td></tr>';
+  g('histRows').innerHTML=hist;
+}
+
+// ── form ──
+function invCatOther(){ var r=g('invCatOtherWrap'); if(r) r.style.display=(val('invCat')==='სხვა')?'flex':'none'; }
+function clearForm(){
+  ['invEditId','invCode','invName','invCatOther','invSerial','invLoc','invResp','invValue','invDate'].forEach(function(id){ setVal(id,''); });
+  setVal('invCat','ტექნიკა'); setVal('invStatus','მუშა');
+  var f=g('invPhoto'); if(f) f.value='';
+  g('formTitle').textContent='➕ ინვენტარის დამატება';
+  g('invSaveBtn').textContent='➕ დამატება';
+  g('editBadge').style.display='none';
+  g('invMsg').textContent='';
+  invCatOther();
+}
+function editInv(id){
+  var x=INV.find(function(i){ return String(i.id)===String(id); }); if(!x) return;
+  setVal('invEditId',x.id); setVal('invCode',x.code); setVal('invName',x.name);
+  var cats=['ტექნიკა','ინვენტარი','სასწორი / სკანერი','სამაცივრე მოწყობილობა','საწყობის მოწყობილობა','ტრანსპორტი'];
+  if(cats.indexOf(x.cat)>=0){ setVal('invCat',x.cat); setVal('invCatOther',''); }
+  else { setVal('invCat','სხვა'); setVal('invCatOther',x.cat||''); }
+  setVal('invSerial',x.serial); setVal('invLoc',x.loc); setVal('invResp',x.responsible);
+  setVal('invStatus',x.status||'მუშა'); setVal('invValue',x.value||''); setVal('invDate',x.purchaseDate||'');
+  var f=g('invPhoto'); if(f) f.value='';
+  g('formTitle').textContent='✏️ ინვენტარის რედაქტირება';
+  g('invSaveBtn').textContent='💾 განახლება';
+  g('editBadge').style.display='inline-block';
+  g('invMsg').textContent='';
+  invCatOther();
+  g('formTitle').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function saveInv(){
+  var msg=g('invMsg'); msg.textContent='';
+  if(!val('invName')){ msg.textContent='❌ შეიყვანე ნივთის სახელი'; return; }
+  var editId=val('invEditId');
+  var old=editId?INV.find(function(i){ return String(i.id)===String(editId); }):null;
+  var code=(val('invCode')||(old&&old.code)||('INV-2026-'+String(INV.length+1).padStart(4,'0'))).toUpperCase();
+  var cat=(val('invCat')==='სხვა')?(val('invCatOther')||'სხვა'):val('invCat');
+  g('invSaveBtn').disabled=true;
+  var up=await upload(INV_BUCKET,'inventory/'+code, firstFile('invPhoto'));
+  var payload={
+    user_id:uid, qr_code:code, item_name:val('invName'), category:cat,
+    serial_no:val('invSerial')||null, location:val('invLoc')||null,
+    responsible_person:val('invResp')||null, condition:val('invStatus')||'მუშა',
+    purchase_price:(+val('invValue')||0), purchase_date:val('invDate')||null,
+    photo_path:(up&&up.path)||(old&&old.photo&&old.photo.path)||null, note:null
+  };
+  async function _save(p){
+    if(editId && old) return await sb.from('agro_inventory_items').update(p).eq('id',editId).eq('user_id',uid).select().single();
+    return await sb.from('agro_inventory_items').upsert(p,{onConflict:'user_id,qr_code'}).select().single();
+  }
+  try{
+    var res=await _save(payload);
+    if(res.error){
+      // purchase_date სვეტი შეიძლება არ არსებობდეს — ხელახლა მის გარეშე (მონაცემი მაინც ინახება)
+      var p2=Object.assign({},payload); delete p2.purchase_date;
+      res=await _save(p2);
+    }
+    if(res.error){ msg.textContent='❌ '+res.error.message; g('invSaveBtn').disabled=false; return; }
+  }catch(e){ msg.textContent='❌ '+(e.message||e); g('invSaveBtn').disabled=false; return; }
+  g('invSaveBtn').disabled=false;
+  clearForm();
+  await loadInv();
+  render();
+  setTimeout(function(){ showQr(code); },80);
+}
+
+async function delInv(id){
+  var x=INV.find(function(i){ return String(i.id)===String(id); });
+  if(!x || !confirm('ნამდვილად წავშალო ინვენტარი "'+x.name+'"?')) return;
+  try{
+    var res=await sb.from('agro_inventory_items').delete().eq('id',id).eq('user_id',uid);
+    if(res.error){ alert('❌ '+res.error.message); return; }
+  }catch(e){ alert('❌ '+(e.message||e)); return; }
+  await loadInv();
+  render();
+}
+
+// ── QR generation ──
+function showQr(code){
+  var b=g('invQrPreview'); if(!b||!code) return;
+  b.innerHTML='<div><b style="font-size:1rem;color:#0f172a">'+esc(code)+'</b></div><div id="qrCanvas"></div>'+
+    '<div class="mini" style="justify-content:center;margin-top:6px">'+
+      '<button class="small gray" onclick="printQr(\''+q(code)+'\')">🖨️ ბეჭდვა</button>'+
+      '<button class="small blue" onclick="var e=document.getElementById(\'invCheckCode\');if(e)e.value=\''+q(code)+'\';findInv(\''+q(code)+'\')">🔎 შემოწმება</button>'+
+    '</div>';
+  try{ if(window.QRCode) new QRCode(g('qrCanvas'),{text:code,width:140,height:140,correctLevel:QRCode.CorrectLevel.M}); }catch(e){ g('qrCanvas').textContent=code; }
+  b.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function printQr(code){
+  var item=itemByCode(code)||{};
+  var w=window.open('','_blank'); if(!w){ alert('პოპ-აპ დაბლოკილია'); return; }
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>QR '+esc(code)+'</title>'+
+    '<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></scr'+'ipt>'+
+    '<style>body{font-family:sans-serif;text-align:center;padding:30px}#q{display:inline-block;margin:14px auto}h2{margin:6px 0}.m{color:#555;font-size:14px}</style></head><body>'+
+    '<h2>'+esc(item.name||'ინვენტარი')+'</h2>'+
+    '<div class="m">'+esc(item.cat||'')+(item.loc?' · '+esc(item.loc):'')+'</div>'+
+    '<div id="q"></div><h3>'+esc(code)+'</h3>'+
+    '<scr'+'ipt>function mk(){try{new QRCode(document.getElementById("q"),{text:'+JSON.stringify(code)+',width:240,height:240,correctLevel:QRCode.CorrectLevel.M});setTimeout(function(){window.print();},400);}catch(e){document.getElementById("q").textContent="QR ვერ დაიხატა";}}'+
+    'if(window.QRCode)mk();else{var t=setInterval(function(){if(window.QRCode){clearInterval(t);mk();}},80);setTimeout(function(){clearInterval(t);},5000);}</scr'+'ipt>'+
+    '</body></html>';
+  w.document.write(html); w.document.close();
+}
+
+// ── QR check ──
+function findInv(code){
+  code=(code||val('invCheckCode')); code=String(code||'').trim().toUpperCase();
+  var box=g('invCheckResult'); if(!box) return;
+  if(!code){ box.innerHTML='<div class="note info">შეიყვანე ან დაასკანერე QR კოდი</div>'; return; }
+  var item=itemByCode(code);
+  if(!item){ box.innerHTML='<div class="note" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b">❌ ინვენტარი ვერ მოიძებნა: <b>'+esc(code)+'</b></div>'; return; }
+  var last=latestCheck(item.code);
+  var ca=q(item.code);
+  box.innerHTML='<div class="preview">'+
+    (item.photo&&item.photo.path?'<button class="small sec" onclick="openStoredFile(\''+q(item.photo.bucket||INV_BUCKET)+'\',\''+q(item.photo.path)+'\')">👁️ ფოტო</button>':'')+
+    '<div style="flex:1;min-width:220px">'+
+      '<div style="font-size:1.05rem;font-weight:800;color:#0f172a">'+esc(item.name)+'</div>'+
+      '<div style="margin-top:6px;color:#475569;font-size:.82rem;line-height:1.7">'+
+        '<b>კოდი:</b> '+esc(item.code)+'<br><b>კატეგორია:</b> '+esc(item.cat)+'<br><b>სერიული №:</b> '+esc(item.serial||'—')+
+        '<br><b>მდებარეობა:</b> '+esc(item.loc||'—')+'<br><b>პასუხისმგებელი:</b> '+esc(item.responsible||'—')+
+        '<br><b>მდგომარეობა:</b> '+esc(item.status||'—')+'<br><b>ბოლო შემოწმება:</b> '+esc(last?last.at:'ჯერ არ შემოწმებულა')+'</div>'+
+    '</div>'+
+    '<div style="flex:1;min-width:240px">'+
+      '<div class="row2"><div class="fld"><label>ფაქტობრივი მდებარეობა</label><input id="invCheckLoc" value="'+esc(item.loc||'')+'"></div>'+
+      '<div class="fld"><label>კომენტარი</label><input id="invCheckNote" placeholder="მაგ: სერვისში..."></div></div>'+
+      '<div class="actions">'+
+        '<button class="small green" onclick="saveCheck(\''+ca+'\',\'ადგილზეა\')">✅ ადგილზეა</button>'+
+        '<button class="small blue" onclick="saveCheck(\''+ca+'\',\'სხვა ადგილზეა\')">📍 სხვა ადგილზეა</button>'+
+        '<button class="small o" onclick="saveCheck(\''+ca+'\',\'სერვისშია\')">🔧 სერვისშია</button>'+
+        '<button class="small r" onclick="saveCheck(\''+ca+'\',\'დაზიანებულია\')">⚠️ დაზიანებულია</button>'+
+        '<button class="small gray" onclick="saveCheck(\''+ca+'\',\'ვერ მოიძებნა\')">❌ ვერ მოიძებნა</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+async function saveCheck(code,status){
+  var loc=val('invCheckLoc'), note=val('invCheckNote');
+  var nowIso=new Date().toISOString();
+  var rec={ code:code, status:status, loc:loc, note:note, at:new Date().toLocaleString('ka-GE'), iso:nowIso, by:userEmail||'' };
+  // update item condition + location locally + cloud
+  var item=itemByCode(code);
+  if(item){
+    var newStatus=item.status;
+    if(status==='დაზიანებულია') newStatus='დაზიანებული';
+    else if(status==='სერვისშია') newStatus='სერვისი სჭირდება';
+    var patch={};
+    if(loc && loc!==item.loc){ patch.location=loc; item.loc=loc; }
+    if(newStatus!==item.status){ patch.condition=newStatus; item.status=newStatus; }
+    if(Object.keys(patch).length){ try{ await sb.from('agro_inventory_items').update(patch).eq('id',item.id).eq('user_id',uid); }catch(e){ console.warn('patch item',e); } }
+  }
+  // cloud insert check
+  var cloudOk=false;
+  try{
+    var payload={ user_id:uid, qr_code:code, check_status:status, check_location:loc||null, checked_by:userEmail||null, comment:note||null, checked_at:nowIso };
+    var res=await sb.from('agro_inventory_checks').insert(payload).select().single();
+    if(!res.error){ cloudOk=true; rec.id=res.data.id; }
+    else console.warn('check save',res.error);
+  }catch(e){ console.warn('check save',e); }
+  // always mirror to localStorage
+  CHECKS.unshift(rec); saveLocalChecks(CHECKS);
+  if(cloudOk){ await loadInv(); } else { /* keep local */ }
+  render();
+  setVal('invCheckCode',code);
+  findInv(code);
+}
+
+// ── camera scan (jsQR) ──
+var invCamStream=null, invCamTimer=null;
+async function startCamera(){
+  var box=g('invCameraBox'), video=g('invCamVideo');
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ alert('კამერა ხელმისაწვდომია მხოლოდ HTTPS-ზე და თანამედროვე ბრაუზერში.'); return; }
+  try{
+    invCamStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    video.srcObject=invCamStream; box.style.display='block'; await video.play(); scanLoop();
+  }catch(e){ alert('კამერა ვერ ჩაირთო: '+(e.message||e)); }
+}
+function stopCamera(){
+  if(invCamTimer) clearTimeout(invCamTimer); invCamTimer=null;
+  if(invCamStream){ invCamStream.getTracks().forEach(function(t){ t.stop(); }); invCamStream=null; }
+  var box=g('invCameraBox'); if(box) box.style.display='none';
+}
+function scanLoop(){
+  var video=g('invCamVideo'); if(!video||!invCamStream) return;
+  try{
+    var c=document.createElement('canvas'); c.width=video.videoWidth||640; c.height=video.videoHeight||480;
+    var ctx=c.getContext('2d'); ctx.drawImage(video,0,0,c.width,c.height);
+    if(window.jsQR){
+      var img=ctx.getImageData(0,0,c.width,c.height);
+      var r=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+      if(r&&r.data){ setVal('invCheckCode',r.data); stopCamera(); findInv(r.data); return; }
+    }
+  }catch(e){}
+  invCamTimer=setTimeout(scanLoop,350);
+}
+function readQrImage(){
+  var input=g('invQrImage'); var f=input&&input.files&&input.files[0]; if(!f) return alert('აირჩიე QR-ის ფოტო');
+  var img=new Image();
+  img.onload=function(){
+    try{
+      var c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight;
+      var ctx=c.getContext('2d'); ctx.drawImage(img,0,0);
+      if(window.jsQR){
+        var data=ctx.getImageData(0,0,c.width,c.height);
+        var r=jsQR(data.data,data.width,data.height,{inversionAttempts:'dontInvert'});
+        if(r&&r.data){ setVal('invCheckCode',r.data); findInv(r.data); return; }
+      }
+      alert('QR ვერ ამოვიცანი. შეგიძლია კოდი ხელით ჩაწერო.');
+    }catch(e){ alert('ფოტოს წაკითხვა ვერ მოხერხდა.'); }
+  };
+  img.src=URL.createObjectURL(f);
+}
+
+// ── session resume ──
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; userEmail=s.data.session.user.email; showApp(); } }catch(e){} })();
+</script>
+</body></html>

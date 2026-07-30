@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📁 დოკუმენტების არქივი</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;font-family:'Noto Sans Georgian',system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:900px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.95rem;margin:0 0 8px;color:#334155}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select,textarea{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff;color:#0f172a;font-family:inherit}
+  textarea{min-height:74px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:#06b6d4;box-shadow:0 0 0 3px rgba(6,182,212,.14)}
+  input[type=file]{padding:8px}
+  button{background:#06b6d4;color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:#0891b2;border:1.5px solid #06b6d4}
+  button.gray{background:#fff;color:#475569;border:1.5px solid #cbd5e1}
+  button.o{background:#ea580c}button.r{background:#dc2626}button.blue{background:#2563eb}
+  button:active{transform:scale(.98)}
+  .row2{display:flex;gap:8px;flex-wrap:wrap}.row2>*{flex:1;min-width:180px}
+  .muted{font-size:.8rem;color:#64748b}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .grid .full{grid-column:1/-1}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
+  .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.actions button{width:auto;flex:1;min-width:140px;margin:0}
+  .edit-badge{display:none;font-size:.68rem;font-weight:700;color:#0891b2;background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.3);border-radius:20px;padding:3px 10px}
+  .editing .edit-badge{display:inline-flex}
+  .form-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .table-wrap{overflow-x:auto;border:1px solid #e2e8f0;border-radius:12px}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:640px}
+  th{background:#f8fafc;text-align:left;padding:10px 12px;font-size:.72rem;text-transform:uppercase;letter-spacing:.4px;color:#64748b;font-weight:700;border-bottom:1px solid #e2e8f0;white-space:nowrap}
+  td{padding:10px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr.expiring td{background:#fff7ed}
+  tr.expired td{background:#fef2f2}
+  .pill{display:inline-block;font-size:.68rem;font-weight:700;border-radius:20px;padding:2px 9px;white-space:nowrap}
+  .pill.warn{color:#9a3412;background:#ffedd5;border:1px solid #fdba74}
+  .pill.bad{color:#991b1b;background:#fee2e2;border:1px solid #fca5a5}
+  .pill.cat{color:#0e7490;background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.28)}
+  .mini{display:flex;gap:6px;flex-wrap:wrap}
+  .mini button{width:auto;margin:0;padding:6px 10px;font-size:.72rem}
+  .empty{text-align:center;color:#94a3b8;padding:22px 0}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:12px 20px;border-radius:12px;font-size:.86rem;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:all .25s;z-index:9999;max-width:90vw;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.bad{background:#b91c1c}#toast.good{background:#047857}
+  .file-open{background:none;border:none;color:#0891b2;font-weight:700;cursor:pointer;padding:0;width:auto;margin:0;font-size:.82rem;text-decoration:underline}
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>📁 დოკუმენტების არქივი — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <h1>📁 დოკუმენტების არქივი <span style="font-size:.6rem;background:#06b6d4;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v1</span></h1>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0891b2">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <div class="card" id="docFormBox">
+    <div class="form-title">
+      <h2 style="margin:0">📝 დოკუმენტის დამატება / რედაქტირება</h2>
+      <span class="edit-badge">✏️ რედაქტირების რეჟიმი</span>
+    </div>
+    <div class="muted" style="margin:2px 0 8px">კომპანიის, ფერმერის, თანამშრომლის და ტექნიკის დოკუმენტების ერთიანი არქივი</div>
+    <input type="hidden" id="docEditId">
+    <div class="grid">
+      <div><label>დასახელება</label><input id="docName" placeholder="დოკუმენტის სახელი"></div>
+      <div><label>კატეგორია</label><select id="docCat" onchange="docOther()"></select></div>
+      <div id="docCatOtherWrap" style="display:none"><label>სხვა კატეგორია</label><input id="docCatOther" placeholder="მიუთითეთ კატეგორია"></div>
+      <div><label>მფლობელი / საქაღალდე</label><input id="docOwner" placeholder="მაგ: InterAgro / თანამშრომელი / ტექნიკა"></div>
+      <div><label>ვადა</label><input type="date" id="docExpire"></div>
+      <div><label>ფაილი</label><input type="file" id="docFile"></div>
+      <div class="full"><label>კომენტარი</label><textarea id="docNote" placeholder="დამატებითი ინფორმაცია"></textarea></div>
+    </div>
+    <div class="actions">
+      <button id="docSaveBtn" onclick="saveDoc()">➕ დამატება</button>
+      <button class="gray" onclick="clearDocForm()">გასუფთავება</button>
+    </div>
+    <div id="docMsg" class="err"></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <h2 style="margin:0">📄 დოკუმენტები <span class="muted" id="docCount"></span></h2>
+      <button class="sec" style="width:auto;padding:7px 12px;margin:0" onclick="loadDocs()">🔄 განახლება</button>
+    </div>
+    <div class="table-wrap" style="margin-top:10px">
+      <table>
+        <thead><tr><th>დასახელება</th><th>კატეგორია</th><th>მფლობელი</th><th>ვადა</th><th>ფაილი</th><th>მოქმედება</th></tr></thead>
+        <tbody id="docRows"><tr><td colspan="6" class="empty">იტვირთება…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+const BUCKET="documents-archive", TABLE="agro_documents_archive";
+let sb=null, userId=null, DOCS=[];
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+
+// ── generic helpers ──
+function g(id){return document.getElementById(id)}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function q(v){return String(v==null?'':v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n')}
+function val(id){var e=g(id);return e?String(e.value||'').trim():''}
+function setVal(id,v){var e=g(id);if(e)e.value=v==null?'':v}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function firstFile(id){var e=g(id);return e&&e.files&&e.files[0]?e.files[0]:null}
+function safeName(n){return String(n||'file').replace(/[^A-Za-z0-9._-]+/g,'_').slice(-120)}
+
+// ── localStorage cache (per-user), self-contained ──
+function readRaw(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return []}}
+function writeRaw(k,a){localStorage.setItem(k,JSON.stringify(a||[]))}
+function keyFor(k){return 'its_docs_v1_'+k+'__'+(userId||'anon')}
+function read(k){return readRaw(keyFor(k))}
+function write(k,a){writeRaw(keyFor(k),a)}
+
+// ── toast ──
+let _toastT=null;
+function toast(msg,kind){var t=g('toast');if(!t)return;t.textContent=msg;t.className='show'+(kind?(' '+kind):'');clearTimeout(_toastT);_toastT=setTimeout(function(){t.className='';},2600)}
+
+// ── Supabase storage helpers ──
+async function upload(bucket, folder, file){
+  if(!file || !sb || !userId) return null;
+  var path=userId+'/'+folder+'/'+Date.now()+'_'+safeName(file.name);
+  var res=await sb.storage.from(bucket).upload(path,file,{upsert:true,contentType:file.type||undefined});
+  if(res.error){ console.warn('upload failed',res.error); toast('ფაილის ატვირთვა ვერ მოხერხდა: '+res.error.message,'bad'); return null; }
+  return {path:path,name:file.name,type:file.type||'',size:file.size||0,bucket:bucket};
+}
+async function openStorage(bucket,path){
+  if(!path || !sb) return toast('ფაილის გზა ვერ მოიძებნა.','bad');
+  var res=await sb.storage.from(bucket).createSignedUrl(path,600);
+  if(res.error || !res.data || !res.data.signedUrl){
+    try{ var pub=sb.storage.from(bucket).getPublicUrl(path); if(pub&&pub.data&&pub.data.publicUrl){ window.open(pub.data.publicUrl,'_blank'); return; } }catch(e){}
+    return toast('ფაილის გახსნა ვერ მოხერხდა.','bad');
+  }
+  window.open(res.data.signedUrl,'_blank');
+}
+async function delSB(table,id){
+  if(!id||!sb||!userId) return true;
+  var res=await sb.from(table).delete().eq('id',id).eq('user_id',userId);
+  if(res.error){ toast('Supabase-ში წაშლა ვერ მოხერხდა: '+res.error.message,'bad'); return false; }
+  return true;
+}
+
+// ── auth ──
+async function doLogin(){
+  var e=val('email'), p=g('pass').value, err=g('loginErr');
+  err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    userId=r.data.user.id; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+function updateNet(){ var b=g('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+async function showApp(email){
+  g('loginCard').style.display='none';
+  g('app').style.display='block';
+  g('whoami').textContent=email||'—';
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+  buildCatSelect();
+  clearDocForm();
+  await loadDocs();
+}
+
+// ── categories ──
+function docCats(){return ['კომპანიის დოკუმენტი','ფერმერის დოკუმენტი','ხელშეკრულება','სერტიფიკატი','ლიცენზია/ნებართვა','მიწის/ქონების დოკუმენტი','საგადასახადო დოკუმენტი','ბანკის დოკუმენტი','დაზღვევა','თანამშრომლის დოკუმენტი','ტექნიკის დოკუმენტი','საწყობის/მაცივრის დოკუმენტი','ხარისხის კონტროლი','ფოტო/აქტი','სხვა']}
+function buildCatSelect(){
+  var s=g('docCat'); if(!s) return;
+  s.innerHTML=docCats().map(function(c){return '<option>'+esc(c)+'</option>'}).join('');
+}
+function docOther(){ var r=g('docCatOtherWrap'); if(r) r.style.display=(val('docCat')==='სხვა')?'block':'none'; }
+
+// ── expiry helpers ──
+function _today(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function expiryInfo(dateStr){
+  if(!dateStr) return {cls:'',pill:''};
+  var t=new Date(_today()+'T00:00:00'), d=new Date(dateStr+'T00:00:00');
+  if(isNaN(d.getTime())) return {cls:'',pill:''};
+  var days=Math.round((d-t)/86400000);
+  if(days<0) return {cls:'expired',pill:'<span class="pill bad">ვადაგასული</span>'};
+  if(days<=30) return {cls:'expiring',pill:'<span class="pill warn">'+days+' დღე</span>'};
+  return {cls:'',pill:''};
+}
+
+// ── load + render (cloud-first) ──
+async function loadDocs(){
+  var body=g('docRows');
+  if(!sb||!userId){ if(body) body.innerHTML='<tr><td colspan="6" class="empty">გთხოვთ შეხვიდეთ</td></tr>'; return; }
+  if(body) body.innerHTML='<tr><td colspan="6" class="empty">იტვირთება…</td></tr>';
+  try{
+    var r=await sb.from(TABLE).select('*').eq('user_id',userId).order('created_at',{ascending:false});
+    if(r.error){ body.innerHTML='<tr><td colspan="6" class="empty">❌ '+esc(r.error.message)+'</td></tr>'; return; }
+    DOCS=r.data||[];
+    write('docs',DOCS);
+  }catch(e){
+    // fall back to local cache
+    DOCS=read('docs');
+    if(!DOCS.length){ body.innerHTML='<tr><td colspan="6" class="empty">❌ '+esc(e.message||e)+'</td></tr>'; return; }
+    toast('ქსელი მიუწვდომელია — ნაჩვენებია ქეშირებული სია','bad');
+  }
+  renderDocs();
+}
+function renderDocs(){
+  var body=g('docRows'); if(!body) return;
+  g('docCount').textContent=DOCS.length?('· '+DOCS.length):'';
+  if(!DOCS.length){ body.innerHTML='<tr><td colspan="6" class="empty">დოკუმენტი ჯერ არ არის დამატებული</td></tr>'; return; }
+  body.innerHTML=DOCS.map(function(x){
+    var ex=expiryInfo(x.expiry_date);
+    var fileCell=x.file_path
+      ? '<button class="file-open" onclick="viewDoc(\''+q(x.id)+'\')">📎 '+esc(x.file_name||'ფაილი')+'</button>'
+      : esc(x.file_name||'—');
+    return '<tr class="'+ex.cls+'">'+
+      '<td><b>'+esc(x.title||'—')+'</b>'+(x.note?'<div class="muted" style="margin-top:2px">'+esc(x.note)+'</div>':'')+'</td>'+
+      '<td><span class="pill cat">'+esc(x.category||'—')+'</span></td>'+
+      '<td>'+esc(x.folder_name||'—')+'</td>'+
+      '<td>'+esc(x.expiry_date||'—')+' '+ex.pill+'</td>'+
+      '<td>'+fileCell+'</td>'+
+      '<td><div class="mini">'+
+        (x.file_path?'<button class="blue" onclick="viewDoc(\''+q(x.id)+'\')">👁️ ნახვა</button>':'')+
+        '<button class="o" onclick="editDoc(\''+q(x.id)+'\')">✏️ რედაქტ.</button>'+
+        '<button class="r" onclick="deleteDoc(\''+q(x.id)+'\')">🗑️ წაშლა</button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+}
+
+// ── view / open file ──
+function viewDoc(id){
+  var x=DOCS.find(function(d){return String(d.id)===String(id)});
+  if(!x) return toast('დოკუმენტი ვერ მოიძებნა','bad');
+  if(x.file_path) return openStorage(BUCKET,x.file_path);
+  toast('ფაილი მიმაგრებული არ არის','bad');
+}
+
+// ── form: edit / clear ──
+function editDoc(id){
+  var x=DOCS.find(function(d){return String(d.id)===String(id)});
+  if(!x) return;
+  setVal('docEditId',x.id);
+  setVal('docName',x.title);
+  var cats=docCats();
+  if(cats.indexOf(x.category)>=0){ setVal('docCat',x.category); setVal('docCatOther',''); }
+  else { setVal('docCat','სხვა'); setVal('docCatOther',x.category||''); }
+  setVal('docOwner',x.folder_name);
+  setVal('docExpire',x.expiry_date);
+  setVal('docNote',x.note);
+  var f=g('docFile'); if(f) f.value='';
+  var box=g('docFormBox'), btn=g('docSaveBtn');
+  if(box) box.classList.add('editing');
+  if(btn) btn.textContent='💾 განახლება';
+  docOther();
+  g('docMsg').textContent='';
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function clearDocForm(){
+  ['docEditId','docName','docCatOther','docOwner','docExpire','docNote'].forEach(function(id){setVal(id,'')});
+  setVal('docCat','კომპანიის დოკუმენტი');
+  var f=g('docFile'); if(f) f.value='';
+  var box=g('docFormBox'), btn=g('docSaveBtn');
+  if(box) box.classList.remove('editing');
+  if(btn) btn.textContent='➕ დამატება';
+  g('docMsg').textContent='';
+  docOther();
+}
+
+// ── save (cloud: insert new / update by id+user_id) ──
+async function saveDoc(){
+  var msg=g('docMsg'); msg.textContent='';
+  if(!sb||!userId){ msg.textContent='❌ გთხოვთ შეხვიდეთ'; return; }
+  var editId=val('docEditId');
+  var cat=(val('docCat')==='სხვა')?(val('docCatOther')||'სხვა'):val('docCat');
+  var file=firstFile('docFile');
+  if(!val('docName') && !file){ msg.textContent='❌ შეიყვანე დასახელება ან აირჩიე ფაილი'; return; }
+  var old=editId?(DOCS.find(function(d){return String(d.id)===String(editId)})||{}):{};
+  var btn=g('docSaveBtn'); var prev=btn.textContent; btn.disabled=true; btn.textContent='⏳ ინახება…';
+  try{
+    var up=await upload(BUCKET,'documents/'+(editId||uid()),file);
+    var payload={
+      user_id:userId,
+      title:val('docName')||(file&&file.name)||old.title||'დოკუმენტი',
+      category:cat||'სხვა',
+      folder_name:val('docOwner')||cat||'სხვა',
+      owner_type:'other',
+      expiry_date:val('docExpire')||null,
+      file_name:(up&&up.name)||old.file_name||null,
+      file_path:(up&&up.path)||old.file_path||null,
+      mime_type:(up&&up.type)||old.mime_type||null,
+      size_bytes:(up&&up.size)||old.size_bytes||null,
+      status:'active',
+      note:val('docNote')||null
+    };
+    var res=editId
+      ? await sb.from(TABLE).update(payload).eq('id',editId).eq('user_id',userId).select().single()
+      : await sb.from(TABLE).insert(payload).select().single();
+    if(res.error){ msg.textContent='❌ '+res.error.message; return; }
+    toast(editId?'✅ განახლდა':'✅ დაემატა','good');
+    clearDocForm();
+    await loadDocs();
+  }catch(e){ msg.textContent='❌ '+(e.message||e); }
+  finally{ btn.disabled=false; if(g('docSaveBtn').textContent==='⏳ ინახება…') btn.textContent=prev; }
+}
+
+// ── delete ──
+async function deleteDoc(id){
+  if(!confirm('ნამდვილად წავშალო დოკუმენტი?')) return;
+  var ok=await delSB(TABLE,id);
+  if(!ok) return;
+  toast('🗑️ წაიშალა','good');
+  await loadDocs();
+}
+
+// ── session resume on load ──
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ userId=s.data.session.user.id; showApp(s.data.session.user.email); } }catch(e){} })();
+</script>
+</body></html>

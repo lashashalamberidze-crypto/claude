@@ -3870,22 +3870,31 @@ const accessToken = session?.access_token;
 
 
 
-    <div class="module-card card-teal clickable" id="mod-docsarchive" onclick="tryOpenModule('docsarchive')">
+    <div class="module-card card-orange clickable" id="mod-personali" onclick="window.open('./personali.html','_blank')">
+      <div class="module-status status-active" id="status-personali">✓ აქტიური</div>
+      <div class="card-icon-wrap">👥</div>
+      <div class="card-title">თანამშრომლები / მუშახელი</div>
+      <div class="card-desc">პერსონალის რეესტრი — სახელი, როლი, ანაზღაურება, დოკუმენტები (ფოტო, პირადობა, ხელშეკრულება, უწყისი). ცალკე გვერდი, ღრუბელში.</div>
+      <div class="card-tags"><span class="tag">👤 რეესტრი</span><span class="tag">💵 ანაზღაურება</span><span class="tag">📎 დოკუმენტები</span></div>
+      <div class="card-footer"><button class="open-btn" id="btn-personali" onclick="event.stopPropagation();window.open('./personali.html','_blank')" style="background:rgba(249,115,22,.15);color:#c2410c;border-color:rgba(249,115,22,.3)">👥 გახსნა <span class="card-open-arrow">→</span></button><span class="card-ver">v2.0 · ცალკე გვერდი</span></div>
+    </div>
+
+    <div class="module-card card-teal clickable" id="mod-docsarchive" onclick="window.open('./dokumentebi.html','_blank')">
       <div class="module-status status-active" id="status-docsarchive">✓ აქტიური</div>
       <div class="card-icon-wrap">📁</div>
       <div class="card-title">დოკუმენტების არქივი</div>
-      <div class="card-desc">სერტიფიკატები, ანალიზები, ხელშეკრულებები, ინვოისები და სხვა დოკუმენტები ერთ სივრცეში.</div>
+      <div class="card-desc">სერტიფიკატები, ანალიზები, ხელშეკრულებები, ინვოისები და სხვა დოკუმენტები ერთ სივრცეში. ცალკე გვერდი, ღრუბელში.</div>
       <div class="card-tags"><span class="tag">📎 ფაილი</span><span class="tag">📅 ვადა</span><span class="tag">🔎 ძებნა</span></div>
-      <div class="card-footer"><button class="open-btn" id="btn-docsarchive">გახსნა <span class="card-open-arrow">→</span></button><span class="card-ver">v0.1 · სრული</span></div>
+      <div class="card-footer"><button class="open-btn" id="btn-docsarchive" onclick="event.stopPropagation();window.open('./dokumentebi.html','_blank')">📁 გახსნა <span class="card-open-arrow">→</span></button><span class="card-ver">v2.0 · ცალკე გვერდი</span></div>
     </div>
 
-    <div class="module-card card-rose clickable" id="mod-inventoryqr" onclick="tryOpenModule('inventoryqr')">
+    <div class="module-card card-rose clickable" id="mod-inventoryqr" onclick="window.open('./inventari.html','_blank')">
       <div class="module-status status-active" id="status-inventoryqr">✓ აქტიური</div>
       <div class="card-icon-wrap">🗂️</div>
       <div class="card-title">ინვენტარი / ტექნიკა (აქტივები)</div>
-      <div class="card-desc">გამძლე ქონება — ტექნიკა, ხელსაწყო, მოწყობილობა. QR კოდები, ბეჭდვა, სკანირებით შემოწმება, ინვენტარიზაცია, ღირებულება და კაპიტალის ჯამი.</div>
+      <div class="card-desc">გამძლე ქონება — ტექნიკა, ხელსაწყო, მოწყობილობა. QR კოდები, ბეჭდვა, სკანირებით შემოწმება, ინვენტარიზაცია, ღირებულება და კაპიტალის ჯამი. ცალკე გვერდი, ღრუბელში.</div>
       <div class="card-tags"><span class="tag">🏷️ QR</span><span class="tag">💰 ღირებულება</span><span class="tag">✅ შემოწმება</span></div>
-      <div class="card-footer"><button class="open-btn" id="btn-inventoryqr">გახსნა <span class="card-open-arrow">→</span></button><span class="card-ver">v1.0 · სრული</span></div>
+      <div class="card-footer"><button class="open-btn" id="btn-inventoryqr" onclick="event.stopPropagation();window.open('./inventari.html','_blank')">🗂️ გახსნა <span class="card-open-arrow">→</span></button><span class="card-ver">v2.0 · ცალკე გვერდი</span></div>
     </div>
 
     <div class="module-card card-lime clickable" id="mod-agronom" onclick="tryOpenModule('agronom')">
