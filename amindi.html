@@ -442,6 +442,7 @@ function amindiTab(tab, btn){
   document.querySelectorAll('#amindiTabs .auth-tab').forEach(function(b){ b.classList.remove('active'); });
   if(btn) btn.classList.add('active');
   if (tab === 'sms'){
+    window.wsmsRender(); // მაშინვე ლოკალურიდან (რომ ნომრები არ „გაქრეს")
     window.wsmsLoadFromSupabase().then(function(){ window.wsmsRender(); });
   }
 }
@@ -882,20 +883,28 @@ window.wsmsLoadFromSupabase = async function(){
     if (!sb || !uid) return;
     const { data, error } = await sb.from('wsms_config').select('*').eq('user_id', uid).maybeSingle();
     if (error) { console.warn('wsms load error:', error.message); return; }
+    // ლოკალური კონფიგი (რომ ლოკალურად დამატებული ნომრები არ დაიკარგოს)
+    const local = window.wsmsGetConfig();
     if (data) {
+      const cloudPhones = Array.isArray(data.phones) ? data.phones : [];
+      // ღრუბლისა და ლოკალის გაერთიანება (ნომრით dedupe)
+      const seen = {}; const merged = [];
+      cloudPhones.concat(local.phones||[]).forEach(function(p){
+        const key = (p && (p.phone||p)) ? String(p.phone||p) : '';
+        if (!key || seen[key]) return; seen[key] = 1; merged.push(p);
+      });
       const cfg = {
-        enabled: !!data.enabled,
-        severity: data.severity || 'warning',
-        phones: Array.isArray(data.phones) ? data.phones : []
+        enabled: (typeof data.enabled === 'boolean') ? data.enabled : !!local.enabled,
+        severity: data.severity || local.severity || 'warning',
+        phones: merged
       };
       try { localStorage.setItem('its_wsms', JSON.stringify(cfg)); } catch(e){}
       if (data.sent_log && typeof data.sent_log === 'object') {
         WSMS_SENTLOG = data.sent_log;
         try { localStorage.setItem('its_weather_sms_log', JSON.stringify(WSMS_SENTLOG)); } catch(e){}
       }
-    } else {
-      localStorage.removeItem('its_wsms');
     }
+    // data == null → ლოკალს არ ვშლით (ნომრები რჩება; შემდეგი save ღრუბელში ატვირთავს)
   } catch(e){ console.warn('wsms load error', e); }
 };
 
