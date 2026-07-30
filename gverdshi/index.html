@@ -1093,6 +1093,7 @@
             <label><input type="checkbox" data-value="tutor" onchange="onMSChange('ms-service')"><span class="ms-opt-label">რეპეტიტორი</span></label>
             <label><input type="checkbox" data-value="beauty" onchange="onMSChange('ms-service')"><span class="ms-opt-label">სილამაზე სახლში</span></label>
             <label><input type="checkbox" data-value="moving" onchange="onMSChange('ms-service')"><span class="ms-opt-label">გადაზიდვა</span></label>
+            <label><input type="checkbox" data-value="furniture-moving" onchange="onMSChange('ms-service')"><span class="ms-opt-label">ავეჯის გადაზიდვა</span></label>
             <label><input type="checkbox" data-value="tech" onchange="onMSChange('ms-service')"><span class="ms-opt-label">ტექნიკის შეკეთება</span></label>
             <label><input type="checkbox" data-value="family" onchange="onMSChange('ms-service')"><span class="ms-opt-label">ოჯახის დახმარება</span></label>
             <label><input type="checkbox" data-value="restorer" onchange="onMSChange('ms-service')"><span class="ms-opt-label">რესტავრატორი</span></label>
@@ -1218,6 +1219,20 @@
           </div>
           <div>
             <div class="cat-name" data-t="cat_furniture">ავეჯის აწყობა</div>
+            <div class="cat-count" data-t="masters_in_batumi">ოსტატი ბათუმში</div>
+          </div>
+          <div class="cat-footer">
+            <span style="font-size: 13px; color: var(--text-muted);" data-t="by_agreement">შეთანხმებით</span>
+            <span class="cat-arrow">→</span>
+          </div>
+        </div>
+
+        <div class="cat-card" onclick="showPage('list')">
+          <div class="cat-icon" style="background: #E6F1FB;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h13v11H1zM14 8h4l3 3v3h-7z"/><circle cx="5.5" cy="17.5" r="1.5"/><circle cx="17.5" cy="17.5" r="1.5"/></svg>
+          </div>
+          <div>
+            <div class="cat-name" data-t="cat_furniture_moving">ავეჯის გადაზიდვა</div>
             <div class="cat-count" data-t="masters_in_batumi">ოსტატი ბათუმში</div>
           </div>
           <div class="cat-footer">
@@ -1430,6 +1445,7 @@
             <option>დამლაგებელი</option>
             <option>რემონტი</option>
             <option>ავეჯის აწყობა</option>
+            <option>ავეჯის გადაზიდვა</option>
             <option>რესტავრატორი</option>
             <option>ცხოველების მომვლელი</option>
             <option>მანქანის ხელოსანი</option>
@@ -1881,6 +1897,7 @@
               <option>ტექნიკის შეკეთება</option>
               <option>ოჯახის დახმარება</option>
               <option>რესტავრატორი</option>
+              <option>ავეჯის გადაზიდვა</option>
               <optgroup label="🌱 აგრონომია">
                 <option>აგრონომი</option>
                 <option>ვეტერინარი</option>
@@ -2369,6 +2386,7 @@
         <option value="რემონტი">🔨 რემონტი</option>
         <option value="ავეჯის აწყობა">🪑 ავეჯის აწყობა</option>
         <option value="რესტავრატორი">🖌️ რესტავრატორი</option>
+        <option value="ავეჯის გადაზიდვა">🚚 ავეჯის გადაზიდვა</option>
         <optgroup label="🌱 აგრონომია">
           <option value="აგრონომი">🌾 აგრონომი</option>
           <option value="ვეტერინარი">🐄 ვეტერინარი</option>
@@ -3080,6 +3098,7 @@
       cat_cleaner: "დამლაგებელი",
       cat_renovation: "რემონტი",
       cat_furniture: "ავეჯის აწყობა",
+      cat_furniture_moving: "ავეჯის გადაზიდვა",
       masters_in_batumi: "ოსტატი ბათუმში",
       masters_summer_peak: "ოსტატი · პიკი ზაფხულში",
       masters_airbnb_spec: "ოსტატი · Airbnb სპეც.",
@@ -3261,6 +3280,7 @@
       cat_cleaner: "Уборщик",
       cat_renovation: "Ремонт",
       cat_furniture: "Сборка мебели",
+      cat_furniture_moving: "Перевозка мебели",
       masters_in_batumi: "мастеров в Батуми",
       masters_summer_peak: "мастеров · пик летом",
       masters_airbnb_spec: "мастеров · спец. Airbnb",
@@ -3442,6 +3462,7 @@
       cat_cleaner: "Cleaner",
       cat_renovation: "Renovation",
       cat_furniture: "Furniture assembly",
+      cat_furniture_moving: "Furniture moving",
       masters_in_batumi: "masters in Batumi",
       masters_summer_peak: "masters · peak in summer",
       masters_airbnb_spec: "masters · Airbnb specialists",
