@@ -119,11 +119,12 @@ serve(async (req) => {
       const ev = body.event || {};
       if (!ev.title) return json({ error: "ღონისძიების სათაური აუცილებელია" }, 400);
 
-      const GMAIL_USER = Deno.env.get("GMAIL_USER");            // intechsolltd@gmail.com
-      const GMAIL_APP_PASSWORD = Deno.env.get("GMAIL_APP_PASSWORD"); // Google App Password (16 სიმბოლო)
+      // არსებული secret-ების გამოყენება (GMAIL_APP_PASS უკვე დაყენებულია)
+      const GMAIL_USER = Deno.env.get("GMAIL_USER") || Deno.env.get("GMAIL_ADDRESS") || "intechsolltd@gmail.com";
+      const GMAIL_APP_PASSWORD = (Deno.env.get("GMAIL_APP_PASS") || Deno.env.get("GMAIL_APP_PASSWORD") || "").replace(/\s+/g, "");
       const FROM_NAME = Deno.env.get("EVENT_FROM_NAME") || "AgroInTechSol";
-      if (!GMAIL_USER || !GMAIL_APP_PASSWORD)
-        return json({ error: "GMAIL_USER / GMAIL_APP_PASSWORD არ არის დაყენებული (Edge Function Secrets)" }, 500);
+      if (!GMAIL_APP_PASSWORD)
+        return json({ error: "GMAIL_APP_PASS არ არის დაყენებული (Edge Function Secrets)" }, 500);
 
       // მიმღებები — ყველა რეალური მომხმარებელი (demo-ს გამოკლებით)
       const { data: users, error: uErr } = await adminClient
