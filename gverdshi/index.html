@@ -4484,8 +4484,9 @@
       }
       return;
     }
-    // ქალაქის whitelist დაცვა (მხოლოდ ნებადართული ქალაქები)
-    const allowedCities = ['batumi', 'rustavi', 'kutaisi', 'zugdidi', 'telavi', 'marneuli'];
+    // ქალაქის whitelist დაცვა — ყველა რეალური ლოკაცია (ქალაქები + რეგიონები, CITY_AREAS-დან)
+    const allowedCities = (typeof CITY_AREAS !== 'undefined') ? Object.keys(CITY_AREAS)
+      : ['batumi', 'rustavi', 'kutaisi', 'zugdidi', 'telavi', 'marneuli', 'tbilisi'];
     if (!allowedCities.includes(municipality)) {
       showToast('⚠️ არასწორი ქალაქი');
       return;
