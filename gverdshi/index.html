@@ -1505,7 +1505,7 @@
 
         <!-- 🌱 აგრო სპეციალისტების სია (ჩნდება აგრო კატეგორიაზე დაჭერისას) -->
         <div id="agro-list-body" style="display: none;">
-          <div style="background: #FEF0C7; color: #92400E; border: 1px solid #F59E0B; font-size: 13px; font-weight: 700; padding: 10px 16px; border-radius: 12px; text-align: center; margin-bottom: 16px;">⚠️ დემო მაგალითები — რეალური სპეციალისტები მალე დაემატება</div>
+          <div style="background: #FEF0C7; color: #92400E; border: 1px solid #F59E0B; font-size: 13px; font-weight: 700; padding: 10px 16px; border-radius: 12px; text-align: center; margin-bottom: 16px;" data-t="demo_examples">⚠️ დემო მაგალითები — რეალური სპეციალისტები მალე დაემატება</div>
           <div id="agro-cards" style="display: flex; flex-direction: column; gap: 12px;"></div>
         </div>
 
@@ -1523,7 +1523,7 @@
             </div>
             <div class="master-right">
               <div class="price">45₾<span class="unit">/სთ-დან</span></div>
-              <button class="btn-contact" onclick="event.stopPropagation(); contactMaster('ზურაბ')">დაკავშირება</button>
+              <button class="btn-contact" onclick="event.stopPropagation(); contactMaster('ზურაბ')" data-t="btn_contact">დაკავშირება</button>
             </div>
           </div>
         </div>
@@ -1536,12 +1536,12 @@
 <div id="page-profile" class="page">
   <div class="container">
     <div style="padding-top: 20px;">
-      <button class="back-btn" onclick="backToList()">← სიაში დაბრუნება</button>
+      <button class="back-btn" onclick="backToList()" data-t="btn_back_list">← სიაში დაბრუნება</button>
     </div>
 
     <div class="profile-layout">
       <main>
-        <div class="test-banner-top">
+        <div class="test-banner-top" data-t="pf_test_banner" data-t-html="true">
           🧪 <strong>სატესტო პროფილი</strong> — ეს არის მაგალითი. რეალური ოსტატის პროფილი ბაზიდან ჩაიტვირთება.
         </div>
 
@@ -1560,12 +1560,12 @@
         </div>
 
         <div class="profile-section">
-          <h3>ჩემ შესახებ</h3>
+          <h3 data-t="pf_about_h">ჩემ შესახებ</h3>
           <p style="color: var(--text-muted); font-size: 15px;" id="pf-about">10 წელია ვმუშაობ სანტექნიკოსად ბათუმში. ვსპეციალიზდები ნიჟარის, მილების, კანალიზაციისა და ბოილერის შეკეთებაზე. ვმუშაობ ბულვარსა და ახალ ბულვარში, ავარიულ შემთხვევებში — 24 საათის განმავლობაში. გავლილი მაქვს Airbnb/Booking მფლობელებთან მუშაობის დიდი გამოცდილება — ვიცი რაც სჭირდება ქირავნობის ბინებს. ვიყენებ ხარისხიან მასალებს და ყოველ სამუშაოზე ვაძლევ 30-დღიან გარანტიას.</p>
         </div>
 
         <div class="profile-section">
-          <h3>რას ვაკეთებ</h3>
+          <h3 data-t="pf_skills_h">რას ვაკეთებ</h3>
           <div class="skills-list" id="pf-skills">
             <span class="skill-pill">ნიჟარის შეკეთება</span>
             <span class="skill-pill">ონკანის მონტაჟი</span>
@@ -1578,7 +1578,7 @@
         </div>
 
         <div class="profile-section">
-          <h3>ნამუშევრების გალერეა</h3>
+          <h3 data-t="pf_gallery_h">ნამუშევრების გალერეა</h3>
           <div class="portfolio-grid">
             <div class="portfolio-item"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect width="100" height="100" fill="#E1F5EE"/><circle cx="50" cy="40" r="18" fill="#0F6E56" opacity="0.3"/><rect x="30" y="58" width="40" height="25" rx="3" fill="#0F6E56" opacity="0.4"/></svg></div>
             <div class="portfolio-item"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect width="100" height="100" fill="#FAECE7"/><rect x="25" y="25" width="50" height="50" rx="5" fill="#D85A30" opacity="0.3"/><circle cx="50" cy="50" r="12" fill="#D85A30" opacity="0.5"/></svg></div>
@@ -1590,7 +1590,7 @@
         <div class="profile-section">
           <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 24px; flex-wrap: wrap; gap: 20px;">
             <div>
-              <h3 style="margin-bottom: 4px;">შეფასებები</h3>
+              <h3 style="margin-bottom: 4px;" data-t="pf_reviews_h">შეფასებები</h3>
               <div style="font-size: 14px; color: var(--text-muted);" id="pf-reviews-count">127 დადასტურებული კლიენტის შეფასება</div>
             </div>
             <div style="text-align: right;">
@@ -1603,7 +1603,7 @@
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr; gap: 6px; padding: 16px 20px; background: var(--bg); border-radius: 12px; margin-bottom: 20px;">
-            <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">შეფასებების განაწილება</div>
+            <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;" data-t="pf_distribution">შეფასებების განაწილება</div>
 
             <div style="display: grid; grid-template-columns: 24px 1fr 40px; gap: 10px; align-items: center; font-size: 13px;">
               <span style="color: var(--orange);">5★</span>
@@ -1643,12 +1643,12 @@
           </div>
 
           <div style="padding: 16px 20px; background: var(--bg); border-radius: 12px; margin-bottom: 24px;">
-            <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">რას აფასებენ კლიენტები</div>
+            <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;" data-t="pf_what_rated">რას აფასებენ კლიენტები</div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
               <div>
                 <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
-                  <span>⏰ დროულობა</span>
+                  <span data-t="pf_crit_time">⏰ დროულობა</span>
                   <span style="font-weight: 600;">4.8</span>
                 </div>
                 <div style="height: 6px; background: var(--border); border-radius: 100px; overflow: hidden;">
@@ -1657,7 +1657,7 @@
               </div>
               <div>
                 <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
-                  <span>🔧 ხარისხი</span>
+                  <span data-t="pf_crit_quality">🔧 ხარისხი</span>
                   <span style="font-weight: 600;">4.9</span>
                 </div>
                 <div style="height: 6px; background: var(--border); border-radius: 100px; overflow: hidden;">
@@ -1666,7 +1666,7 @@
               </div>
               <div>
                 <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
-                  <span>💰 ფასი</span>
+                  <span data-t="pf_crit_price">💰 ფასი</span>
                   <span style="font-weight: 600;">4.6</span>
                 </div>
                 <div style="height: 6px; background: var(--border); border-radius: 100px; overflow: hidden;">
@@ -1675,7 +1675,7 @@
               </div>
               <div>
                 <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
-                  <span>💬 კომუნიკაცია</span>
+                  <span data-t="pf_crit_comm">💬 კომუნიკაცია</span>
                   <span style="font-weight: 600;">5.0</span>
                 </div>
                 <div style="height: 6px; background: var(--border); border-radius: 100px; overflow: hidden;">
@@ -1720,12 +1720,12 @@
           </div>
           </div><!-- /pf-reviews -->
 
-          <button onclick="openReviewModal()" style="width: 100%; margin-top: 20px; padding: 14px; background: white; color: var(--text); border: 2px dashed var(--border-strong); border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer;">
+          <button onclick="openReviewModal()" style="width: 100%; margin-top: 20px; padding: 14px; background: white; color: var(--text); border: 2px dashed var(--border-strong); border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer;" data-t="pf_leave_review">
             ★ დატოვე შეფასება
           </button>
 
           <div style="margin-top: 16px; padding: 14px 16px; background: var(--green-light); border-radius: 12px;">
-            <div style="font-size: 13px; color: var(--green-dark); line-height: 1.6;">
+            <div style="font-size: 13px; color: var(--green-dark); line-height: 1.6;" data-t="pf_how_rating" data-t-html="true">
               <strong>როგორ მუშაობს შეფასება:</strong><br>
               • შეფასება შეუძლია მხოლოდ ვინც დაუკავშირდა ოსტატს პლატფორმიდან<br>
               • 1-5 ვარსკვლავი: 1 = ცუდი, 5 = შესანიშნავი<br>
@@ -2366,7 +2366,7 @@
   @media(max-width:640px){ .gv-fab{right:14px;bottom:14px;padding:12px 16px;font-size:14px} }
 </style>
 
-<button class="gv-fab" onclick="openBooking()" aria-label="დაჯავშნე ვიზიტი">📅 დაჯავშნე ვიზიტი</button>
+<button class="gv-fab" onclick="openBooking()" aria-label="დაჯავშნე ვიზიტი" data-t="fab_book">📅 დაჯავშნე ვიზიტი</button>
 
 <div id="booking-modal" class="modal-overlay">
   <div class="modal" style="max-width: 480px;">
@@ -3116,6 +3116,26 @@
       ms_area_all: "უბანი (ყველა)",
       cat_restorer: "რესტავრატორი",
       cat_restorer_note: "ავეჯი · კარ-ფანჯარა · ანტიკვარი",
+      pf_about_h: "ჩემ შესახებ",
+      pf_skills_h: "რას ვაკეთებ",
+      pf_gallery_h: "ნამუშევრების გალერეა",
+      pf_reviews_h: "შეფასებები",
+      pf_distribution: "შეფასებების განაწილება",
+      pf_what_rated: "რას აფასებენ კლიენტები",
+      pf_crit_time: "⏰ დროულობა",
+      pf_crit_quality: "🔧 ხარისხი",
+      pf_crit_price: "💰 ფასი",
+      pf_crit_comm: "💬 კომუნიკაცია",
+      btn_back_list: "← სიაში დაბრუნება",
+      btn_contact: "დაკავშირება",
+      pf_leave_review: "★ დატოვე შეფასება",
+      demo_examples: "⚠️ დემო მაგალითები — რეალური სპეციალისტები მალე დაემატება",
+      pf_test_banner: "🧪 <strong>სატესტო პროფილი</strong> — ეს არის მაგალითი. რეალური ოსტატის პროფილი ბაზიდან ჩაიტვირთება.",
+      pf_how_rating: "<strong>როგორ მუშაობს შეფასება:</strong><br>• შეფასება შეუძლია მხოლოდ ვინც დაუკავშირდა ოსტატს პლატფორმიდან<br>• 1-5 ვარსკვლავი: 1 = ცუდი, 5 = შესანიშნავი<br>• საშუალო = ყველა შეფასების საშუალო არითმეტიკული<br>• ყველა შეფასება მოდერირდება 24 საათში",
+      fab_book: "📅 დაჯავშნე ვიზიტი",
+      cookie_no: "მხოლოდ საჭირო",
+      cookie_yes: "თანხმობა",
+      cookie_text: '🍪 ვიყენებთ cookie-ებს საიტის გამართული მუშაობისა და ანალიტიკისთვის. დეტალები — <a href="/privacy.html">კონფიდენციალურობის პოლიტიკაში</a>.',
       masters_in_batumi: "ოსტატი ბათუმში",
       masters_summer_peak: "ოსტატი · პიკი ზაფხულში",
       masters_airbnb_spec: "ოსტატი · Airbnb სპეც.",
@@ -3315,6 +3335,26 @@
       ms_area_all: "Район (Все)",
       cat_restorer: "Реставратор",
       cat_restorer_note: "Мебель · двери-окна · антиквариат",
+      pf_about_h: "Обо мне",
+      pf_skills_h: "Что я делаю",
+      pf_gallery_h: "Галерея работ",
+      pf_reviews_h: "Отзывы",
+      pf_distribution: "Распределение оценок",
+      pf_what_rated: "Что оценивают клиенты",
+      pf_crit_time: "⏰ Пунктуальность",
+      pf_crit_quality: "🔧 Качество",
+      pf_crit_price: "💰 Цена",
+      pf_crit_comm: "💬 Коммуникация",
+      btn_back_list: "← Назад к списку",
+      btn_contact: "Связаться",
+      pf_leave_review: "★ Оставить отзыв",
+      demo_examples: "⚠️ Демо-примеры — реальные специалисты скоро появятся",
+      pf_test_banner: "🧪 <strong>Тестовый профиль</strong> — это пример. Реальный профиль мастера загрузится из базы.",
+      pf_how_rating: "<strong>Как работает оценка:</strong><br>• Оценить может только тот, кто связался с мастером через платформу<br>• 1-5 звёзд: 1 = плохо, 5 = отлично<br>• Средняя = среднее арифметическое всех оценок<br>• Все отзывы модерируются в течение 24 часов",
+      fab_book: "📅 Забронировать визит",
+      cookie_no: "Только необходимые",
+      cookie_yes: "Принять",
+      cookie_text: '🍪 Мы используем cookie для корректной работы сайта и аналитики. Подробнее — в <a href="/privacy.html">политике конфиденциальности</a>.',
       masters_in_batumi: "мастеров в Батуми",
       masters_summer_peak: "мастеров · пик летом",
       masters_airbnb_spec: "мастеров · спец. Airbnb",
@@ -3514,6 +3554,26 @@
       ms_area_all: "District (All)",
       cat_restorer: "Restorer",
       cat_restorer_note: "Furniture · doors-windows · antiques",
+      pf_about_h: "About",
+      pf_skills_h: "What I do",
+      pf_gallery_h: "Portfolio",
+      pf_reviews_h: "Reviews",
+      pf_distribution: "Rating distribution",
+      pf_what_rated: "What clients rate",
+      pf_crit_time: "⏰ Punctuality",
+      pf_crit_quality: "🔧 Quality",
+      pf_crit_price: "💰 Price",
+      pf_crit_comm: "💬 Communication",
+      btn_back_list: "← Back to list",
+      btn_contact: "Contact",
+      pf_leave_review: "★ Leave a review",
+      demo_examples: "⚠️ Demo examples — real specialists coming soon",
+      pf_test_banner: "🧪 <strong>Test profile</strong> — this is an example. The real master's profile loads from the database.",
+      pf_how_rating: "<strong>How rating works:</strong><br>• Only someone who contacted the master via the platform can rate<br>• 1-5 stars: 1 = poor, 5 = excellent<br>• Average = arithmetic mean of all ratings<br>• All reviews are moderated within 24 hours",
+      fab_book: "📅 Book a visit",
+      cookie_no: "Essential only",
+      cookie_yes: "Accept",
+      cookie_text: '🍪 We use cookies for proper site function and analytics. Details in our <a href="/privacy.html">privacy policy</a>.',
       masters_in_batumi: "masters in Batumi",
       masters_summer_peak: "masters · peak in summer",
       masters_airbnb_spec: "masters · Airbnb specialists",
@@ -5581,6 +5641,132 @@
     }
   };
 
+  // 🌍 უბნების/დაბების თარგმანი (ka label → ru/en)
+  const AREA_I18N = {
+    'ცენტრი': { ru: 'Центр', en: 'Center' },
+    'ბულვარი': { ru: 'Бульвар', en: 'Boulevard' },
+    'ახალი ბულვარი': { ru: 'Новый бульвар', en: 'New Boulevard' },
+    'ძველი ბათუმი': { ru: 'Старый Батуми', en: 'Old Batumi' },
+    'ხიმშიაშვილის': { ru: 'Химшиашвили', en: 'Khimshiashvili' },
+    'აღმაშენებლის': { ru: 'Агмашенебели', en: 'Aghmashenebeli' },
+    'ბაგრატიონის': { ru: 'Багратиони', en: 'Bagrationi' },
+    'თამარ მეფის': { ru: 'Царицы Тамар', en: 'Queen Tamar' },
+    'გონიო': { ru: 'Гонио', en: 'Gonio' },
+    'მახინჯაური': { ru: 'Махинджаури', en: 'Makhinjauri' },
+    'ფერია': { ru: 'Фериа', en: 'Feria' },
+    'ყოროლისთავი': { ru: 'Королистави', en: 'Korolistavi' },
+    'ბოსტანქალაქი': { ru: 'Бостанкалаки', en: 'Bostankalaki' },
+    'ძველი რუსთავი': { ru: 'Старый Рустави', en: 'Old Rustavi' },
+    'ახალი რუსთავი': { ru: 'Новый Рустави', en: 'New Rustavi' },
+    '20-ე მიკრორაიონი': { ru: '20-й микрорайон', en: '20th Microdistrict' },
+    'ხრამი': { ru: 'Храми', en: 'Khrami' },
+    'ვაზ-ფისანი': { ru: 'Ваз-Писани', en: 'Vaz-Pisani' },
+    'ავტოქარხანა': { ru: 'Автозавод', en: 'Avtokarkhana' },
+    'სოლომონ მეფის': { ru: 'Царя Соломона', en: 'King Solomon' },
+    'წერეთლის': { ru: 'Церетели', en: 'Tsereteli' },
+    'რიონი': { ru: 'Риони', en: 'Rioni' },
+    'გაგინის': { ru: 'Гагини', en: 'Gagini' },
+    'ნიკეა': { ru: 'Никея', en: 'Nikea' },
+    'ვაკე': { ru: 'Ваке', en: 'Vake' },
+    'ბალახვანი': { ru: 'Балахвани', en: 'Balakhvani' },
+    'ნარაზენი': { ru: 'Наразени', en: 'Narazeni' },
+    'რიყე': { ru: 'Рике', en: 'Rike' },
+    'ჯიხა': { ru: 'Джиха', en: 'Jikha' },
+    'ოდიში': { ru: 'Одиши', en: 'Odishi' },
+    'ჩხოროწყუ': { ru: 'Чхороцку', en: 'Chkhorotsku' },
+    'ნადიკვარი': { ru: 'Надиквари', en: 'Nadikvari' },
+    'რუსთაველის': { ru: 'Руставели', en: 'Rustaveli' },
+    'ყორანთა': { ru: 'Коранта', en: 'Koranta' },
+    'ხოდაშენი': { ru: 'Ходашени', en: 'Khodasheni' },
+    'იყალთო': { ru: 'Икалто', en: 'Ikalto' },
+    'კაპანახჩი': { ru: 'Капанахчи', en: 'Kapanakhchi' },
+    'სადახლო': { ru: 'Садахло', en: 'Sadakhlo' },
+    'კაჩაგანი': { ru: 'Качагани', en: 'Kachagani' },
+    'ალგეთი': { ru: 'Алгети', en: 'Algeti' },
+    'შულავერი': { ru: 'Шулавери', en: 'Shulaveri' },
+    'ამბროლაური': { ru: 'Амбролаури', en: 'Ambrolauri' },
+    'ონი': { ru: 'Они', en: 'Oni' },
+    'ცაგერი': { ru: 'Цагери', en: 'Tsageri' },
+    'ლენტეხი': { ru: 'Лентехи', en: 'Lentekhi' },
+    'საბურთალო': { ru: 'Сабуртало', en: 'Saburtalo' },
+    'მთაწმინდა': { ru: 'Мтацминда', en: 'Mtatsminda' },
+    'ძველი თბილისი': { ru: 'Старый Тбилиси', en: 'Old Tbilisi' },
+    'ვერა': { ru: 'Вера', en: 'Vera' },
+    'ისანი': { ru: 'Исани', en: 'Isani' },
+    'სამგორი': { ru: 'Самгори', en: 'Samgori' },
+    'გლდანი': { ru: 'Глдани', en: 'Gldani' },
+    'ნაძალადევი': { ru: 'Надзаладеви', en: 'Nadzaladevi' },
+    'დიდუბე': { ru: 'Дидубе', en: 'Didube' },
+    'ჩუღურეთი': { ru: 'Чугурети', en: 'Chughureti' },
+    'დიდი დიღომი': { ru: 'Диди Дигоми', en: 'Didi Digomi' },
+    'ვარკეთილი': { ru: 'Варкетили', en: 'Varketili' },
+    'საველე / სხვა': { ru: 'Другое', en: 'Field / Other' },
+    'ქობულეთი': { ru: 'Кобулети', en: 'Kobuleti' },
+    'ხელვაჩაური': { ru: 'Хелвачаури', en: 'Khelvachauri' },
+    'ქედა': { ru: 'Кеда', en: 'Keda' },
+    'შუახევი': { ru: 'Шуахеви', en: 'Shuakhevi' },
+    'ხულო': { ru: 'Хуло', en: 'Khulo' },
+    'ზესტაფონი': { ru: 'Зестафони', en: 'Zestaponi' },
+    'ჭიათურა': { ru: 'Чиатура', en: 'Chiatura' },
+    'სამტრედია': { ru: 'Самтредиа', en: 'Samtredia' },
+    'ხონი': { ru: 'Хони', en: 'Khoni' },
+    'ტყიბული': { ru: 'Ткибули', en: 'Tkibuli' },
+    'ვანი': { ru: 'Вани', en: 'Vani' },
+    'ბაღდათი': { ru: 'Багдати', en: 'Baghdati' },
+    'თერჯოლა': { ru: 'Терджола', en: 'Terjola' },
+    'საჩხერე': { ru: 'Сачхере', en: 'Sachkhere' },
+    'ხარაგაული': { ru: 'Харагаули', en: 'Kharagauli' },
+    'გურჯაანი': { ru: 'Гурджаани', en: 'Gurjaani' },
+    'საგარეჯო': { ru: 'Сагареджо', en: 'Sagarejo' },
+    'სიღნაღი': { ru: 'Сигнахи', en: 'Sighnaghi' },
+    'ყვარელი': { ru: 'Кварели', en: 'Kvareli' },
+    'ლაგოდეხი': { ru: 'Лагодехи', en: 'Lagodekhi' },
+    'დედოფლისწყარო': { ru: 'Дедоплисцкаро', en: 'Dedoplistskaro' },
+    'ახმეტა': { ru: 'Ахмета', en: 'Akhmeta' },
+    'გარდაბანი': { ru: 'Гардабани', en: 'Gardabani' },
+    'ბოლნისი': { ru: 'Болниси', en: 'Bolnisi' },
+    'დმანისი': { ru: 'Дманиси', en: 'Dmanisi' },
+    'თეთრიწყარო': { ru: 'Тетрицкаро', en: 'Tetritskaro' },
+    'წალკა': { ru: 'Цалка', en: 'Tsalka' },
+    'ფოთი': { ru: 'Поти', en: 'Poti' },
+    'სენაკი': { ru: 'Сенаки', en: 'Senaki' },
+    'მარტვილი': { ru: 'Мартвили', en: 'Martvili' },
+    'ხობი': { ru: 'Хоби', en: 'Khobi' },
+    'წალენჯიხა': { ru: 'Цаленджиха', en: 'Tsalenjikha' },
+    'მესტია': { ru: 'Местиа', en: 'Mestia' },
+    'აბაშა': { ru: 'Абаша', en: 'Abasha' },
+    'გორი': { ru: 'Гори', en: 'Gori' },
+    'ქარელი': { ru: 'Карели', en: 'Kareli' },
+    'კასპი': { ru: 'Каспи', en: 'Kaspi' },
+    'ხაშური': { ru: 'Хашури', en: 'Khashuri' },
+    'ახალციხე': { ru: 'Ахалцихе', en: 'Akhaltsikhe' },
+    'ბორჯომი': { ru: 'Боржоми', en: 'Borjomi' },
+    'ახალქალაქი': { ru: 'Ахалкалаки', en: 'Akhalkalaki' },
+    'ასპინძა': { ru: 'Аспиндза', en: 'Aspindza' },
+    'ადიგენი': { ru: 'Адигени', en: 'Adigeni' },
+    'ნინოწმინდა': { ru: 'Ниноцминда', en: 'Ninotsminda' },
+    'მცხეთა': { ru: 'Мцхета', en: 'Mtskheta' },
+    'დუშეთი': { ru: 'Душети', en: 'Dusheti' },
+    'თიანეთი': { ru: 'Тианети', en: 'Tianeti' },
+    'ყაზბეგი': { ru: 'Казбеги', en: 'Kazbegi' },
+    'ოზურგეთი': { ru: 'Озургети', en: 'Ozurgeti' },
+    'ლანჩხუთი': { ru: 'Ланчхути', en: 'Lanchkhuti' },
+    'ჩოხატაური': { ru: 'Чохатаури', en: 'Chokhatauri' },
+    'ბათუმი': { ru: 'Батуми', en: 'Batumi' },
+    'ქუთაისი': { ru: 'Кутаиси', en: 'Kutaisi' },
+    'ზუგდიდი': { ru: 'Зугдиди', en: 'Zugdidi' },
+    'თელავი': { ru: 'Телави', en: 'Telavi' },
+    'რუსთავი': { ru: 'Рустави', en: 'Rustavi' },
+    'მარნეული': { ru: 'Марнеули', en: 'Marneuli' }
+  };
+  function getAreaLabel(kaLabel) {
+    const L = (typeof currentLang !== 'undefined') ? currentLang : 'ka';
+    if (L === 'ka') return kaLabel;
+    const e = AREA_I18N[kaLabel];
+    return (e && e[L]) ? e[L] : kaLabel;
+  }
+  const ALL_OF_PREFIX = { ka: 'მთელი', ru: 'Весь', en: 'All of' };
+
   // 🗺️ ლოკაციების დაჯგუფება პიკერისთვის
   const LOCATION_GROUPS = {
     cities:  ['tbilisi', 'batumi', 'kutaisi', 'rustavi', 'zugdidi', 'telavi', 'marneuli'],
@@ -5709,32 +5895,32 @@
     // 1) Hero search bar — area multi-select
     const msPanel = document.getElementById('ms-area-panel');
     if (msPanel) {
-      msPanel.innerHTML = areas.map(a => 
-        `<label><input type="checkbox" data-value="${a.value}" onchange="onMSChange('ms-area')"><span class="ms-opt-label">${a.label}</span></label>`
+      msPanel.innerHTML = areas.map(a =>
+        `<label><input type="checkbox" data-value="${a.value}" onchange="onMSChange('ms-area')"><span class="ms-opt-label">${getAreaLabel(a.label)}</span></label>`
       ).join('');
       updateMSLabel('ms-area');
     }
-    
+
     // 2) List page — filter sidebar
     const filterList = document.getElementById('filter-areas-list');
     if (filterList) {
-      filterList.innerHTML = areas.map((a, i) => 
-        `<label class="check-row"><input type="checkbox" ${i === 0 ? 'checked' : ''}> <span>${a.label}</span></label>`
+      filterList.innerHTML = areas.map((a, i) =>
+        `<label class="check-row"><input type="checkbox" ${i === 0 ? 'checked' : ''}> <span>${getAreaLabel(a.label)}</span></label>`
       ).join('');
     }
-    
-    // 3) Registration form — area checkboxes
+
+    // 3) Registration form — area checkboxes (value რჩება ქართული, ჩვენება ითარგმნება)
     const regGrid = document.getElementById('reg-areas-grid');
     if (regGrid) {
       regGrid.innerHTML = `
         <label class="check-row" style="padding: 4px 0; font-size: 13px;">
-          <input type="checkbox" value="all" onchange="toggleAllAreas(this)"> 
-          <strong>მთელი ${cityData.label}</strong>
+          <input type="checkbox" value="all" onchange="toggleAllAreas(this)">
+          <strong>${(ALL_OF_PREFIX[currentLang]||ALL_OF_PREFIX.ka)} ${getCityLabel(cityKey)}</strong>
         </label>
       ` + areas.map(a => `
         <label class="check-row" style="padding: 4px 0; font-size: 13px;">
-          <input type="checkbox" class="area-check" value="${a.label}"> 
-          <span>${a.label}</span>
+          <input type="checkbox" class="area-check" value="${a.label}">
+          <span>${getAreaLabel(a.label)}</span>
         </label>
       `).join('');
     }
@@ -5749,13 +5935,13 @@
     
     regGrid.innerHTML = `
       <label class="check-row" style="padding: 4px 0; font-size: 13px;">
-        <input type="checkbox" value="all" onchange="toggleAllAreas(this)"> 
-        <strong>მთელი ${cityData.label}</strong>
+        <input type="checkbox" value="all" onchange="toggleAllAreas(this)">
+        <strong>${(ALL_OF_PREFIX[currentLang]||ALL_OF_PREFIX.ka)} ${getCityLabel(municipality)}</strong>
       </label>
     ` + cityData.areas.map(a => `
       <label class="check-row" style="padding: 4px 0; font-size: 13px;">
-        <input type="checkbox" class="area-check" value="${a.label}"> 
-        <span>${a.label}</span>
+        <input type="checkbox" class="area-check" value="${a.label}">
+        <span>${getAreaLabel(a.label)}</span>
       </label>
     `).join('');
     
@@ -6167,11 +6353,11 @@
   #cookie-banner .ck-no{background:#f1f1ee;color:var(--text,#1f2421)}
 </style>
 <div id="cookie-banner">
-  <p>🍪 ვიყენებთ cookie-ებს საიტის გამართული მუშაობისა და ანალიტიკისთვის.
+  <p data-t="cookie_text" data-t-html="true">🍪 ვიყენებთ cookie-ებს საიტის გამართული მუშაობისა და ანალიტიკისთვის.
      დეტალები — <a href="/privacy.html">კონფიდენციალურობის პოლიტიკაში</a>.</p>
   <div class="ck-btns">
-    <button class="ck-no" onclick="gvCookie(false)">მხოლოდ საჭირო</button>
-    <button class="ck-ok" onclick="gvCookie(true)">თანხმობა</button>
+    <button class="ck-no" onclick="gvCookie(false)" data-t="cookie_no">მხოლოდ საჭირო</button>
+    <button class="ck-ok" onclick="gvCookie(true)" data-t="cookie_yes">თანხმობა</button>
   </div>
 </div>
 
