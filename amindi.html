@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌤️ ამინდის პროგნოზი</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --acc:#06b6d4; --acc2:#0891b2;
+    --text:#0f172a; --muted:#64748b;
+    --surf:#f8fafc; --border:#e2e8f0;
+    --red:#dc2626; --orange:#ea580c;
+  }
+  *{box-sizing:border-box;font-family:"Noto Sans Georgian",system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:820px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.95rem;margin:0 0 8px;color:#334155}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff;color:#0f172a}
+  input:focus,select:focus{outline:none;border-color:var(--acc)}
+  button{background:var(--acc);color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:var(--acc2);border:1.5px solid var(--acc)}
+  button.gray{background:#fff;color:#475569;border:1.5px solid #cbd5e1}
+  button.r{background:var(--red)}
+  button:active{transform:scale(.98)}
+  .row2{display:flex;gap:8px;flex-wrap:wrap}.row2>*{flex:1;min-width:140px}
+  .muted{font-size:.8rem;color:#64748b}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+
+  /* ── weather module design (mirrors index.html aw-* classes) ── */
+  .auth-tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .auth-tab{width:auto;margin:0;background:var(--surf);color:var(--muted);border:1px solid var(--border);padding:8px 13px;border-radius:9px;font-size:.8rem;font-weight:600}
+  .auth-tab.active{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .aw-current-card{background:var(--surf);border:1px solid var(--border);border-radius:11px;padding:12px 14px;text-align:center}
+  .aw-current-val{font-size:1.4rem;font-weight:500;color:var(--text);margin:4px 0}
+  .aw-current-lbl{font-size:.65rem;font-weight:400;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .aw-day-card{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:8px 6px;text-align:center;cursor:default;transition:border-color .2s}
+  .aw-day-card:hover{border-color:rgba(6,182,212,.3)}
+  .aw-day-name{font-size:.62rem;font-weight:500;color:var(--muted);text-transform:uppercase}
+  .aw-day-icon{font-size:1.3rem;margin:5px 0}
+  .aw-day-hi{font-size:.85rem;font-weight:500;color:var(--text)}
+  .aw-day-lo{font-size:.72rem;color:var(--muted)}
+  .aw-day-rain{font-size:.62rem;color:#0369a1;margin-top:3px}
+  .aw-hour-card{background:var(--surf);border:1px solid var(--border);border-radius:9px;padding:8px 10px;min-width:62px;text-align:center}
+  .aw-hour-time{font-size:.62rem;font-weight:500;color:var(--muted)}
+  .aw-hour-icon{font-size:1.1rem;margin:4px 0}
+  .aw-hour-temp{font-size:.82rem;font-weight:500;color:var(--text)}
+  .aw-hour-wind{font-size:.62rem;color:#06b6d4;margin-top:2px}
+  .aw-spray-row{display:flex;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:10px 14px}
+  .aw-spray-score{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:600;flex-shrink:0}
+  .aw-alert-card{border-radius:11px;padding:13px 16px;border:1px solid}
+  .btn{width:auto;margin:0}
+  .btn-primary{background:linear-gradient(135deg,#0ea5e9,#0369a1)}
+  .btn-outline{background:#fff;color:var(--acc2);border:1.5px solid var(--acc)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media(max-width:560px){
+    #amindiCurrentRow{grid-template-columns:repeat(2,1fr)!important}
+    #amindiDayCards{grid-template-columns:repeat(4,1fr)!important}
+    .aw-current-card{padding:10px 8px}
+  }
+  /* toast */
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+  .toast-item{background:#065f46;color:#fff;padding:10px 18px;border-radius:10px;font-size:.86rem;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:90vw}
+</style></head>
+<body>
+
+<div id="toast"></div>
+
+<div id="loginCard" class="card">
+  <h1>🌤️ ამინდის პროგნოზი — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <h1>🌤️ ამინდის პროგნოზი</h1>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:var(--acc2)">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <!-- Location picker -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+      <h2 style="margin:0">📍 მდებარეობა</h2>
+      <button class="sec" style="width:auto;padding:6px 12px;margin:0;font-size:.75rem" onclick="usePlantationLoc()">🎯 პლანტაცია</button>
+    </div>
+    <div class="row2" style="margin-top:8px">
+      <div><label>რეგიონი</label>
+        <select id="locRegion" onchange="locRegionChange(this.value)"><option value="">— პლანტაცია / ნაგულ. —</option></select>
+      </div>
+      <div><label>მუნიციპალიტეტი</label>
+        <select id="locMunic" onchange="locMunicChange(this.value)" disabled><option value="">— ჯერ რეგიონი —</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="auth-logo" style="text-align:center;margin-bottom:6px">
+      <div style="font-size:2rem" id="amindiMainIcon">🌤️</div>
+      <div style="font-weight:600;font-size:1.05rem" id="amindiLocLabel">📍 პლანტაციის მდებარეობის ამინდი</div>
+    </div>
+
+    <!-- Loading -->
+    <div id="amindiLoading" style="text-align:center;padding:40px 0;color:var(--muted)">
+      <div style="font-size:2rem;animation:spin 1s linear infinite">⟳</div>
+      <div style="margin-top:12px;font-size:.85rem">ამინდის მონაცემები იტვირთება...</div>
+    </div>
+
+    <!-- Error -->
+    <div id="amindiError" style="display:none;text-align:center;padding:32px;color:#ef4444">
+      <div style="font-size:2rem">⚠️</div>
+      <div style="margin-top:10px;font-size:.85rem">ამინდის მონაცემები ვერ ჩაიტვირთა. გთხოვთ სცადოთ ხელახლა.</div>
+      <button onclick="loadAmindiData()" style="width:auto;margin-top:14px;background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.25);color:#06b6d4;border-radius:9px;padding:8px 22px">↺ სცადე ხელახლა</button>
+    </div>
+
+    <!-- Content -->
+    <div id="amindiContent" style="display:none">
+
+      <!-- CURRENT CONDITIONS ROW -->
+      <div id="amindiCurrentRow" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px"></div>
+
+      <!-- SPRAY ADVISORY BANNER -->
+      <div id="amindiSprayBanner" style="border-radius:13px;padding:14px 18px;margin-bottom:16px;border:1px solid"></div>
+
+      <!-- TABS -->
+      <div class="auth-tabs" style="margin-bottom:14px;flex-wrap:wrap" id="amindiTabs">
+        <button class="auth-tab active" onclick="amindiTab('forecast',this)">📅 7 დღე</button>
+        <button class="auth-tab" onclick="amindiTab('hourly',this)">⏱️ საათობრივი</button>
+        <button class="auth-tab" onclick="amindiTab('spray',this)">🛠️ აგრო სამუშაოები</button>
+        <button class="auth-tab" onclick="amindiTab('alerts',this)">⚠️ გაფრთხილება</button>
+        <button class="auth-tab" onclick="amindiTab('sms',this)">📲 SMS შეტყობინებები</button>
+      </div>
+
+      <!-- 7-DAY FORECAST -->
+      <div id="amindiTabForecast">
+        <div id="amindiDayCards" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px"></div>
+        <div style="margin-top:16px;background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:16px">
+          <div style="font-size:.72rem;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">🌡️ ტემპერატურა (°C) · 7 დღე</div>
+          <div style="position:relative;height:220px"><canvas id="amindiTempChart"></canvas></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+          <div style="background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:14px">
+            <div style="font-size:.72rem;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">💧 ნალექი (მმ)</div>
+            <div style="position:relative;height:170px"><canvas id="amindiRainChart"></canvas></div>
+          </div>
+          <div style="background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:14px">
+            <div style="font-size:.72rem;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">💨 ქარი (კმ/სთ)</div>
+            <div style="position:relative;height:170px"><canvas id="amindiWindChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOURLY (today) -->
+      <div id="amindiTabHourly" style="display:none">
+        <div style="overflow-x:auto;padding-bottom:4px">
+          <div id="amindiHourlyRow" style="display:flex;gap:6px;min-width:max-content"></div>
+        </div>
+        <div style="margin-top:14px;background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:16px">
+          <div style="font-size:.72rem;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">⏱️ ტემპ. + ტენიანობა დღის განმავლობაში</div>
+          <div style="position:relative;height:200px"><canvas id="amindiHourlyChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- SPRAY WINDOW -->
+      <div id="amindiTabSpray" style="display:none">
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:12px;line-height:1.6;background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+          <b style="color:var(--text)">🛠️ აგრო სამუშაოების ფანჯრები (საუკეთესო პრაქტიკა):</b><br>✅ შეწამვლა: ქარი 3–15 კმ/სთ · ტემპ. 10–25°C · ტენიანობა 40–90% · ნალექი &lt;1მმ<br>✅ გასხვლა: მშრალი ამინდი, ძლიერი წვიმისა და ყინვის გარეშე<br>✅ მორწყვა/განოყიერება: გააძლიერეთ როცა მაღალი ტემპერატურა, გვალვა ან მაღალი ET0 ფიქსირდება
+        </div>
+        <div id="amindiSprayTable" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+
+      <!-- ALERTS -->
+      <div id="amindiTabAlerts" style="display:none">
+        <div id="amindiAlertsSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:12px"></div>
+        <div id="amindiAlertsList" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <!-- SMS NOTIFICATIONS TAB -->
+      <div id="amindiTabSms" style="display:none">
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;margin-bottom:14px;font-size:.82rem;color:#1e40af;line-height:1.6">
+          <div style="font-weight:700;margin-bottom:6px;font-size:.95rem">📲 ავტომატური SMS გაფრთხილება</div>
+          როცა პლანტაციის ამინდში ფიქსირდება <b>კრიტიკული</b> ან <b>საშიში</b> მოვლენა (წვიმა, ქარი, ყინვა, სეტყვა...), სისტემა ავტომატურად გაუგზავნის SMS-ს ქვემოთ დამატებულ ნომრებზე.
+        </div>
+
+        <!-- Toggle + severity -->
+        <div style="background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;color:var(--text);margin-bottom:12px;font-size:.95rem">
+            <input type="checkbox" id="wsmsEnabled" style="width:20px;height:20px;cursor:pointer;accent-color:#0284c7">
+            <span>ავტომატური SMS გაფრთხილება ჩართული</span>
+          </label>
+          <div style="margin-bottom:4px;font-size:.82rem;font-weight:600;color:var(--muted)">მინიმალური სიმძიმე:</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <label class="wsms-sev-opt" data-sev="warning" style="flex:1;min-width:140px;cursor:pointer;padding:9px 11px;border:2px solid var(--border);border-radius:9px;font-size:.84rem;transition:all .15s">
+              <input type="radio" name="wsmsSeverity" value="warning" onchange="window.wsmsHandleSeverityChange(this.value)" style="margin-right:6px;accent-color:#0284c7">
+              🟡 გაფრთხილება + კრიტიკული
+            </label>
+            <label class="wsms-sev-opt" data-sev="danger" style="flex:1;min-width:140px;cursor:pointer;padding:9px 11px;border:2px solid var(--border);border-radius:9px;font-size:.84rem;transition:all .15s">
+              <input type="radio" name="wsmsSeverity" value="danger" onchange="window.wsmsHandleSeverityChange(this.value)" style="margin-right:6px;accent-color:#dc2626">
+              🔴 მხოლოდ კრიტიკული
+            </label>
+          </div>
+        </div>
+
+        <!-- Phone list -->
+        <div style="background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+            <div style="font-weight:700;color:var(--text);font-size:.95rem">📋 ნომრების სია</div>
+            <div style="font-size:.78rem;color:var(--muted)"><span id="wsmsCount">0</span> / 10 ნომერი</div>
+          </div>
+
+          <!-- Add row -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:10px;background:#f0f9ff;border:1px dashed #7dd3fc;border-radius:10px">
+            <input id="wsmsNewName" type="text" maxlength="20" placeholder="სახელი (მაგ. ლაშა)" style="flex:1;min-width:130px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:.88rem;background:#fff">
+            <input id="wsmsNewPhone" type="tel" maxlength="9" placeholder="555123456" style="flex:1;min-width:130px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:.88rem;background:#fff">
+            <button class="btn btn-primary" style="width:auto" onclick="wsmsAddNumber()">➕ დამატება</button>
+          </div>
+
+          <!-- List container -->
+          <div id="wsmsListEl" style="display:flex;flex-direction:column;gap:6px"></div>
+          <div id="wsmsEmptyEl" style="text-align:center;padding:20px;color:var(--muted);font-size:.85rem;display:none">
+            — ჯერ ნომერი არ არის დამატებული —
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn btn-primary" onclick="wsmsSave()" style="flex:1;min-width:130px">💾 შენახვა</button>
+          <button class="btn btn-outline" onclick="wsmsTestSend()" style="flex:1;min-width:130px">🧪 ტესტი SMS</button>
+        </div>
+        <div id="wsmsStatus" style="font-size:.8rem;color:var(--muted);line-height:1.5;margin-top:4px;min-height:18px"></div>
+
+        <!-- Info -->
+        <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;margin-top:14px;font-size:.74rem;color:#78350f;line-height:1.6">
+          <b>⚠️ შენიშვნა:</b><br>
+          • SMS იგზავნება <b>მხოლოდ</b> მაშინ, როცა ამინდის მოდული გახსენი და გაფრთხილება ფიქსირდება<br>
+          • 1 გაფრთხილება <b>მაქს. 1-ჯერ 4 საათში</b> (სპამის წინააღმდეგ)<br>
+        </div>
+      </div>
+
+    </div><!-- /amindiContent -->
+  </div>
+</div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+let sb=null, uid=null, PLANTS=[], ACTIVE_ID='';
+let USER_LOC=null; // {lat,lon,name} override chosen via the picker
+let _amindiCharts = {};
+let WSMS_SENTLOG = {}; // rate-limit "sent log", mirrored to cloud + localStorage
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+const _GEO_DAYS  = ['კვი','ორშ','სამ','ოთხ','ხუთ','პარ','შაბ'];
+const _GEO_MONS  = ['იანვ','თებ','მარ','აპრ','მაი','ივნ','ივლ','აგვ','სექ','ოქტ','ნოე','დეკ'];
+function geoDayMonth(d){ return _GEO_DAYS[(d||new Date()).getDay()]+' '+(d||new Date()).getDate()+' '+_GEO_MONS[(d||new Date()).getMonth()]; }
+
+// ── SMS config (same defaults as the app) ──
+window.sms_config = (function(){
+  try{
+    const s = JSON.parse(localStorage.getItem('its_sms_config') || '{}');
+    return { proxyUrl:s.proxyUrl||'/sms-proxy.php', sender:s.sender||'agroits', method:s.method||'smsoffice' };
+  }catch(e){ return { proxyUrl:'/sms-proxy.php', sender:'agroits', method:'smsoffice' }; }
+})();
+
+// Phone normalization (mirrors PHP side): "555123456" → "995555123456"
+window.normalizePhone = function(raw){
+  let d = String(raw||'').replace(/\D+/g, '');
+  if (!d) return '';
+  if (d.length === 9 && d[0] === '5')                  d = '995' + d;
+  else if (d.length > 11 && d.substring(0,2) === '00') d = d.substring(2);
+  return d;
+};
+
+// Low-level: POST to proxy, returns Promise<{Success, Message, ErrorCode?}>
+window.smsSendViaApi = async function(phone, text, senderOverride){
+  const cfg = window.sms_config;
+  const to = window.normalizePhone(phone);
+  if (!to || to.length < 11) throw new Error('არასწორი ან არა-მობილური ნომერი: ' + (phone || '—'));
+  const body = new URLSearchParams({ to:to, text:text, sender: senderOverride || cfg.sender || 'agroits' });
+  const resp = await fetch(cfg.proxyUrl, { method:'POST', headers:{ 'Content-Type':'application/x-www-form-urlencoded' }, body: body.toString() });
+  let json;
+  try { json = await resp.json(); }
+  catch(e){ throw new Error('Proxy did not return JSON (HTTP ' + resp.status + ')'); }
+  if (!json.Success) throw new Error(json.Message || ('ErrorCode: ' + (json.ErrorCode||'?')));
+  return json;
+};
+
+// ── toast ──
+function notify(msg, color){
+  var wrap=document.getElementById('toast'); if(!wrap) return;
+  var el=document.createElement('div'); el.className='toast-item'; el.textContent=msg;
+  if(color) el.style.background = (color==='var(--red)'||color==='var(--orange)') ? (color==='var(--red)'?'#b91c1c':'#c2410c') : color;
+  wrap.appendChild(el);
+  setTimeout(function(){ el.style.transition='opacity .4s'; el.style.opacity='0'; setTimeout(function(){ try{ el.remove(); }catch(e){} },420); }, 3200);
+}
+
+// ── auth ──
+async function doLogin(){
+  var e=document.getElementById('email').value.trim(), p=document.getElementById('pass').value, err=document.getElementById('loginErr');
+  err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; window.currentUser={id:uid,isDemo:false}; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+
+function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+async function showApp(email){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('whoami').textContent=email||'—';
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+  fillLocRegions();
+  await loadActivePlantation();
+  await window.wsmsLoadFromSupabase();
+  window.wsmsRender();
+  loadAmindiData();
+}
+
+// ══ GEORGIAN MUNICIPALITIES + COORDS ══
+const GEO_MUNICIPALITIES = {
+  'კახეთი': ['ახმეტა','გურჯაანი','დედოფლისწყარო','თელავი','თიანეთი','კახი','ლაგოდეხი','საგარეჯო','სიღნაღი','ყვარელი'],
+  'თბილისი': ['თბილისი'],
+  'შიდა ქართლი': ['გორი','კასპი','ქარელი','ხაშური','ცხინვალი'],
+  'ქვემო ქართლი': ['ბოლნისი','დმანისი','გარდაბანი','თეთრიწყარო','მარნეული','რუსთავი','წალკა'],
+  'სამცხე-ჯავახეთი': ['ადიგენი','ასპინძა','ახალქალაქი','ახალციხე','ბორჯომი','ნინოწმინდა'],
+  'აჭარა': ['ბათუმი','ქედა','ქობულეთი','შუახევი','ხელვაჩაური','ხულო'],
+  'გურია': ['ლანჩხუთი','ოზურგეთი','ჩოხატაური'],
+  'სამეგრელო-ზემო სვანეთი': ['აბაშა','ზუგდიდი','მარტვილი','მესტია','სენაკი','ჩხოროწყუ','წალენჯიხა','ხობი'],
+  'რაჭა-ლეჩხუმი და ქვემო სვანეთი': ['ამბროლაური','ლენტეხი','ონი','ცაგერი'],
+  'მცხეთა-მთიანეთი': ['დუშეთი','მცხეთა','ყაზბეგი','ახალგორი'],
+  'იმერეთი': ['ბაღდათი','ვანი','ზესტაფონი','თერჯოლა','ქუთაისი','სამტრედია','საჩხერე','ტყიბული','წყალტუბო','ჭიათურა','ხარაგაული','ხონი']
+};
+const MUNIC_COORDS = {
+  'ახმეტა':{lat:42.0283,lon:45.2097},'გურჯაანი':{lat:41.7454,lon:45.7913},'დედოფლისწყარო':{lat:41.4672,lon:46.1045},
+  'თელავი':{lat:41.9200,lon:45.4737},'თიანეთი':{lat:42.1169,lon:45.0018},'კახი':{lat:41.6353,lon:45.9875},
+  'ლაგოდეხი':{lat:41.8280,lon:46.2784},'საგარეჯო':{lat:41.7298,lon:45.3278},'სიღნაღი':{lat:41.6166,lon:45.9197},
+  'ყვარელი':{lat:41.9648,lon:45.8197},'თბილისი':{lat:41.6941,lon:44.8337},'გორი':{lat:41.9875,lon:44.1098},
+  'კასპი':{lat:41.9249,lon:44.4280},'ქარელი':{lat:41.8471,lon:44.3207},'ხაშური':{lat:41.9991,lon:43.5832},
+  'ცხინვალი':{lat:42.2300,lon:43.9700},'ბოლნისი':{lat:41.4452,lon:44.5266},'დმანისი':{lat:41.3251,lon:44.2006},
+  'გარდაბანი':{lat:41.4589,lon:45.0980},'თეთრიწყარო':{lat:41.5409,lon:44.4665},'მარნეული':{lat:41.4760,lon:44.7928},
+  'რუსთავი':{lat:41.5495,lon:44.9950},'წალკა':{lat:41.5626,lon:44.0854},'ადიგენი':{lat:41.6441,lon:42.7754},
+  'ასპინძა':{lat:41.5564,lon:43.2634},'ახალქალაქი':{lat:41.3993,lon:43.4916},'ახალციხე':{lat:41.6396,lon:42.9829},
+  'ბორჯომი':{lat:41.8367,lon:43.3894},'ნინოწმინდა':{lat:41.2444,lon:43.5841},'ბათუმი':{lat:41.6468,lon:41.6367},
+  'ქედა':{lat:41.4371,lon:42.0673},'ქობულეთი':{lat:41.8152,lon:41.7881},'შუახევი':{lat:41.5558,lon:42.2551},
+  'ხელვაჩაური':{lat:41.5947,lon:41.6702},'ხულო':{lat:41.6333,lon:42.3024},'ლანჩხუთი':{lat:41.9831,lon:42.2717},
+  'ოზურგეთი':{lat:41.9312,lon:42.0107},'ჩოხატაური':{lat:41.9871,lon:42.3025},'აბაშა':{lat:42.2157,lon:42.5200},
+  'ზუგდიდი':{lat:42.5092,lon:41.8709},'მარტვილი':{lat:42.3794,lon:42.3792},'მესტია':{lat:43.0458,lon:42.7237},
+  'სენაკი':{lat:42.2677,lon:42.0613},'ჩხოროწყუ':{lat:42.4253,lon:42.2219},'წალენჯიხა':{lat:42.5869,lon:42.0969},
+  'ხობი':{lat:42.3122,lon:41.9056},'ამბროლაური':{lat:42.5237,lon:43.1501},'ლენტეხი':{lat:42.7775,lon:42.7392},
+  'ონი':{lat:42.5830,lon:43.4388},'ცაგერი':{lat:42.6148,lon:43.0040},'დუშეთი':{lat:42.0858,lon:44.6968},
+  'მცხეთა':{lat:41.8449,lon:44.7206},'ყაზბეგი':{lat:42.6592,lon:44.6487},'ახალგორი':{lat:42.0593,lon:44.2300},
+  'ბაღდათი':{lat:42.0930,lon:43.0541},'ვანი':{lat:42.1042,lon:42.5050},'ზესტაფონი':{lat:42.1082,lon:43.0419},
+  'თერჯოლა':{lat:42.1284,lon:43.1310},'ქუთაისი':{lat:42.2679,lon:42.6880},'სამტრედია':{lat:42.1605,lon:42.3393},
+  'საჩხერე':{lat:42.3455,lon:43.4058},'ტყიბული':{lat:42.3590,lon:43.0705},'წყალტუბო':{lat:42.3496,lon:42.5961},
+  'ჭიათურა':{lat:42.2847,lon:43.2842},'ხარაგაული':{lat:41.9960,lon:43.0665},'ხონი':{lat:42.2915,lon:42.8917}
+};
+
+function fillLocRegions(){
+  var r=document.getElementById('locRegion');
+  r.innerHTML='<option value="">— პლანტაცია / ნაგულ. —</option>'+Object.keys(GEO_MUNICIPALITIES).map(function(k){ return '<option>'+esc(k)+'</option>'; }).join('');
+}
+function locRegionChange(region){
+  var sel=document.getElementById('locMunic');
+  sel.innerHTML='<option value="">— აირჩიეთ —</option>';
+  if(!region){ sel.disabled=true; USER_LOC=null; loadAmindiData(); return; }
+  (GEO_MUNICIPALITIES[region]||[]).forEach(function(m){ var o=document.createElement('option'); o.textContent=m; sel.appendChild(o); });
+  sel.disabled=false;
+}
+function locMunicChange(m){
+  if(!m || !MUNIC_COORDS[m]){ return; }
+  var c=MUNIC_COORDS[m];
+  USER_LOC={ lat:c.lat, lon:c.lon, name:m, source:'🏘️ არჩეული მუნიციპალიტეტი' };
+  loadAmindiData();
+}
+function usePlantationLoc(){
+  USER_LOC=null;
+  document.getElementById('locRegion').value='';
+  var sel=document.getElementById('locMunic'); sel.innerHTML='<option value="">— ჯერ რეგიონი —</option>'; sel.disabled=true;
+  loadAmindiData();
+}
+
+// ══ Plantation (read-only, from `plantations` table) ══
+function _normCoords(coords){
+  if(!Array.isArray(coords)) return [];
+  return coords.map(function(pt){
+    if(Array.isArray(pt)&&pt.length>=2) return [Number(pt[0])||0,Number(pt[1])||0];
+    if(pt&&typeof pt==='object'&&('lat' in pt)&&('lng' in pt)) return [Number(pt.lat)||0,Number(pt.lng)||0];
+    return null;
+  }).filter(Boolean);
+}
+function mapFromRow(r){
+  var meta=(r.meta&&typeof r.meta==='object')?r.meta:{};
+  var coords=_normCoords(r.map_coords).length?_normCoords(r.map_coords):_normCoords(meta.polygon);
+  var center=(Array.isArray(r.map_center)&&r.map_center.length===2)?r.map_center:(Array.isArray(meta.center)&&meta.center.length===2?meta.center:null);
+  return {
+    id:r.id, name:r.name||'', culture:r.culture||'', cultureIcon:(r.culture_icon||meta.cultureIcon||'🌱'),
+    region:r.region||'', munic:(r.munic||meta.munic||''), mapCenter:center, mapCoords:coords
+  };
+}
+async function loadActivePlantation(){
+  PLANTS=[]; ACTIVE_ID='';
+  if(!sb||!uid) return;
+  try{
+    var r=await sb.from('plantations').select('*').eq('user_id',uid);
+    if(!r.error && r.data) PLANTS=r.data.map(mapFromRow);
+  }catch(e){ console.warn('loadActivePlantation',e); }
+  try{
+    var s=await sb.from('user_settings').select('sval').eq('user_id',uid).eq('skey','its_active_pl');
+    if(!s.error && s.data && s.data[0]) ACTIVE_ID=s.data[0].sval;
+  }catch(e){}
+}
+function getActivePlantation(){
+  if(!PLANTS.length) return null;
+  return PLANTS.find(function(p){ return p.id===ACTIVE_ID; }) || PLANTS[0];
+}
+
+// ══ TABS ══
+function amindiTab(tab, btn){
+  var _aerr=document.getElementById('amindiError'); if(_aerr) _aerr.style.display='none';
+  var _acont=document.getElementById('amindiContent'); if(_acont) _acont.style.display='block';
+  ['forecast','hourly','spray','alerts','sms'].forEach(function(t){
+    var el = document.getElementById('amindiTab'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(el) el.style.display = t===tab ? 'block':'none';
+  });
+  document.querySelectorAll('#amindiTabs .auth-tab').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  if (tab === 'sms'){
+    window.wsmsLoadFromSupabase().then(function(){ window.wsmsRender(); });
+  }
+}
+
+function awWmoIcon(code, isDay){
+  const icons = {
+    0: isDay?'☀️':'🌙', 1: isDay?'🌤️':'🌙', 2:'⛅', 3:'☁️', 45:'🌫️', 48:'🌫️',
+    51:'🌦️', 53:'🌦️', 55:'🌧️', 61:'🌧️', 63:'🌧️', 65:'🌨️', 71:'🌨️', 73:'❄️', 75:'❄️',
+    77:'🌨️', 80:'🌦️', 81:'🌧️', 82:'⛈️', 85:'❄️', 86:'❄️', 95:'⛈️', 96:'⛈️', 99:'⛈️'
+  };
+  return icons[code] || '🌡️';
+}
+
+function awSprayScore(temp, wind, humidity, precip){
+  let score = 100;
+  const issues = [];
+  const warnings = [];
+  if(wind < 1){ score -= 20; warnings.push('ქარი ძალიან სუსტია — ინვერსიის საფრთხე'); }
+  else if(wind > 25){ score -= 50; issues.push('ქარი ძალიან ძლიერია (>25კმ/სთ) — დრიფტის საფრთხე'); }
+  else if(wind > 15){ score -= 20; warnings.push('ქარი ოდნავ ძლიერია (15–25კმ/სთ)'); }
+  else if(wind < 3){ score -= 10; warnings.push('ქარი სუსტია (<3კმ/სთ)'); }
+  if(temp > 30){ score -= 35; issues.push('ტემპერატურა ძალიან მაღალია (>30°C) — სწრაფი აორთქლება'); }
+  else if(temp > 25){ score -= 15; warnings.push('ტემპ. ოდნავ მაღალია (25–30°C)'); }
+  else if(temp < 5){ score -= 30; issues.push('ტემპერატურა ძალიან დაბალია (<5°C) — პრეპარატი გაიყინება'); }
+  else if(temp < 10){ score -= 10; warnings.push('ტემპ. დაბალია (5–10°C) — ნელი შეწოვა'); }
+  if(humidity < 30){ score -= 30; issues.push('ტენიანობა ძალიან დაბალია (<30%) — სწრაფი გამოშრობა'); }
+  else if(humidity < 40){ score -= 15; warnings.push('ტენიანობა დაბალია (30–40%)'); }
+  else if(humidity > 95){ score -= 10; warnings.push('ტენიანობა ძალიან მაღალია (>95%) — გამდინარების საფრთხე'); }
+  if(precip > 5){ score -= 50; issues.push('ნალექი ძალიან ბევრია — შეწამვლა შეუძლებელია'); }
+  else if(precip > 1){ score -= 30; issues.push('ნალექი >1მმ — პრეპარატი ჩამოიწმინდება'); }
+  else if(precip > 0.1){ score -= 10; warnings.push('მსუბუქი წვიმა — სიფრთხილე'); }
+  score = Math.max(0, Math.min(100, score));
+  const all = [...issues, ...warnings];
+  let grade, color, bgColor;
+  if(score >= 80){ grade='საუკეთესო'; color='#10b981'; bgColor='rgba(16,185,129,.12)'; }
+  else if(score >= 60){ grade='კარგი'; color='#059669'; bgColor='rgba(52,211,153,.14)'; }
+  else if(score >= 40){ grade='მისაღები'; color='#d97706'; bgColor='rgba(251,191,36,.14)'; }
+  else if(score >= 20){ grade='ცუდი'; color='#f97316'; bgColor='rgba(249,115,22,.12)'; }
+  else{ grade='შეუძლებელი'; color='#ef4444'; bgColor='rgba(239,68,68,.12)'; }
+  return {score, grade, color, bgColor, issues, warnings, all};
+}
+
+function awAgriAlerts(daily, hourly){
+  const alerts = [];
+  daily.temperature_2m_max.forEach((tmax, i)=>{
+    const tmin  = daily.temperature_2m_min[i];
+    const precip= daily.precipitation_sum[i];
+    const wind  = daily.wind_speed_10m_max[i];
+    const et0   = (daily.et0_fao_evapotranspiration||[])[i] || 0;
+    const rainProb = (daily.precipitation_probability_max||[])[i] || 0;
+    const date  = new Date(daily.time[i]);
+    const dname = geoDayMonth(date);
+    if(tmin <= 2){
+      alerts.push({ level: tmin <= 0 ? 'danger':'warning', icon:'🥶', title:'ყინვის საფრთხე',
+        desc:`${dname} — მინ. ტემპ. ${tmin}°C. ნაყოფი და ყვავილობა შეიძლება დაზიანდეს.`,
+        advice:'განიხილეთ სარწყავი დამცავი ან ბოლქვური გათბობა. ფარავეთ ახალგაზრდა ნარგავები.' });
+    }
+    if(tmax >= 32){
+      alerts.push({ level: tmax >= 38 ? 'danger':'warning', icon:'🔥', title:'სიცხის სტრესი',
+        desc:`${dname} — მაქს. ტემპ. ${tmax}°C. ${tmax>=38?'კრიტიკული სიცხე — ნაყოფი სერიოზულად დაზიანდება.':'ნაყოფი შეიძლება დაიწვას.'}`,
+        advice:'შეწამვლა ადრე დილით (06:00–08:00) ან საღამოს. გაზარდეთ სარწყავი სიხშირე. ფოთლური კვება გადადეთ.' });
+    }
+    if(et0 > 5 && precip < 1 && rainProb < 20){
+      alerts.push({ level:'warning', icon:'🏜️', title:'გვალვის საფრთხე',
+        desc:`${dname} — ორთქლაგვაპი ${et0.toFixed(1)}მმ, ნალექი ≈0. ნიადაგი სწრაფად გამოშრება.`,
+        advice:'გაზარდეთ მორწყვის სიხშირე. სულ. მიწის ფენა დაიცავეთ მულჩირებით.' });
+    }
+    const hourBase = i * 24;
+    const hourRH = (hourly.relative_humidity_2m||[]).slice(hourBase, hourBase+24);
+    const avgRH = hourRH.length ? hourRH.reduce((a,b)=>a+b,0)/hourRH.length : 0;
+    if(avgRH >= 80 && tmax >= 15 && tmax <= 28 && precip > 3){
+      alerts.push({ level:'warning', icon:'🍄', title:'სოკოვანი დაავადების რისკი',
+        desc:`${dname} — ტენიანობა ${avgRH.toFixed(0)}%, ტემპ. ${tmin}–${tmax}°C, ნალექი ${precip.toFixed(1)}მმ. ბოტრიტისი, ოიდიუმი, ბლანი.`,
+        advice:'გაამოწმეთ ფუნგიციდის კალენდარი. სამხრეთ კავკასიაში — ბოტრიტის წინააღმდეგ iprodione ან fludioxonil.' });
+    }
+    const wmoCode = daily.weather_code[i];
+    if([96,99].includes(wmoCode)){
+      alerts.push({ level:'danger', icon:'🌨️', title:'სეტყვის საფრთხე',
+        desc:`${dname} — ამინდის კოდი ${wmoCode} (სეტყვა). ნაყოფი და ფოთოლი მძიმედ დაზიანდება.`,
+        advice:'გამოიყენეთ სეტყვასაწინააღმდეგო ბადე. შეამოწმეთ სადაზღვევო პოლისი.' });
+    }
+    if(precip > 10 && ![96,99].includes(wmoCode)){
+      alerts.push({ level:'warning', icon:'🌧️', title:'ძლიერი წვიმა — შეწამვლის ეფექტი',
+        desc:`${dname} — ${precip.toFixed(1)}მმ ნალექი. შეწამლული პრეპარატი შეიძლება ჩამოიბანოს.`,
+        advice:'ნუ შეიწამლებთ 24სთ წინ. სისტემური პრეპარატი 4სთ-ში შეიწოვება.' });
+    }
+    if(wind > 25){
+      alerts.push({ level:'danger', icon:'💨', title:'ძლიერი ქარი — შეწამვლა შეუძლებელია',
+        desc:`${dname} — ქარი ${wind.toFixed(0)}კმ/სთ. დრიფტის ძლიერი რისკი, ხილის ჩამოცვენა.`,
+        advice:'გადადეთ შეწამვლა. ქარი >25კმ/სთ — შეწამვლა მიზანშეუწონელია. შეამოწმეთ ხის სამაგრები.' });
+    } else if(wind > 15){
+      alerts.push({ level:'info', icon:'🌬️', title:'ზომიერი ქარი — სიფრთხილე',
+        desc:`${dname} — ქარი ${wind.toFixed(0)}კმ/სთ. შეწამვლა შესაძლებელია, მაგრამ დრიფტი გასათვალისწინებელია.`,
+        advice:'გამოიყენეთ მსხვილ-წვეთიანი სფრინკლერი. ქარის ქვეითა მხარე გამოსცილდით.' });
+    }
+  });
+  const nightWinds = (hourly.wind_speed_10m||[]).slice(0,48).filter((_,i)=>{ const h=i%24; return h>=22||h<=6; });
+  const avgNightWind = nightWinds.length ? nightWinds.reduce((a,b)=>a+b,0)/nightWinds.length : 5;
+  if(avgNightWind < 2){
+    alerts.push({ level:'info', icon:'🌫️', title:'ტემპერატურული ინვერსიის საფრთხე',
+      desc:'ღამის ქარი ძალიან სუსტია (<2კმ/სთ). ინვერსიის დროს პრეპარატი შეიძლება გავრცელდეს მოულოდნელი მიმართულებით.',
+      advice:'ნუ შეიწამლებთ გამთენიისას ან გვიანი საღამოს. ამჯობინეთ 09:00–17:00 ფანჯარა.' });
+  }
+  const nightRH = (hourly.relative_humidity_2m||[]).slice(0,48).filter((_,i)=>{ const h=i%24; return h>=20||h<=8; });
+  const avgNightRH = nightRH.length ? nightRH.reduce((a,b)=>a+b,0)/nightRH.length : 0;
+  if(avgNightRH >= 90){
+    alerts.push({ level:'info', icon:'💧', title:'ღამის ნამი — სოკოს გაღვივება',
+      desc:`ღამის საშ. ტენიანობა ${avgNightRH.toFixed(0)}%. ფოთლებზე ხანგრძლივი სიმრთე — სოკოს სპორები ღვივდება.`,
+      advice:'დილის შეწამვლამდე გაიქნეთ ფოთოლი. ვენტილაციის გაუმჯობესება პრიორიტეტია.' });
+  }
+  if(!alerts.length){
+    alerts.push({ level:'ok', icon:'✅', title:'კრიტიკული გაფრთხილება არ არის',
+      desc:'7 დღის განმავლობაში სასოფლო-სამეურნეო კრიტიკული ამინდის მოვლენა არ იგეგმება.',
+      advice:'მიჰყევით ყოველდღიურ შეწამვლის ფანჯრის რეკომენდაციებს.' });
+  }
+  return alerts;
+}
+
+function awDrawChart(id, labels, datasets, yLabel){
+  const canvas = document.getElementById(id);
+  if(!canvas || !window.Chart) return;
+  if(_amindiCharts[id]) _amindiCharts[id].destroy();
+  const ctx = canvas.getContext('2d');
+  _amindiCharts[id] = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:false,
+      plugins:{ legend:{ display: datasets.length>1, labels:{ color:'#64748b', font:{size:10}, boxWidth:12 } } },
+      scales:{
+        x:{ ticks:{ color:'#64748b', font:{size:10} }, grid:{ color:'rgba(15,23,42,.05)' } },
+        y:{ ticks:{ color:'#64748b', font:{size:10} }, grid:{ color:'rgba(15,23,42,.07)' },
+            title:{ display:!!yLabel, text:yLabel||'', color:'#64748b', font:{size:9} } }
+      }
+    }
+  });
+}
+
+async function loadAmindiData(){
+  document.getElementById('amindiLoading').style.display='block';
+  document.getElementById('amindiError').style.display='none';
+  document.getElementById('amindiContent').style.display='none';
+
+  let lat = 41.6941, lon = 44.8337, locName = 'თბილისი', locSource='ნაგულისხმევი';
+
+  if(USER_LOC){
+    lat=USER_LOC.lat; lon=USER_LOC.lon; locName=USER_LOC.name; locSource=USER_LOC.source||'📍 არჩეული მდებარეობა';
+  } else {
+    const pl = getActivePlantation()||{};
+    if(pl.mapCoords && pl.mapCoords.length >= 3){
+      const pts = pl.mapCoords;
+      lat = pts.reduce((s,p)=>s+p[0],0)/pts.length;
+      lon = pts.reduce((s,p)=>s+p[1],0)/pts.length;
+      locName = pl.name || 'პლანტაცია';
+      locSource = '🎯 პლანტაციის ცენტრი (რუკიდან)';
+    } else if(pl.mapCenter){
+      lat = pl.mapCenter[0]; lon = pl.mapCenter[1];
+      locName = pl.name || 'პლანტაცია';
+      locSource = '🎯 პლანტაციის ცენტრი';
+    } else if(pl.munic && MUNIC_COORDS[pl.munic]){
+      const mc = MUNIC_COORDS[pl.munic];
+      lat = mc.lat; lon = mc.lon;
+      locName = pl.munic + (pl.name?' — '+pl.name:'');
+      locSource = '🏘️ მუნიციპალიტეტი (პლანტაციას რუკაზე საზღვრები არ აქვს)';
+    } else if(pl.region){
+      const regionCapitals = {
+        'კახეთი':{lat:41.9200,lon:45.4737},'თბილისი':{lat:41.6941,lon:44.8337},
+        'შიდა ქართლი':{lat:41.9875,lon:44.1098},'ქვემო ქართლი':{lat:41.4760,lon:44.7928},
+        'სამცხე-ჯავახეთი':{lat:41.6396,lon:42.9829},'აჭარა':{lat:41.6468,lon:41.6367},
+        'გურია':{lat:41.9312,lon:42.0107},'სამეგრელო-ზემო სვანეთი':{lat:42.5092,lon:41.8709},
+        'რაჭა-ლეჩხუმი და ქვემო სვანეთი':{lat:42.5237,lon:43.1501},
+        'მცხეთა-მთიანეთი':{lat:41.8449,lon:44.7206},'იმერეთი':{lat:42.2679,lon:42.6880}
+      };
+      const rc = regionCapitals[pl.region];
+      if(rc){ lat=rc.lat; lon=rc.lon; locName=pl.region+(pl.name?' — '+pl.name:''); locSource='🗺️ რეგიონის ცენტრი (პლანტაციას ზუსტი ლოკაცია არ აქვს)'; }
+      else { locName = pl.region; locSource='🗺️ რეგიონი'; }
+    }
+  }
+
+  const locLabel=document.getElementById('amindiLocLabel');
+  if(locLabel) locLabel.textContent='📍 '+locName;
+
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+    + `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code,is_day`
+    + `&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code,dew_point_2m`
+    + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunrise,sunset,precipitation_probability_max,et0_fao_evapotranspiration`
+    + `&timezone=Asia%2FTbilisi&forecast_days=7`;
+
+  try {
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('API error');
+    const d = await res.json();
+    document.getElementById('amindiLoading').style.display='none';
+    document.getElementById('amindiContent').style.display='block';
+    renderAmindiContent(d, locName, locSource, lat, lon);
+  } catch(e){
+    document.getElementById('amindiLoading').style.display='none';
+    document.getElementById('amindiError').style.display='block';
+    document.getElementById('amindiContent').style.display='block';
+  }
+}
+
+function renderAmindiContent(d, locName, locSource, lat, lon){
+  const cur = d.current;
+  const daily = d.daily;
+  const hourly = d.hourly;
+
+  var locBox = document.getElementById('amindiLocationBox');
+  if(!locBox){
+    locBox = document.createElement('div');
+    locBox.id = 'amindiLocationBox';
+    locBox.style.cssText='margin-bottom:12px;padding:10px 14px;background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.25);border-radius:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.82rem';
+    var cont=document.getElementById('amindiContent');
+    if(cont) cont.insertBefore(locBox, cont.firstChild);
+  }
+  if(locBox){
+    locBox.innerHTML = '<div style="font-weight:700;color:var(--text)">📍 '+(locName||'—')+'</div>'
+      + '<div style="font-size:.72rem;color:var(--muted)">'+(locSource||'')+'</div>'
+      + (lat&&lon?'<div style="font-size:.66rem;color:var(--muted);font-family:monospace;margin-left:auto">'+lat.toFixed(4)+', '+lon.toFixed(4)+'</div>':'');
+  }
+
+  const spray = awSprayScore(cur.temperature_2m, cur.wind_speed_10m, cur.relative_humidity_2m, cur.precipitation);
+  document.getElementById('amindiCurrentRow').innerHTML = `
+    <div class="aw-current-card">
+      <div class="aw-current-lbl">ტემპ.</div>
+      <div class="aw-current-val">${cur.temperature_2m.toFixed(1)}°C</div>
+      <div style="font-size:.68rem;color:var(--muted)">${awWmoIcon(cur.weather_code, cur.is_day)}</div>
+    </div>
+    <div class="aw-current-card">
+      <div class="aw-current-lbl">ტენიანობა</div>
+      <div class="aw-current-val">${cur.relative_humidity_2m}%</div>
+      <div style="font-size:.65rem;color:${cur.relative_humidity_2m<40?'#ef4444':cur.relative_humidity_2m>90?'#d97706':'#10b981'}">${cur.relative_humidity_2m<40?'დაბალი':cur.relative_humidity_2m>90?'მაღალი':'ნორმა'}</div>
+    </div>
+    <div class="aw-current-card">
+      <div class="aw-current-lbl">ქარი</div>
+      <div class="aw-current-val">${cur.wind_speed_10m.toFixed(0)}<span style="font-size:.7rem;font-weight:400">კმ/სთ</span></div>
+      <div style="font-size:.65rem;color:${cur.wind_speed_10m>25?'#ef4444':cur.wind_speed_10m>15?'#d97706':'#10b981'}">${cur.wind_speed_10m>25?'ძლიერი':cur.wind_speed_10m>15?'ზომიერი':cur.wind_speed_10m<2?'სუსტი':'ოპტ.'}</div>
+    </div>
+    <div class="aw-current-card" style="border-color:${spray.color}44;background:${spray.bgColor}">
+      <div class="aw-current-lbl">სამუშაოები</div>
+      <div class="aw-current-val" style="color:${spray.color}">${spray.score}%</div>
+      <div style="font-size:.65rem;font-weight:400;color:${spray.color}">${spray.grade}</div>
+    </div>`;
+
+  const banner = document.getElementById('amindiSprayBanner');
+  banner.style.background = spray.bgColor;
+  banner.style.borderColor = spray.color+'44';
+  const issueText = spray.all.length ? spray.all.slice(0,2).map(s=>`• ${s}`).join('<br>') : '• ყველა პარამეტრი ოპტიმალურ დიაპაზონშია';
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="font-size:1.6rem">${spray.score>=60?'✅':spray.score>=40?'⚠️':'❌'}</div>
+      <div style="flex:1">
+        <div style="font-size:.82rem;font-weight:500;color:${spray.color}">ახლანდელი პირობები აგრო სამუშაოებისთვის: ${spray.grade} (${spray.score}/100)</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:4px;line-height:1.5">${issueText}</div>
+      </div>
+    </div>`;
+
+  const dayNames=['კვი','ორშ','სამ','ოთხ','ხუთ','პარ','შაბ'];
+  document.getElementById('amindiDayCards').innerHTML = daily.time.map((t,i)=>{
+    const dt = new Date(t);
+    const dn = dayNames[dt.getDay()];
+    const icon = awWmoIcon(daily.weather_code[i], true);
+    const rain = daily.precipitation_sum[i];
+    return `<div class="aw-day-card">
+      <div class="aw-day-name">${dn}</div>
+      <div class="aw-day-name" style="font-size:.58rem">${dt.getDate()}/${dt.getMonth()+1}</div>
+      <div class="aw-day-icon">${icon}</div>
+      <div class="aw-day-hi">${daily.temperature_2m_max[i].toFixed(0)}°</div>
+      <div class="aw-day-lo">${daily.temperature_2m_min[i].toFixed(0)}°</div>
+      <div class="aw-day-rain">${rain>0?rain.toFixed(1)+'მმ':'—'}</div>
+    </div>`;
+  }).join('');
+
+  const dLabels = daily.time.map(t=>{ const dt=new Date(t); return dayNames[dt.getDay()]; });
+  awDrawChart('amindiTempChart', dLabels, [
+    { label:'მაქს °C', data:daily.temperature_2m_max, borderColor:'#f97316', backgroundColor:'rgba(249,115,22,.1)', tension:.4, fill:false, pointRadius:3 },
+    { label:'მინ °C',  data:daily.temperature_2m_min, borderColor:'#0ea5e9', backgroundColor:'rgba(14,165,233,.1)', tension:.4, fill:false, pointRadius:3 }
+  ]);
+
+  if(_amindiCharts['amindiRainChart']) _amindiCharts['amindiRainChart'].destroy();
+  if(window.Chart){
+    const rainCtx = document.getElementById('amindiRainChart').getContext('2d');
+    _amindiCharts['amindiRainChart'] = new Chart(rainCtx,{
+      type:'bar',
+      data:{ labels:dLabels, datasets:[{ data:daily.precipitation_sum, backgroundColor:'rgba(14,165,233,.5)', borderColor:'#0ea5e9', borderWidth:1, borderRadius:4 }]},
+      options:{ responsive:true, maintainAspectRatio:false, animation:false, plugins:{legend:{display:false}},
+        scales:{ x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(15,23,42,.05)'}}, y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(15,23,42,.07)'}} } }
+    });
+  }
+
+  awDrawChart('amindiWindChart', dLabels, [
+    { data:daily.wind_speed_10m_max, borderColor:'#06b6d4', backgroundColor:'rgba(6,182,212,.1)', tension:.4, fill:true, pointRadius:3 }
+  ]);
+
+  const now = new Date().getHours();
+  const todayHours = hourly.time.slice(0,24);
+  document.getElementById('amindiHourlyRow').innerHTML = todayHours.map((t,i)=>{
+    const h = new Date(t).getHours();
+    const isNow = h===now;
+    const icon = awWmoIcon(hourly.weather_code[i], h>=6&&h<=20);
+    return `<div class="aw-hour-card" style="${isNow?'border-color:#06b6d4;background:rgba(6,182,212,.08)':''}">
+      <div class="aw-hour-time">${String(h).padStart(2,'0')}:00</div>
+      <div class="aw-hour-icon">${icon}</div>
+      <div class="aw-hour-temp">${hourly.temperature_2m[i].toFixed(0)}°C</div>
+      <div class="aw-hour-wind">💨${hourly.wind_speed_10m[i].toFixed(0)}</div>
+      <div class="aw-hour-wind" style="color:#64748b">💧${hourly.relative_humidity_2m[i]}%</div>
+    </div>`;
+  }).join('');
+
+  const hLabels = todayHours.map(t=>String(new Date(t).getHours()).padStart(2,'0')+':00');
+  awDrawChart('amindiHourlyChart', hLabels, [
+    { label:'ტემპ °C', data:hourly.temperature_2m.slice(0,24), borderColor:'#f97316', tension:.4, fill:false, yAxisID:'y', pointRadius:2 },
+    { label:'ტენ %', data:hourly.relative_humidity_2m.slice(0,24), borderColor:'#0ea5e9', tension:.4, fill:false, yAxisID:'y1', pointRadius:2 }
+  ]);
+  if(_amindiCharts['amindiHourlyChart']){
+    _amindiCharts['amindiHourlyChart'].options.scales.y1 = {
+      position:'right', ticks:{color:'#0ea5e9',font:{size:9}}, grid:{display:false},
+      title:{display:true,text:'ტენ %',color:'#0ea5e9',font:{size:8}}
+    };
+    _amindiCharts['amindiHourlyChart'].update();
+  }
+
+  const windows = [];
+  for(let dd=0;dd<7;dd++){
+    const date = new Date(daily.time[dd]);
+    const dname = geoDayMonth(date);
+    [[6,10,'🌅 დილა'],[10,16,'☀️ შუადღე'],[16,20,'🌇 საღამო']].forEach(([hStart,hEnd,lbl])=>{
+      const baseIdx = dd*24;
+      const slice = hourly.temperature_2m.slice(baseIdx+hStart, baseIdx+hEnd);
+      if(!slice.length) return;
+      const avgTemp = slice.reduce((a,b)=>a+b,0)/slice.length;
+      const avgWind = hourly.wind_speed_10m.slice(baseIdx+hStart,baseIdx+hEnd).reduce((a,b)=>a+b,0)/slice.length;
+      const avgHum  = hourly.relative_humidity_2m.slice(baseIdx+hStart,baseIdx+hEnd).reduce((a,b)=>a+b,0)/slice.length;
+      const totalRain = hourly.precipitation.slice(baseIdx+hStart,baseIdx+hEnd).reduce((a,b)=>a+b,0);
+      const sp = awSprayScore(avgTemp, avgWind, avgHum, totalRain);
+      windows.push({dname, lbl, avgTemp, avgWind, avgHum, totalRain, sp});
+    });
+  }
+
+  document.getElementById('amindiSprayTable').innerHTML = windows.map(w=>`
+    <div class="aw-spray-row">
+      <div class="aw-spray-score" style="background:${w.sp.bgColor};color:${w.sp.color}">${w.sp.score}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.78rem;font-weight:400;color:var(--text)">${w.dname} · ${w.lbl}</div>
+        <div style="font-size:.68rem;color:var(--muted);margin-top:2px">
+          🌡️${w.avgTemp.toFixed(0)}°C · 💨${w.avgWind.toFixed(0)}კმ/სთ · 💧${w.avgHum.toFixed(0)}% · 🌧️${w.totalRain.toFixed(1)}მმ
+        </div>
+        ${w.sp.all.length?`<div style="font-size:.65rem;color:${w.sp.color};margin-top:2px">${w.sp.all[0]}</div>`:''}
+      </div>
+      <div style="font-size:.72rem;font-weight:500;color:${w.sp.color};white-space:nowrap">${w.sp.grade}</div>
+    </div>`).join('');
+
+  const alerts = awAgriAlerts(daily, hourly);
+  const alertColors = { danger:'rgba(239,68,68,.1)',warning:'rgba(251,191,36,.12)',info:'rgba(6,182,212,.1)',ok:'rgba(16,185,129,.1)' };
+  const alertBorder = { danger:'rgba(239,68,68,.3)',warning:'rgba(251,191,36,.35)',info:'rgba(6,182,212,.3)',ok:'rgba(16,185,129,.3)' };
+  document.getElementById('amindiAlertsList').innerHTML = alerts.map(a=>`
+    <div class="aw-alert-card" style="background:${alertColors[a.level]};border-color:${alertBorder[a.level]}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span style="font-size:1.3rem">${a.icon}</span>
+        <div style="font-size:.82rem;font-weight:500;color:var(--text)">${a.title}</div>
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);line-height:1.5;margin-bottom:6px">${a.desc}</div>
+      <div style="font-size:.72rem;font-weight:400;color:var(--text);background:rgba(6,182,212,.08);border-radius:7px;padding:6px 10px">
+        💡 ${a.advice}
+      </div>
+    </div>`).join('');
+
+  const counts = {danger:0,warning:0,info:0,ok:0};
+  alerts.forEach(a=>counts[a.level]=(counts[a.level]||0)+1);
+  const sumEl = document.getElementById('amindiAlertsSummary');
+  if(sumEl){
+    sumEl.innerHTML = `
+      <div class="aw-current-card" style="border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.06)"><div class="aw-current-lbl">კრიტიკული</div><div class="aw-current-val" style="color:#ef4444">${counts.danger}</div></div>
+      <div class="aw-current-card" style="border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.06)"><div class="aw-current-lbl">გაფრთხილება</div><div class="aw-current-val" style="color:#d97706">${counts.warning}</div></div>
+      <div class="aw-current-card" style="border-color:rgba(6,182,212,.25);background:rgba(6,182,212,.06)"><div class="aw-current-lbl">ინფორმაცია</div><div class="aw-current-val" style="color:#0891b2">${counts.info}</div></div>
+      <div class="aw-current-card" style="border-color:rgba(16,185,129,.25);background:rgba(16,185,129,.06)"><div class="aw-current-lbl">სტაბილური დღეები</div><div class="aw-current-val" style="color:#10b981">${counts.ok}</div></div>`;
+  }
+
+  triggerWeatherRiskHooks(alerts);
+}
+
+function triggerWeatherRiskHooks(alerts){
+  try{
+    const critical = (alerts||[]).filter(a=>['danger','warning'].includes(a.level));
+    window.__lastWeatherRiskAlerts = critical;
+    if(!critical.length) return;
+    console.log('Weather risk alerts ready for SMS hook', critical);
+    if(typeof sendWeatherRiskSMS === 'function') sendWeatherRiskSMS(critical, false);
+  }catch(_e){}
+}
+
+// ════════════════════════════════════════════════════════════════
+//  WEATHER SMS — cloud-synced config (table: wsms_config)
+//  columns: user_id, enabled bool, severity text, phones jsonb, sent_log jsonb
+// ════════════════════════════════════════════════════════════════
+window.wsmsGetConfig = function(){
+  try {
+    const c = JSON.parse(localStorage.getItem('its_wsms') || '{}');
+    return {
+      enabled: !!c.enabled,                                   // SAFETY: default false
+      severity: c.severity || 'warning',
+      phones: Array.isArray(c.phones) ? c.phones : []          // SAFETY: default empty
+    };
+  } catch(e) { return { enabled:false, severity:'warning', phones:[] }; }
+};
+
+// Upsert config to Supabase. Tries WITH sent_log first; if that column is
+// missing (error), silently falls back to writing without it.
+async function wsmsCloudUpsert(cfg){
+  if(!sb || !uid) return;
+  const base = {
+    user_id: uid,
+    enabled: !!cfg.enabled,
+    severity: cfg.severity || 'warning',
+    phones: cfg.phones || [],
+    updated_at: new Date().toISOString()
+  };
+  const withLog = Object.assign({}, base, { sent_log: WSMS_SENTLOG || {} });
+  try {
+    const r = await sb.from('wsms_config').upsert(withLog, { onConflict:'user_id' });
+    if (r && r.error) {
+      // sent_log column may not exist — fall back to base object
+      try { await sb.from('wsms_config').upsert(base, { onConflict:'user_id' }); } catch(e){}
+    }
+  } catch(e) {
+    try { await sb.from('wsms_config').upsert(base, { onConflict:'user_id' }); } catch(_e){}
+  }
+}
+
+window.wsmsSetConfig = function(cfg){
+  try { localStorage.setItem('its_wsms', JSON.stringify(cfg)); } catch(e){}
+  wsmsCloudUpsert(cfg);
+};
+
+// Load wsms config (and shared sent_log) from Supabase → localStorage mirrors
+window.wsmsLoadFromSupabase = async function(){
+  try {
+    if (!sb || !uid) return;
+    const { data, error } = await sb.from('wsms_config').select('*').eq('user_id', uid).maybeSingle();
+    if (error) { console.warn('wsms load error:', error.message); return; }
+    if (data) {
+      const cfg = {
+        enabled: !!data.enabled,
+        severity: data.severity || 'warning',
+        phones: Array.isArray(data.phones) ? data.phones : []
+      };
+      try { localStorage.setItem('its_wsms', JSON.stringify(cfg)); } catch(e){}
+      if (data.sent_log && typeof data.sent_log === 'object') {
+        WSMS_SENTLOG = data.sent_log;
+        try { localStorage.setItem('its_weather_sms_log', JSON.stringify(WSMS_SENTLOG)); } catch(e){}
+      }
+    } else {
+      localStorage.removeItem('its_wsms');
+    }
+  } catch(e){ console.warn('wsms load error', e); }
+};
+
+// merged sent-log read (cloud mirror + localStorage fallback)
+function wsmsGetSentLog(){
+  let log = {};
+  try { log = JSON.parse(localStorage.getItem('its_weather_sms_log') || '{}'); } catch(e){}
+  if (WSMS_SENTLOG && typeof WSMS_SENTLOG === 'object') {
+    for (const k in WSMS_SENTLOG) { if (!log[k] || WSMS_SENTLOG[k] > log[k]) log[k] = WSMS_SENTLOG[k]; }
+  }
+  return log;
+}
+function wsmsSaveSentLog(log){
+  WSMS_SENTLOG = log;
+  try { localStorage.setItem('its_weather_sms_log', JSON.stringify(log)); } catch(e){}
+  // push to cloud so the rate-limit is shared across devices (falls back silently)
+  wsmsCloudUpsert(window.wsmsGetConfig());
+}
+
+// ── Send weather risk SMS to all configured phones. `forceSend=true` bypasses rate limit.
+async function sendWeatherRiskSMS(alerts, forceSend){
+  const smsCfg = window.sms_config || {};
+  if (smsCfg.method !== 'smsoffice' || !smsCfg.proxyUrl) { console.log('[weather SMS] SMSOffice not configured'); return; }
+  if (typeof window.smsSendViaApi !== 'function') { console.log('[weather SMS] API not loaded'); return; }
+
+  const wcfg = window.wsmsGetConfig();
+  if (!wcfg.enabled) { console.log('[weather SMS] disabled'); return; }
+  if (!wcfg.phones.length) { console.log('[weather SMS] no phones configured'); return; }
+
+  const filtered = (alerts||[]).filter(function(a){
+    if (wcfg.severity === 'danger') return a.level === 'danger';
+    return a.level === 'danger' || a.level === 'warning';
+  });
+  if (!filtered.length) { console.log('[weather SMS] no alerts after severity filter'); return; }
+
+  const today = new Date().toISOString().slice(0,10);
+  let sentLog = wsmsGetSentLog();
+  const FOUR_HOURS = 4 * 60 * 60 * 1000;
+
+  const toSend = [];
+  for (const a of filtered) {
+    const key = today + '|' + a.level + '|' + (a.title||'').slice(0,40);
+    const last = sentLog[key] || 0;
+    if (!forceSend && (Date.now() - last) < FOUR_HOURS) {
+      console.log('[weather SMS] skipped (rate limit):', key);
+      continue;
+    }
+    toSend.push({ alert: a, key });
+  }
+  if (!toSend.length) { console.log('[weather SMS] all alerts rate-limited'); return; }
+
+  let locName = '';
+  try {
+    if (USER_LOC && USER_LOC.name) locName = USER_LOC.name;
+    else { const pl = getActivePlantation(); if (pl) locName = pl.munic || pl.region || pl.name || ''; }
+  } catch(e){}
+
+  let body = 'AgroInTechSol ⚠️\n' + today + (locName ? ' | ' + locName : '') + '\n';
+  for (let ai = 0; ai < toSend.length; ai++) {
+    const t = toSend[ai];
+    let ln = (t.alert.icon||'⚠️') + ' ' + (t.alert.title||'') + '\n' + (t.alert.desc||'') + '\n';
+    // პირველი რისკი აუცილებლად უნდა ჩაჯდეს — თუ გრძელია, მოვჭრათ
+    if (ai === 0 && (body + ln + 'agrointechsol.ge').length > 420) {
+      const room = 420 - (body + 'agrointechsol.ge').length - 2;
+      ln = (t.alert.icon||'⚠️') + ' ' + (t.alert.title||'').slice(0, Math.max(0, room)) + '\n';
+    } else if ((body + ln + 'agrointechsol.ge').length > 420) {
+      break;
+    }
+    body += ln;
+  }
+  body += 'agrointechsol.ge';
+
+  let okCount = 0, failCount = 0;
+  for (const p of wcfg.phones) {
+    const phoneStr = typeof p === 'string' ? p : (p.phone || '');
+    if (!phoneStr) continue;
+    try {
+      await window.smsSendViaApi(phoneStr, body);
+      okCount++;
+      toSend.forEach(function(t){ sentLog[t.key] = Date.now(); });
+    } catch(e) {
+      console.warn('[weather SMS] failed to', phoneStr, e);
+      failCount++;
+    }
+  }
+  wsmsSaveSentLog(sentLog);
+  if (okCount > 0) notify('🌤️📲 ამინდის SMS გაიგზავნა ' + okCount + '-ს');
+  if (failCount > 0) notify('❌ ვერ გაიგზავნა ' + failCount + ' SMS', 'var(--red)');
+}
+window.sendWeatherRiskSMS = sendWeatherRiskSMS;
+
+// ════════════════════════════════════════════════════════════════
+//  WSMS UI — Weather SMS tab controls
+// ════════════════════════════════════════════════════════════════
+window.wsmsRender = function(){
+  const cfg = window.wsmsGetConfig();
+  const en = document.getElementById('wsmsEnabled');
+  if (en) en.checked = !!cfg.enabled;
+  document.querySelectorAll('input[name="wsmsSeverity"]').forEach(function(r){ r.checked = (r.value === cfg.severity); });
+  document.querySelectorAll('.wsms-sev-opt').forEach(function(lbl){
+    const sev = lbl.getAttribute('data-sev');
+    if (sev === cfg.severity){
+      lbl.style.borderColor = sev === 'danger' ? '#dc2626' : '#0284c7';
+      lbl.style.background = sev === 'danger' ? 'rgba(220,38,38,.06)' : 'rgba(2,132,199,.06)';
+    } else {
+      lbl.style.borderColor = 'var(--border)';
+      lbl.style.background = 'transparent';
+    }
+  });
+  const listEl = document.getElementById('wsmsListEl');
+  const emptyEl = document.getElementById('wsmsEmptyEl');
+  const cntEl = document.getElementById('wsmsCount');
+  if (cntEl) cntEl.textContent = cfg.phones.length;
+  if (!listEl) return;
+  if (!cfg.phones.length){
+    listEl.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+  listEl.innerHTML = cfg.phones.map(function(p, i){
+    const nm = (p.name||'').replace(/</g,'&lt;');
+    const ph = (p.phone||'').replace(/</g,'&lt;');
+    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#fff;border:1px solid var(--border);border-radius:9px">' +
+           '<div style="width:26px;height:26px;border-radius:50%;background:#e0f2fe;color:#0369a1;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;flex-shrink:0">' + (i+1) + '</div>' +
+           '<div style="flex:1;min-width:0;overflow:hidden"><div style="font-weight:600;color:var(--text);font-size:.88rem">' + nm + '</div>' +
+           '<div style="font-family:monospace;font-size:.78rem;color:var(--muted)">' + ph + '</div></div>' +
+           '<button onclick="wsmsRemove(' + i + ')" style="width:auto;margin:0;background:#fee2e2;border:1px solid #fecaca;color:#b91c1c;border-radius:7px;padding:6px 10px;font-size:.78rem" title="წაშლა">🗑</button>' +
+           '</div>';
+  }).join('');
+};
+
+window.wsmsAddNumber = function(){
+  const nameEl = document.getElementById('wsmsNewName');
+  const phoneEl = document.getElementById('wsmsNewPhone');
+  const name = (nameEl.value||'').trim();
+  let phone = (phoneEl.value||'').replace(/\D/g, '');
+  if (!name){ notify('⚠️ სახელი სავალდებულოა','var(--orange)'); nameEl.focus(); return; }
+  if (phone.length !== 9 || phone[0] !== '5'){
+    notify('⚠️ ტელეფონი: 9 ციფრი, იწყება 5-ით (მაგ. 555123456)','var(--orange)');
+    phoneEl.focus(); return;
+  }
+  const cfg = window.wsmsGetConfig();
+  if (cfg.phones.length >= 10){ notify('⚠️ მაქსიმუმ 10 ნომერი შესაძლებელია','var(--orange)'); return; }
+  if (cfg.phones.some(function(p){ return p.phone === phone; })){ notify('⚠️ ეს ნომერი უკვე დამატებულია','var(--orange)'); return; }
+  cfg.phones.push({ name: name, phone: phone });
+  window.wsmsSetConfig(cfg);
+  nameEl.value = ''; phoneEl.value = '';
+  window.wsmsRender();
+  notify('✅ ' + name + ' დაემატა');
+};
+
+window.wsmsRemove = function(i){
+  const cfg = window.wsmsGetConfig();
+  if (i < 0 || i >= cfg.phones.length) return;
+  const removed = cfg.phones[i];
+  cfg.phones.splice(i, 1);
+  window.wsmsSetConfig(cfg);
+  window.wsmsRender();
+  notify('🗑 ' + (removed.name||'') + ' წაიშალა');
+};
+
+window.wsmsSave = function(){
+  const en = document.getElementById('wsmsEnabled');
+  const sevEl = document.querySelector('input[name="wsmsSeverity"]:checked');
+  const cfg = window.wsmsGetConfig();
+  cfg.enabled = !!(en && en.checked);
+  cfg.severity = sevEl ? sevEl.value : 'warning';
+  window.wsmsSetConfig(cfg);
+  const st = document.getElementById('wsmsStatus');
+  if (st) st.textContent = '✅ შენახულია — ' + (cfg.enabled?'ჩართული':'გამორთული') + ', ' + cfg.phones.length + ' ნომერი';
+  window.wsmsRender();
+  notify('✅ კონფიგურაცია შენახულია');
+};
+
+window.wsmsHandleSeverityChange = function(val){
+  const cfg = window.wsmsGetConfig();
+  cfg.severity = val;
+  window.wsmsSetConfig(cfg);
+  window.wsmsRender();
+};
+
+window.wsmsTestSend = async function(){
+  const cfg = window.wsmsGetConfig();
+  const st = document.getElementById('wsmsStatus');
+  if (!cfg.phones.length){ if(st) st.textContent='⚠️ ჯერ დაამატე მინიმუმ 1 ნომერი'; return; }
+  const smsCfg = window.sms_config || {};
+  if (smsCfg.method !== 'smsoffice' || !smsCfg.proxyUrl){ if(st) st.textContent='⚠️ SMS პროქსი დააკონფიგურირე ჯერ'; return; }
+  if (!cfg.enabled){
+    cfg.enabled = true;
+    window.wsmsSetConfig(cfg);
+  }
+  if(st) st.textContent = '⏳ ვუგზავნი ტესტ SMS-ს ' + cfg.phones.length + ' ნომერს...';
+  const testAlerts = [
+    { level:'warning', icon:'🌧️', title:'ტესტი — ძლიერი წვიმა', desc:'ხვალ 8:00-14:00, 15-20მმ' },
+    { level:'warning', icon:'💨', title:'ძლიერი ქარი', desc:'40-50 კმ/სთ' }
+  ];
+  try {
+    await window.sendWeatherRiskSMS(testAlerts, true); // forceSend=true
+    if(st) st.textContent = '✅ ტესტი გაიგზავნა — შეამოწმე ტელეფონები';
+  } catch(e){
+    if(st) st.textContent = '❌ შეცდომა: ' + e.message;
+  }
+};
+
+setTimeout(function(){
+  document.querySelectorAll('.wsms-sev-opt').forEach(function(lbl){
+    lbl.addEventListener('click', function(){ setTimeout(window.wsmsRender, 10); });
+  });
+}, 200);
+
+// ══ session resume on load ══
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; window.currentUser={id:uid,isDemo:false}; showApp(s.data.session.user.email); } }catch(e){} })();
+</script>
+</body></html>

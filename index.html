@@ -3805,15 +3805,15 @@ const accessToken = session?.access_token;
       </div>
     </div>
 
-    <div class="module-card card-teal clickable" id="mod-amindi" onclick="tryOpenModule('amindi')">
+    <div class="module-card card-teal clickable" id="mod-amindi" onclick="window.open('./amindi.html','_blank')">
       <div class="module-status status-active" id="status-amindi">✓ აქტიური</div>
       <div class="card-icon-wrap">🌤️</div>
       <div class="card-title">ამინდის პროგნოზი</div>
-      <div class="card-desc">7-დღიანი სასოფლო-სამეურნეო ამინდი — აგრო სამუშაოების ფანჯრები, რისკები და გაფრთხილებები.</div>
-      <div class="card-tags"><span class="tag">🌡️ ტემპ.</span><span class="tag">💧 ტენი</span><span class="tag">💨 ქარი</span><span class="tag">⚡ გაფრთხ.</span></div>
+      <div class="card-desc">7-დღიანი სასოფლო-სამეურნეო ამინდი (არჩეული პლანტაციის ტერიტორიაზე) — აგრო სამუშაოების ფანჯრები, რისკები, გაფრთხილებები და SMS. ცალკე გვერდი, ღრუბელში.</div>
+      <div class="card-tags"><span class="tag">🌡️ ტემპ.</span><span class="tag">💧 ტენი</span><span class="tag">💨 ქარი</span><span class="tag">📲 SMS</span></div>
       <div class="card-footer">
-        <button class="open-btn" id="btn-amindi" style="background:rgba(6,182,212,.15);color:#0369a1;border-color:rgba(6,182,212,.3)">გახსნა <span class="card-open-arrow">→</span></button>
-        <span class="card-ver">v1.0</span>
+        <button class="open-btn" id="btn-amindi" onclick="event.stopPropagation();window.open('./amindi.html','_blank')" style="background:rgba(6,182,212,.15);color:#0369a1;border-color:rgba(6,182,212,.3)">🌤️ გახსნა <span class="card-open-arrow">→</span></button>
+        <span class="card-ver">v2.0 · ცალკე გვერდი</span>
       </div>
     </div>
 
