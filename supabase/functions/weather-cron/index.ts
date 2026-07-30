@@ -40,7 +40,7 @@ function coordsFromPlantation(pl: any){
 async function fetchForecast(lat: number, lon: number){
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
     + `&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code,dew_point_2m`
-    + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,precipitation_probability_max,et0_fao_evapotranspiration,time`
+    + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,precipitation_probability_max,et0_fao_evapotranspiration`
     + `&timezone=Asia%2FTbilisi&forecast_days=7`;
   const r = await fetch(url);
   if(!r.ok) throw new Error("open-meteo "+r.status);
