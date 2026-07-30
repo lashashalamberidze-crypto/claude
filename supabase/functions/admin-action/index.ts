@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -118,9 +119,11 @@ serve(async (req) => {
       const ev = body.event || {};
       if (!ev.title) return json({ error: "ღონისძიების სათაური აუცილებელია" }, 400);
 
-      const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-      const FROM = Deno.env.get("EVENT_FROM_EMAIL") || "AgroInTechSol <onboarding@resend.dev>";
-      if (!RESEND_API_KEY) return json({ error: "RESEND_API_KEY არ არის დაყენებული (Edge Function Secrets)" }, 500);
+      const GMAIL_USER = Deno.env.get("GMAIL_USER");            // intechsolltd@gmail.com
+      const GMAIL_APP_PASSWORD = Deno.env.get("GMAIL_APP_PASSWORD"); // Google App Password (16 სიმბოლო)
+      const FROM_NAME = Deno.env.get("EVENT_FROM_NAME") || "AgroInTechSol";
+      if (!GMAIL_USER || !GMAIL_APP_PASSWORD)
+        return json({ error: "GMAIL_USER / GMAIL_APP_PASSWORD არ არის დაყენებული (Edge Function Secrets)" }, 500);
 
       // მიმღებები — ყველა რეალური მომხმარებელი (demo-ს გამოკლებით)
       const { data: users, error: uErr } = await adminClient
@@ -154,19 +157,34 @@ serve(async (req) => {
           </div>
         </div>`;
 
-      const fromAddr = (FROM.match(/<([^>]+)>/)?.[1]) || FROM;
+      // Gmail SMTP-ით გაგზავნა (from = intechsolltd@gmail.com), BCC batch-ებად
+      const client = new SMTPClient({
+        connection: {
+          hostname: "smtp.gmail.com",
+          port: 465,
+          tls: true,
+          auth: { username: GMAIL_USER, password: GMAIL_APP_PASSWORD },
+        },
+      });
       let sent = 0, failed = 0;
-      const CHUNK = 45;
-      for (let i = 0; i < emails.length; i += CHUNK) {
-        const batch = emails.slice(i, i + CHUNK);
-        try {
-          const r = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: { "Authorization": "Bearer " + RESEND_API_KEY, "Content-Type": "application/json" },
-            body: JSON.stringify({ from: FROM, to: [fromAddr], bcc: batch, subject, html }),
-          });
-          if (r.ok) sent += batch.length; else failed += batch.length;
-        } catch (_e) { failed += batch.length; }
+      const CHUNK = 40; // Gmail: ~100 მიმღები/წერილი — 40 უსაფრთხოა
+      try {
+        for (let i = 0; i < emails.length; i += CHUNK) {
+          const batch = emails.slice(i, i + CHUNK);
+          try {
+            await client.send({
+              from: `${FROM_NAME} <${GMAIL_USER}>`,
+              to: GMAIL_USER,
+              bcc: batch,
+              subject,
+              content: (ev.title || "") + " — " + (when || ""),
+              html,
+            });
+            sent += batch.length;
+          } catch (_e) { failed += batch.length; }
+        }
+      } finally {
+        try { await client.close(); } catch (_e) { /* ignore */ }
       }
       return json({ success: true, action: "notify_event", sent, failed, total: emails.length });
     }

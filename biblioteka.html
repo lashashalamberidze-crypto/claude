@@ -862,7 +862,7 @@ window.eventNotify = async function(ev){
     alert('✅ მეილი გაიგზავნა.'+(d.sent!=null?(' მიმღები: '+d.sent):'')+(d.failed?(' · ვერ გაიგზავნა: '+d.failed):''));
   }catch(e){
     var em=(e&&e.message)?e.message:String(e);
-    alert('❌ მეილი ვერ გაიგზავნა: '+em+'\n\nდარწმუნდი რომ Supabase-ზე განთავსებულია edge function „notify-event".');
+    alert('❌ მეილი ვერ გაიგზავნა: '+em+'\n\nდარწმუნდი რომ admin-action edge function განახლებულია და GMAIL_USER / GMAIL_APP_PASSWORD დაყენებულია.');
   }
 };
 </script>
