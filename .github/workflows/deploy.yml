@@ -46,5 +46,6 @@ jobs:
             **/.git*/**
             **/.github/**
             sql/**
+            supabase/**
             *.md
             README*
