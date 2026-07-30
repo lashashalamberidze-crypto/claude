@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📚 აგრო ბიბლიოთეკა</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;font-family:'Noto Sans Georgian',system-ui,-apple-system,"Segoe UI",sans-serif}
+  :root{
+    --bg:#f1f5f9;--surf:#ffffff;--surf2:#f8fafc;--text:#0f172a;--muted:#64748b;
+    --border:#e2e8f0;--border2:#cbd5e1;--accent:#10b981;--accent2:#34d399;--accent-d:#059669;
+  }
+  body{margin:0;background:var(--bg);color:var(--text);padding:14px;max-width:820px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.95rem;margin:0 0 8px;color:#334155}
+  .card{background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input,select,textarea{width:100%;padding:11px;border:1.5px solid var(--border2);border-radius:10px;font-size:1rem;background:#fff;color:var(--text)}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent-d)}
+  button{background:var(--accent-d);color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:var(--accent-d);border:1.5px solid var(--accent-d)}
+  button.teal{background:#0d9488}button.o{background:#ea580c}button.r{background:#dc2626}
+  button.gray{background:#fff;color:#475569;border:1.5px solid var(--border2)}
+  button:active{transform:scale(.98)}
+  .row2{display:flex;gap:8px;flex-wrap:wrap}.row2>*{flex:1;min-width:140px}
+  .muted{font-size:.8rem;color:var(--muted)}
+  .ok{color:#16a34a;font-weight:700}.warn{color:#dc2626;font-weight:700}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+  /* tabs */
+  .tabbar{display:flex;gap:8px;margin-bottom:14px}
+  .tabbar button{flex:1;margin:0;background:#fff;color:#475569;border:1.5px solid var(--border);padding:12px 10px;font-size:.92rem;border-radius:12px}
+  .tabbar button.active{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;border-color:transparent;box-shadow:0 4px 14px rgba(16,185,129,.25)}
+  /* toast */
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:11px 20px;border-radius:12px;font-size:.86rem;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:99999;box-shadow:0 8px 30px rgba(0,0,0,.3);max-width:90vw;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* SRCA attribution */
+  .srca-partner-block{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #e2e8f0;border-left:4px solid #d4202c;border-radius:12px;padding:12px 16px;margin-bottom:16px;box-shadow:0 2px 10px rgba(15,23,42,.04);transition:all .2s}
+  .srca-partner-block:hover{border-color:#cbd5e1;border-left-color:#b81824;box-shadow:0 4px 16px rgba(15,23,42,.07)}
+  .srca-partner-logo{flex:0 0 auto;width:50px;height:auto;background-image:url("data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCADgAIwDASIAAhEBAxEB/8QAHQAAAgIDAQEBAAAAAAAAAAAAAAcGCAEDBQQCCf/EAE0QAAEDBAAEAgYECgUICwAAAAECAwQABQYRBxIhMRNBCBQiMlFhFUJxkRYjNjhScoGxwuEYM2R0lBckRFdigqHBJic1Q0dUc4OEktH/xAAbAQABBQEBAAAAAAAAAAAAAAAAAgMEBQYHAf/EADMRAAEEAQMDAwIEBAcAAAAAAAEAAgMEEQUSIQYTMSJBURRhFSMzcTJTgaEWJCVCkbHh/9oADAMBAAIRAxEAPwC5dFBOhvrQToboQiisc3Tej91fDziG0Fa1pbSNbUs6H30IXFvGW2W05NaMdmvut3C78/qaA0opXyDatq1odPjXafebZZcdcVpDaSpR+AHc0rskzOzYBl8qfm+axnoF2fbas0FMULVCUE6VtY2QFbHU1I8h4g4Xbot6Tcru2EWxLSJqUjmID2gnlA97e+uu1eFzR7r3BS+kcS8nyfMbfJwr1M4YhLqHZ6nAVynQNcoT3ASoVo4f8WM0aziwYPmWOMes3Txi3cmXwQpKSSNpHbpoVwskwPE7Jm1kd4fsupTakPPTYzT5LJS8naVd9E7JNfPCVWPWKHLy7Ocect71glFqHeVSC6qV4qtey336bAqkitF2oOi7g4HhTHMHZB2p7Xq2ZFLyuy3C35AmFaoniCfALAUZexpPtfV0akY35mocjiVhZzo4Ym9NfTAj+slr6nJrm3z9t68t12cVySz5Na0XKzTEyY6lKT20oFKiDtPcdRV3kKHtIXYooBrBVryP3V6vFmigHdBPXXWhCKKKKEIooooQolxaflRsGnSImTDG3GilZuBZ8XwwCNp5fPfb9tK298WMlvuDTlY5CVapXKExrk6nYURraikjpv8A516OJfEJ2ZnF0wiZakItNvbQ5KfWsfj+bRA18jVUONPFfIPpqfYLLPDNtGkuFCNeKB218NVTT2Z5rBgrnGPJUyKJgi7jk+rHxJz6JjkqBfswiquNxkM+rTW2AfUEBQ5wUjvzD7q7mc3O/ZffsrsEm8bxAsR1R5TXsqacSAVEEd9kVUHg3cLtOziOkzlq59haXDzBQ+HWrJcYLmrFOFMW4WyGIqo6xythzmCiT1JPnVfqFqzG9tYHLne6k14Yi3uLzR52H2t65RblZpFxmXEIQ8+/tYdCOgKd+6fsro2+/Yk7N9ejY28tVvQWfHdJISFDXtJPv68vhSTb9ICQUoclY0w66lOkKOup+Ncq48c7xIbJatjLDoB5FJA0N/EedMnSp5GkOZ6vnKWbgx5/srSYzMhWKCxj1lY8dpXO6iQ8vR9rqoKUft6CuRkl0gBcGYlpcRmAVJSFAuJe5veBR+40u+F9+cyXhp4N0bdnvuvcz6UbSTo+yQodgK8HH7Mr3i1zsb8Hw0KW1p5OgpLoA6D7RVPFpJF/aeXc85Ut9sdnKl6siwX6Olx3bBIiMxXEuOrO/FUonYIX318qkWM5RbVX4z8cublquE8ITIklv8W4kdkhHZP21Xn/AC4PPx0Rp2Nx30p6kduY/PpXwvjTLfSltizNMLWsJKk66D4CryTTbIYCxuCPuoHfa/glXGtXETILE3llyyZaJkeEWhbo6AB4oPvEHzpaZ3xV4rT5VwmYfPixmJHhJhxFJSVMjpzK+dfWbMypuA2JceV4I8ArcQo+0skb/bVRrlkN8h5G7IZuDyHWHCGyFHSevwqRpVqxcgB3YI/ukWI44+dvlX9wXizcrSlFqztsuNRo3Ou9oHsvK1s7QPd12rgcbOOU/HpOAZhhz/0rid1cealt+Fyh87CRtZHskE/tpQ+j7xEZyBEu05M2Hny2Q+tQ362k76AfV0KZ3DLC7hnD0zGri5FhcObY6PDsaQFOSFbKkq5h1QArR+dS6N2UWXV5+T7JiaEAbgrNQXjIitPEa8RtLmvhsb1W+tUVluOw2y2NIbQEJHwSOwrbVwoqKKKKEKsXE7GpsfixkeQZDZ1osUtplEOYhzfOodwQO1VT494zNtmXu3RMVSbZNAMVxA2CB8fhX6Q8T8efyfC7hZY9z+jXH0giSUc/hgHZ0Kqq7eccfxqTjiXk3phlzwnnH0cjjBB0SEnro1RWGup2TYbyHeynw7ZmbHeyrLwwujFozGFIkL5WFHw3FDy30q0OQ2I5Fhr+JSXVxoKW/Gt7ijsvKPXVVj4lQrXac/ksWeOqPb2loU2k9fhvR86spjmZ2bP8aaTZ5iYl6tDKUhpXTxRrqRTOsNc8x2Gfvn4S6h5LHKp16tsuzXR633BhTb7SikpV215EV420OOuhpOytZCQB5k1Z/jdZsUdwOHe7hHK5gBSXwNEq+B+PWq+YHeoGPZTEu1wtibpFaUeeKo65x5datKd76qt3GDlRpou1JsJ4VrOEuPSsY4NvM3VSbc8SlXjoT4inArsABUC9J7G58jGLVfWYnhRISdK9rmKubXWnTi+QWPIcEZudkfTASwNIKvxng7+ry+fw+VR3jNmWOYzhbcS8WtMmS42QiJz7CiR7/wDzrEU7Vn8SyG5OTkK6mhZ9NjKpYjRX1OtjvUm4ZYxJyfLIkFtKwwlYW84E7CAOu6j7RbkT0JUPCYce7fogntVv7Ljttx3FrXBxN9u33C4pSTIKeflHns+W62ep3m1ow33Kpq0Jk/ot2e3RiLYkzZralwIEctQJY9kPK1o7HlqqdTX/AFmZIeWOdbjhUFftqyvpHZjYmcRXgzc1D1za5VPuIG0qPnqlJwkh4op6VNydp17wFtiI0lJ06onX3VB0Zpr1TI8clSLb+84Y9lO/RtxB8szb/c1qgRVoIiulO1KV1+rVvvR+w+HimMSb7MdUi43ZfPLcec0nQJCdA9ulJW9T58jIrVj+GWTw8jaLbnqyBzR1M9yef3dgVaHJ8YtmXYr9BZDFU7EdDanm2nC2edJB6Ede4p/TmunmdZeMfCZsloAaFIQQQCCCPLVFa47KGGW2WwQhtAQkE76AaFbKulDRRRRQhYWARo9qrDxmwHHcmz675DgjK3stx8IN5tQQW2p6FJHLo9tgAnp3qz9R3OJl4s1hlXPGscavN0K0JEYLDSnQSASVH4DZpLmB4LT7r0Eg5CpFm2LWPPcLYuFkUWZcPmDjakadbWPeSpPfW+m6W3DfDMpby22vW9l9DgUorOilISnuCfnVp/SAt7OO8ScYuNhtibdc8jBRdHB/VqCEj2eXtv51527hcEQJVvRbtsv9ELbb6oPmdis9ctilmAnIP9lZxs7uJB7Lm8RMROdcNuVmZGtnKNNwucElae/3mqsvcNszSJiTZ1FMLosk639nxqzLFotrEZTbsda5XNtKzJ0UH9Wui19MFCRcmnJCWSDG02QE/DZ+tVdQv/QRljnefCfng744HKifo04JfbPZlXC7TUQRMB8Bh5QHhAdyUmoR6RHD/JFX9i4wJhvNpfXysKSrm8Envv4dacE5BulzcnXqM84+8kJdbbUUDQ7aT5VrtsZ+A1KiQYa1wZKgp9hSuc9O2vhTEdp8V51jeCD7YSnwvdCI8KvFg4L5hcMkEBEQIYYKFvyFq5UpB6+ferQZDZUWXE/wZs5Zm3S5RvxKw4PYKU9dHyrw5G/dLs0ltLLsWCrlC2kpKTofE1zZVsZcltOW1DjS0AbKHi4Un9napbk777mP3cN9kqvEIc/dVtb4eZJcJKXpLL6nnHVpkJUklaNH7zTwx/F02qx45YLRbmbxkslSvBjgAhtr/vCs/VOt63UtLt/ZYky/ZZujTCy1KU1oaCfMUzPRGstrHDdjKxCUm9Xhxap8lzZK1JUoez+iPsq8rTDUcAO4HkKtlHaz91MbE7hfD+TjmDsR1QptxQ56i2W1OKJHtLBc8u/manoIPatbjDK3m3VtNqW37q1JBUn7D5Vsq9AAGAoSKKKK9QiiiihC0yZTEcJLz7LQV0HiLCd/ZuvOq5QCP+0IY/8AfTVMPSWl3TKONF4x+63SSLZZWULgMsLLfhlYTzEkd90thh8D2ua5XIAf2k1EluMidtK0undK3r8ImiHBVqeLJsUXNmJuW5E3dkTVFFggsAKVBcCRzq6dSD06mo3kEXPIlkiqxySlpkhReSprZ+VIrHbQnHb2ze7TMf8AX42/V1yF+KOvfoe1TM51nKkhX4QpSSeqPDrJatGJbQlatFU6QvRx9t4SyucXiNIvsh2RaJqpjkpClyU83Lyg9elWNt98vIya4Lm3la7KuMymCx6odpWE+1118aX34dZyAQL1HAHuq8Ae1WTnWb8xBvcdKR2Hq46Ui7/mw0NaBj/xLi6PuROJDs5TRxy526VeJEi5svKmMjTTvgkJKfsrdakmTe3TjrS2ooVt9xxB6/GlP+HGbkaavTCwnsPAAJoRnebpTtq9NsoV7yEsgbqofpcrtwZ7qT/h20WgjkqZ8WXc4iY1kaIkkqW8UC0BtjZcT9f7OlJ3gz+HVkyszW7fMh25SD68l1Kl869dxvt1qYfh7nSVcxyBpXidkKZB+74Ufh3nCSUm9xwPMCOPaq2qtkhgMQaDlMP6PuyneCmFAvDr0S1qyB16Y4PEMxKY5Ttr+QqeejtMvUqTfHIjTf4C8yfwcWkdVDavE3/vUgTnWbKS+ld7jkKbLa0erj3VDRr4w7Nc4xCwM2DHr83GtrJUplC2grk5iSf+JNS9FDK0jnScKLb6R1GYBsbFeUK+SvuoB38fuqmA4t8U/aT+FcckEf6MP/yml6LGd5hl19y6JlF2bnt29TYjcrQTyb3vt9lamKyyU4as1qfTtzTWb5wMJ/UUDtRUhUSKKKKEKj3Gr84nMf7ux+4VHPrVI+NP5xOY/wB3Y/cKjvnWavgunK7x0ZkaXHtHyiiisEoHdxtJ/wBpQFRG/mLUOcGjfJwvo1gde9ClBscygQn9M+799YC0rSVAggDfQ969DNzsEYSGTwl5YCMrTJUkSmW35TkGMUqL8htsr5T5dBWu1PKXCC3pJcbSohL5TrxB5dPKu+3asit2GO5Q3KjxY8w8sRlxIWVpHvHRro8PMOm5Nu4yXERrKgbS4P8ASD9bp5VInEddmXrCt16OO0+Uu9I8D5+VGlFAQl4lHMf6tKVbIo1pRHvE9T8qar3C/G5lqmjGVuxrierbzu9bHcAH40qnWpUSbKtlwb8ObFOnmAf+O/nUOGRj/wBN2cK60zqOK07bjlFFFFLD3E4cMZWlO8jd4CPrj7RTg9Cv8rc+/XZ/ipP/AFx9opwehV+Vuffrs/xVZ6aMPWC6/wAmk0/dWjHaigdqKvVxpFFFFCFR7jT+cRmR/szH7hUdNSPjV+cNmJ/s7H7hUc+FZm8fz3LvfR+WaNFgec/9oB2OUL8MH62qZPAHEMRzWbeImRWYulHKWpPjcoTqlsSVpW0Bvl17NT30fG5juR3W1wIS5aH+VUgBfLyAfA1J01reMqt65LxS3N8JxXLhpigltWRuM3cLWUkyISVe0kAdDzUsOJHCX6Otsq+YNK+lIyQQ1bPrNgd+vnqnrabKmO1OvFtbVEcdTyNJWvm69jXyi0O2OzMXMN+BKCimQN7GlHW9VcuijzyFyWrqtqpIXxOOVV++W99/hTjVwK3EiAHhKCiQlBPkamno+OoicNmVSAmU0p8hLYX1b2e5HlXcyyPY2zkfDq+yECHeFNvxpHuAEdTquhwr4Y2m2XyZOgXUItstoNrYU5sSdDWx+jqoF7TzOBsKfOoB8bY3DxlTK9xWoT0VhxbT7r6eaK4jSUoA7gkVWXPXWJGeXZcZpLRSQF6Vzcx+2rJXqzQbFAjwrg+VQAVJZ0vmV7XzpYXHhLbJEty2xrm5DknbjSwOfxieoBPlTDtLd3nSBWXT+rQafOJZjnCUKVDXMNAfWWTrVYHVXP7LiEe8EneqZfCzhpJu+ZXSHldvcKrQQF24dESgeygupDxz4V2PHsWdyfHmTaUwyPHZKuYPb8vlqmWaa9rS8ldDPW1Y2hA0ek45SVT74+0U3/Qr/KzPv12f4qT6DsoV+lo/fTg9Cv8AK3Pv12f4qVp36qj9eHdQaf2Vox2ooHair5ccRRRRQhUe40/nE5l/dmP3Co6feqRcavziMxH9nY/cKjh71m7wzM5d56NIGkxY9so1ynaiW0q9xffVTPhJkVtxabdbpPvCrTICeWKgI5vWt99/CoU674YAHiPPuKCW2W0cykk9ugqW5Bw4zay4ychuljSqM2jxHUpPOpCfLpRSieCCEjqa1QlrGpPLtLk2+FmcvZTcVR25C34FrUVSmgnWyrsaaF0uLF3mRrbFk6jvBRf5xrt270p/RUgm2WB3JJDITDvyhyFSdFHLsaIptR4cK832cX20usNgBpSDy8vTr2rRNLnD1riViOOKUtjOW+yTfpP2KAzgsC5TUmU+wspbfaOiPh2rl8Kslx25WG14/d5L1vmRgSt9KiS+PLp5U4OK2LxpvDyXaYY06B/miVe0Qo0j+COB3ONkk5rIoAt97gD8UtZ2h1Ku1eHHgFOMkBi8chMacxYLlClRjkio7qCCwtftb15a+dZw3I4louiQ8lbjDg5Hitvaka7EefWuo/YbLZ4Bn3fHFPGMSuQ8lX9X5ggedQe68bsPiSn5VntH01dUJLaNt8g18x8qW57Q0ApiGvNZk2xDJ+E44F8tDKQph1SELBUhsNbUr7VVXrjvxQfyt+XiEOK7CtkZX+e+IjRk9RrX2arbjXHW7QLZHZl4y2+5FWtROwC6FHt8tVBs9ymXmWT/AIQSILcFspCWoiUgeHruSfPdV1qyxkZaCtfoHT9p9xj5ovQFxEAAJA7DQH2U3/Qr/K3Pv12f4qUCfe/3hTf9Cv8AK3Pv12f4qhad+qtd14MUGj9laMdqKB2oq+XHEUUUUIVH+NOh6ReXq5uUiMz1/YK5eK2a4ZJkEewWlpby5IUpx8J6MAdya6fGnY9IjMRrfNHY/Z0Fa8Hyy7Ymi6qtDqA7cUhBWUbLQ+VUdkATnPhdi0Y2zoLW1W+oruJvmN4GwuJhym75kmyiRe3kezGI7pCT0JqacDcyypq8OR83alyYN8Sr1R9bKigEd9jsBS24XYenK7/JL5SzZbeoyrk8Ty8qx7QBPzNSRnjjlyMkRcERYruPsKLBtPhAEoT05wry6danRSgAOfwFktS06WVzoa7d7x/EcqxVlZtltwgtKaQqKlauVCPMk9NDyr4ttruVutL0uFG5bhJUNNFew2ndcfHcgx3K7dARib22paitxR6lkjqQU1PpjyIURTy1EcqdEnzqccYACxjmODsO8qKX66vwsnx9qcNNcizIWBv2tdOn21zLhbZkiW/ep0tLNvk78UJ99Gvd1511pMWOuOq9z7gfDJ0klvZ760BX21iS3ZCJZnr0U7Qg9k7+VLc1rSCF4ACMOUEk3nI1zIsB1ZXDcCkNPqRsJT29r+dLS5cHsgk3S4ybI83cuRXNy8gb5ifgasBOtUqPFXby4hwrPONjXigdT18tV1bNdYv0WmUUhmKn2UODoSR33TT2d6PDlLo3X0p+9CcOVJblDl225TLXdkLhzIn9cwsaH+6fOtCFJcQFocS6ke62k7++rS8eXcHYxZnMLvjib9Jh79TYSrkU9vW9nz1SryfBsXu/DFjiHh0ddiaCeeXbubn8U7HTflrdVE2njGAV0nS+t3EsbYZgfKWCPe/aKb3oVfldn/8A6jP8VKFHUg/Eg03/AEKvytz/APXZ/iprTm4mKl9duElFrx4KtGO1FA7UVfLj6KKKKEKj/Gr84fMT/Z2P3Co24dNOEdCG1EfbqpJxp/OIzL+7sfuFRxQ2CPIjRrOXWkzlw9l3jpJ3+isaB8qdqbXD9G22LhJcbGQOq+l5adpKuU+yKgbYKWEtlOyhHTrrmAFe969Xp3HY2Ov3JCbLFJLLHLrZPzrfZrG/dsZvN3aKy3aFICjrqUnvyjzpyUm45uzjCrtPYNEhmfaIG7P3/ZeO2X+7Ym9AvGK3Z1qZO5g602yVhOv9kU8+Hd9ydWNys84gZK59DxxtUZUco6+Q18+lJhyPfcPuMHIbbIjxIklG7a+tIc8Q69oFPka7lyuPF7L8fbiXAJfx65q0tPgeGVkHp08hsVZwvLDtcsDdgbKwT4w0nz/VMe1+kBBl3PxLtjBjxm1aYVzbCEfpa89ipuOO/C5UlmOcm5XniEoR4Z6E+Xakw5wTyxNh+kbpKatyI7fOtKSF6SB0H3Uo4CbXNnSZUVhOw5ylRQOqknoRSTM5gJcpMWi0dQlbFUdz7lfoAzItt4adYQtTyQkKV0IOj1GjXLg2xuPKfhSEF2POPudg3r4Uo+EXGKIxAZs2SvBu4NENsOhPSWD0Gz5ap5syYkqWsokNvuMhKtJV7KAfnUuKYSjhZi9QloymJ4wQq8elbdWk3axY9b3uRuNzeO2B0SD2rHo3vG7YnmliUC/GYR+LaI6A6Na/SXw+9RcuOWMoVItMtKUyFoTzGOR26ee68HowTX2ms0XDfZZeZcaALigPH38jUNpLZSHLSEVjpDDGfWDz/wApXOtBqS6y2FFDLygUqGiOtN30K9HLc+UD0K2en/2qCcUI8uNxHuceXFTBICFhCex313U79CrQyvPv12f4qj1Ricq/6hn7+hxP/ZWjHaigdqKt1zFFFFFCFR7jX+cPmX92Y/cKjuk8pJ8k718akfGnQ9IbMt/+XY/cKjTgJSeU+VZy23Noru3Spf8AgcezyMqacDccsXEOzZUXnXH5tvZUpiKEkFCgDr7dmmP6P8GDk/CG1ylPi23OBIdYmoKPa94gBafPprW6WPo4SrpaMpudtgXFmNdrspKo3MkBJSk7UCasxjtij2TKL3kRtrcJV0bQJS218yVLSNBQRV3WjYYxhcn1y3aNh4nPKrVxMtsHFeJMi2XBibNgRuV1PKhSk7PXmSPLXwFMvgplD2WXu4RZt6NysxQPU5bkfwB7I6pKT7pHb505GI1vMePcroqNKkt7BdWyOdQPQDVR7PcMTdELiWtKIrNxAMttlHJz8vu6I7fOnBE1pVfJedNXEJHAUZzC+2yxY/drjbL2u6RUIUy/AUeqlKGgR8hVbsQxXK5bCYcO1CXJUtb6QTy8yT1/bqn29ieNWTI7fFv98S9OlJKPUWvb1ronYFTiz2FNryGxpegMsmOHOSSp0JKgfLXnRNCyQYTum6rY0+QPh4VTPVFuXRNvkqet7qyQ6tbWuXXcJJpzcAXXbU9MtMi6uXKxSEFSPEJC21p7Anv1NMfjhc8GsNshT8qtAlJW7yR3GW+iSrpskUuJGOuWKxXtvG7im9XG/thy0pe/EBlOtlI3TUNURH0qdqWuSas4CVuF3bvxJuknh1fk3mCxZDCUWlSAoPJaQToEj4kVX6fY3LMbdeGpbjsK7r8W3Sm3OUyFJ6nmSO2jTUxzh5cIPA7II0ltBvuTEEwJEgabKD1IUe/xpXXZthiDa7GmcqdKtQIdkdkpP6KR8u1N3C0D1KX05E760QMO4HyML5u9xut3uzt1u8r1iS5yoA+AHQU2fQs3+FufJI0Qtn9yqT7YHjJIRy9e5NN30J06yzPypfMouM7/AONQKDt05Ww62rMqacyJnhWlHaigdqKvFyNFFFFCFR7jSE/0isw5lDlMdnm0e3QVHQDzb37I7U1/S1tdisWYWe5RIC2bjkBUifLJPIpKAkJBPZJpUHlURyLS4lP6B5v3VnbzHCcldy6Lswv0tkYdgjOVrWCohbTy4747PJOlJP203+FPFqDY7aqJlDrsq5NDUd1RJBHxIpS+0VKOytaveb5e1YSjmAccb6o90FNIr3HswFI1jpqpqPqyAfdPvJeLVlX9E3HEkjIMjUohUZxXhIUPMdelTjFs4v0mDPfzK0wsZDjBNvbEpLi1+ydk67daqHKt0aZJRIkNuc7XVlTW0EH9lZchoeeVKkOznH9aS4uQojXwANWTNRa4crFS9CSGTbHJwFKcSxvibcLinMcVjx5NzMtwImypI0Ec36J7dKYnpES/WsQxxiZkgbyxg/6O5pJUe+9UmkBaY/qyJkuK15ht5SQr7q0Lituxy3IS86d91uEqP2HypsanGDhPu6Ltyvy/gBPThxaOJdzXHtudqtk3Ckxy7zuPpK+dI2n596U/EHKL7l78R67uq1Z5ahDZjnw+ZCVaA2PkK4pjEsGMmXcCy5olAkq0NVuHiDmCSpfKNAEd6RPfd/sU7SujQ1xdZcDnx9lJ+KGcKz5FijptMmyN2hOgpD5BV0A8u/aouD7S0J9pB+ue5rKuctBS+Zej7R1WSlZVrlJbT5aqDJM+X+NbDStHqabGe1hYSCXErJ9gkbpwehWP+lefH4rZ/ipNuvMxWlvPutpbCSsJUsAnQ3rVWF9DrFvVcfuOcevOqGSKB9TW3ymNyKUP27qZp0ZEpKyXX1uL6RkIOSrAjtRRRV4uRIooooQuHmuKWHMLBIsmQ29E2E/rnQeihogjR7jt5UoM59HG0TWYDWE3hzFksbEgBJd8cdNdz011p90UlzGu8hPw2ZYDmNxCq4PRgyH/AFmu/wCF/nR/RgyH/Wc7/hf51aPQ+FGh8Kb+nj+FP/HL/wDNKq4n0X8gCt/5TXT/APF/nXEzfgfn2NNw1WJwZchzm9aKtNFgDXUDfXfX7qt9ofCsEb+I+w14a0ZGMJ6DqPUYHbmyFfnrClsTkKWhSkupUUKYWNKQod9jyr22yNPvF+hWKzRV3G7TD7DCR0bQPeUo/V0AT1qwHH3go5eLgrMcJjNt3xWkzIgPKiYPZSFfBJT3+eq7OGcG5mI4HLiY/kKYOXXBTa5t8UwHCdK2UJSew10qAzTGiTJ8LY2OvXOoBrB+YobM9Gi6PJSqPnrkVZA5khgEA+Y715D6MOQn/wATXP8AC/zqzsZDjcdpDrniLSgBS9a5la6n9tbdD4VP+mi+Fi3dQai45MpVXP6MGQ/6znf8L/Oj+jBkOj/1nO78v81/nVo9D4UaHwr36eP4SPxy/wDzSkrjvo6YQiwwo+VsryC6MK53ZxUW/FOyR7IPYDVOWLHYisoZjststoHKlCE6AH2Vtop0ADwq2SaSU5eSUUUUV6m0UUUUIRRRRQhFFFFCEUUUUIQRuiiihCKKKKEIooooQiiiihCKKKKEIooooQv/2Q==");background-repeat:no-repeat;background-size:contain;background-position:center;aspect-ratio:140/224;border-radius:6px;background-color:#fff}
+  .srca-partner-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .srca-partner-text .srca-title{font-size:.78rem;font-weight:700;color:#0f172a;line-height:1.3}
+  .srca-partner-text .srca-org{font-size:.72rem;color:#475569;line-height:1.3;font-weight:500}
+  .srca-partner-text .srca-link{font-size:.7rem;color:#0369a1;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:4px;margin-top:2px}
+  .srca-partner-text .srca-link:hover{text-decoration:underline}
+  @media (max-width:600px){.srca-partner-block{flex-wrap:wrap;gap:10px;padding:10px 12px}.srca-partner-logo{width:42px}.srca-partner-text .srca-title{font-size:.74rem}}
+  .fbtn{background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.25);color:#0284c7;border-radius:8px;padding:8px 16px;font-size:.82rem;font-weight:600;cursor:pointer;width:auto;margin:0}
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>📚 აგრო ბიბლიოთეკა — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <h1>📚 აგრო ბიბლიოთეკა <span style="font-size:.6rem;background:var(--accent-d);color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v1</span></h1>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:var(--accent-d)">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <div class="tabbar">
+    <button id="tabBtnDocs" class="active" onclick="switchTab('docs')">📚 ბიბლიოთეკა</button>
+    <button id="tabBtnAds" onclick="switchTab('ads')">🤝 პარტნიორები</button>
+    <button id="tabBtnEvents" onclick="switchTab('events')">📅 ღონისძიებები</button>
+  </div>
+
+  <!-- ══ TAB 1 — DOCS / LITERATURE ══ -->
+  <div id="phTabDocs" class="card">
+    <h2>📖 ცოდნის ბაზა — სამეცნიერო ლიტერატურა და მასალები</h2>
+
+    <!-- Filter bar -->
+    <div style="display:flex;align-items:center;gap:10px;margin:12px 0 16px;flex-wrap:wrap">
+      <select id="phDocFilter" onchange="phDocsRender()" style="flex:1;min-width:150px;padding:9px 12px;font-size:.85rem">
+        <option value="">🌿 ყველა კულტურა</option>
+        <option value="მოცვი">🫐 მოცვი</option>
+        <option value="ვაზი">🍇 ვაზი</option>
+        <option value="ვაშლი">🍎 ვაშლი</option>
+        <option value="მსხალი">🍐 მსხალი</option>
+        <option value="ატამი">🍑 ატამი</option>
+        <option value="ალუბალი">🍒 ალუბალი</option>
+        <option value="ჩაი">🍵 ჩაი</option>
+        <option value="ნიორი">🧄 ნიორი</option>
+        <option value="სხვა">• სხვა</option>
+      </select>
+      <select id="phDocType" onchange="phDocsRender()" style="flex:1;min-width:150px;padding:9px 12px;font-size:.85rem">
+        <option value="">📄 ყველა ტიპი</option>
+        <option value="სამეცნიერო">🔬 სამეცნიერო ნაშრომი</option>
+        <option value="სახელმძღვ.">📖 სახელმძღვანელო</option>
+        <option value="ინსტრ.">⚙️ ინსტრუქცია</option>
+        <option value="სტანდ.">📋 სტანდარტი / ნორმა</option>
+        <option value="ვიდეო">🎬 ვიდეო</option>
+        <option value="PDF">📕 PDF</option>
+        <option value="პრეზენტაცია">🖥️ პრეზენტაცია</option>
+      </select>
+      <input id="phDocSearch" oninput="phDocsRender()" placeholder="🔍 ძებნა..." style="flex:2;min-width:160px;padding:9px 12px;font-size:.85rem">
+    </div>
+
+    <!-- SRCA partner attribution -->
+    <a href="https://srca.gov.ge/" target="_blank" rel="noopener" class="srca-partner-block" style="text-decoration:none">
+      <span class="srca-partner-logo" aria-label="სსიპ სოფლის მეურნეობის სამეცნიერო-კვლევითი ცენტრი"></span>
+      <span class="srca-partner-text">
+        <span class="srca-title">📖 სამეცნიერო ლიტერატურა წარმოდგენილია</span>
+        <span class="srca-org">სსიპ სოფლის მეურნეობის სამეცნიერო-კვლევითი ცენტრის მიერ</span>
+        <span class="srca-link">🌐 srca.gov.ge ↗</span>
+      </span>
+    </a>
+
+    <!-- Upload form -->
+    <div id="phDocUploadPanel" style="background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.25);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div style="font-size:.86rem;font-weight:700;color:var(--accent-d);margin-bottom:10px">📤 დოკუმენტის ატვირთვა</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <input id="phDocTitle" placeholder="სათაური *" style="padding:9px 12px;font-size:.85rem">
+        <select id="phDocCulture" style="padding:9px 12px;font-size:.85rem">
+          <option value="">კულტურა *</option>
+          <option>მოცვი</option><option>ვაზი</option><option>ვაშლი</option>
+          <option>მსხალი</option><option>ატამი</option><option>ალუბალი</option>
+          <option>ჩაი</option><option>ნიორი</option><option>სხვა</option>
+        </select>
+        <select id="phDocDocType" style="padding:9px 12px;font-size:.85rem">
+          <option value="სამეცნიერო">🔬 სამეცნიერო ნაშრომი</option>
+          <option value="სახელმძღვ.">📖 სახელმძღვანელო</option>
+          <option value="ინსტრ.">⚙️ ინსტრუქცია</option>
+          <option value="სტანდ.">📋 სტანდარტი / ნორმა</option>
+          <option value="ვიდეო">🎬 ვიდეო</option>
+          <option value="PDF">📕 PDF</option>
+          <option value="პრეზენტაცია">🖥️ პრეზენტაცია</option>
+        </select>
+        <input id="phDocAuthor" placeholder="ავტორი / წყარო" style="padding:9px 12px;font-size:.85rem">
+        <input id="phDocDesc" placeholder="მოკლე აღწერა" style="padding:9px 12px;font-size:.85rem;grid-column:1/-1">
+      </div>
+      <div style="margin-bottom:8px">
+        <input type="file" id="phDocFile" accept=".pdf,.doc,.docx,.xlsx,.ppt,.pptx,.mp4,.mov,.avi,.mkv,.webm" style="display:none" onchange="phDocFileSelected(this)">
+        <button class="fbtn" onclick="document.getElementById('phDocFile').click()">📎 ფაილის არჩევა</button>
+        <span id="phDocFileName" style="font-size:.75rem;color:var(--muted);margin-left:8px">ფაილი არ არჩეულა</span>
+      </div>
+      <input id="phDocUrl" placeholder="ან ბმული: https://..." style="width:100%;padding:9px 12px;font-size:.85rem;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button onclick="phDocSave()" style="width:auto;margin:0;padding:9px 22px;font-size:.86rem">💾 შენახვა</button>
+        <span id="phDocMsg" style="font-size:.78rem;color:var(--accent-d)"></span>
+      </div>
+      <div class="muted" style="margin-top:8px;font-size:.72rem">ℹ️ ატვირთული ფაილი ინახება ღრუბელში (მაქს. 2.5 MB). დიდი ფაილისთვის გამოიყენე გარე ბმული.</div>
+    </div>
+
+    <!-- Documents list -->
+    <div id="phDocsList" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div id="phDocsEmpty" style="display:none;text-align:center;padding:40px 0;color:var(--muted);font-size:.85rem">
+      📭 ამ კულტურის დოკუმენტი ჯერ არ არის ატვირთული.
+    </div>
+  </div>
+
+  <!-- ══ TAB 2 — ADS / PARTNERS ══ -->
+  <div id="phTabAds" class="card" style="display:none">
+    <h2>🤝 პარტნიორი კომპანიები</h2>
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px">🤝 პრეპარატები, სასუქები, აღჭურვილობა და სერვისები</div>
+
+    <!-- Add Form -->
+    <div id="phAdminPanel" style="background:rgba(250,204,21,.06);border:1px solid rgba(250,204,21,.28);border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="font-size:.86rem;font-weight:700;color:#b45309;margin-bottom:10px">➕ პარტნიორის დამატება</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <input id="phAdName" placeholder="კომპანიის სახელი *" style="padding:9px 12px;font-size:.85rem">
+        <input id="phAdEmoji" placeholder="ემოჯი (მაგ: 🌿) — სურვ." style="padding:9px 12px;font-size:.85rem">
+        <input id="phAdContact" placeholder="საკონტაქტო პირი" style="padding:9px 12px;font-size:.85rem">
+        <input id="phAdPhone" placeholder="ტელეფონი (+995...)" style="padding:9px 12px;font-size:.85rem">
+        <input id="phAdEmail" placeholder="ელფოსტა" style="padding:9px 12px;font-size:.85rem">
+        <input id="phAdWebsite" placeholder="ვებ-გვერდი (https://...) *" style="padding:9px 12px;font-size:.85rem">
+        <input id="phAdAddress" placeholder="მისამართი (ქ., ქუჩა) *" style="padding:9px 12px;font-size:.85rem">
+        <input id="phAdDesc" placeholder="აღწერა · ქალაქი" style="padding:9px 12px;font-size:.85rem">
+        <input id="phAdTags" placeholder="თეგები (მძიმით: ფუნგ., სასუქი)" style="padding:9px 12px;font-size:.85rem;grid-column:1/-1">
+      </div>
+      <div style="margin-bottom:10px">
+        <input type="file" id="phAdLogo" accept=".png,.jpg,.jpeg,.webp,.svg" style="display:none" onchange="phAdLogoSelected(this)">
+        <button class="fbtn" onclick="document.getElementById('phAdLogo').click()">🖼️ ლოგოს არჩევა</button>
+        <span id="phAdLogoName" style="font-size:.75rem;color:var(--muted);margin-left:8px">ლოგო არ არჩეულა</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <button onclick="phAdSave()" style="width:auto;margin:0;padding:9px 22px;font-size:.86rem;background:linear-gradient(135deg,#fbbf24,#d97706);color:#111">💾 შენახვა</button>
+        <span id="phAdMsg" style="font-size:.78rem;color:var(--accent-d)"></span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="phAdsList">
+      <div style="text-align:center;padding:40px;color:var(--muted);font-size:.82rem;grid-column:1/-1">⏳ იტვირთება...</div>
+    </div>
+    <div style="margin-top:16px;padding:12px 16px;background:rgba(52,211,153,.06);border:1px dashed rgba(52,211,153,.3);border-radius:10px;text-align:center">
+      <div style="font-size:.75rem;color:var(--muted)">განათავსე ინფორმაცია შენი კომპანიის შესახებ</div>
+      <div style="font-size:.82rem;color:var(--accent-d);font-weight:600;margin-top:4px">📧 <a href="mailto:info@intechsol.ge" style="color:inherit;text-decoration:none">info@intechsol.ge</a> · 📞 <a href="tel:+995595533500" style="color:var(--accent-d);text-decoration:none">+995&nbsp;595&nbsp;533&nbsp;500</a></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 3 — EVENTS CALENDAR ══ -->
+  <div id="phTabEvents" class="card" style="display:none">
+    <h2>📅 ღონისძიებები — კონფერენციები, ლაივები, ტრენინგები</h2>
+
+    <!-- Add-event Form -->
+    <div style="background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.25);border-radius:12px;padding:16px;margin:12px 0 16px">
+      <div style="font-size:.86rem;font-weight:700;color:var(--accent-d);margin-bottom:10px">➕ ღონისძიების დამატება</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <input id="phEvTitle" placeholder="სათაური *" style="padding:9px 12px;font-size:.85rem;grid-column:1/-1">
+        <select id="phEvType" style="padding:9px 12px;font-size:.85rem">
+          <option value="კონფერენცია">🎤 კონფერენცია</option>
+          <option value="ლაივი">📡 ლაივი</option>
+          <option value="სემინარი">📊 სემინარი</option>
+          <option value="ტრენინგი">🎓 ტრენინგი</option>
+          <option value="გამოფენა">🏛️ გამოფენა</option>
+          <option value="სხვა">• სხვა</option>
+        </select>
+        <input id="phEvTime" type="time" placeholder="დრო" style="padding:9px 12px;font-size:.85rem">
+        <div><label style="margin-top:0">დაწყება *</label><input id="phEvDate" type="date" style="padding:9px 12px;font-size:.85rem"></div>
+        <div><label style="margin-top:0">დასრულება (სურვ.)</label><input id="phEvDateTo" type="date" style="padding:9px 12px;font-size:.85rem"></div>
+        <input id="phEvLocation" placeholder="ადგილი / ლინკი (ონლაინ)" style="padding:9px 12px;font-size:.85rem;grid-column:1/-1">
+        <input id="phEvDesc" placeholder="აღწერა" style="padding:9px 12px;font-size:.85rem;grid-column:1/-1">
+        <input id="phEvUrl" placeholder="რეგისტრაცია / შესვლის ბმული: https://..." style="padding:9px 12px;font-size:.85rem;grid-column:1/-1">
+      </div>
+      <div style="margin-bottom:8px">
+        <input type="file" id="phEvImage" accept=".png,.jpg,.jpeg,.webp" style="display:none" onchange="phEvImageSelected(this)">
+        <button class="fbtn" onclick="document.getElementById('phEvImage').click()">🖼️ ბანერის არჩევა</button>
+        <span id="phEvImageName" style="font-size:.75rem;color:var(--muted);margin-left:8px">ბანერი არ არჩეულა</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <button onclick="phEvSave()" style="width:auto;margin:0;padding:9px 22px;font-size:.86rem">💾 შენახვა</button>
+        <button id="phEvCancelBtn" class="gray" onclick="phEvCancelEdit()" style="width:auto;margin:0;padding:9px 18px;font-size:.86rem;display:none">გაუქმება</button>
+        <span id="phEvMsg" style="font-size:.78rem;color:var(--accent-d)"></span>
+      </div>
+      <div id="phEvNotifyAfter" style="margin-top:10px"></div>
+    </div>
+
+    <div style="font-size:.85rem;font-weight:700;color:#0f172a;margin:8px 0 6px">🔜 მომავალი ღონისძიებები</div>
+    <div id="phEvUpcoming" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div id="phEvUpcomingEmpty" style="display:none;text-align:center;padding:24px 0;color:var(--muted);font-size:.85rem">📭 დაგეგმილი ღონისძიება ჯერ არ არის.</div>
+
+    <div id="phEvPastWrap" style="margin-top:18px">
+      <div onclick="phEvTogglePast()" style="cursor:pointer;font-size:.85rem;font-weight:700;color:#64748b;margin:8px 0 6px;user-select:none">✅ გასული ღონისძიებები <span id="phEvPastCaret">▸</span></div>
+      <div id="phEvPast" style="display:none;flex-direction:column;gap:10px;opacity:.7"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+let sb=null, uid=null, userEmail=null;
+
+const PH_DOCS_KEY='its_ph_docs';
+const PH_PARTNERS_KEY='its_ph_partners';
+const MAX_FILE_BYTES=2.5*1024*1024; // ~2.5 MB
+let DOCS=[]; // merged doc cache
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+function _today(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function safeText(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function safeAttr(s){ return safeText(s); }
+function toast(msg){ var t=document.getElementById('toast'); if(!t)return; t.textContent=msg; t.classList.add('show'); clearTimeout(window._tt); window._tt=setTimeout(function(){ t.classList.remove('show'); },2400); }
+
+// ── auth ──
+async function doLogin(){
+  var e=document.getElementById('email').value.trim(), p=document.getElementById('pass').value, err=document.getElementById('loginErr');
+  err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    uid=r.data.user.id; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+
+function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+async function showApp(email){
+  userEmail=email;
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('whoami').textContent=email||'—';
+  updateNet();
+  window.addEventListener('online',updateNet);
+  window.addEventListener('offline',updateNet);
+  phDocsInit();
+  phAdLoad();
+  phEvLoad();
+}
+
+// ── tabs ──
+function switchTab(which){
+  document.getElementById('phTabDocs').style.display=which==='docs'?'block':'none';
+  document.getElementById('phTabAds').style.display=which==='ads'?'block':'none';
+  document.getElementById('phTabEvents').style.display=which==='events'?'block':'none';
+  document.getElementById('tabBtnDocs').classList.toggle('active',which==='docs');
+  document.getElementById('tabBtnAds').classList.toggle('active',which==='ads');
+  document.getElementById('tabBtnEvents').classList.toggle('active',which==='events');
+}
+
+// ════════════════════════════════════════════════════
+//  TAB 1 — DOCS / LIBRARY  →  cloud table: ph_documents
+// ════════════════════════════════════════════════════
+function phDocsGetUser(){ try{ return JSON.parse(localStorage.getItem(PH_DOCS_KEY)||'[]'); }catch(e){ return []; } }
+function phDocsSaveUser(arr){ try{ localStorage.setItem(PH_DOCS_KEY, JSON.stringify(arr)); }catch(e){} }
+function phDocsGetAll(){ return DOCS.length ? DOCS : phDocsGetUser(); }
+
+async function phDocsLoadFromSupabase(){
+  if(!sb || !uid) { DOCS=phDocsGetUser(); return; }
+  try{
+    var res=await Promise.all([
+      sb.from('ph_documents').select('*').eq('user_id', uid).order('date',{ascending:false}),
+      sb.from('ph_documents').select('*').eq('is_admin', true).order('date',{ascending:false})
+    ]);
+    var userRes=res[0], adminRes=res[1];
+    var local=phDocsGetUser();
+    var allCloud=[].concat(userRes.data||[], adminRes.data||[]).filter(function(d){ return d && !d.builtin; });
+    var map=new Map();
+    // cloud-first, dedupe by id
+    local.forEach(function(d){ if(d && d.id) map.set(d.id, d); });
+    allCloud.forEach(function(d){ if(d && d.id) map.set(d.id, d); });
+    var merged=Array.from(map.values());
+    merged.sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
+    DOCS=merged;
+    phDocsSaveUser(merged);
+  }catch(e){ console.warn('phDocsLoadFromSupabase', e); DOCS=phDocsGetUser(); }
+}
+
+function phDocsInit(){
+  phDocsLoadFromSupabase().then(function(){ phDocsRender(); }).catch(function(){ phDocsRender(); });
+}
+
+function phDocFileSelected(input){
+  var fn=document.getElementById('phDocFileName');
+  if(fn) fn.textContent=input.files[0] ? input.files[0].name : 'ფაილი არ არჩეულა';
+}
+
+async function _phDocPersist(doc, msg){
+  // add to memory + local cache
+  DOCS.unshift(doc);
+  var arr=phDocsGetUser(); arr.unshift(doc); phDocsSaveUser(arr);
+  // save to cloud (fileData included so files are cross-device)
+  if(sb && uid){
+    try{
+      var r=await sb.from('ph_documents').upsert(Object.assign({}, doc, { user_id:uid }), { onConflict:'id' });
+      if(r.error){ if(msg){ msg.style.color='#dc2626'; msg.textContent='⚠️ ღრუბელში ვერ შეინახა: '+r.error.message; } }
+    }catch(e){ if(msg){ msg.style.color='#dc2626'; msg.textContent='⚠️ '+(e.message||e); } }
+  }
+  if(msg && !/⚠️/.test(msg.textContent)){ msg.style.color='var(--accent-d)'; msg.textContent='✅ შენახულია!'; }
+  toast('✅ დოკუმენტი შენახულია');
+  setTimeout(function(){ if(msg) msg.textContent=''; },2500);
+  phDocsRender();
+  ['phDocTitle','phDocAuthor','phDocDesc','phDocUrl'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=''; });
+  var fileInp=document.getElementById('phDocFile'); if(fileInp) fileInp.value='';
+  var fn=document.getElementById('phDocFileName'); if(fn) fn.textContent='ფაილი არ არჩეულა';
+}
+
+function phDocSave(){
+  var title=(document.getElementById('phDocTitle').value||'').trim();
+  var culture=(document.getElementById('phDocCulture').value||'').trim();
+  var type=(document.getElementById('phDocDocType').value||'').trim();
+  var author=(document.getElementById('phDocAuthor').value||'').trim();
+  var desc=(document.getElementById('phDocDesc').value||'').trim();
+  var url=(document.getElementById('phDocUrl').value||'').trim();
+  var fileInp=document.getElementById('phDocFile');
+  var msg=document.getElementById('phDocMsg');
+  if(msg){ msg.style.color='var(--accent-d)'; msg.textContent=''; }
+
+  if(!title||!culture){ if(msg){ msg.style.color='#dc2626'; msg.textContent='⚠️ სათაური და კულტურა სავ.'; } return; }
+
+  var hasFile=fileInp && fileInp.files && fileInp.files[0];
+  if(!hasFile && !url){ if(msg){ msg.style.color='#dc2626'; msg.textContent='⚠️ ფაილი ან ბმული სავ.'; } return; }
+
+  var doc={
+    id:'doc_'+Date.now(),
+    title:title, culture:culture, type:type, author:author, desc:desc, url:url,
+    date:_today(),
+    size:hasFile ? (fileInp.files[0].size/1024).toFixed(0)+'კბ' : '',
+    fileName:'', fileData:'',
+    is_admin:false, builtin:false
+  };
+
+  if(hasFile){
+    var file=fileInp.files[0];
+    if(file.size > MAX_FILE_BYTES){
+      if(msg){ msg.style.color='#dc2626'; msg.textContent='⚠️ ფაილი დიდია ('+(file.size/1024/1024).toFixed(1)+' MB). მაქს. 2.5 MB — გამოიყენე გარე ბმული.'; }
+      return;
+    }
+    var reader=new FileReader();
+    reader.onload=function(e){
+      doc.fileData=e.target.result; // base64 dataURL
+      doc.fileName=file.name;
+      _phDocPersist(doc, msg);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    _phDocPersist(doc, msg);
+  }
+}
+
+function phDocsRender(){
+  var listEl=document.getElementById('phDocsList');
+  var emptyEl=document.getElementById('phDocsEmpty');
+  if(!listEl) return;
+  var filterC=(document.getElementById('phDocFilter').value||'');
+  var filterT=(document.getElementById('phDocType').value||'');
+  var search=(document.getElementById('phDocSearch').value||'').toLowerCase();
+
+  var docs=phDocsGetAll();
+  if(filterC) docs=docs.filter(function(d){ return d.culture===filterC; });
+  if(filterT) docs=docs.filter(function(d){ return d.type===filterT; });
+  if(search)  docs=docs.filter(function(d){ return (String(d.title||'')+String(d.desc||'')+String(d.author||'')+String(d.culture||'')).toLowerCase().indexOf(search)>=0; });
+
+  if(!docs.length){ listEl.innerHTML=''; if(emptyEl) emptyEl.style.display='block'; return; }
+  if(emptyEl) emptyEl.style.display='none';
+
+  var typeColors={'სამეცნიერო':'#0284c7','სახელმძღვ.':'#059669','ინსტრ.':'#d97706','სტანდ.':'#7c3aed','ვიდეო':'#e11d48','PDF':'#ea580c','პრეზენტაცია':'#6366f1'};
+  var cultureIcons={'მოცვი':'🫐','ვაზი':'🍇','ვაშლი':'🍎','მსხალი':'🍐','ატამი':'🍑','ალუბალი':'🍒','ჩაი':'🍵','ნიორი':'🧄','სხვა':'🌿'};
+
+  listEl.innerHTML=docs.map(function(d){
+    var col=typeColors[d.type]||'#2563eb';
+    var icon=cultureIcons[d.culture]||'🌿';
+    var canOpen=!!(d.fileData || d.url);
+    var openBtn=canOpen
+      ? '<button onclick="phDocOpen(\''+safeAttr(d.id)+'\')" style="width:auto;margin:0;background:'+col+'15;border:1px solid '+col+'40;color:'+col+';border-radius:9px;padding:7px 12px;font-size:.74rem;font-weight:700;white-space:nowrap">'+(d.fileData?'📥 გახსნა':'🔗 ბმული')+'</button>'
+      : '<span style="font-size:.72rem;color:var(--muted)">ფაილი მალე დაემატება</span>';
+    var canDel=!d.builtin && !d.is_admin;
+    var delBtn=canDel ? '<button onclick="phDocDelete(\''+safeAttr(d.id)+'\')" style="width:auto;margin:0;background:#fff1f2;border:1px solid #fecdd3;color:#e11d48;border-radius:9px;padding:7px 10px;font-size:.72rem">🗑 წაშლა</button>' : '';
+    return '<div style="display:flex;gap:14px;align-items:flex-start;padding:14px;background:#fff;border:1px solid #d9e7f2;border-radius:14px;box-shadow:0 6px 18px rgba(15,23,42,.04)">'+
+      '<div style="width:54px;height:54px;border-radius:14px;background:'+col+'12;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0">'+icon+'</div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:4px">'+
+          '<div style="font-size:.92rem;font-weight:800;color:#0f172a">'+safeText(d.title||'უსათაურო მასალა')+'</div>'+
+          '<span style="font-size:.68rem;background:'+col+'14;border:1px solid '+col+'38;color:'+col+';border-radius:999px;padding:3px 9px">'+safeText(d.type||'მასალა')+'</span>'+
+          '<span style="font-size:.68rem;background:#f1f5f9;border:1px solid #dbeafe;color:#334155;border-radius:999px;padding:3px 9px">'+icon+' '+safeText(d.culture||'სხვა')+'</span>'+
+          (d.is_admin?'<span style="font-size:.62rem;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;border-radius:999px;padding:3px 8px">🌐 საჯარო</span>':'')+
+        '</div>'+
+        '<div style="font-size:.73rem;color:#64748b;margin-bottom:6px">'+(d.author?'ავტორი: '+safeText(d.author):'')+(d.author&&d.date?' · ':'')+(d.date?'თარიღი: '+safeText(String(d.date).slice(0,7)):'')+(d.size?' · '+safeText(d.size):'')+'</div>'+
+        '<div style="font-size:.78rem;color:#334155;line-height:1.55">'+safeText(d.desc||'მოკლე აღწერა დამატებული არ არის.')+'</div>'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0">'+openBtn+delBtn+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function phDocOpen(id){
+  var d=phDocsGetAll().find(function(x){ return x.id===id; });
+  if(!d) return;
+  if(d.fileData){
+    var a=document.createElement('a');
+    a.href=d.fileData;
+    a.download=d.fileName || (d.title+'.pdf');
+    document.body.appendChild(a); a.click(); a.remove();
+  } else if(d.url){
+    window.open(d.url,'_blank','noopener');
+  }
+}
+
+async function phDocDelete(id){
+  if(!confirm('წაშლა?')) return;
+  DOCS=DOCS.filter(function(d){ return d.id!==id; });
+  phDocsSaveUser(phDocsGetUser().filter(function(d){ return d.id!==id; }));
+  if(sb && uid){
+    try{ var r=await sb.from('ph_documents').delete().eq('id',id).eq('user_id',uid); if(r.error) console.warn(r.error); }catch(e){ console.warn(e); }
+  }
+  toast('🗑 წაიშალა');
+  phDocsRender();
+}
+
+// ════════════════════════════════════════════════════
+//  TAB 2 — PARTNERS  →  cloud table: ph_partners
+// ════════════════════════════════════════════════════
+function phPartnersLocal(){ try{ return JSON.parse(localStorage.getItem(PH_PARTNERS_KEY)||'[]'); }catch(e){ return []; } }
+function phPartnersSaveLocal(arr){ try{ localStorage.setItem(PH_PARTNERS_KEY, JSON.stringify(arr)); }catch(e){} }
+
+// static default partner card (SRCA) — always shown at top, not deletable
+const SRCA_PARTNER={
+  _static:true,
+  name:'სსიპ სოფლის მეურნეობის სამეცნიერო-კვლევითი ცენტრი',
+  website:'https://srca.gov.ge/',
+  role:'📚 სამეცნიერო ლიტერატურა · 🌱 ფენოლოგიური მონაცემები'
+};
+
+function normalizePhone(phone){
+  var raw=String(phone||'').trim();
+  if(!raw) return '';
+  var digits=raw.replace(/\D/g,'');
+  if(!digits) return '';
+  if(digits.indexOf('995')===0) return '+'+digits;
+  if(digits.indexOf('0')===0) return '+995'+digits.slice(1);
+  if(digits.length===9) return '+995'+digits;
+  return '+'+digits;
+}
+function normalizeWebsite(url){
+  var v=String(url||'').trim();
+  if(!v) return '';
+  if(/^\d+$/.test(v)) return '';
+  if(/^https?:\/\//i.test(v)) return v;
+  return 'https://'+v;
+}
+
+async function phAdLoad(){
+  var list=document.getElementById('phAdsList');
+  if(!list) return;
+  list.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);font-size:.82rem;grid-column:1/-1">⏳ იტვირთება...</div>';
+  try{
+    if(!sb) throw new Error('no sb');
+    var res=await sb.from('ph_partners').select('*').order('created_at',{ascending:false});
+    if(res.error) throw res.error;
+    var data=res.data||[];
+    var local=phPartnersLocal();
+    var map=new Map();
+    data.concat(local||[]).forEach(function(item){ if(item && item.id) map.set(item.id, item); });
+    var merged=Array.from(map.values());
+    if(merged.length) phPartnersSaveLocal(merged);
+    phAdRender(merged);
+  }catch(e){
+    phAdRender(phPartnersLocal());
+  }
+}
+
+function phAdLogoSelected(input){
+  var el=document.getElementById('phAdLogoName');
+  if(el) el.textContent=(input.files && input.files[0]) ? input.files[0].name : 'ლოგო არ არჩეულა';
+}
+
+function _srcaCardHtml(){
+  return '<a href="'+SRCA_PARTNER.website+'" target="_blank" rel="noopener" style="text-decoration:none;grid-column:1/-1;background:#fff;border:1px solid #d9e7f2;border-left:4px solid #d4202c;border-radius:16px;padding:14px;display:flex;gap:14px;align-items:center;box-shadow:0 6px 18px rgba(15,23,42,.04)">'+
+    '<div style="flex:0 0 auto"><span class="srca-partner-logo" style="width:56px;display:block"></span></div>'+
+    '<div style="flex:1;min-width:0">'+
+      '<div style="font-size:.95rem;font-weight:800;color:#0f172a;margin-bottom:4px">'+safeText(SRCA_PARTNER.name)+'</div>'+
+      '<div style="font-size:.78rem;color:#334155;line-height:1.5;margin-bottom:6px">'+safeText(SRCA_PARTNER.role)+'</div>'+
+      '<div style="font-size:.74rem;color:#0369a1;font-weight:700">🌐 srca.gov.ge ↗</div>'+
+    '</div></a>';
+}
+
+function phAdRender(partners){
+  var list=document.getElementById('phAdsList');
+  if(!list) return;
+  var html=_srcaCardHtml();
+  (partners||[]).forEach(function(p){
+    if(!p) return;
+    var tags=String(p.tags||'').split(',').map(function(t){return t.trim();}).filter(Boolean).slice(0,4).map(function(t){return '<span style="background:#eef6ff;border:1px solid #cfe1f4;color:#1d4ed8;padding:3px 8px;border-radius:999px;font-size:.68rem">'+safeText(t)+'</span>';}).join('');
+    var hasLogo=!!(p.logoData && String(p.logoData).indexOf('data:image')===0);
+    var logoHtml=hasLogo
+      ? '<img src="'+safeAttr(p.logoData)+'" alt="'+safeAttr(p.name||'')+'" style="width:58px;height:58px;object-fit:contain;border-radius:14px;background:#fff;border:1px solid #dbeafe;padding:6px">'
+      : '<div style="width:58px;height:58px;border-radius:14px;background:#eff6ff;border:1px solid #dbeafe;display:flex;align-items:center;justify-content:center;font-size:1.5rem">'+safeText(p.emoji||'🏢')+'</div>';
+    var phoneBtn=p.phone ? '<div style="font-size:.78rem;color:#166534;font-weight:700">📞 '+safeText(p.phone)+'</div>' : '';
+    var mailBtn=p.email ? '<div style="font-size:.78rem;color:#1d4ed8;font-weight:700">✉️ '+safeText(p.email)+'</div>' : '';
+    var safeWebsite=normalizeWebsite(p.website);
+    var webDisp=safeWebsite ? String(safeWebsite).replace(/^https?:\/\//,'').replace(/\/+$/,'') : '';
+    var webBtn=webDisp ? '<div style="font-size:.78rem;color:#334155;font-weight:700"><a href="'+safeAttr(safeWebsite)+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">🌐 '+safeText(webDisp)+' ↗</a></div>' : '';
+    var del='<button onclick="phAdDelete(\''+safeAttr(p.id)+'\')" style="width:auto;margin:0;background:#fff1f2;border:1px solid #fecdd3;color:#e11d48;border-radius:9px;padding:7px 11px;font-size:.72rem">🗑 წაშლა</button>';
+    var who=[p.contact_person||p.contact||'', p.address||''].filter(Boolean).join(' · ');
+    html+='<div style="background:#fff;border:1px solid #d9e7f2;border-radius:16px;padding:14px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 6px 18px rgba(15,23,42,.04)">'+
+      '<div>'+logoHtml+'</div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:.95rem;font-weight:800;color:#0f172a;margin-bottom:4px">'+safeText(p.name||'უსახელო პარტნიორი')+'</div>'+
+        '<div style="font-size:.78rem;color:#334155;line-height:1.55;margin-bottom:6px">'+safeText(p.description||'მოკლე აღწერა დამატებული არ არის.')+'</div>'+
+        (who?'<div style="font-size:.72rem;color:#64748b;margin-bottom:6px">'+safeText(who)+'</div>':'')+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">'+tags+'</div>'+
+        '<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px">'+phoneBtn+mailBtn+webBtn+'</div>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap">'+del+'</div>'+
+      '</div>'+
+    '</div>';
+  });
+  list.innerHTML=html;
+}
+
+async function phAdSave(){
+  var name=(document.getElementById('phAdName').value||'').trim();
+  var emoji=(document.getElementById('phAdEmoji').value||'').trim() || '🏢';
+  var desc=(document.getElementById('phAdDesc').value||'').trim();
+  var phone=(document.getElementById('phAdPhone').value||'').trim();
+  var contact=(document.getElementById('phAdContact').value||'').trim();
+  var email=(document.getElementById('phAdEmail').value||'').trim();
+  var address=(document.getElementById('phAdAddress').value||'').trim();
+  var websiteRaw=(document.getElementById('phAdWebsite').value||'').trim();
+  var website=normalizeWebsite(websiteRaw);
+  var tags=(document.getElementById('phAdTags').value||'').trim();
+  var logoInp=document.getElementById('phAdLogo');
+  var msg=document.getElementById('phAdMsg');
+
+  function fail(t){ if(msg){ msg.style.color='#dc2626'; msg.textContent=t; } }
+  if(!name){ fail('სახელი სავალდებულოა'); return; }
+  if(!address){ fail('მისამართი სავალდებულოა'); return; }
+  if(!websiteRaw){ fail('ვებ-გვერდი სავალდებულოა'); return; }
+  if(!website){ fail('ვებ-გვერდის ველში სწორი ბმული ჩაწერე'); return; }
+  if(msg){ msg.style.color='var(--accent-d)'; msg.textContent='💾 ინახება...'; }
+
+  var saveEntry=async function(logoData){
+    logoData=logoData||'';
+    var payload={ name:name, emoji:emoji, description:desc||'', address:address||'', phone:phone||'', email:email||'', contact_person:contact||'', tags:tags||'', website:website||'', logoData:logoData };
+    var newEntry=Object.assign({ id:'loc_'+Date.now(), created_at:new Date().toISOString() }, payload);
+    try{
+      if(!sb) throw new Error('no sb');
+      var r=await sb.from('ph_partners').insert(payload).select().single();
+      if(r.error) throw r.error;
+      var cached=phPartnersLocal(); cached.unshift(r.data); phPartnersSaveLocal(cached);
+    }catch(e){
+      var cached2=phPartnersLocal(); cached2.unshift(newEntry); phPartnersSaveLocal(cached2);
+    }
+    if(msg){ msg.style.color='var(--accent-d)'; msg.textContent='✅ შენახულია!'; }
+    toast('✅ პარტნიორი შენახულია');
+    ['phAdName','phAdEmoji','phAdDesc','phAdPhone','phAdContact','phAdEmail','phAdAddress','phAdWebsite','phAdTags'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+    if(logoInp) logoInp.value='';
+    var logoName=document.getElementById('phAdLogoName'); if(logoName) logoName.textContent='ლოგო არ არჩეულა';
+    setTimeout(function(){ if(msg) msg.textContent=''; },2000);
+    phAdLoad();
+  };
+
+  if(logoInp && logoInp.files && logoInp.files[0]){
+    var f=logoInp.files[0];
+    if(f.size > MAX_FILE_BYTES){ fail('ლოგო დიდია (მაქს. 2.5 MB)'); return; }
+    var reader=new FileReader();
+    reader.onload=function(e){ saveEntry(e.target.result); };
+    reader.readAsDataURL(f);
+  } else {
+    saveEntry('');
+  }
+}
+
+async function phAdDelete(id){
+  if(!confirm('წავშალოთ?')) return;
+  phPartnersSaveLocal(phPartnersLocal().filter(function(p){ return p.id!==id; }));
+  try{ if(sb) await sb.from('ph_partners').delete().eq('id',id); }catch(e){}
+  toast('🗑 წაიშალა');
+  phAdLoad();
+}
+
+// ════════════════════════════════════════════════════
+//  TAB 3 — EVENTS  →  cloud table: ph_events
+// ════════════════════════════════════════════════════
+const PH_EVENTS_KEY='its_ph_events';
+let EVENTS=[], editEvId=null;
+
+function phEventsLocal(){ try{ return JSON.parse(localStorage.getItem(PH_EVENTS_KEY)||'[]'); }catch(e){ return []; } }
+function phEventsSaveLocal(arr){ try{ localStorage.setItem(PH_EVENTS_KEY, JSON.stringify(arr)); }catch(e){} }
+
+const EV_TYPE_META={
+  'კონფერენცია':{ic:'🎤',col:'#0284c7'},'ლაივი':{ic:'📡',col:'#e11d48'},
+  'სემინარი':{ic:'📊',col:'#7c3aed'},'ტრენინგი':{ic:'🎓',col:'#059669'},
+  'გამოფენა':{ic:'🏛️',col:'#d97706'},'სხვა':{ic:'📌',col:'#2563eb'}
+};
+
+async function phEvLoad(){
+  if(!sb || !uid){ EVENTS=phEventsLocal(); phEvRender(); return; }
+  try{
+    var r=await sb.from('ph_events').select('*').order('event_date',{ascending:true});
+    if(r.error) throw r.error;
+    var cloud=r.data||[];
+    var local=phEventsLocal();
+    var map=new Map();
+    local.forEach(function(e){ if(e && e.id) map.set(e.id, e); });
+    cloud.forEach(function(e){ if(e && e.id) map.set(e.id, e); });
+    EVENTS=Array.from(map.values());
+    phEventsSaveLocal(EVENTS);
+  }catch(e){ EVENTS=phEventsLocal(); }
+  phEvRender();
+}
+
+function phEvImageSelected(input){
+  var el=document.getElementById('phEvImageName');
+  if(el) el.textContent=(input.files && input.files[0]) ? input.files[0].name : 'ბანერი არ არჩეულა';
+}
+
+function _evDateRange(ev){
+  var s=ev.event_date||'', e=ev.date_to||'';
+  var t=ev.time?(' · 🕒 '+safeText(ev.time)):'';
+  if(e && e!==s) return safeText(s)+' → '+safeText(e)+t;
+  return safeText(s)+t;
+}
+
+function _evCardHtml(ev, isPast){
+  var meta=EV_TYPE_META[ev.type]||EV_TYPE_META['სხვა'];
+  var col=meta.col;
+  var img=(ev.image && String(ev.image).indexOf('data:image')===0)
+    ? '<img src="'+safeAttr(ev.image)+'" alt="" style="width:100%;max-height:150px;object-fit:cover;border-radius:10px;margin-bottom:8px">' : '';
+  var joinBtn=ev.url ? '<a href="'+safeAttr(normalizeWebsite(ev.url))+'" target="_blank" rel="noopener" style="text-decoration:none;background:'+col+'15;border:1px solid '+col+'40;color:'+col+';border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;display:inline-block">🎟️ დარეგისტრირდი / შესვლა ↗</a>' : '';
+  var canEdit=(ev.user_id && ev.user_id===uid);
+  var editBtn=canEdit ? '<button onclick="phEvEdit(\''+safeAttr(ev.id)+'\')" style="width:auto;margin:0;background:#fff;border:1.5px solid var(--border2);color:#475569;border-radius:9px;padding:7px 10px;font-size:.72rem">✏️</button>' : '';
+  var delBtn=canEdit ? '<button onclick="phEvDelete(\''+safeAttr(ev.id)+'\')" style="width:auto;margin:0;background:#fff1f2;border:1px solid #fecdd3;color:#e11d48;border-radius:9px;padding:7px 10px;font-size:.72rem">🗑</button>' : '';
+  var notifyBtn='<button onclick="phEvNotify(\''+safeAttr(ev.id)+'\')" style="width:auto;margin:0;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:9px;padding:7px 12px;font-size:.72rem;font-weight:700">📲 შეტყობინება მომხმარებლებს</button>';
+  return '<div style="padding:14px;background:#fff;border:1px solid #d9e7f2;border-left:4px solid '+col+';border-radius:14px;box-shadow:0 6px 18px rgba(15,23,42,.04)'+(isPast?';filter:grayscale(.3)':'')+'">'+
+    img+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:5px">'+
+      '<span style="font-size:.68rem;background:'+col+'14;border:1px solid '+col+'38;color:'+col+';border-radius:999px;padding:3px 9px">'+meta.ic+' '+safeText(ev.type||'ღონისძიება')+'</span>'+
+      '<div style="font-size:.94rem;font-weight:800;color:#0f172a">'+safeText(ev.title||'უსათაურო ღონისძიება')+'</div>'+
+    '</div>'+
+    '<div style="font-size:.75rem;color:#64748b;margin-bottom:5px">📆 '+_evDateRange(ev)+'</div>'+
+    (ev.location?'<div style="font-size:.75rem;color:#334155;margin-bottom:5px">📍 '+safeText(ev.location)+'</div>':'')+
+    (ev.description?'<div style="font-size:.78rem;color:#334155;line-height:1.55;margin-bottom:8px">'+safeText(ev.description)+'</div>':'')+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px">'+joinBtn+notifyBtn+editBtn+delBtn+'</div>'+
+  '</div>';
+}
+
+function phEvRender(){
+  var up=document.getElementById('phEvUpcoming'), past=document.getElementById('phEvPast');
+  var upEmpty=document.getElementById('phEvUpcomingEmpty');
+  if(!up) return;
+  var today=_today();
+  var upcoming=EVENTS.filter(function(e){ return String(e.event_date||'')>=today; })
+    .sort(function(a,b){ return String(a.event_date||'').localeCompare(String(b.event_date||'')); });
+  var pastEv=EVENTS.filter(function(e){ return String(e.event_date||'')<today; })
+    .sort(function(a,b){ return String(b.event_date||'').localeCompare(String(a.event_date||'')); });
+  up.innerHTML=upcoming.map(function(e){ return _evCardHtml(e,false); }).join('');
+  if(upEmpty) upEmpty.style.display=upcoming.length?'none':'block';
+  past.innerHTML=pastEv.map(function(e){ return _evCardHtml(e,true); }).join('');
+  document.getElementById('phEvPastWrap').style.display=pastEv.length?'block':'none';
+}
+
+function phEvTogglePast(){
+  var p=document.getElementById('phEvPast'), c=document.getElementById('phEvPastCaret');
+  var open=p.style.display==='flex';
+  p.style.display=open?'none':'flex';
+  if(c) c.textContent=open?'▸':'▾';
+}
+
+function phEvClearForm(){
+  ['phEvTitle','phEvTime','phEvDate','phEvDateTo','phEvLocation','phEvDesc','phEvUrl'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=''; });
+  document.getElementById('phEvType').value='კონფერენცია';
+  var fi=document.getElementById('phEvImage'); if(fi) fi.value='';
+  var fn=document.getElementById('phEvImageName'); if(fn) fn.textContent='ბანერი არ არჩეულა';
+}
+function phEvCancelEdit(){
+  editEvId=null;
+  phEvClearForm();
+  document.getElementById('phEvCancelBtn').style.display='none';
+  var m=document.getElementById('phEvMsg'); if(m) m.textContent='';
+}
+function phEvEdit(id){
+  var ev=EVENTS.find(function(e){ return e.id===id; }); if(!ev) return;
+  editEvId=id;
+  document.getElementById('phEvTitle').value=ev.title||'';
+  document.getElementById('phEvType').value=ev.type||'კონფერენცია';
+  document.getElementById('phEvTime').value=ev.time||'';
+  document.getElementById('phEvDate').value=ev.event_date||'';
+  document.getElementById('phEvDateTo').value=ev.date_to||'';
+  document.getElementById('phEvLocation').value=ev.location||'';
+  document.getElementById('phEvDesc').value=ev.description||'';
+  document.getElementById('phEvUrl').value=ev.url||'';
+  document.getElementById('phEvCancelBtn').style.display='inline-block';
+  try{ document.getElementById('phTabEvents').scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){}
+}
+
+async function _phEvPersist(ev, msg){
+  var map=new Map(); EVENTS.forEach(function(e){ if(e && e.id) map.set(e.id, e); });
+  map.set(ev.id, ev);
+  EVENTS=Array.from(map.values());
+  phEventsSaveLocal(EVENTS);
+  if(sb && uid){
+    try{ var r=await sb.from('ph_events').upsert(Object.assign({}, ev, { user_id:uid }), { onConflict:'id' });
+      if(r.error){ if(msg){ msg.style.color='#dc2626'; msg.textContent='⚠️ ღრუბელში ვერ შეინახა: '+r.error.message; } }
+    }catch(e){ if(msg){ msg.style.color='#dc2626'; msg.textContent='⚠️ '+(e.message||e); } }
+  }
+  if(msg && !/⚠️/.test(msg.textContent)){ msg.style.color='var(--accent-d)'; msg.textContent='✅ შენახულია!'; }
+  toast('✅ ღონისძიება შენახულია');
+  editEvId=null;
+  document.getElementById('phEvCancelBtn').style.display='none';
+  phEvClearForm();
+  phEvRender();
+  // notify prompt right after saving
+  var after=document.getElementById('phEvNotifyAfter');
+  if(after){
+    after.innerHTML='<button onclick="phEvNotify(\''+safeAttr(ev.id)+'\')" style="width:auto;margin:0;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:9px;padding:8px 14px;font-size:.78rem;font-weight:700">📲 შეტყობინება მომხმარებლებს</button>';
+  }
+  setTimeout(function(){ if(msg) msg.textContent=''; },2500);
+}
+
+function phEvSave(){
+  var title=(document.getElementById('phEvTitle').value||'').trim();
+  var type=(document.getElementById('phEvType').value||'').trim();
+  var date=(document.getElementById('phEvDate').value||'').trim();
+  var dateTo=(document.getElementById('phEvDateTo').value||'').trim();
+  var time=(document.getElementById('phEvTime').value||'').trim();
+  var location=(document.getElementById('phEvLocation').value||'').trim();
+  var desc=(document.getElementById('phEvDesc').value||'').trim();
+  var url=(document.getElementById('phEvUrl').value||'').trim();
+  var imgInp=document.getElementById('phEvImage');
+  var msg=document.getElementById('phEvMsg');
+  if(msg){ msg.style.color='var(--accent-d)'; msg.textContent=''; }
+  document.getElementById('phEvNotifyAfter').innerHTML='';
+
+  if(!title||!date){ if(msg){ msg.style.color='#dc2626'; msg.textContent='⚠️ სათაური და თარიღი სავ.'; } return; }
+
+  var existing=editEvId ? EVENTS.find(function(e){ return e.id===editEvId; }) : null;
+  var ev={
+    id: editEvId || ('ev_'+Date.now()),
+    title:title, type:type, event_date:date, date_to:dateTo, time:time,
+    location:location, description:desc, url:url,
+    image: existing ? (existing.image||'') : '',
+    is_admin:false,
+    created_at: existing ? (existing.created_at||new Date().toISOString()) : new Date().toISOString()
+  };
+
+  var hasImg=imgInp && imgInp.files && imgInp.files[0];
+  if(hasImg){
+    var f=imgInp.files[0];
+    if(f.size > MAX_FILE_BYTES){ if(msg){ msg.style.color='#dc2626'; msg.textContent='⚠️ ბანერი დიდია (მაქს. 2.5 MB)'; } return; }
+    var reader=new FileReader();
+    reader.onload=function(e){ ev.image=e.target.result; _phEvPersist(ev, msg); };
+    reader.readAsDataURL(f);
+  } else {
+    _phEvPersist(ev, msg);
+  }
+}
+
+async function phEvDelete(id){
+  if(!confirm('წაშლა?')) return;
+  EVENTS=EVENTS.filter(function(e){ return e.id!==id; });
+  phEventsSaveLocal(EVENTS);
+  if(sb && uid){ try{ var r=await sb.from('ph_events').delete().eq('id',id).eq('user_id',uid); if(r.error) console.warn(r.error); }catch(e){ console.warn(e); } }
+  toast('🗑 წაიშალა');
+  phEvRender();
+}
+
+function phEvNotify(id){
+  var ev=EVENTS.find(function(e){ return e.id===id; });
+  if(!ev) return;
+  if(window.eventNotify) window.eventNotify(ev);
+}
+
+// ── session resume on load ──
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; showApp(s.data.session.user.email); } }catch(e){} })();
+
+// Notification broadcast stub — replaced with real SMS/email sender later.
+window.eventNotify = async function(ev){
+  if(!ev){ return; }
+  var when = (ev.event_date||'') + (ev.date_to && ev.date_to!==ev.event_date ? ' – '+ev.date_to : '') + (ev.time? ' · '+ev.time : '');
+  var msg = '📧 გავაგზავნო მეილი ყველა რეგისტრირებულ მომხმარებელს ამ ღონისძიების შესახებ?\n\n„'+(ev.title||'')+'"\n'+when+(ev.location?'\n📍 '+ev.location:'');
+  if(!confirm(msg)) return;
+  var client=getSb(); if(!client){ alert('სერვერს ვერ დაუკავშირდა.'); return; }
+  var btns=document.querySelectorAll('button'); // lightweight busy state
+  try{
+    var r=await client.functions.invoke('notify-event', { body: { event: {
+      title:ev.title||'', type:ev.type||'', event_date:ev.event_date||'', date_to:ev.date_to||'',
+      time:ev.time||'', location:ev.location||'', description:ev.description||'', url:ev.url||''
+    } } });
+    if(r.error) throw r.error;
+    var d=r.data||{};
+    alert('✅ მეილი გაიგზავნა.'+(d.sent!=null?(' მიმღები: '+d.sent):'')+(d.failed?(' · ვერ გაიგზავნა: '+d.failed):''));
+  }catch(e){
+    var em=(e&&e.message)?e.message:String(e);
+    alert('❌ მეილი ვერ გაიგზავნა: '+em+'\n\nდარწმუნდი რომ Supabase-ზე განთავსებულია edge function „notify-event".');
+  }
+};
+</script>
+</body></html>
