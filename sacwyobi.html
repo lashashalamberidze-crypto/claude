@@ -273,7 +273,10 @@
       <div class="sw-card-title" style="justify-content:space-between">
         <span>🛒 შესყიდვა <span id="sw-pur-summary" class="muted" style="font-weight:400;letter-spacing:0;text-transform:none"></span></span>
         <span style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="sw-btn sw-btn-outline" style="padding:6px 12px;font-size:.76rem" onclick="swCompaniesModal()">🏢 კომპანიები</button>
+          <button class="sw-btn sw-btn-outline" style="padding:6px 12px;font-size:.76rem" onclick="swMyCompanyModal()">🏢 ჩემი კომპანია</button>
+          <button class="sw-btn sw-btn-outline" style="padding:6px 12px;font-size:.76rem" onclick="swCompaniesModal()">🚚 მომწოდებლები</button>
+          <button class="sw-btn sw-btn-outline" style="padding:6px 12px;font-size:.76rem" onclick="swExportPurExcel()">📊 Excel</button>
+          <button class="sw-btn sw-btn-outline" style="padding:6px 12px;font-size:.76rem" onclick="swExportPurPdf()">📕 PDF</button>
           <button class="sw-btn sw-btn-outline" style="padding:6px 12px;font-size:.76rem" onclick="swActBatch()">📄 აქტი (ფილტრით)</button>
           <button class="sw-btn sw-btn-gold" style="padding:6px 14px;font-size:.78rem" onclick="swNewPurchase()">➕ ახალი შესყიდვა</button>
         </span>
@@ -327,6 +330,7 @@
 </div><!-- /sw-wrap -->
 <datalist id="sw-suppliers-dl"></datalist>
 <datalist id="sw-buyers-dl"></datalist>
+<datalist id="sw-products-dl"></datalist>
 <div class="sw-notify" id="sw-notif"></div>
 
 </div><!-- /app -->
@@ -1308,6 +1312,12 @@ function swBuildContactLists(){
   }
   fill('sw-suppliers-dl', sup);
   fill('sw-buyers-dl', buy);
+  // products/cultures (from lots + ops) → free-entry datalist in new-purchase form
+  var prod={};
+  swOps.forEach(function(o){ var p=String((o&&o.product)||'').trim(); if(p) prod[p]=1; });
+  (typeof swLots!=='undefined'?swLots:[]).forEach(function(l){ var p=String((l&&l.product)||'').trim(); if(p) prod[p]=1; });
+  ['მოცვი','მაყვალი','ჟოლო','მარწყვი','ვაშლი','ატამი','მსხალი','ალუბალი','ბალი','ქლიავი','ვენახი','კაკალი','თხილი'].forEach(function(p){ prod[p]=1; });
+  fill('sw-products-dl', prod);
 }
 window.swBuildContactLists = swBuildContactLists;
 
@@ -1338,7 +1348,7 @@ function swNewPurchase(){
       <button onclick="document.getElementById('sw-newpur-modal').remove()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer">✕</button>
       <div style="font-size:1rem;font-weight:600;color:#1e3a5f;margin-bottom:16px">🛒 ახალი შესყიდვა</div>
       <div class="sw-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">
-        <div class="sw-field full"><label>პროდუქტი *</label><input id="swnp-product" placeholder="მოცვი პრემიუმ"></div>
+        <div class="sw-field full"><label>პროდუქტი / კულტურა * <span class="muted" style="font-weight:400">(აირჩიე ან ჩაწერე ახალი)</span></label><input id="swnp-product" list="sw-products-dl" placeholder="მოცვი / მაყვალი / ჟოლო / ...  — ნებისმიერი კულტურა"></div>
         <div class="sw-field full"><label>🏢 შენახული კომპანია (არჩევა)</label><select id="swnp-supselect" onchange="swNpSupPick(this.value)" style="padding:9px 11px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.85rem;width:100%;outline:none"><option value="">— აირჩიე შენახული ან ჩაწერე ხელით ↓ —</option></select></div>
         <div class="sw-field full"><label>მომწოდებელი</label><input id="swnp-supplier" list="sw-suppliers-dl" placeholder="მომწოდებლის სახელი" oninput="swNpSupFill()" onchange="swNpSupFill()"></div>
         <div class="sw-field"><label>ს/კ (საიდ./პ.ნ.)</label><input id="swnp-supidnum" placeholder="ნ.ა."></div>
@@ -1469,7 +1479,7 @@ function geoNumWords(n){
   const m=Math.floor(n/1000000),r=n%1000000; const w=(m===1)?(r===0?"მილიონი":"მილიონ"):(thous(m)+(r===0?" მილიონი":" მილიონ")); return r===0?w:w+" "+thous(r);
 }
 function geoLari(a){ a=Math.round(a*100)/100; const l=Math.floor(a+1e-9),t=Math.round((a-l)*100); let s=geoNumWords(l)+" ლარი"; if(t>0)s+=" და "+geoNumWords(t)+" თეთრი"; return s; }
-const _AD='border:1px solid #000;padding:9px 11px';
+const _AD='border:1px solid #000;padding:13px 12px';
 function aktTh(t){return `<th style="border:1px solid #000;padding:9px 11px;font-size:14.5px;font-weight:700">${t}</th>`;}
 function _swCo(){ return window.__swCompany||{}; }
 function aktIntro(seller,idc,ph){
@@ -1477,10 +1487,10 @@ function aktIntro(seller,idc,ph){
   const bName = co.name ? safeText(co.name) : '________________________________';
   const bId   = (co.idnum!=null && String(co.idnum).trim()) ? safeText(co.idnum) : '____________';
   const rep   = (co.rep!=null && String(co.rep).trim()) ? (' წარმომადგენელი '+safeText(co.rep)) : '';
-  return `<p style="text-align:justify;margin:0 0 15px;line-height:1.8">ჩვენ, ერთის მხრივ <b>${bName}</b> (ს/კ ${bId})${rep}, შემდგომში „მყიდველი" და მეორეს მხრივ <u>&nbsp;${seller}&nbsp;</u> (ს/კ პ/ნ <u>&nbsp;${idc}&nbsp;</u>), ტელ. <u>&nbsp;${ph}&nbsp;</u>, შემდგომში „გამყიდველი" ვადგენთ აღნიშნულ აქტს მასზედ, რომ „მყიდველმა" შეიძინა „გამყიდველის"-გან შემდეგი საქონელი:</p>`;
+  return `<p style="text-align:justify;margin:0 0 26px;line-height:2.15">ჩვენ, ერთის მხრივ <b>${bName}</b> (ს/კ ${bId})${rep}, შემდგომში „მყიდველი" და მეორეს მხრივ <u>&nbsp;${seller}&nbsp;</u> (ს/კ პ/ნ <u>&nbsp;${idc}&nbsp;</u>), ტელ. <u>&nbsp;${ph}&nbsp;</u>, შემდგომში „გამყიდველი" ვადგენთ აღნიშნულ აქტს მასზედ, რომ „მყიდველმა" შეიძინა „გამყიდველის"-გან შემდეგი საქონელი:</p>`;
 }
 function aktTableHead(){
-  return `<table style="width:100%;border-collapse:collapse;font-size:15px;margin:0 0 15px"><thead><tr>${aktTh("N")}${aktTh("საქონლის დასახელება")}${aktTh("ერთეული")}${aktTh("რაოდენობა")}${aktTh("ერთეულის ფასი, (ლარი)")}${aktTh("ჯამი, (ლარი)")}</tr></thead><tbody>`;
+  return `<table style="width:100%;border-collapse:collapse;font-size:15.5px;margin:0 0 26px"><thead><tr>${aktTh("N")}${aktTh("საქონლის დასახელება")}${aktTh("ერთეული")}${aktTh("რაოდენობა")}${aktTh("ერთეულის ფასი, (ლარი)")}${aktTh("ჯამი, (ლარი)")}</tr></thead><tbody>`;
 }
 function aktRow(n,name,qty,price,sum){
   return `<tr><td style="${_AD};text-align:center">${n}</td><td style="${_AD}">${name}</td><td style="${_AD};text-align:center">კგ</td><td style="${_AD};text-align:right">${_akFmt(qty)}</td><td style="${_AD};text-align:right">${price?_akFmt2(price):""}</td><td style="${_AD};text-align:right">${_akFmt2(sum)}</td></tr>`;
@@ -1491,14 +1501,14 @@ function aktTotalRow(totQty,totSum){
 function aktFoot(totSum,sellerName){
   const co=_swCo();
   const bName = co.name ? safeText(co.name) : '&nbsp;';
-  return `<p style="margin:0 0 12px;line-height:1.85">თანხა შეადგენს: <u>&nbsp;${geoLari(totSum)}&nbsp;</u> <span style="color:#333">(${_akFmt2(totSum)} ₾)</span></p>`
-    +`<p style="margin:0 0 28px;line-height:1.85">თანხის გაცემის თარიღი «_______» ____________________________ წ.</p>`
-    +`<div style="display:flex;justify-content:space-between;gap:60px;margin-top:4px;font-size:16px">`
-      +`<div style="flex:1">მყიდველი<br>${bName}<br><br><br>__________________________________</div>`
-      +`<div style="flex:1">გამყიდველი<br>${sellerName||"&nbsp;"}<br><br><br>__________________________________</div>`
+  return `<p style="margin:0 0 20px;line-height:2.1">თანხა შეადგენს: <u>&nbsp;${geoLari(totSum)}&nbsp;</u> <span style="color:#333">(${_akFmt2(totSum)} ₾)</span></p>`
+    +`<p style="margin:0 0 48px;line-height:2.1">თანხის გაცემის თარიღი «_______» ____________________________ წ.</p>`
+    +`<div style="display:flex;justify-content:space-between;gap:60px;margin-top:8px;font-size:16.5px;line-height:1.9">`
+      +`<div style="flex:1">მყიდველი<br>${bName}<br><br><br><br>__________________________________</div>`
+      +`<div style="flex:1">გამყიდველი<br>${sellerName||"&nbsp;"}<br><br><br><br>__________________________________</div>`
     +`</div>`;
 }
-function aktWrap(inner){return `<div class="akt" style="font-family:'Noto Sans Georgian','DejaVu Sans',sans-serif;color:#000;max-width:780px;margin:0 auto;font-size:16.5px;line-height:1.7;padding:6px 4px">${inner}</div>`;}
+function aktWrap(inner){return `<div class="akt" style="font-family:'Noto Sans Georgian','DejaVu Sans',sans-serif;color:#000;max-width:600px;margin:0 auto;font-size:17px;line-height:2.05;padding:26px 18px">${inner}</div>`;}
 // enrich supplier idnum/phone from gv_suppliers map (match by name)
 function _swSupInfo(name){
   var rec = (window.__swSupByName||{})[String(name||'').trim().toLowerCase()];
@@ -1517,9 +1527,9 @@ function aktSingleHtml(op, aktNo){
   const rows = aktRow(1, safeText(op.product||'პროდუქცია'), kg, price, sum);
   const noStr = (aktNo!=null) ? String(aktNo).padStart(3,'0') : '____';
   const city = co.addr ? safeText(co.addr) : 'ქ. ______';
-  const top = `<div style="display:flex;justify-content:space-between;align-items:baseline;margin:0 0 14px;font-size:16px"><span>${city}</span><span>${aktDateGeo(op.date)} წ</span></div>`
-    +`<div style="text-align:center;font-weight:700;font-size:20px;margin:0 0 16px">შესყიდვის აქტი № ${noStr}</div>`;
-  const warn = (!co.name && !co.idnum) ? `<div style="text-align:center;color:#b45309;font-size:13px;margin:0 0 12px">⚠️ ჯერ კომპანიის მონაცემები შეავსე (მთავარ აპში)</div>` : '';
+  const top = `<div style="display:flex;justify-content:space-between;align-items:baseline;margin:0 0 20px;font-size:16px"><span>${city}</span><span>${aktDateGeo(op.date)} წ</span></div>`
+    +`<div style="text-align:center;font-weight:700;font-size:22px;margin:0 0 26px">შესყიდვის აქტი № ${noStr}</div>`;
+  const warn = (!co.name && !co.idnum) ? `<div style="text-align:center;color:#b45309;font-size:13px;margin:0 0 12px">⚠️ ჯერ შეავსე „🏢 ჩემი კომპანია" — მაშინ აქტში „მყიდველი" ავტომატურად ჩაიწერება</div>` : '';
   return aktWrap(warn+top+aktIntro(seller,idc,ph)+aktTableHead()+rows+aktTotalRow(kg,sum)+aktFoot(sum, op.buyer?safeText(op.buyer):''));
 }
 // open a print window with the act(s)
@@ -1563,7 +1573,8 @@ function swCompaniesModal(){
   bg.innerHTML=`
     <div class="sw-modal" style="max-width:640px">
       <button onclick="document.getElementById('sw-comp-modal').remove()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer">✕</button>
-      <div style="font-size:1rem;font-weight:600;color:#1e3a5f;margin-bottom:14px">🏢 კომპანიები (მომწოდებლები)</div>
+      <div style="font-size:1rem;font-weight:600;color:#1e3a5f;margin-bottom:4px">🚚 მომწოდებლები (გამყიდველი)</div>
+      <div class="muted" style="font-size:.78rem;margin-bottom:12px">აქ დაამატე ფირმები, ვისგანაც ყიდულობ — აქტში ჩაიწერება როგორც „გამყიდველი"</div>
       <div class="sw-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px;margin-bottom:12px">
         <input type="hidden" id="swc-id">
         <div class="sw-field full"><label>დასახელება *</label><input id="swc-name" placeholder="შპს / ფ.პ. სახელი"></div>
@@ -1711,6 +1722,171 @@ async function swViewSignedAct(opId){
   }catch(e){ console.warn('swViewSignedAct', e); swNotify('⚠️ შეცდომა', true); }
 }
 window.swViewSignedAct = swViewSignedAct;
+
+// ══════════════════════════════════════════════════════
+//  MY COMPANY (🏢 ჩემი კომპანია — buyer/მყიდველი → gv_settings.company_cfg)
+// ══════════════════════════════════════════════════════
+function swMyCompanyModal(){
+  const existing=document.getElementById('sw-myco-modal'); if(existing) existing.remove();
+  const co=window.__swCompany||{};
+  const v=function(x){ return (x==null?'':String(x)).replace(/"/g,'&quot;'); };
+  const bg=document.createElement('div'); bg.id='sw-myco-modal'; bg.className='sw-modal-bg';
+  bg.innerHTML=`
+    <div class="sw-modal" style="max-width:520px">
+      <button onclick="document.getElementById('sw-myco-modal').remove()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer">✕</button>
+      <div style="font-size:1rem;font-weight:600;color:#1e3a5f;margin-bottom:6px">🏢 ჩემი კომპანია (მყიდველი)</div>
+      <div class="muted" style="font-size:.78rem;margin-bottom:14px">ეს მონაცემები აქტში ჩაიწერება როგორც „მყიდველი"</div>
+      <div class="sw-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">
+        <div class="sw-field full"><label>კომპანიის დასახელება *</label><input id="swmc-name" value="${v(co.name)}" placeholder="შპს „..."></div>
+        <div class="sw-field"><label>ს/კ (საიდ. კოდი)</label><input id="swmc-idnum" value="${v(co.idnum)}" placeholder="000000000"></div>
+        <div class="sw-field"><label>წარმომადგენელი</label><input id="swmc-rep" value="${v(co.rep)}" placeholder="სახელი გვარი"></div>
+        <div class="sw-field full"><label>მისამართი (ქალაქი)</label><input id="swmc-addr" value="${v(co.addr)}" placeholder="ქ. თბილისი"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button class="sw-btn sw-btn-gold" style="flex:1" onclick="swSaveMyCompany()">💾 შენახვა</button>
+        <button class="sw-btn sw-btn-outline" style="flex:1" onclick="document.getElementById('sw-myco-modal').remove()">დახურვა</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+}
+window.swMyCompanyModal = swMyCompanyModal;
+function swSaveMyCompany(){
+  const name=(document.getElementById('swmc-name').value||'').trim();
+  if(!name){ swNotify('⚠️ დასახელება სავალდებულოა', true); return; }
+  const co={
+    name:name,
+    idnum:(document.getElementById('swmc-idnum').value||'').trim(),
+    rep:(document.getElementById('swmc-rep').value||'').trim(),
+    addr:(document.getElementById('swmc-addr').value||'').trim()
+  };
+  window.__swCompany=co;
+  const m=document.getElementById('sw-myco-modal'); if(m) m.remove();
+  swNotify('✅ ჩემი კომპანია შენახულია');
+  swRenderPurchases();
+  if(_sb && uid){
+    // try jsonb object first; on failure retry with stringified (text column)
+    _sb.from('gv_settings').upsert({ user_id:uid, company_cfg:co },{ onConflict:'user_id' })
+      .then(function(r){
+        if(r&&r.error){
+          console.warn('swSaveMyCompany obj', r.error);
+          _sb.from('gv_settings').upsert({ user_id:uid, company_cfg:JSON.stringify(co) },{ onConflict:'user_id' })
+            .then(function(r2){ if(r2&&r2.error) console.warn('swSaveMyCompany str', r2.error); })
+            .catch(function(e){ console.warn('swSaveMyCompany str', e); });
+        }
+      })
+      .catch(function(e){ console.warn('swSaveMyCompany', e); });
+  }
+}
+window.swSaveMyCompany = swSaveMyCompany;
+
+// ══════════════════════════════════════════════════════
+//  EXPORT PURCHASES (📊 Excel + 📕 PDF — respects filters)
+// ══════════════════════════════════════════════════════
+function _swPurExportRows(){
+  return _swPurFiltered().map(function(o){
+    const kg=+o.kg||0, amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0;
+    return {
+      date:o.date||o.time||'',
+      supplier:o.buyer||o.section||'',
+      product:o.product||'',
+      kg:kg,
+      unit:(amt>0&&kg>0)?(amt/kg):0,
+      amount:amt,
+      paid:Math.min(pa,amt),
+      remain:amt>0?Math.max(0,amt-pa):0,
+      status:(amt>0?(pa>=amt?'გადახდილი':(pa>0?'ნაწილობრივი':'ვალი')):'—')
+    };
+  });
+}
+function _swFilterLabel(){
+  const parts=[];
+  const g=function(id){ return (swEl(id)||{}).value||''; };
+  if(g('sw-pur-fculture')) parts.push('კულტურა: '+g('sw-pur-fculture'));
+  if(g('sw-pur-fsupplier')) parts.push('კომპანია: '+g('sw-pur-fsupplier'));
+  if(g('sw-pur-fyear')) parts.push('წელი: '+g('sw-pur-fyear'));
+  const mons=['','იანვარი','თებერვალი','მარტი','აპრილი','მაისი','ივნისი','ივლისი','აგვისტო','სექტემბერი','ოქტომბერი','ნოემბერი','დეკემბერი'];
+  if(g('sw-pur-fmonth')) parts.push('თვე: '+(mons[+g('sw-pur-fmonth')]||g('sw-pur-fmonth')));
+  if(g('sw-pur-from')) parts.push('დან: '+g('sw-pur-from'));
+  if(g('sw-pur-to')) parts.push('მდე: '+g('sw-pur-to'));
+  return parts.length?parts.join(' · '):'ყველა შესყიდვა';
+}
+// Excel export (real .xls via HTML table — opens natively in Excel/Sheets)
+function swExportPurExcel(){
+  const rows=_swPurExportRows();
+  if(!rows.length){ swNotify('⚠️ ექსპორტისთვის ჩანაწერი არ არის', true); return; }
+  let tKg=0,tAmt=0,tPaid=0,tRem=0;
+  const trs=rows.map(function(r){
+    tKg+=r.kg; tAmt+=r.amount; tPaid+=r.paid; tRem+=r.remain;
+    return '<tr>'
+      +'<td>'+safeText(r.date)+'</td>'
+      +'<td>'+safeText(r.supplier)+'</td>'
+      +'<td>'+safeText(r.product)+'</td>'
+      +'<td>'+_akFmt(r.kg)+'</td>'
+      +'<td>'+(r.unit?_akFmt2(r.unit):'')+'</td>'
+      +'<td>'+_akFmt2(r.amount)+'</td>'
+      +'<td>'+_akFmt2(r.paid)+'</td>'
+      +'<td>'+_akFmt2(r.remain)+'</td>'
+      +'<td>'+safeText(r.status)+'</td></tr>';
+  }).join('');
+  const totRow='<tr style="font-weight:bold;background:#eef5ff"><td colspan="3">ჯამი</td><td>'+_akFmt(tKg)+'</td><td></td><td>'+_akFmt2(tAmt)+'</td><td>'+_akFmt2(tPaid)+'</td><td>'+_akFmt2(tRem)+'</td><td></td></tr>';
+  const html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"></head><body>'
+    +'<table border="1"><thead>'
+    +'<tr><th colspan="9" style="font-size:15px">შესყიდული პროდუქტები — '+safeText(_swFilterLabel())+'</th></tr>'
+    +'<tr style="background:#dbeafe"><th>თარიღი</th><th>მომწოდებელი</th><th>პროდუქტი</th><th>კგ</th><th>ფასი ₾/კგ</th><th>სულ ₾</th><th>გადახდილი ₾</th><th>დარჩა ₾</th><th>სტატუსი</th></tr>'
+    +'</thead><tbody>'+trs+totRow+'</tbody></table></body></html>';
+  const blob=new Blob(['﻿'+html],{ type:'application/vnd.ms-excel;charset=utf-8' });
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='shesyidva_'+swDate()+'.xls';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  swNotify('📊 Excel ჩამოიტვირთა ('+rows.length+' ჩანაწერი)');
+}
+window.swExportPurExcel = swExportPurExcel;
+// PDF export (print-to-PDF via a formatted print window)
+function swExportPurPdf(){
+  const rows=_swPurExportRows();
+  if(!rows.length){ swNotify('⚠️ ექსპორტისთვის ჩანაწერი არ არის', true); return; }
+  let tKg=0,tAmt=0,tPaid=0,tRem=0;
+  const trs=rows.map(function(r){
+    tKg+=r.kg; tAmt+=r.amount; tPaid+=r.paid; tRem+=r.remain;
+    const rc=r.remain>0.0001?'#dc2626':'#059669';
+    return '<tr>'
+      +'<td>'+safeText(r.date)+'</td>'
+      +'<td>'+safeText(r.supplier)+'</td>'
+      +'<td>'+safeText(r.product)+'</td>'
+      +'<td style="text-align:right">'+_akFmt(r.kg)+'</td>'
+      +'<td style="text-align:right">'+(r.unit?_akFmt2(r.unit):'—')+'</td>'
+      +'<td style="text-align:right">'+_akFmt2(r.amount)+'</td>'
+      +'<td style="text-align:right">'+_akFmt2(r.paid)+'</td>'
+      +'<td style="text-align:right;color:'+rc+'">'+_akFmt2(r.remain)+'</td>'
+      +'<td>'+safeText(r.status)+'</td></tr>';
+  }).join('');
+  const co=_swCo();
+  const head=(co.name?safeText(co.name):'შესყიდვების უწყისი');
+  const inner='<div style="font-family:\'Noto Sans Georgian\',sans-serif;color:#111">'
+    +'<div style="text-align:center;font-size:20px;font-weight:700;margin:0 0 4px">'+head+'</div>'
+    +'<div style="text-align:center;font-size:16px;margin:0 0 6px">შესყიდული პროდუქტების უწყისი</div>'
+    +'<div style="text-align:center;font-size:12.5px;color:#555;margin:0 0 14px">'+safeText(_swFilterLabel())+'</div>'
+    +'<table style="width:100%;border-collapse:collapse;font-size:12.5px">'
+    +'<thead><tr style="background:#1e3a5f;color:#fff">'
+    +['თარიღი','მომწოდებელი','პროდუქტი','კგ','ფასი ₾/კგ','სულ ₾','გადახდ. ₾','დარჩა ₾','სტატუსი']
+      .map(function(h){ return '<th style="border:1px solid #94a3b8;padding:6px 8px;text-align:left">'+h+'</th>'; }).join('')
+    +'</tr></thead><tbody>'+trs
+    +'<tr style="font-weight:700;background:#eef5ff"><td colspan="3" style="border:1px solid #94a3b8;padding:6px 8px">ჯამი</td>'
+      +'<td style="border:1px solid #94a3b8;padding:6px 8px;text-align:right">'+_akFmt(tKg)+'</td>'
+      +'<td style="border:1px solid #94a3b8;padding:6px 8px"></td>'
+      +'<td style="border:1px solid #94a3b8;padding:6px 8px;text-align:right">'+_akFmt2(tAmt)+'</td>'
+      +'<td style="border:1px solid #94a3b8;padding:6px 8px;text-align:right">'+_akFmt2(tPaid)+'</td>'
+      +'<td style="border:1px solid #94a3b8;padding:6px 8px;text-align:right">'+_akFmt2(tRem)+'</td>'
+      +'<td style="border:1px solid #94a3b8;padding:6px 8px"></td></tr>'
+    +'</tbody></table>'
+    +'<div style="margin-top:10px;font-size:12px;color:#555">ჩანაწერი: '+rows.length+' · დაბეჭდვის თარიღი: '+swDate()+'</div>'
+    +'</div>';
+  swPrintAct(inner, 'შესყიდვების უწყისი');
+  swNotify('📕 PDF გასაბეჭდი გაიხსნა');
+}
+window.swExportPurPdf = swExportPurPdf;
 
 // ══════════════════════════════════════════════════════
 //  SHIPMENTS (🚚 გამგზავრება — dispatch/export)
