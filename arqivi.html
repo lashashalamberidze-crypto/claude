@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📦 სეზონის არქივი</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;font-family:'Noto Sans Georgian',system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:920px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}h2{font-size:.98rem;margin:0 0 8px;color:#334155}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.82rem;font-weight:600;color:#475569;margin:8px 0 4px}
+  input{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff;color:#0f172a;font-family:inherit}
+  input:focus{outline:none;border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.16)}
+  button{background:#f59e0b;color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+  button.sec{background:#fff;color:#b45309;border:1.5px solid #f59e0b}
+  button.gray{background:#fff;color:#475569;border:1.5px solid #cbd5e1}
+  button.r{background:#dc2626}button.blue{background:#2563eb}button.green{background:#059669}
+  button:active{transform:scale(.98)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .muted{font-size:.8rem;color:#64748b}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  #netbar{position:sticky;top:0;text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;z-index:5}
+  .on{background:#dcfce7;color:#166534}.off{background:#fef3c7;color:#92400e}
+  .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.actions button{width:auto;flex:1;min-width:150px;margin:0}
+  .table-wrap{overflow-x:auto;border:1px solid #e2e8f0;border-radius:12px;margin-top:10px}
+  table{width:100%;border-collapse:collapse;font-size:.86rem;min-width:520px}
+  th{background:#f8fafc;text-align:left;padding:9px 12px;font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;color:#64748b;font-weight:700;border-bottom:1px solid #e2e8f0;white-space:nowrap}
+  td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  .pill{display:inline-block;font-size:.68rem;font-weight:700;border-radius:20px;padding:2px 9px;white-space:nowrap}
+  .pill.clear{color:#991b1b;background:#fee2e2;border:1px solid #fca5a5}
+  .pill.keep{color:#166534;background:#dcfce7;border:1px solid #86efac}
+  .pill.na{color:#64748b;background:#f1f5f9;border:1px solid #cbd5e1}
+  .mini{display:flex;gap:6px;flex-wrap:wrap}
+  .mini button{width:auto;margin:0;padding:6px 10px;font-size:.72rem}
+  .empty{text-align:center;color:#94a3b8;padding:22px 0}
+  .warnbox{background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:11px 13px;font-size:.84rem;color:#92400e;margin-top:10px;line-height:1.55}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:12px 20px;border-radius:12px;font-size:.86rem;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:all .25s;z-index:9999;max-width:90vw;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.bad{background:#b91c1c}#toast.good{background:#047857}
+  a.back{display:inline-block;font-size:.8rem;color:#b45309;text-decoration:none;margin-bottom:4px}
+</style></head>
+<body>
+
+<div id="loginCard" class="card">
+  <h1>📦 სეზონის არქივი — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="you@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="netbar" class="on">🌐 ონლაინ</div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <div>
+      <a class="back" href="index.html">← მთავარზე დაბრუნება</a>
+      <h1 style="margin:0">📦 სეზონის არქივი</h1>
+    </div>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#b45309">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <!-- ── CLOSE SEASON ── -->
+  <div class="card">
+    <h2>🔒 სეზონის დახურვა</h2>
+    <div class="muted" style="margin-bottom:6px">ყველა მოდულის მიმდინარე ჩანაწერი აიხსნება ერთ არქივში (სრული ასლი), შემდეგ სეზონური ჩანაწერები გასუფთავდება და ცარიელი დაიწყება. <b>ძირითადი მონაცემები (კომპანია, მომწოდებლები, პერსონალი, ბიბლიოთეკა და ა.შ.) რჩება ხელუხლებელი.</b></div>
+    <label>სეზონის სახელი</label>
+    <input id="seasonName" placeholder="მაგ: სეზონი 2026">
+    <div class="actions">
+      <button class="blue" onclick="previewCounts()">📊 გადახედვა (რა დაარქივდება)</button>
+      <button class="r" id="archiveBtn" onclick="doArchive()" disabled>📦 დაარქივე და დაიწყე ახლიდან</button>
+    </div>
+    <div id="previewBox"></div>
+  </div>
+
+  <!-- ── PAST ARCHIVES ── -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <h2 style="margin:0">🗂️ დაარქივებული სეზონები <span class="muted" id="archCount"></span></h2>
+      <button class="sec" style="width:auto;padding:7px 12px;margin:0" onclick="loadArchives()">🔄 განახლება</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>სეზონი</th><th>თარიღი</th><th>ჩანაწერები</th><th>მოქმედება</th></tr></thead>
+        <tbody id="archRows"><tr><td colspan="4" class="empty">იტვირთება…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+const ARCH_TABLE="agro_season_archive";
+let sb=null, userId=null, _preview=null;
+
+// ── table registry: seasonal=true → snapshot + CLEAR; false → snapshot only, KEPT ──
+const SEASON_TABLES=[
+  {t:'harvest_sessions',      label:'🧺 კრეფა / სესიები',            seasonal:true},
+  {t:'gv_sales',              label:'💰 გაყიდვები',                  seasonal:true},
+  {t:'gv_purchases',          label:'🛒 შესყიდვები',                 seasonal:true},
+  {t:'agro_expenses',         label:'💸 ხარჯები',                    seasonal:true},
+  {t:'agro_prep_usage',       label:'🧪 პრეპარატების ხარჯვა',        seasonal:true},
+  {t:'sacwyobi_ops',          label:'📦 საწყობი — ოპერაციები',       seasonal:true},
+  {t:'sacwyobi_lots',         label:'📦 საწყობი — მარაგი',           seasonal:true},
+  {t:'sacwyobi_temps',        label:'🌡️ საწყობი — ტემპერატურა',      seasonal:true},
+  {t:'sacwyobi_shipments',    label:'🚚 გამგზავრება',                seasonal:true},
+  {t:'agroshop_entries',      label:'🏪 მაღაზიები',                  seasonal:true},
+  {t:'plantmon_records',      label:'🌿 პლანტაციის მდგომარეობა',     seasonal:true},
+  {t:'phenocal_entries',      label:'📅 ფენოკალენდარი',              seasonal:true},
+  {t:'agro_inventory_checks', label:'✅ ინვენტარის შემოწმებები',      seasonal:true},
+  // ── ძირითადი (KEPT) — მხოლოდ ასლი, არ იშლება ──
+  {t:'gv_settings',           label:'⚙️ კომპანია / პარამეტრები',     seasonal:false},
+  {t:'gv_suppliers',          label:'🚚 მომწოდებლები',               seasonal:false},
+  {t:'gv_buyers',             label:'🧑‍🌾 მყიდველები',               seasonal:false},
+  {t:'agro_employees',        label:'👥 პერსონალი',                  seasonal:false},
+  {t:'agro_inventory_items',  label:'🔧 ინვენტარი (ქონება)',         seasonal:false},
+  {t:'agro_documents_archive',label:'📁 დოკუმენტები',                seasonal:false},
+  {t:'ph_documents',          label:'📚 ბიბლიოთეკა',                 seasonal:false},
+  {t:'ph_partners',           label:'🤝 პარტნიორები',                seasonal:false},
+  {t:'ph_events',             label:'🎪 ღონისძიებები',               seasonal:false},
+  {t:'wsms_config',           label:'📲 ამინდის SMS პარამეტრები',    seasonal:false}
+];
+
+function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+function g(id){return document.getElementById(id)}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function val(id){var e=g(id);return e?String(e.value||'').trim():''}
+let _toastT=null;
+function toast(msg,kind){var t=g('toast');if(!t)return;t.textContent=msg;t.className='show'+(kind?(' '+kind):'');clearTimeout(_toastT);_toastT=setTimeout(function(){t.className='';},2800)}
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+
+// ── auth ──
+async function doLogin(){
+  var e=val('email'), p=g('pass').value, err=g('loginErr'); err.textContent='';
+  var client=getSb(); if(!client){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await client.auth.signInWithPassword({email:e,password:p});
+    if(r.error){ err.textContent='❌ '+r.error.message; return; }
+    userId=r.data.user.id; showApp(r.data.user.email);
+  }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+function updateNet(){ var b=g('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+async function showApp(email){
+  g('loginCard').style.display='none'; g('app').style.display='block';
+  g('whoami').textContent=email||'—';
+  if(!val('seasonName')) g('seasonName').value='სეზონი '+new Date().getFullYear();
+  updateNet();
+  window.addEventListener('online',updateNet); window.addEventListener('offline',updateNet);
+  await loadArchives();
+}
+
+// ── count rows of one table for this user (head:true → no data transfer) ──
+async function countTable(table){
+  try{
+    var r=await sb.from(table).select('*',{count:'exact',head:true}).eq('user_id',userId);
+    if(r.error) return {n:null, err:r.error.message};
+    return {n:(r.count==null?0:r.count)};
+  }catch(e){ return {n:null, err:String(e&&e.message||e)}; }
+}
+// ── fetch ALL rows of one table (paginated) ──
+async function fetchAll(table){
+  var out=[], from=0, size=1000;
+  for(var guard=0; guard<40; guard++){
+    var r=await sb.from(table).select('*').eq('user_id',userId).range(from,from+size-1);
+    if(r.error) return {rows:null, err:r.error.message};
+    var batch=r.data||[];
+    out=out.concat(batch);
+    if(batch.length<size) break;
+    from+=size;
+  }
+  return {rows:out};
+}
+
+// ── PREVIEW ──
+async function previewCounts(){
+  g('previewBox').innerHTML='<div class="muted" style="margin-top:12px">⏳ ითვლება…</div>';
+  g('archiveBtn').disabled=true;
+  var rows=[], totalSeasonal=0, present=[];
+  for(var i=0;i<SEASON_TABLES.length;i++){
+    var m=SEASON_TABLES[i];
+    var c=await countTable(m.t);
+    if(c.err){ // table missing / no access → skip silently in a "n/a" state
+      rows.push('<tr><td>'+esc(m.label)+'</td><td style="text-align:right">—</td><td><span class="pill na">არ არსებობს</span></td></tr>');
+      continue;
+    }
+    present.push({t:m.t, seasonal:m.seasonal, n:c.n});
+    if(m.seasonal) totalSeasonal+=c.n;
+    var badge=m.seasonal?'<span class="pill clear">გასუფთავდება</span>':'<span class="pill keep">რჩება</span>';
+    rows.push('<tr><td>'+esc(m.label)+'</td><td style="text-align:right;font-weight:700">'+c.n+'</td><td>'+badge+'</td></tr>');
+  }
+  _preview={present:present, totalSeasonal:totalSeasonal};
+  g('previewBox').innerHTML=
+    '<div class="table-wrap"><table><thead><tr><th>მოდული</th><th style="text-align:right">ჩანაწერი</th><th>სტატუსი</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>'+
+    '<div class="warnbox">⚠️ „<b>დაარქივე და დაიწყე ახლიდან</b>" შეინახავს <b>ყველა</b> მოდულის სრულ ასლს, შემდეგ წაშლის მხოლოდ <b class="pill clear" style="font-size:.68rem">გასუფთავდება</b>-ით მონიშნულ '+totalSeasonal+' სეზონურ ჩანაწერს. „<b>რჩება</b>"-ს არაფერი დაემართება. არქივიდან ნებისმიერ დროს ნახავ ან ჩამოტვირთავ.</div>';
+  g('archiveBtn').disabled=false;
+}
+
+// ── ARCHIVE (snapshot all → insert → clear seasonal) ──
+async function doArchive(){
+  var season=val('seasonName'); if(!season){ toast('ჩაწერე სეზონის სახელი','bad'); g('seasonName').focus(); return; }
+  if(!confirm('სეზონი „'+season+'" დაიხურება.\n\n• ყველა მოდულის სრული ასლი აიხსნება არქივში\n• სეზონური ჩანაწერები გასუფთავდება (ცარიელი დაიწყება)\n• ძირითადი მონაცემები (კომპანია, მომწოდებლები, პერსონალი...) დარჩება\n\nგავაგრძელო?')) return;
+  g('archiveBtn').disabled=true; g('archiveBtn').textContent='⏳ არქივდება…';
+  try{
+    // 1) snapshot every table
+    var payload={}, summary={}, seasonalPresent=[], failed=[];
+    for(var i=0;i<SEASON_TABLES.length;i++){
+      var m=SEASON_TABLES[i];
+      var r=await fetchAll(m.t);
+      if(r.err){ failed.push(m.t); continue; } // missing table → skip (and DON'T clear it)
+      payload[m.t]=r.rows; summary[m.t]=r.rows.length;
+      if(m.seasonal) seasonalPresent.push(m.t);
+    }
+    summary._totals={ tables:Object.keys(payload).length, rows:Object.keys(payload).reduce(function(a,k){return a+payload[k].length;},0) };
+    // 2) insert the archive record
+    var id='arch_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+    var ins=await sb.from(ARCH_TABLE).insert({
+      id:id, user_id:userId, season_name:season, archived_at:new Date().toISOString(),
+      summary:summary, payload:payload, cleared:seasonalPresent
+    });
+    if(ins.error){ toast('არქივის შენახვა ვერ მოხერხდა: '+ins.error.message,'bad'); resetArchiveBtn(); return; }
+    // 3) clear ONLY seasonal tables that were snapshotted OK
+    var clearedOk=[], clearErr=[];
+    for(var j=0;j<seasonalPresent.length;j++){
+      var t=seasonalPresent[j];
+      var del=await sb.from(t).delete().eq('user_id',userId);
+      if(del.error){ clearErr.push(t); } else { clearedOk.push(t); }
+    }
+    if(clearErr.length){
+      toast('არქივი შენახულია. ზოგი ცხრილი ვერ გასუფთავდა: '+clearErr.join(', '),'bad');
+    }else{
+      toast('✅ სეზონი დაარქივდა და ცარიელი დაიწყო','good');
+    }
+    g('previewBox').innerHTML=''; _preview=null;
+    await loadArchives();
+  }catch(e){
+    console.warn('doArchive',e); toast('შეცდომა არქივირებისას','bad');
+  }finally{
+    resetArchiveBtn();
+  }
+}
+function resetArchiveBtn(){ var b=g('archiveBtn'); if(b){ b.disabled=true; b.textContent='📦 დაარქივე და დაიწყე ახლიდან'; } }
+
+// ── LIST ARCHIVES (no payload — keep it light) ──
+async function loadArchives(){
+  var tb=g('archRows'); if(tb) tb.innerHTML='<tr><td colspan="4" class="empty">იტვირთება…</td></tr>';
+  try{
+    var r=await sb.from(ARCH_TABLE).select('id,season_name,archived_at,summary,cleared').eq('user_id',userId).order('archived_at',{ascending:false});
+    if(r.error){ tb.innerHTML='<tr><td colspan="4" class="empty">❌ '+esc(r.error.message)+'</td></tr>'; return; }
+    var list=r.data||[];
+    g('archCount').textContent='('+list.length+')';
+    if(!list.length){ tb.innerHTML='<tr><td colspan="4" class="empty">— ჯერ არქივი არ არის —</td></tr>'; return; }
+    tb.innerHTML=list.map(function(a){
+      var tot=(a.summary&&a.summary._totals)||{};
+      var dt=(a.archived_at||'').slice(0,16).replace('T',' ');
+      return '<tr>'+
+        '<td style="font-weight:700">'+esc(a.season_name||'—')+'</td>'+
+        '<td class="muted">'+esc(dt)+'</td>'+
+        '<td>'+(tot.rows!=null?tot.rows:'?')+' ჩანაწ. / '+(tot.tables!=null?tot.tables:'?')+' მოდ.</td>'+
+        '<td><div class="mini">'+
+          '<button class="blue" onclick="viewArchive(\''+esc(a.id)+'\')">👁️ ნახვა</button>'+
+          '<button class="green" onclick="downloadArchive(\''+esc(a.id)+'\')">⬇️ JSON</button>'+
+          '<button class="sec" onclick="restoreArchive(\''+esc(a.id)+'\')">♻️ აღდგენა</button>'+
+          '<button class="r" onclick="deleteArchive(\''+esc(a.id)+'\',\''+esc(a.season_name||'')+'\')">🗑</button>'+
+        '</div></td>'+
+      '</tr>';
+    }).join('');
+  }catch(e){ if(tb) tb.innerHTML='<tr><td colspan="4" class="empty">შეცდომა</td></tr>'; }
+}
+
+function _labelFor(t){ for(var i=0;i<SEASON_TABLES.length;i++){ if(SEASON_TABLES[i].t===t) return SEASON_TABLES[i].label; } return t; }
+
+// ── VIEW: fetch full row, show per-module counts ──
+async function viewArchive(id){
+  toast('იტვირთება…');
+  var r=await sb.from(ARCH_TABLE).select('season_name,archived_at,summary').eq('id',id).eq('user_id',userId).maybeSingle();
+  if(r.error||!r.data){ toast('ვერ ჩაიტვირთა','bad'); return; }
+  var s=r.data.summary||{}; var lines=[];
+  Object.keys(s).forEach(function(k){ if(k==='_totals') return; lines.push(_labelFor(k)+': '+s[k]); });
+  var tot=s._totals||{};
+  alert('📦 '+(r.data.season_name||'')+'\n'+(r.data.archived_at||'').slice(0,16).replace('T',' ')+'\n\n'+lines.join('\n')+'\n\n— სულ: '+(tot.rows||0)+' ჩანაწერი / '+(tot.tables||0)+' მოდული');
+}
+
+// ── DOWNLOAD full archive JSON ──
+async function downloadArchive(id){
+  toast('მზადდება…');
+  var r=await sb.from(ARCH_TABLE).select('*').eq('id',id).eq('user_id',userId).maybeSingle();
+  if(r.error||!r.data){ toast('ვერ ჩაიტვირთა','bad'); return; }
+  var blob=new Blob([JSON.stringify(r.data,null,2)],{type:'application/json'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='arqivi_'+String(r.data.season_name||'sezoni').replace(/[^\w-]+/g,'_')+'.json';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1500);
+  toast('⬇️ ჩამოიტვირთა','good');
+}
+
+// ── RESTORE: re-insert archived seasonal rows back into their tables ──
+async function restoreArchive(id){
+  if(!confirm('არქივიდან აღდგენა ჩანაწერებს დაუბრუნებს ცოცხალ ბაზას.\n\nთუ ახლა უკვე გაქვს ახალი სეზონის მონაცემი — შეიძლება აირიოს. გავაგრძელო?')) return;
+  toast('აღდგენა…');
+  var r=await sb.from(ARCH_TABLE).select('payload,cleared,season_name').eq('id',id).eq('user_id',userId).maybeSingle();
+  if(r.error||!r.data){ toast('ვერ ჩაიტვირთა','bad'); return; }
+  var payload=r.data.payload||{};
+  // restore only the tables that were cleared at archive time (seasonal), keyed by id
+  var tables=(r.data.cleared&&r.data.cleared.length)?r.data.cleared:Object.keys(payload);
+  var okN=0, errT=[];
+  for(var i=0;i<tables.length;i++){
+    var t=tables[i]; var rows=payload[t]||[];
+    if(!rows.length) continue;
+    // ensure user_id present, upsert in batches by id
+    for(var b=0;b<rows.length;b+=200){
+      var chunk=rows.slice(b,b+200).map(function(x){ var y=Object.assign({},x); y.user_id=userId; return y; });
+      var up=await sb.from(t).upsert(chunk,{onConflict:'id'});
+      if(up.error){ errT.push(t); break; }
+      okN+=chunk.length;
+    }
+  }
+  if(errT.length){ toast('ნაწილობრივ აღდგა. ვერ: '+errT.join(', '),'bad'); }
+  else { toast('♻️ აღდგა '+okN+' ჩანაწერი','good'); }
+}
+
+// ── DELETE archive ──
+async function deleteArchive(id,name){
+  if(!confirm('წავშალო არქივი „'+(name||'')+'"?\nეს შეუქცევადია.')) return;
+  var r=await sb.from(ARCH_TABLE).delete().eq('id',id).eq('user_id',userId);
+  if(r.error){ toast('წაშლა ვერ მოხერხდა: '+r.error.message,'bad'); return; }
+  toast('🗑 წაშლილია','good'); loadArchives();
+}
+
+// expose
+window.doLogin=doLogin; window.doLogout=doLogout; window.previewCounts=previewCounts;
+window.doArchive=doArchive; window.loadArchives=loadArchives; window.viewArchive=viewArchive;
+window.downloadArchive=downloadArchive; window.restoreArchive=restoreArchive; window.deleteArchive=deleteArchive;
+
+// ── auto-resume session ──
+window.addEventListener('load', async function(){
+  var client=getSb(); if(!client) return;
+  try{ var r=await client.auth.getSession();
+    if(r.data && r.data.session && r.data.session.user){ userId=r.data.session.user.id; showApp(r.data.session.user.email); }
+  }catch(e){}
+});
+</script>
+</body></html>
