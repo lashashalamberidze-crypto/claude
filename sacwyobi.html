@@ -273,14 +273,23 @@
       <div class="sw-card-title" style="justify-content:space-between">
         <span>🛒 შესყიდვა <span id="sw-pur-summary" class="muted" style="font-weight:400;letter-spacing:0;text-transform:none"></span></span>
         <span style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="sw-btn sw-btn-outline" style="padding:6px 12px;font-size:.76rem" onclick="swCompaniesModal()">🏢 კომპანიები</button>
           <button class="sw-btn sw-btn-outline" style="padding:6px 12px;font-size:.76rem" onclick="swActBatch()">📄 აქტი (ფილტრით)</button>
           <button class="sw-btn sw-btn-gold" style="padding:6px 14px;font-size:.78rem" onclick="swNewPurchase()">➕ ახალი შესყიდვა</button>
         </span>
       </div>
-      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-        <input type="date" id="sw-pur-from" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
-        <input type="date" id="sw-pur-to" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+        <select id="sw-pur-fculture" onchange="swRenderPurchases()" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none"><option value="">🌱 ყველა კულტურა</option></select>
+        <select id="sw-pur-fsupplier" onchange="swRenderPurchases()" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none"><option value="">🏢 ყველა კომპანია</option></select>
+        <select id="sw-pur-fyear" onchange="swRenderPurchases()" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none"><option value="">📅 ყველა წელი</option></select>
+        <select id="sw-pur-fmonth" onchange="swRenderPurchases()" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
+          <option value="">🗓️ ყველა თვე</option>
+          <option value="01">იანვარი</option><option value="02">თებერვალი</option><option value="03">მარტი</option><option value="04">აპრილი</option><option value="05">მაისი</option><option value="06">ივნისი</option><option value="07">ივლისი</option><option value="08">აგვისტო</option><option value="09">სექტემბერი</option><option value="10">ოქტომბერი</option><option value="11">ნოემბერი</option><option value="12">დეკემბერი</option>
+        </select>
+        <input type="date" id="sw-pur-from" title="თარიღიდან" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
+        <input type="date" id="sw-pur-to" title="თარიღამდე" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
         <button class="sw-btn sw-btn-outline" onclick="swRenderPurchases()">🔍 ფილტრი</button>
+        <button class="sw-btn sw-btn-outline" style="padding:6px 10px;font-size:.74rem" onclick="swClearPurFilters()">✕ გასუფთავება</button>
       </div>
       <div class="sw-table-wrap">
         <table class="sw-table">
@@ -712,6 +721,7 @@ async function initSacwyobiFromHub(){
       swLoadPurchasesMap().catch(function(e){ console.warn('swLoadPurchasesMap', e); }),
       swLoadContacts().catch(function(e){ console.warn('swLoadContacts', e); }),
       swLoadCompany().catch(function(e){ console.warn('swLoadCompany', e); }),
+      swLoadActFiles().catch(function(e){ console.warn('swLoadActFiles', e); }),
       swLoadShipments().then(function(rows){ if(rows){ swShipments=rows; try{ localStorage.setItem(_swK('ships'), JSON.stringify(rows)); }catch(e){} } }).catch(function(e){ console.warn('swLoadShipments', e); })
     ]).then(function(){
       try{
@@ -1203,24 +1213,68 @@ window.swConfirmNewSale = swConfirmNewSale;
 function swIsPurchase(o){
   return o && o.type==='in' && ((o.amount!=null && +o.amount>0) || o.section==='შესყიდვა' || String(o.gv_ref||'').indexOf('pur_')===0);
 }
-function swRenderPurchases(){
-  const tbody = swEl('sw-pur-tbody'); if(!tbody) return;
+// clear all purchase filters + re-render
+function swClearPurFilters(){
+  ['sw-pur-fculture','sw-pur-fsupplier','sw-pur-fyear','sw-pur-fmonth','sw-pur-from','sw-pur-to'].forEach(function(id){ var e=swEl(id); if(e) e.value=''; });
+  swRenderPurchases();
+}
+window.swClearPurFilters = swClearPurFilters;
+// (re)populate the culture/company/year dropdowns from existing purchases, keeping the current selection
+function swPopulatePurFilters(purs){
+  function fill(id, values, prefixLabel){
+    var el=swEl(id); if(!el) return;
+    var cur=el.value||'';
+    var opts=['<option value="">'+prefixLabel+'</option>'];
+    values.forEach(function(v){ opts.push('<option value="'+safeAttr(v)+'"'+(v===cur?' selected':'')+'>'+safeText(v)+'</option>'); });
+    el.innerHTML=opts.join('');
+    if(values.indexOf(cur)>=0) el.value=cur; // keep selection if still valid
+  }
+  var cultures={}, comps={}, years={};
+  purs.forEach(function(o){
+    var p=String(o.product||'').trim(); if(p) cultures[p]=1;
+    var c=String(o.buyer||o.section||'').trim(); if(c) comps[c]=1;
+    var y=String(o.date||'').slice(0,4); if(/^\d{4}$/.test(y)) years[y]=1;
+  });
+  fill('sw-pur-fculture', Object.keys(cultures).sort(function(a,b){return a.localeCompare(b);}), '🌱 ყველა კულტურა');
+  fill('sw-pur-fsupplier', Object.keys(comps).sort(function(a,b){return a.localeCompare(b);}), '🏢 ყველა კომპანია');
+  fill('sw-pur-fyear', Object.keys(years).sort().reverse(), '📅 ყველა წელი');
+}
+// shared filter: returns purchases (newest-first) matching all active filters
+function _swPurFiltered(){
   const from = (swEl('sw-pur-from')||{}).value||'';
   const to   = (swEl('sw-pur-to')||{}).value||'';
-  let purs = swOps.filter(swIsPurchase);
-  // small summary line
-  let tAmt=0, tOwed=0;
-  purs.forEach(o=>{ const amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0; tAmt+=amt; if(amt>0){ const rem=amt-pa; if(rem>0.0001) tOwed+=rem; } });
-  let list=[...purs].reverse();
+  const fcult= (swEl('sw-pur-fculture')||{}).value||'';
+  const fsup = (swEl('sw-pur-fsupplier')||{}).value||'';
+  const fyear= (swEl('sw-pur-fyear')||{}).value||'';
+  const fmon = (swEl('sw-pur-fmonth')||{}).value||'';
+  let list=[...swOps.filter(swIsPurchase)].reverse();
   if(from) list=list.filter(o=>(o.date||'')>=from);
   if(to)   list=list.filter(o=>(o.date||'')<=to);
+  if(fcult)list=list.filter(o=>String(o.product||'').trim()===fcult);
+  if(fsup) list=list.filter(o=>String(o.buyer||o.section||'').trim()===fsup);
+  if(fyear)list=list.filter(o=>String(o.date||'').slice(0,4)===fyear);
+  if(fmon) list=list.filter(o=>String(o.date||'').slice(5,7)===fmon);
+  return list;
+}
+function swRenderPurchases(){
+  const tbody = swEl('sw-pur-tbody'); if(!tbody) return;
+  let purs = swOps.filter(swIsPurchase);
+  swPopulatePurFilters(purs);
+  let list = _swPurFiltered();
+  // summary over the FILTERED list (so totals reflect what's shown)
+  let tAmt=0, tOwed=0, tKg=0;
+  list.forEach(o=>{ const amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0; tAmt+=amt; tKg+=(+o.kg||0); if(amt>0){ const rem=amt-pa; if(rem>0.0001) tOwed+=rem; } });
   const sEl=swEl('sw-pur-summary');
-  if(sEl) sEl.textContent = '· ჩანაწერი: '+list.length+' · სულ '+swMoney(tAmt)+' ₾ · მომწოდებლებს ვმართებთ '+swMoney(tOwed)+' ₾';
+  if(sEl) sEl.textContent = '· ჩანაწერი: '+list.length+' · '+_akFmt(tKg)+' კგ · სულ '+swMoney(tAmt)+' ₾ · ვმართებთ '+swMoney(tOwed)+' ₾';
   if(!list.length){ tbody.innerHTML='<tr><td colspan="10" class="sw-empty">— შესყიდვა არ არის —</td></tr>'; return; }
-  tbody.innerHTML = list.slice(0,200).map(o=>{
+  tbody.innerHTML = list.slice(0,300).map(o=>{
     const kgv=+o.kg||0, amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0;
     const unit = (amt>0 && kgv>0) ? swMoney(amt/kgv) : '—';
     const rem  = amt>0 ? swMoney(Math.max(0,amt-pa))+' ₾' : '—';
+    const hasFile = !!(window.__swActFiles||{})[o.id];
+    const fileBtn = hasFile
+      ? `<button class="sw-btn sw-btn-outline" style="padding:3px 8px;font-size:.7rem;margin-right:4px;border-color:#059669;color:#059669" onclick="swViewSignedAct('${safeAttr(o.id)}')" title="ხელმოწერილი აქტი — ნახვა/შეცვლა">📎✓</button>`
+      : `<button class="sw-btn sw-btn-outline" style="padding:3px 8px;font-size:.7rem;margin-right:4px" onclick="swUploadSignedAct('${safeAttr(o.id)}')" title="ხელმოწერილი აქტის ატვირთვა">📎</button>`;
     return `<tr>
       <td class="muted" style="font-size:.72rem">${safeText(o.date||o.time||'—')}</td>
       <td>${safeText(o.buyer||o.section||'—')}</td>
@@ -1231,7 +1285,7 @@ function swRenderPurchases(){
       <td class="muted">${amt>0?swMoney(Math.min(pa,amt))+' ₾':'—'}</td>
       <td style="color:${(amt>0&&amt-pa>0.0001)?'#dc2626':'#059669'}">${rem}</td>
       <td>${swPayBadge(o)}</td>
-      <td style="white-space:nowrap"><button class="sw-btn sw-btn-outline" style="padding:3px 9px;font-size:.7rem;margin-right:4px" onclick="swActForOp('${safeAttr(o.id)}')" title="შესყიდვის აქტი">📄</button><button onclick="swDeleteOp('${safeAttr(o.id)}')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:.95rem" title="წაშლა">🗑</button></td>
+      <td style="white-space:nowrap"><button class="sw-btn sw-btn-outline" style="padding:3px 9px;font-size:.7rem;margin-right:4px" onclick="swActForOp('${safeAttr(o.id)}')" title="შესყიდვის აქტი (ბეჭდვა)">📄</button>${fileBtn}<button onclick="swDeleteOp('${safeAttr(o.id)}')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:.95rem" title="წაშლა">🗑</button></td>
     </tr>`;
   }).join('');
 }
@@ -1285,6 +1339,7 @@ function swNewPurchase(){
       <div style="font-size:1rem;font-weight:600;color:#1e3a5f;margin-bottom:16px">🛒 ახალი შესყიდვა</div>
       <div class="sw-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">
         <div class="sw-field full"><label>პროდუქტი *</label><input id="swnp-product" placeholder="მოცვი პრემიუმ"></div>
+        <div class="sw-field full"><label>🏢 შენახული კომპანია (არჩევა)</label><select id="swnp-supselect" onchange="swNpSupPick(this.value)" style="padding:9px 11px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.85rem;width:100%;outline:none"><option value="">— აირჩიე შენახული ან ჩაწერე ხელით ↓ —</option></select></div>
         <div class="sw-field full"><label>მომწოდებელი</label><input id="swnp-supplier" list="sw-suppliers-dl" placeholder="მომწოდებლის სახელი" oninput="swNpSupFill()" onchange="swNpSupFill()"></div>
         <div class="sw-field"><label>ს/კ (საიდ./პ.ნ.)</label><input id="swnp-supidnum" placeholder="ნ.ა."></div>
         <div class="sw-field"><label>ტელეფონი</label><input id="swnp-supphone" placeholder="ნ.ა."></div>
@@ -1305,8 +1360,28 @@ function swNewPurchase(){
       </div>
     </div>`;
   document.body.appendChild(bg);
+  swFillSupSelect('swnp-supselect');
 }
 window.swNewPurchase = swNewPurchase;
+// fill a <select> with saved companies (gv_suppliers)
+function swFillSupSelect(id){
+  const el=document.getElementById(id); if(!el) return;
+  const names=(window.__swSupNames||[]).slice().sort(function(a,b){ return String(a).localeCompare(String(b)); });
+  el.innerHTML='<option value="">— აირჩიე შენახული ან ჩაწერე ხელით ↓ —</option>'+
+    names.map(function(n){ return '<option value="'+safeAttr(n)+'">'+safeText(n)+'</option>'; }).join('');
+}
+window.swFillSupSelect = swFillSupSelect;
+// pick a saved company → fill name + ს/კ / phone / addr (overwrites)
+function swNpSupPick(name){
+  name=String(name||'').trim(); if(!name) return;
+  const rec=(window.__swSupByName||{})[name.toLowerCase()]||{};
+  const set=function(id,v){ var e=document.getElementById(id); if(e) e.value=(v==null?'':v); };
+  set('swnp-supplier', name);
+  set('swnp-supidnum', rec.idnum||rec.idcode||'');
+  set('swnp-supphone', rec.phone||'');
+  set('swnp-supaddr',  rec.addr||rec.address||'');
+}
+window.swNpSupPick = swNpSupPick;
 function swConfirmNewPurchase(){
   const product=(document.getElementById('swnp-product').value||'').trim();
   const supplier=(document.getElementById('swnp-supplier').value||'').trim();
@@ -1337,6 +1412,8 @@ function swConfirmNewPurchase(){
   swUpdateStats(); swRenderStock(); swRenderHistory(); swRenderPurchases(); swBuildContactLists();
   const m=document.getElementById('sw-newpur-modal'); if(m) m.remove();
   swNotify('🛒 შესყიდვა: '+kg+'კგ '+product);
+  // 🖨️ აქტი ავტომატურად გაიხსნას შენახვისთანავე (ბეჭდვისთვის)
+  try{ if(window.__swAutoAct!==false) swActForOp(_purOp.id); }catch(e){ console.warn('auto act', e); }
 }
 window.swConfirmNewPurchase = swConfirmNewPurchase;
 
@@ -1468,12 +1545,7 @@ function swActForOp(id){
 window.swActForOp = swActForOp;
 // print all currently-filtered purchases as separate acts (page-break between)
 function swActBatch(){
-  const from = (swEl('sw-pur-from')||{}).value||'';
-  const to   = (swEl('sw-pur-to')||{}).value||'';
-  let list = swOps.filter(swIsPurchase);
-  list = [...list].reverse();
-  if(from) list=list.filter(o=>(o.date||'')>=from);
-  if(to)   list=list.filter(o=>(o.date||'')<=to);
+  let list = _swPurFiltered();
   if(!list.length){ swNotify('⚠️ აქტისთვის ჩანაწერი არ არის', true); return; }
   const start = parseInt(window.__swActNum,10)||1;
   const parts = list.map((o,i)=>`<div${i<list.length-1?' style="page-break-after:always"':''}>${aktSingleHtml(o, start+i)}</div>`);
@@ -1481,6 +1553,164 @@ function swActBatch(){
   swBumpActNum(list.length);
 }
 window.swActBatch = swActBatch;
+
+// ══════════════════════════════════════════════════════
+//  COMPANIES MANAGER (🏢 კომპანიები → gv_suppliers)
+// ══════════════════════════════════════════════════════
+function swCompaniesModal(){
+  const existing=document.getElementById('sw-comp-modal'); if(existing) existing.remove();
+  const bg=document.createElement('div'); bg.id='sw-comp-modal'; bg.className='sw-modal-bg';
+  bg.innerHTML=`
+    <div class="sw-modal" style="max-width:640px">
+      <button onclick="document.getElementById('sw-comp-modal').remove()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer">✕</button>
+      <div style="font-size:1rem;font-weight:600;color:#1e3a5f;margin-bottom:14px">🏢 კომპანიები (მომწოდებლები)</div>
+      <div class="sw-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px;margin-bottom:12px">
+        <input type="hidden" id="swc-id">
+        <div class="sw-field full"><label>დასახელება *</label><input id="swc-name" placeholder="შპს / ფ.პ. სახელი"></div>
+        <div class="sw-field"><label>ს/კ (საიდ./პ.ნ.)</label><input id="swc-idnum" placeholder="000000000"></div>
+        <div class="sw-field"><label>ტელეფონი</label><input id="swc-phone" placeholder="5xx xx xx xx"></div>
+        <div class="sw-field full"><label>მისამართი</label><input id="swc-addr" placeholder="ქ. ..."></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <button class="sw-btn sw-btn-gold" style="flex:1" onclick="swCompanySave()">💾 შენახვა</button>
+        <button class="sw-btn sw-btn-outline" style="flex:0 0 auto" onclick="swCompanyReset()">➕ ახალი</button>
+      </div>
+      <div class="sw-table-wrap" style="max-height:320px;overflow:auto">
+        <table class="sw-table"><thead><tr><th>დასახელება</th><th>ს/კ</th><th>ტელეფონი</th><th></th></tr></thead>
+        <tbody id="swc-tbody"></tbody></table>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+  swRenderCompanies();
+}
+window.swCompaniesModal = swCompaniesModal;
+function swRenderCompanies(){
+  const tb=document.getElementById('swc-tbody'); if(!tb) return;
+  const recs=Object.values(window.__swSupByName||{}).sort(function(a,b){ return String(a.name||'').localeCompare(String(b.name||'')); });
+  if(!recs.length){ tb.innerHTML='<tr><td colspan="4" class="sw-empty">— კომპანია არ არის —</td></tr>'; return; }
+  tb.innerHTML=recs.map(function(r){
+    return '<tr>'+
+      '<td>'+safeText(r.name||'—')+'</td>'+
+      '<td class="muted">'+safeText(r.idnum||r.idcode||'—')+'</td>'+
+      '<td class="muted">'+safeText(r.phone||'—')+'</td>'+
+      '<td style="white-space:nowrap"><button class="sw-btn sw-btn-outline" style="padding:3px 9px;font-size:.7rem;margin-right:4px" onclick="swCompanyEdit(\''+safeAttr((r.name||'').toLowerCase())+'\')">✏️</button>'+
+      '<button onclick="swCompanyDelete(\''+safeAttr(r.id||'')+'\',\''+safeAttr((r.name||'').toLowerCase())+'\')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:.95rem" title="წაშლა">🗑</button></td>'+
+    '</tr>';
+  }).join('');
+}
+function swCompanyReset(){
+  ['swc-id','swc-name','swc-idnum','swc-phone','swc-addr'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=''; });
+  var n=document.getElementById('swc-name'); if(n) n.focus();
+}
+window.swCompanyReset = swCompanyReset;
+function swCompanyEdit(key){
+  const r=(window.__swSupByName||{})[key]; if(!r) return;
+  const set=function(id,v){ var e=document.getElementById(id); if(e) e.value=(v==null?'':v); };
+  set('swc-id', r.id||''); set('swc-name', r.name||''); set('swc-idnum', r.idnum||r.idcode||'');
+  set('swc-phone', r.phone||''); set('swc-addr', r.addr||r.address||'');
+}
+window.swCompanyEdit = swCompanyEdit;
+function swCompanySave(){
+  const name=(document.getElementById('swc-name').value||'').trim();
+  if(!name){ swNotify('⚠️ დასახელება სავალდებულოა', true); return; }
+  const id   =(document.getElementById('swc-id').value||'').trim();
+  const idnum=(document.getElementById('swc-idnum').value||'').trim();
+  const phone=(document.getElementById('swc-phone').value||'').trim();
+  const addr =(document.getElementById('swc-addr').value||'').trim();
+  const key=name.toLowerCase();
+  // if editing an existing record, keep its id (handles rename); else upsertSupplier mints one
+  const existing=(window.__swSupByName||{})[key];
+  const rec=Object.assign({}, existing||{}, { name:name, idnum:idnum, phone:phone, addr:addr });
+  if(id) rec.id=id; else if(!rec.id) rec.id='sup_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+  // rebuild in-memory map (drop any stale key under a former name that shared this id)
+  window.__swSupByName=window.__swSupByName||{};
+  Object.keys(window.__swSupByName).forEach(function(k){ if(window.__swSupByName[k] && window.__swSupByName[k].id===rec.id) delete window.__swSupByName[k]; });
+  window.__swSupByName[key]=rec;
+  window.__swSupNames=Object.values(window.__swSupByName).map(function(r){ return r.name; });
+  swBuildContactLists(); swRenderCompanies(); swCompanyReset();
+  swFillSupSelect('swnp-supselect');
+  // persist to cloud
+  if(_sb && uid){
+    const payload={ id:rec.id, user_id:uid, name:rec.name, idnum:rec.idnum||null, phone:rec.phone||null, addr:rec.addr||null };
+    try{ _sb.from('gv_suppliers').upsert(payload,{ onConflict:'id' })
+      .then(function(r){ if(r&&r.error) console.warn('swCompanySave', r.error); })
+      .catch(function(e){ console.warn('swCompanySave', e); }); }catch(e){ console.warn('swCompanySave', e); }
+  }
+  swNotify('✅ შენახულია: '+name);
+}
+window.swCompanySave = swCompanySave;
+function swCompanyDelete(id, key){
+  if(!confirm('წავშალო ეს კომპანია?')) return;
+  if(key && window.__swSupByName) delete window.__swSupByName[key];
+  window.__swSupNames=Object.values(window.__swSupByName||{}).map(function(r){ return r.name; });
+  swBuildContactLists(); swRenderCompanies(); swFillSupSelect('swnp-supselect');
+  if(_sb && uid && id){
+    try{ _sb.from('gv_suppliers').delete().eq('id', id).eq('user_id', uid)
+      .then(function(r){ if(r&&r.error) console.warn('swCompanyDelete', r.error); })
+      .catch(function(e){ console.warn('swCompanyDelete', e); }); }catch(e){ console.warn('swCompanyDelete', e); }
+  }
+  swNotify('🗑 წაშლილია');
+}
+window.swCompanyDelete = swCompanyDelete;
+
+// ══════════════════════════════════════════════════════
+//  SIGNED ACT UPLOAD (📎 → Storage bucket, keyed by op id)
+// ══════════════════════════════════════════════════════
+const SW_ACT_BUCKET = 'documents-archive';
+window.__swActFiles = window.__swActFiles || {}; // opId → { path, name }
+// list already-uploaded signed acts (cross-device) → __swActFiles
+async function swLoadActFiles(){
+  window.__swActFiles = {};
+  if(!_sb || !uid) return;
+  try{
+    const dir = uid+'/sacwyobi-acts';
+    const r = await _sb.storage.from(SW_ACT_BUCKET).list(dir, { limit:1000 });
+    if(r.error){ console.warn('swLoadActFiles', r.error); return; }
+    (r.data||[]).forEach(function(f){
+      var nm=String(f.name||''); var i=nm.indexOf('__');
+      if(i>0){ var opId=nm.slice(0,i); if(!window.__swActFiles[opId]) window.__swActFiles[opId]={ path:dir+'/'+nm, name:nm.slice(i+2) }; }
+    });
+  }catch(e){ console.warn('swLoadActFiles', e); }
+}
+window.swLoadActFiles = swLoadActFiles;
+// upload a signed act for one purchase op
+function swUploadSignedAct(opId){
+  if(!_sb || !uid){ swNotify('⚠️ ჯერ შედი სისტემაში', true); return; }
+  const inp=document.createElement('input'); inp.type='file';
+  inp.accept='image/*,application/pdf';
+  inp.onchange=async function(){
+    const file=inp.files && inp.files[0]; if(!file) return;
+    const safe=String(file.name||'act').replace(/[^\w.\-]+/g,'_').slice(-60);
+    const path=uid+'/sacwyobi-acts/'+opId+'__'+safe;
+    swNotify('⬆️ იტვირთება…');
+    try{
+      // remove any previous file for this op first (avoid orphans on re-upload)
+      const prev=(window.__swActFiles||{})[opId];
+      if(prev && prev.path && prev.path!==path){ try{ await _sb.storage.from(SW_ACT_BUCKET).remove([prev.path]); }catch(e){} }
+      const up=await _sb.storage.from(SW_ACT_BUCKET).upload(path, file, { upsert:true, contentType:file.type||undefined });
+      if(up.error){ swNotify('⚠️ ატვირთვა ვერ მოხერხდა: '+up.error.message, true); return; }
+      window.__swActFiles=window.__swActFiles||{}; window.__swActFiles[opId]={ path:path, name:safe };
+      swRenderPurchases();
+      swNotify('📎 ხელმოწერილი აქტი აიტვირთა');
+    }catch(e){ swNotify('⚠️ შეცდომა ატვირთვისას', true); console.warn('swUploadSignedAct', e); }
+  };
+  inp.click();
+}
+window.swUploadSignedAct = swUploadSignedAct;
+// view (or replace) the signed act for one op
+async function swViewSignedAct(opId){
+  const rec=(window.__swActFiles||{})[opId];
+  if(!rec){ swUploadSignedAct(opId); return; }
+  if(!_sb || !uid){ return; }
+  try{
+    const r=await _sb.storage.from(SW_ACT_BUCKET).createSignedUrl(rec.path, 3600);
+    if(r.error || !r.data || !r.data.signedUrl){ swNotify('⚠️ ფაილი ვერ გაიხსნა', true); return; }
+    const openIt=window.confirm('📎 '+ (rec.name||'აქტი') +'\n\nOK — ნახვა/გადმოწერა\nCancel — ახლით ჩანაცვლება');
+    if(openIt){ window.open(r.data.signedUrl, '_blank'); }
+    else { swUploadSignedAct(opId); }
+  }catch(e){ console.warn('swViewSignedAct', e); swNotify('⚠️ შეცდომა', true); }
+}
+window.swViewSignedAct = swViewSignedAct;
 
 // ══════════════════════════════════════════════════════
 //  SHIPMENTS (🚚 გამგზავრება — dispatch/export)
