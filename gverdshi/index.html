@@ -1810,15 +1810,15 @@
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
             <div style="font-size: 32px;">🎉</div>
             <div>
-              <div style="font-family: 'Noto Serif Georgian', serif; font-size: 22px; font-weight: 900; color: var(--green-dark); line-height: 1.2;">პირველი 50 ოსტატი — უფასოდ!</div>
-              <div style="font-size: 14px; color: var(--text-muted); margin-top: 4px;">სპეციალური აქცია პირველი რეგისტრანტებისთვის</div>
+              <div style="font-family: 'Noto Serif Georgian', serif; font-size: 22px; font-weight: 900; color: var(--green-dark); line-height: 1.2;" data-t="promo_title">პირველი 50 ოსტატი — უფასოდ!</div>
+              <div style="font-size: 14px; color: var(--text-muted); margin-top: 4px;" data-t="promo_sub">სპეციალური აქცია პირველი რეგისტრანტებისთვის</div>
             </div>
           </div>
           
           <!-- Progress bar -->
           <div style="background: white; padding: 14px 16px; border-radius: 12px; margin-top: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-              <span style="font-size: 14px; font-weight: 600; color: var(--text);">დარჩენილი უფასო ადგილები</span>
+              <span style="font-size: 14px; font-weight: 600; color: var(--text);" data-t="promo_spots_left">დარჩენილი უფასო ადგილები</span>
               <span style="font-family: 'Noto Serif Georgian', serif; font-size: 24px; font-weight: 900; color: var(--green);"><span id="free-spots-left">50</span>/50</span>
             </div>
             <div style="height: 8px; background: var(--border); border-radius: 100px; overflow: hidden;">
@@ -1831,20 +1831,20 @@
         <div id="bank-info-box" style="margin-bottom: 24px; padding: 20px; background: var(--bg); border: 1px solid var(--border-strong); border-radius: 14px;">
           <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
             <div style="font-size: 22px;">💳</div>
-            <div style="font-family: 'Noto Serif Georgian', serif; font-size: 17px; font-weight: 900; color: var(--text);">50 ადგილის შემდეგ — რეგისტრაცია 10 ლარი</div>
+            <div style="font-family: 'Noto Serif Georgian', serif; font-size: 17px; font-weight: 900; color: var(--text);" data-t="bank_title">50 ადგილის შემდეგ — რეგისტრაცია 10 ლარი</div>
           </div>
           
           <div style="padding: 14px 16px; background: white; border-radius: 10px; border: 1px dashed var(--border-strong); margin-bottom: 10px;">
-            <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 6px;">🏦 ანგარიშის ნომერი</div>
+            <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 6px;" data-t="bank_account_label">🏦 ანგარიშის ნომერი</div>
             <div style="font-family: 'SF Mono', Monaco, 'Courier New', monospace; font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: 0.02em; word-break: break-all;">GE76BG0000000610799518</div>
-            <button type="button" onclick="copyIban()" style="margin-top: 8px; padding: 6px 12px; background: var(--green-light); color: var(--green-dark); border: none; border-radius: 8px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;">📋 კოპირება</button>
+            <button type="button" onclick="copyIban()" style="margin-top: 8px; padding: 6px 12px; background: var(--green-light); color: var(--green-dark); border: none; border-radius: 8px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;" data-t="btn_copy">📋 კოპირება</button>
           </div>
 
           <div style="padding: 12px 14px; background: #FFF9E6; border-left: 3px solid #F59E0B; border-radius: 6px;">
             <div style="font-size: 13px; color: #92400E; line-height: 1.6;">
-              <strong>📝 გადარიცხვისას მიზნობრიობაში დაწერე:</strong><br>
-              <span style="font-family: 'SF Mono', Monaco, monospace; font-size: 13px;">სახელი გვარი პირადი ნომერი</span>
-              <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">მაგ: გიორგი კობახიძე 01028012345</div>
+              <strong data-t="bank_purpose_title">📝 გადარიცხვისას მიზნობრიობაში დაწერე:</strong><br>
+              <span style="font-family: 'SF Mono', Monaco, monospace; font-size: 13px;" data-t="bank_purpose_fields">სახელი გვარი პირადი ნომერი</span>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;" data-t="bank_purpose_example">მაგ: გიორგი კობახიძე 01028012345</div>
             </div>
           </div>
         </div>
@@ -1869,13 +1869,13 @@
           <div class="form-group" style="margin-bottom: 24px; padding: 20px; background: linear-gradient(135deg, var(--green-light) 0%, var(--sea-light) 100%); border: 2px solid var(--green); border-radius: 14px;">
             <label style="display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; color: var(--green-dark); margin-bottom: 12px; text-transform: none;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              მუნიციპალიტეტი — სად მუშაობ? *
+              <span data-t="label_municipality">მუნიციპალიტეტი — სად მუშაობ? *</span>
             </label>
             <select id="reg-municipality" required onchange="updateRegAreas(this.value)" style="width: 100%; padding: 14px 16px; font-size: 16px; font-weight: 600; border: 2px solid var(--green); border-radius: 10px; background: white; color: var(--text); font-family: inherit; outline: none; cursor: pointer;">
               <option value="" disabled selected>აირჩიე ლოკაცია...</option>
               <!-- ივსება buildLocationPickers()-ით (CITY_AREAS-დან) -->
             </select>
-            <div style="font-size: 12px; color: var(--green-dark); margin-top: 8px; opacity: 0.8;">
+            <div style="font-size: 12px; color: var(--green-dark); margin-top: 8px; opacity: 0.8;" data-t="municipality_note">
               აუცილებელია — კლიენტები ქალაქის მიხედვით ეძებენ ოსტატებს
             </div>
           </div>
@@ -1912,7 +1912,7 @@
             <label><span data-t="label_areas">სად მუშაობ? *</span> <span style="font-weight: 400; color: var(--text-light);" data-t="label_areas_hint">(მონიშნე ყველა უბანი)</span></label>
             <div id="reg-areas-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; padding: 12px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border);">
               <!-- Dynamically filled by updateAreasForCity() — depends on reg-municipality selection -->
-              <div style="grid-column: 1/-1; padding: 8px; text-align: center; color: var(--text-light); font-size: 13px;">ჯერ აირჩიე მუნიციპალიტეტი ↑</div>
+              <div style="grid-column: 1/-1; padding: 8px; text-align: center; color: var(--text-light); font-size: 13px;" data-t="areas_placeholder">ჯერ აირჩიე მუნიციპალიტეტი ↑</div>
             </div>
           </div>
 
@@ -1984,19 +1984,19 @@
           <div style="padding: 18px; background: #FFF7ED; border: 2px solid var(--orange); border-radius: 14px; margin-bottom: 16px;">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
               <div style="font-size: 22px;">⚠️</div>
-              <div style="font-family: 'Noto Serif Georgian', serif; font-size: 16px; font-weight: 900; color: var(--orange-dark);">მნიშვნელოვანი წესი — ხარისხის უზრუნველყოფა</div>
+              <div style="font-family: 'Noto Serif Georgian', serif; font-size: 16px; font-weight: 900; color: var(--orange-dark);" data-t="conduct_title">მნიშვნელოვანი წესი — ხარისხის უზრუნველყოფა</div>
             </div>
-            <p style="font-size: 13.5px; color: var(--orange-dark); line-height: 1.7; margin: 0 0 10px 0;">
+            <p style="font-size: 13.5px; color: var(--orange-dark); line-height: 1.7; margin: 0 0 10px 0;" data-t="conduct_desc">
               gverdshi.ge ანიჭებს ყველაზე მეტ პრიორიტეტს კლიენტების კმაყოფილებას. რეგისტრაციით ოსტატი ადასტურებს, რომ:
             </p>
             <ul style="margin: 0 0 12px 0; padding-left: 20px; color: var(--orange-dark); font-size: 13.5px; line-height: 1.7;">
-              <li>თუ ოსტატზე დაფიქსირდება <strong>დასაბუთებული საჩივარი</strong> (არაკვალიფიციური შრომა, შეუსრულებელი სიტყვა, კლიენტის მოტყუება, ცუდი ქცევა), პლატფორმას უფლება აქვს წაშალოს მისი პროფილი საიტიდან.</li>
-              <li>პროფილის წაშლის ან დაბლოკვის შემთხვევაში <strong>რეგისტრაციის საფასური არ ბრუნდება</strong>.</li>
-              <li>პლატფორმა იტოვებს უფლებას თავად შეაფასოს საჩივრის მართებულობა.</li>
+              <li data-t="conduct_li1" data-t-html="true">თუ ოსტატზე დაფიქსირდება <strong>დასაბუთებული საჩივარი</strong> (არაკვალიფიციური შრომა, შეუსრულებელი სიტყვა, კლიენტის მოტყუება, ცუდი ქცევა), პლატფორმას უფლება აქვს წაშალოს მისი პროფილი საიტიდან.</li>
+              <li data-t="conduct_li2" data-t-html="true">პროფილის წაშლის ან დაბლოკვის შემთხვევაში <strong>რეგისტრაციის საფასური არ ბრუნდება</strong>.</li>
+              <li data-t="conduct_li3">პლატფორმა იტოვებს უფლებას თავად შეაფასოს საჩივრის მართებულობა.</li>
             </ul>
             <label class="check-row" style="padding: 10px 12px; margin: 0; background: white; border-radius: 10px; border: 1px solid var(--orange); cursor: pointer;">
               <input type="checkbox" id="reg-conduct-agree" required style="margin-right: 10px; width: 18px; height: 18px; accent-color: var(--orange);">
-              <span style="font-size: 13.5px; font-weight: 600; color: var(--orange-dark);">ვეთანხმები — საჩივრის შემთხვევაში ვიხსნი პასუხისმგებლობას და არ მოვითხოვ საფასურის დაბრუნებას *</span>
+              <span style="font-size: 13.5px; font-weight: 600; color: var(--orange-dark);" data-t="conduct_agree">ვეთანხმები — საჩივრის შემთხვევაში ვიხსნი პასუხისმგებლობას და არ მოვითხოვ საფასურის დაბრუნებას *</span>
             </label>
           </div>
 
@@ -3136,6 +3136,24 @@
       cookie_no: "მხოლოდ საჭირო",
       cookie_yes: "თანხმობა",
       cookie_text: '🍪 ვიყენებთ cookie-ებს საიტის გამართული მუშაობისა და ანალიტიკისთვის. დეტალები — <a href="/privacy.html">კონფიდენციალურობის პოლიტიკაში</a>.',
+      promo_title: "პირველი 50 ოსტატი — უფასოდ!",
+      promo_sub: "სპეციალური აქცია პირველი რეგისტრანტებისთვის",
+      promo_spots_left: "დარჩენილი უფასო ადგილები",
+      bank_title: "50 ადგილის შემდეგ — რეგისტრაცია 10 ლარი",
+      bank_account_label: "🏦 ანგარიშის ნომერი",
+      btn_copy: "📋 კოპირება",
+      bank_purpose_title: "📝 გადარიცხვისას მიზნობრიობაში დაწერე:",
+      bank_purpose_fields: "სახელი გვარი პირადი ნომერი",
+      bank_purpose_example: "მაგ: გიორგი კობახიძე 01028012345",
+      label_municipality: "მუნიციპალიტეტი — სად მუშაობ? *",
+      municipality_note: "აუცილებელია — კლიენტები ქალაქის მიხედვით ეძებენ ოსტატებს",
+      areas_placeholder: "ჯერ აირჩიე მუნიციპალიტეტი ↑",
+      conduct_title: "მნიშვნელოვანი წესი — ხარისხის უზრუნველყოფა",
+      conduct_desc: "gverdshi.ge ანიჭებს ყველაზე მეტ პრიორიტეტს კლიენტების კმაყოფილებას. რეგისტრაციით ოსტატი ადასტურებს, რომ:",
+      conduct_li1: "თუ ოსტატზე დაფიქსირდება <strong>დასაბუთებული საჩივარი</strong> (არაკვალიფიციური შრომა, შეუსრულებელი სიტყვა, კლიენტის მოტყუება, ცუდი ქცევა), პლატფორმას უფლება აქვს წაშალოს მისი პროფილი საიტიდან.",
+      conduct_li2: "პროფილის წაშლის ან დაბლოკვის შემთხვევაში <strong>რეგისტრაციის საფასური არ ბრუნდება</strong>.",
+      conduct_li3: "პლატფორმა იტოვებს უფლებას თავად შეაფასოს საჩივრის მართებულობა.",
+      conduct_agree: "ვეთანხმები — საჩივრის შემთხვევაში ვიხსნი პასუხისმგებლობას და არ მოვითხოვ საფასურის დაბრუნებას *",
       masters_in_batumi: "ოსტატი ბათუმში",
       masters_summer_peak: "ოსტატი · პიკი ზაფხულში",
       masters_airbnb_spec: "ოსტატი · Airbnb სპეც.",
@@ -3355,6 +3373,24 @@
       cookie_no: "Только необходимые",
       cookie_yes: "Принять",
       cookie_text: '🍪 Мы используем cookie для корректной работы сайта и аналитики. Подробнее — в <a href="/privacy.html">политике конфиденциальности</a>.',
+      promo_title: "Первые 50 мастеров — бесплатно!",
+      promo_sub: "Специальная акция для первых регистрантов",
+      promo_spots_left: "Осталось бесплатных мест",
+      bank_title: "После 50 мест — регистрация 10 лари",
+      bank_account_label: "🏦 Номер счёта",
+      btn_copy: "📋 Копировать",
+      bank_purpose_title: "📝 В назначении платежа укажи:",
+      bank_purpose_fields: "Имя Фамилия Личный номер",
+      bank_purpose_example: "Напр.: Гиорги Кобахидзе 01028012345",
+      label_municipality: "Муниципалитет — где работаешь? *",
+      municipality_note: "Обязательно — клиенты ищут мастеров по городу",
+      areas_placeholder: "Сначала выбери муниципалитет ↑",
+      conduct_title: "Важное правило — обеспечение качества",
+      conduct_desc: "gverdshi.ge ставит удовлетворённость клиентов на первое место. Регистрируясь, мастер подтверждает, что:",
+      conduct_li1: "если на мастера поступит <strong>обоснованная жалоба</strong> (некачественная работа, невыполненное обещание, обман клиента, плохое поведение), платформа вправе удалить его профиль с сайта.",
+      conduct_li2: "в случае удаления или блокировки профиля <strong>плата за регистрацию не возвращается</strong>.",
+      conduct_li3: "платформа оставляет за собой право самостоятельно оценивать обоснованность жалобы.",
+      conduct_agree: "Согласен — в случае жалобы снимаю с себя ответственность и не требую возврата платы *",
       masters_in_batumi: "мастеров в Батуми",
       masters_summer_peak: "мастеров · пик летом",
       masters_airbnb_spec: "мастеров · спец. Airbnb",
@@ -3574,6 +3610,24 @@
       cookie_no: "Essential only",
       cookie_yes: "Accept",
       cookie_text: '🍪 We use cookies for proper site function and analytics. Details in our <a href="/privacy.html">privacy policy</a>.',
+      promo_title: "First 50 pros — free!",
+      promo_sub: "Special offer for the first registrants",
+      promo_spots_left: "Free spots left",
+      bank_title: "After 50 spots — registration 10 GEL",
+      bank_account_label: "🏦 Account number",
+      btn_copy: "📋 Copy",
+      bank_purpose_title: "📝 In the payment purpose write:",
+      bank_purpose_fields: "First name Last name Personal ID",
+      bank_purpose_example: "e.g.: Giorgi Kobakhidze 01028012345",
+      label_municipality: "Municipality — where do you work? *",
+      municipality_note: "Required — clients search for pros by city",
+      areas_placeholder: "First choose a municipality ↑",
+      conduct_title: "Important rule — quality assurance",
+      conduct_desc: "gverdshi.ge puts client satisfaction first. By registering, the pro confirms that:",
+      conduct_li1: "if a <strong>justified complaint</strong> is filed against the pro (poor work, broken promise, deceiving a client, bad behavior), the platform may remove their profile from the site.",
+      conduct_li2: "if the profile is removed or blocked, the <strong>registration fee is non-refundable</strong>.",
+      conduct_li3: "the platform reserves the right to assess the validity of a complaint itself.",
+      conduct_agree: "I agree — in case of a complaint I accept responsibility and won't request a refund *",
       masters_in_batumi: "masters in Batumi",
       masters_summer_peak: "masters · peak in summer",
       masters_airbnb_spec: "masters · Airbnb specialists",
