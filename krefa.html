@@ -184,6 +184,7 @@
         <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end" onclick="renderReport()">🔄 ჩვენება</button>
         <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end" onclick="exportReportExcel()">📊 Excel</button>
         <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end" onclick="printReport()">🖨️ ბეჭდვა</button>
+        <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end;border-color:#f59e0b;color:#b45309" onclick="fixPriceForFilter()" title="არჩეული ფილტრის ყველა ჩაწონვას ფასი გადაუყენებს და თანხას ხელახლა დაითვლის">🛠️ ფასის კორექცია</button>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:9px 12px;margin-bottom:10px">
         <b style="color:#6d28d9;font-size:.85rem">🎁 მასობრივი ბონუსი:</b>
@@ -656,6 +657,38 @@ async function delSession(id,pu){
   try{ var r=await sb.from('harvest_sessions').delete().eq('user_id',uid).eq('id',id); if(r.error){ alert('❌ '+r.error.message); return; } }
   catch(e){ alert('❌ '+(e.message||e)); return; }
   await loadSessions(); renderDash(); renderPickers(); if(pu){ openPicker(pu); } else { renderReport(); }
+}
+// ── ფასის კორექცია: არჩეული ფილტრის ყველა ჩაწონვას ფასი გადაუყენებს + earned=კგ×ფასი ──
+function _filteredSessions(){
+  var from=(document.getElementById('rFrom')||{}).value||'', to=(document.getElementById('rTo')||{}).value||'',
+      q=((document.getElementById('rPicker')||{}).value||'').trim().toLowerCase(), role=(document.getElementById('rRole')||{}).value||'';
+  return SESSIONS.filter(function(s){
+    if(!s || !s.id) return false;
+    if(from&&(s.date||'')<from) return false;
+    if(to&&(s.date||'')>to) return false;
+    if(q&&(s.picker_name||'').toLowerCase().indexOf(q)<0) return false;
+    if(role&&roleOf(s.picker_id,s.picker_name)!==role) return false;
+    return true;
+  });
+}
+async function fixPriceForFilter(){
+  if(!sb||!uid){ alert('ჯერ შედი სისტემაში'); return; }
+  var list=_filteredSessions();
+  if(!list.length){ alert('ამ ფილტრით ჩაწონვა არ არის (შეამოწმე თარიღები/მკრეფავი)'); return; }
+  var v=prompt('ახალი ფასი ₾/კგ.\n\nარჩეული ფილტრის '+list.length+' ჩაწონვას გადაეყენება ეს ფასი და თანხა ხელახლა დაითვლება (კგ × ფასი).', '2');
+  if(v==null) return;
+  var np=parseFloat(String(v).replace(',','.')); if(isNaN(np)||np<0){ alert('არასწორი ფასი'); return; }
+  var before=0, after=0, payload=list.map(function(s){ var w=+s.weight||0, e=Math.round(w*np*100)/100; before+=(+s.earned||0); after+=e; return {id:s.id,user_id:uid,price:np,earned:e}; });
+  before=Math.round(before*100)/100; after=Math.round(after*100)/100;
+  if(!confirm('დაზუსტდება '+list.length+' ჩაწონვა.\n\nფასი → '+np.toFixed(2)+' ₾/კგ\nთანხა: '+before+' ₾  →  '+after+' ₾\n\nგავაგრძელო?')) return;
+  try{
+    for(var i=0;i<payload.length;i+=200){
+      var r=await sb.from('harvest_sessions').upsert(payload.slice(i,i+200),{onConflict:'id'});
+      if(r.error){ alert('❌ '+r.error.message); return; }
+    }
+  }catch(e){ alert('❌ '+(e.message||e)); return; }
+  await loadSessions(); renderDash(); renderPickers(); renderReport();
+  alert('✅ გასწორდა '+list.length+' ჩაწონვა — ფასი '+np.toFixed(2)+' ₾/კგ');
 }
 // ── ანგარიში ──
 function roleOf(puid,name){ var p=PICKERS.find(function(x){ return (puid&&x.uid===puid)||pName(x)===name; }); return p?(p.role||'picker'):'picker'; }
