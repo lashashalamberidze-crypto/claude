@@ -3965,7 +3965,13 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     // 🌱 სიის რეჟიმი: აგრო (დემო სპეციალისტები) თუ ჩვეულებრივი
-    if (id === 'list') { applyListMode(window._openAgro ? 'agro' : 'home'); window._openAgro = false; }
+    if (id === 'list') {
+      const _agro = !!window._openAgro;
+      applyListMode(_agro ? 'agro' : 'home');
+      window._openAgro = false;
+      // 🔄 ჩვეულებრივი სია — თავიდან ჩავტვირთოთ ბაზიდან მიმდინარე ქალაქისთვის
+      if (!_agro && typeof loadMastersFromDB === 'function') loadMastersFromDB();
+    }
 
     // 🎯 დავიმახსოვროთ ადმინ გვერდი — refresh-ის შემთხვევაში დავაბრუნოთ
     try {
@@ -5938,7 +5944,15 @@
     
     // შეინახე
     try { localStorage.setItem('gverdshi_city', cityKey); } catch(e) {}
-    
+
+    // 🔄 თუ სიის გვერდზე ვართ (ჩვეულებრივი) — განვაახლოთ ოსტატები ახალი ქალაქისთვის
+    try {
+      const lp = document.getElementById('page-list');
+      const agroBody = document.getElementById('agro-list-body');
+      const inAgro = agroBody && agroBody.style.display !== 'none';
+      if (lp && lp.classList.contains('active') && !inAgro && typeof loadMastersFromDB === 'function') loadMastersFromDB();
+    } catch(e) {}
+
     showToast('📍 ქალაქი: ' + emoji + ' ' + cityLabel);
   }
 
