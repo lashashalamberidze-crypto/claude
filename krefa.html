@@ -680,6 +680,9 @@ function _reportByPicker(rows){
     var d=s.date||''; if(!b.dmap[d]){ b.dmap[d]={date:d,box:0,kg:0,earn:0,pallets:{},items:[]}; b.dord.push(d); } var dd=b.dmap[d]; if(!s._att){ dd.box++; dd.kg+=(+s.weight||0); dd.earn+=(+s.earned||0); if(s.pallet_code)dd.pallets[s.pallet_code]=1; dd.items.push(s); } });
   return ord.map(function(u){ var b=g[u]; b.bonus=0; b.dord.sort().reverse(); b.dord.forEach(function(d){ var bn=BONUSBYDATE[(b.puid||'')+'|'+d]||0; b.dmap[d].bonus=bn; b.bonus+=bn; }); return b; }).sort(function(a,b){ return b.kg-a.kg; });
 }
+// რეალურად დაყენებული ფასის საშუალო (ნულ-ფასიანი/ფანტომური ჩანაწერები არ ითვლება)
+function _avgPrice(items){ var s=0,n=0; (items||[]).forEach(function(x){ var p=+((x&&x.price))||0; if(p>0){ s+=p; n++; } }); return n?(s/n):0; }
+function _pickerItems(m){ var a=[]; (m.dord||[]).forEach(function(d){ var dd=m.dmap[d]; if(dd&&dd.items) a=a.concat(dd.items); }); return a; }
 function toggleRp(ix){ document.querySelectorAll('.rp'+ix).forEach(function(e){ e.style.display=(e.style.display==='none'?'':'none'); }); }
 function _reportSectors(rows){
   var m={}; rows.forEach(function(s){ var k=(''+(s.quarter||'—')).trim()||'—'; if(!m[k])m[k]={sec:k,kg:0,n:0,earn:0,pal:{}}; var x=m[k]; x.kg+=(+s.weight||0); x.n++; x.earn+=(+s.earned||0); if(s.pallet_code)x.pal[s.pallet_code]=1; });
@@ -714,10 +717,10 @@ function renderReport(){
   h+='<div style="overflow-x:auto"><table><thead><tr><th><input type="checkbox" id="rSelAll" onclick="toggleAllSel(this)"></th><th>მკრეფავი</th><th>დღე</th><th>ყუთი</th><th>კგ</th><th>₾/კგ</th><th>₾</th><th>🎁 ბონ.</th><th>ჯამი ₾</th></tr></thead><tbody>';
   byP.forEach(function(m,ix){
     var rl=roleOf(m.puid,m.name); var rb=rl==='carrier'?'<span class="badge b-carry" style="font-size:.6rem">🚚</span>':'';
-    var ppk=m.kg>0?(m.earn/m.kg):0;
+    var ppk=_avgPrice(_pickerItems(m))||(m.kg>0?(m.earn/m.kg):0);
     var totLari=Math.round((m.earn+m.bonus)*100)/100;
     h+='<tr style="cursor:pointer;font-weight:600" onclick="toggleRp('+ix+')"><td onclick="event.stopPropagation()"><input type="checkbox" class="rsel" data-puid="'+esc(m.puid||'')+'" onchange="updateSelCount()"></td><td>▸ '+esc(m.name)+' '+rb+'</td><td class="muted">'+m.dord.length+' დღე</td><td>'+m.box+'</td><td><b>'+fmtKg(m.kg)+'</b></td><td>'+(ppk?ppk.toFixed(2):'—')+'</td><td>'+(Math.round(m.earn*100)/100)+'</td><td>'+(m.bonus?('<b style="color:#7c3aed">+'+(Math.round(m.bonus*100)/100)+'</b>'):'—')+'</td><td><b style="color:#16a34a">'+totLari+'</b></td></tr>';
-    m.dord.forEach(function(d){ var dd=m.dmap[d]; var pk=dd.kg>0?(dd.earn/dd.kg):0;
+    m.dord.forEach(function(d){ var dd=m.dmap[d]; var pk=_avgPrice(dd.items)||(dd.kg>0?(dd.earn/dd.kg):0);
       var det=dd.items.slice().sort(function(a,b){return(''+(a.time||'')).localeCompare(''+(b.time||''));}).map(function(s){ return '<div style="display:flex;justify-content:space-between;font-size:.72rem;padding:3px 0;border-bottom:1px dashed #e5e7eb"><span class="muted">'+(s.time?('🕐 '+esc(String(s.time).slice(0,5))+' · '):'')+'ბლ '+esc(s.quarter||'—')+' · რიგ '+esc(s.row_num||'—')+(s.pallet_code?(' · 📦 '+esc(s.pallet_code)):'')+'</span><span style="white-space:nowrap"><b>'+(Math.round((+s.weight||0)*100)/100)+'</b>კგ · <b style="color:#16a34a">'+(Math.round((+s.earned||0)*100)/100)+'</b>₾'+(s.id?(' <span style="cursor:pointer;color:#0369a1" onclick="editSession(\''+esc(String(s.id))+'\',null)">✏️</span> <span style="cursor:pointer;color:#dc2626" onclick="delSession(\''+esc(String(s.id))+'\',null)">🗑️</span>'):'')+'</span></div>'; }).join('');
       h+='<tr class="rp'+ix+'" style="display:none;background:#f8fafc;font-size:.82rem"><td></td><td class="muted" style="cursor:pointer" onclick="var e=this.parentNode.nextElementSibling;if(e&&e.className===\'rpdet'+ix+'-'+esc(d)+'\')e.style.display=(e.style.display===\'none\'?\'\':\'none\')">📅 '+esc(d)+'</td><td>'+Object.keys(dd.pallets).length+' პალ.</td><td>'+dd.box+'</td><td>'+fmtKg(dd.kg)+'</td><td>'+(pk?pk.toFixed(2):'—')+'</td><td>'+(Math.round(dd.earn*100)/100)+'</td><td>'+(dd.bonus?('+'+(Math.round(dd.bonus*100)/100)):'—')+'</td><td>'+(Math.round((dd.earn+dd.bonus)*100)/100)+'</td></tr>'
         +'<tr class="rp'+ix+' rpdet'+ix+'-'+esc(d)+'" style="display:none;background:#fff"><td></td><td colspan="8" style="padding:5px 10px">'+det+'</td></tr>';
@@ -768,7 +771,7 @@ function exportReportExcel(){
       var role=roleOf(m.puid,m.name)==='carrier'?'გამომტანი':'მკრეფავი';
       var row=[ix+1,m.name,pi.id||pi.personal_id||'',pi.phone||'',pi.address||'',role,m.box,r2(m.kg),r2(m.earn),r2(m.bonus||0),r2(m.earn+(m.bonus||0))];
       days.forEach(function(d){ var dd=m.dmap[d];
-        if(dd){ var pr=dd.kg>0?(dd.earn/dd.kg):0; row.push(dd.box,r2(dd.kg),r2(pr),r2(dd.bonus||0),r2(dd.earn+(dd.bonus||0))); }
+        if(dd){ var pr=_avgPrice(dd.items)||(dd.kg>0?(dd.earn/dd.kg):0); row.push(dd.box,r2(dd.kg),r2(pr),r2(dd.bonus||0),r2(dd.earn+(dd.bonus||0))); }
         else { row.push('','','','',''); }
       });
       aoa.push(row);
