@@ -1883,27 +1883,27 @@
           <div class="form-group">
             <label data-t="label_category">რას აკეთებ? *</label>
             <select id="reg-category">
-              <option data-t="cat_plumber">სანტექნიკოსი</option>
-              <option data-t="cat_electrician">ელექტრიკოსი</option>
-              <option data-t="cat_ac_master">კონდიციონერის ოსტატი</option>
-              <option data-t="cat_cleaner">დამლაგებელი</option>
-              <option data-t="cat_renovator">რემონტის ოსტატი</option>
-              <option data-t="cat_assembler">ავეჯის ამწყობი</option>
-              <option>ცხოველების მომვლელი</option>
-              <option>მანქანის ხელოსანი</option>
-              <option>რეპეტიტორი</option>
-              <option>სილამაზე სახლში</option>
-              <option>გადაზიდვა</option>
-              <option>ტექნიკის შეკეთება</option>
-              <option>ოჯახის დახმარება</option>
-              <option>რესტავრატორი</option>
-              <option>ავეჯის გადაზიდვა</option>
+              <option value="სანტექნიკოსი" data-t="cat_plumber">სანტექნიკოსი</option>
+              <option value="ელექტრიკოსი" data-t="cat_electrician">ელექტრიკოსი</option>
+              <option value="კონდიციონერის ოსტატი" data-t="cat_ac_master">კონდიციონერის ოსტატი</option>
+              <option value="დამლაგებელი" data-t="cat_cleaner">დამლაგებელი</option>
+              <option value="რემონტის ოსტატი" data-t="cat_renovator">რემონტის ოსტატი</option>
+              <option value="ავეჯის ამწყობი" data-t="cat_assembler">ავეჯის ამწყობი</option>
+              <option value="ცხოველების მომვლელი">ცხოველების მომვლელი</option>
+              <option value="მანქანის ხელოსანი">მანქანის ხელოსანი</option>
+              <option value="რეპეტიტორი">რეპეტიტორი</option>
+              <option value="სილამაზე სახლში">სილამაზე სახლში</option>
+              <option value="გადაზიდვა">გადაზიდვა</option>
+              <option value="ტექნიკის შეკეთება">ტექნიკის შეკეთება</option>
+              <option value="ოჯახის დახმარება">ოჯახის დახმარება</option>
+              <option value="რესტავრატორი">რესტავრატორი</option>
+              <option value="ავეჯის გადაზიდვა">ავეჯის გადაზიდვა</option>
               <optgroup label="🌱 აგრონომია">
-                <option>აგრონომი</option>
-                <option>ვეტერინარი</option>
-                <option>მცენარეთა დამცველი</option>
-                <option>ტექნოლოგი</option>
-                <option>მკრეფავი</option>
+                <option value="აგრონომი">აგრონომი</option>
+                <option value="ვეტერინარი">ვეტერინარი</option>
+                <option value="მცენარეთა დამცველი">მცენარეთა დამცველი</option>
+                <option value="ტექნოლოგი">ტექნოლოგი</option>
+                <option value="მკრეფავი">მკრეფავი</option>
               </optgroup>
             </select>
           </div>
@@ -3050,8 +3050,8 @@
       };
       
       // SMS ადმინისტრატორს ახალი ოსტატის შესახებ (მუნიციპალიტეტითურთ)
-      const muniLabels = { batumi: 'Batumi', rustavi: 'Rustavi', kutaisi: 'Kutaisi', zugdidi: 'Zugdidi', telavi: 'Telavi', marneuli: 'Marneuli' };
-      const muniLabel = muniLabels[registrationData.municipality] || registrationData.municipality || 'Batumi';
+      const muniKey = registrationData.municipality;
+      const muniLabel = (typeof CITY_LABELS !== 'undefined' && CITY_LABELS[muniKey] && CITY_LABELS[muniKey].en) ? CITY_LABELS[muniKey].en : (muniKey || 'Georgia');
       const smsMessage = `gverdshi.ge: akhali ostati! ${registrationData.first_name} ${registrationData.last_name}, ${registrationData.category}, ${muniLabel}, tel: ${registrationData.phone}`;
       notifyAdmin(smsMessage);
       
