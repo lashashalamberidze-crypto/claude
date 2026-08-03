@@ -2708,6 +2708,34 @@
 
     <div class="admin-section">
       <div class="admin-section-head">
+        <h3>✅ დადასტურებული ოსტატები</h3>
+        <span class="pending-count" id="approved-count" style="background: var(--green-light); color: var(--green-dark);">—</span>
+      </div>
+
+      <div class="approved-filters" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+        <input type="text" id="approved-filter-search" placeholder="🔎 ძებნა (სახელი, ტელეფონი)" oninput="renderApprovedMasters()"
+          style="flex: 1; min-width: 200px; padding: 10px 14px; border: 1px solid var(--border-strong); border-radius: 10px; font-family: inherit; font-size: 14px;">
+        <select id="approved-filter-city" onchange="renderApprovedMasters()"
+          style="padding: 10px 14px; border: 1px solid var(--border-strong); border-radius: 10px; font-family: inherit; font-size: 14px; background: white; cursor: pointer;">
+          <option value="">🏙️ ყველა ქალაქი</option>
+        </select>
+        <select id="approved-filter-category" onchange="renderApprovedMasters()"
+          style="padding: 10px 14px; border: 1px solid var(--border-strong); border-radius: 10px; font-family: inherit; font-size: 14px; background: white; cursor: pointer;">
+          <option value="">💼 ყველა კატეგორია</option>
+        </select>
+        <button onclick="loadApprovedMasters()" title="განახლება"
+          style="padding: 10px 16px; border: 1px solid var(--border-strong); border-radius: 10px; background: white; cursor: pointer; font-family: inherit; font-size: 14px;">🔄</button>
+      </div>
+
+      <div id="approved-list"></div>
+
+      <div class="empty-state" id="approved-empty" style="display: none;">
+        ჯერ არ არის დადასტურებული ოსტატი
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <div class="admin-section-head">
         <h3>ბოლო აქტივობა</h3>
       </div>
       <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -5290,6 +5318,8 @@
 
       // 📋 რეალური pending masters — DB-დან ჩატვირთვა
       await loadPendingMasters();
+      // ✅ დადასტურებული ოსტატები — სია ფილტრებით და წაშლით
+      await loadApprovedMasters();
     } catch(e) {
       console.error('ადმინ სტატისტიკის ჩატვირთვა ვერ მოხდა:', e);
     }
@@ -5423,11 +5453,15 @@
     if (btn) { btn.disabled = true; btn.textContent = '⏳ ...'; }
     
     try {
-      const { error } = await sb
+      let { error } = await sb
         .from('masters')
-        .update({ status: 'approved' })
+        .update({ status: 'approved', approved_at: new Date().toISOString() })
         .eq('id', id);
-      
+      // თუ approved_at სვეტი ჯერ არ დამატებულა — ვცდით მის გარეშე
+      if (error && /approved_at/.test(error.message || '')) {
+        ({ error } = await sb.from('masters').update({ status: 'approved' }).eq('id', id));
+      }
+
       if (error) {
         console.error('დადასტურება ვერ მოხერხდა:', error);
         showToast('❌ ვერ დადასტურდა: ' + error.message);
@@ -5485,6 +5519,135 @@
       showToast('❌ შეცდომა');
     }
   }
+
+  // ============================================
+  // ✅ დადასტურებული ოსტატები — სია / ფილტრი / წაშლა
+  // ============================================
+  let _adminApprovedMasters = [];
+
+  async function loadApprovedMasters() {
+    if (!sb) return;
+    const cols = 'id, first_name, last_name, phone, category, areas, price_per_hour, experience_years, city, created_at, approved_at, avatar_url, is_pro';
+    const colsNoApproved = cols.replace(', approved_at', '');
+    try {
+      let { data, error } = await sb.from('masters')
+        .select(cols).eq('status', 'approved').order('created_at', { ascending: false });
+      // თუ approved_at სვეტი ჯერ არ დამატებულა — ვცდით მის გარეშე
+      if (error && /approved_at/.test(error.message || '')) {
+        ({ data, error } = await sb.from('masters')
+          .select(colsNoApproved).eq('status', 'approved').order('created_at', { ascending: false }));
+      }
+      if (error) { console.error('დადასტურებულების ჩატვირთვა ვერ მოხდა:', error); return; }
+      _adminApprovedMasters = data || [];
+      populateApprovedFilters();
+      renderApprovedMasters();
+      console.log('✓ დადასტურებული ოსტატები ჩაიტვირთა:', _adminApprovedMasters.length);
+    } catch(e) { console.error('approved error:', e); }
+  }
+
+  function populateApprovedFilters() {
+    const citySel = document.getElementById('approved-filter-city');
+    const catSel = document.getElementById('approved-filter-category');
+    if (citySel) {
+      const cur = citySel.value;
+      const cities = [...new Set(_adminApprovedMasters.map(m => m.city).filter(Boolean))].sort();
+      citySel.innerHTML = '<option value="">🏙️ ყველა ქალაქი</option>' + cities.map(c => {
+        const lbl = (typeof getCityLabel === 'function') ? getCityLabel(c) : c;
+        return '<option value="' + escapeHTML(c) + '">' + escapeHTML(lbl) + '</option>';
+      }).join('');
+      citySel.value = cur;
+    }
+    if (catSel) {
+      const cur = catSel.value;
+      const cats = [...new Set(_adminApprovedMasters.map(m => m.category).filter(Boolean))].sort();
+      catSel.innerHTML = '<option value="">💼 ყველა კატეგორია</option>' + cats.map(c =>
+        '<option value="' + escapeHTML(c) + '">' + escapeHTML(c) + '</option>').join('');
+      catSel.value = cur;
+    }
+  }
+
+  function renderApprovedMasters() {
+    const listEl = document.getElementById('approved-list');
+    const emptyEl = document.getElementById('approved-empty');
+    const countEl = document.getElementById('approved-count');
+    if (!listEl) return;
+
+    const qLower = ((document.getElementById('approved-filter-search') || {}).value || '').trim().toLowerCase();
+    const cityF = (document.getElementById('approved-filter-city') || {}).value || '';
+    const catF = (document.getElementById('approved-filter-category') || {}).value || '';
+
+    const list = _adminApprovedMasters.filter(m => {
+      if (cityF && m.city !== cityF) return false;
+      if (catF && m.category !== catF) return false;
+      if (qLower) {
+        const hay = ((m.first_name || '') + ' ' + (m.last_name || '') + ' ' + (m.phone || '')).toLowerCase();
+        if (!hay.includes(qLower)) return false;
+      }
+      return true;
+    });
+
+    if (countEl) countEl.textContent = list.length + ' / ' + _adminApprovedMasters.length;
+
+    if (!list.length) {
+      listEl.innerHTML = '';
+      if (emptyEl) emptyEl.style.display = 'block';
+      return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    const colors = ['av-green', 'av-orange', 'av-purple', 'av-pink', 'av-amber', 'av-sea'];
+    const fmt = (d) => d ? new Date(d).toLocaleString('ka-GE', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+    const pin = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+
+    listEl.innerHTML = list.map((m, i) => {
+      const firstName = escapeHTML(m.first_name || ''), lastName = escapeHTML(m.last_name || '');
+      const phone = escapeHTML(m.phone || ''), category = escapeHTML(m.category || '');
+      const price = parseInt(m.price_per_hour) || 0, exp = parseInt(m.experience_years) || 0;
+      const areasStr = Array.isArray(m.areas) ? m.areas.map(a => escapeHTML(a)).join(', ') : '';
+      const _cl = (typeof CITY_LABELS !== 'undefined') ? CITY_LABELS[m.city] : null;
+      const cityBadge = _cl ? escapeHTML((_cl.emoji || '📍') + ' ' + (_cl.ka || m.city)) : escapeHTML(m.city || '—');
+      const initials = escapeHTML((m.first_name || '?').charAt(0) + (m.last_name || '').charAt(0));
+      const avatarHTML = m.avatar_url
+        ? '<div class="avatar" style="background-image:url(\'' + escapeHTML(m.avatar_url) + '\');background-size:cover;background-position:center;background-color:transparent;cursor:pointer;" onclick="window.open(\'' + escapeHTML(m.avatar_url) + '\',\'_blank\')"></div>'
+        : '<div class="avatar ' + colors[i % colors.length] + '">' + initials + '</div>';
+      const proBadge = m.is_pro ? ' <span class="badge badge-pro">PRO</span>' : '';
+      return '<div class="pending-card" data-approved-id="' + m.id + '">' +
+        avatarHTML +
+        '<div class="pending-info">' +
+          '<h4>' + firstName + ' ' + lastName + ' <span class="pending-city-badge">' + pin + cityBadge + '</span>' + proBadge + '</h4>' +
+          '<div class="pending-meta">📱 ' + phone + ' • 💼 ' + category + ' • ' + exp + ' წ. • ' + price + '₾/სთ</div>' +
+          (areasStr ? '<div class="pending-meta" style="margin-top:4px;">📍 ' + areasStr + '</div>' : '') +
+          '<div class="pending-meta" style="margin-top:4px;">📝 რეგისტრ.: ' + fmt(m.created_at) + ' &nbsp;•&nbsp; ✅ დადასტ.: ' + fmt(m.approved_at) + '</div>' +
+        '</div>' +
+        '<div class="pending-actions">' +
+          '<button class="btn-reject" onclick="deleteMaster(\'' + m.id + '\', this)">🗑️ წაშლა</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+  window.renderApprovedMasters = renderApprovedMasters;
+  window.loadApprovedMasters = loadApprovedMasters;
+
+  // 🗑️ ოსტატის სამუდამო წაშლა ბაზიდან
+  async function deleteMaster(id, btn) {
+    if (!sb || !id) return;
+    if (!confirm('ნამდვილად გინდა ამ ოსტატის სამუდამოდ წაშლა?\n\nეს მოქმედება შეუქცევადია — ოსტატი წაიშლება ბაზიდან და საიტიდან.')) return;
+    if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+    try {
+      const { error } = await sb.from('masters').delete().eq('id', id);
+      if (error) {
+        console.error('წაშლა ვერ მოხერხდა:', error);
+        showToast('❌ წაშლა ვერ მოხერხდა: ' + error.message);
+        if (btn) { btn.disabled = false; btn.textContent = '🗑️ წაშლა'; }
+        return;
+      }
+      showToast('🗑️ ოსტატი წაიშალა');
+      _adminApprovedMasters = _adminApprovedMasters.filter(m => String(m.id) !== String(id));
+      renderApprovedMasters();
+      setTimeout(() => loadAdminStats(), 500);
+    } catch(e) { console.error('deleteMaster error:', e); showToast('❌ შეცდომა'); }
+  }
+  window.deleteMaster = deleteMaster;
 
   // 📄 პირადობის დოკუმენტის ნახვა — signed URL (60 წამი)
   async function viewVerificationDoc(filePath) {
