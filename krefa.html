@@ -686,24 +686,25 @@ async function fixPriceForFilter(){
   var v=prompt('ახალი ფასი ₾/კგ.\n\n📅 '+range+' ('+dts.length+' დღე)\n'+whoStr+'\n🧺 ჩაწონვა: '+list.length+'\n\nყველა ამ ჩაწონვას გადაეყენება ეს ფასი და თანხა ხელახლა დაითვლება (კგ × ფასი).', '2');
   if(v==null) return;
   var np=parseFloat(String(v).replace(',','.')); if(isNaN(np)||np<0){ alert('არასწორი ფასი'); return; }
-  var before=0, after=0, payload=list.map(function(s){ var w=+s.weight||0, e=Math.round(w*np*100)/100; before+=(+s.earned||0); after+=e; return {id:s.id,user_id:uid,price:np,earned:e}; });
+  var before=0, after=0; list.forEach(function(s){ var w=+s.weight||0; before+=(+s.earned||0); after+=Math.round(w*np*100)/100; });
   before=Math.round(before*100)/100; after=Math.round(after*100)/100;
-  if(!confirm('📅 თარიღი: '+range+' ('+dts.length+' დღე)\n'+whoStr+'\n🧺 ჩაწონვა: '+list.length+(noId?('\n⚠️ '+noId+' ვერ განახლდება (დასწრება/არ დასინქრდა)'):'')+'\n\nფასი → '+np.toFixed(2)+' ₾/კგ\nთანხა: '+before+' ₾  →  '+after+' ₾\n\nგავაგრძელო?')) return;
-  var done=0;
-  try{
-    for(var i=0;i<payload.length;i+=40){
-      var chunk=payload.slice(i,i+40);
-      var r=await sb.from('harvest_sessions').upsert(chunk,{onConflict:'id'});
-      if(r.error){
-        await loadSessions(); renderDash(); renderPickers(); renderReport();
-        alert('⚠️ ნაწილი გასწორდა ('+done+'/'+list.length+'), მაგრამ შეფერხდა:\n'+r.error.message+'\n\nუბრალოდ დააჭირე ისევ „🛠️ ფასის კორექცია" — დარჩენილსაც გაასწორებს.');
-        return;
-      }
-      done+=chunk.length;
+  var dFrom=(document.getElementById('rFrom')||{}).value||dts[0]||'', dTo=(document.getElementById('rTo')||{}).value||dts[dts.length-1]||'';
+  if(!confirm('📅 თარიღი: '+range+' ('+dts.length+' დღე)\n'+whoStr+'\n🧺 ჩაწონვა: '+list.length+(noId?('\n⚠️ '+noId+' ჯერ არ დასინქრდა'):'')+'\n\nფასი → '+np.toFixed(2)+' ₾/კგ\nთანხა: '+before+' ₾  →  '+after+' ₾\n\nℹ️ გასწორდება ამ პერიოდის ('+dFrom+' – '+dTo+') ყველა ჩაწონვა.\n\nგავაგრძელო?')) return;
+  // სერვერზე, ერთი ბრძანებით (timeout-ის გარეშე)
+  var rr;
+  try{ rr=await sb.rpc('fix_krepa_price',{ p_from:dFrom, p_to:dTo, p_price:np }); }
+  catch(e){ rr={error:{message:String(e&&e.message||e)}}; }
+  if(rr && rr.error){
+    var msg=String(rr.error.message||''), code=String(rr.error.code||'');
+    if(code==='42883' || /function .*fix_krepa_price.* does not exist/i.test(msg) || /Could not find the function/i.test(msg)){
+      alert('⚠️ ჯერ ერთხელ უნდა გაუშვა SQL Supabase-ში.\n\nSupabase → SQL Editor → ჩააკოპირე ფაილი „sql/fix_krepa_price.sql" და გაუშვი. ამის შემდეგ ეს ღილაკი იმუშავებს.');
+      return;
     }
-  }catch(e){ await loadSessions(); renderReport(); alert('⚠️ შეფერხდა ('+done+'/'+list.length+'): '+(e.message||e)+'\n\nდააჭირე ისევ „🛠️ ფასის კორექცია".'); return; }
+    alert('❌ '+msg); return;
+  }
+  var n=(rr && rr.data!=null)?rr.data:list.length;
   await loadSessions(); renderDash(); renderPickers(); renderReport();
-  alert('✅ გასწორდა '+list.length+' ჩაწონვა — ფასი '+np.toFixed(2)+' ₾/კგ');
+  alert('✅ გასწორდა '+n+' ჩაწონვა — ფასი '+np.toFixed(2)+' ₾/კგ (თანხა ხელახლა დაითვალა)');
 }
 // ── ანგარიში ──
 function roleOf(puid,name){ var p=PICKERS.find(function(x){ return (puid&&x.uid===puid)||pName(x)===name; }); return p?(p.role||'picker'):'picker'; }
