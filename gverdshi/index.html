@@ -4514,7 +4514,8 @@
     const areaChecks = document.querySelectorAll('.area-check:checked');
     const areas = Array.from(areaChecks).map(cb => sanitizeText(cb.value, 50));
     const allAreas = document.querySelector('input[type="checkbox"][value="all"]')?.checked;
-    const finalAreas = allAreas ? ['მთელი ბათუმი'] : areas;
+    const _cityKa = (typeof CITY_LABELS !== 'undefined' && CITY_LABELS[municipality] && CITY_LABELS[municipality].ka) ? CITY_LABELS[municipality].ka : municipality;
+    const finalAreas = allAreas ? ['მთელი ' + _cityKa] : areas;
 
     // ვალიდაცია
     if (!firstName || firstName.length < 2) {
