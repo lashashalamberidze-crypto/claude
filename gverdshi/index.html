@@ -1509,7 +1509,7 @@
           <div id="agro-cards" style="display: flex; flex-direction: column; gap: 12px;"></div>
         </div>
 
-        <div class="demo-card-wrapper" onclick="showPage('profile')">
+        <div class="demo-card-wrapper" onclick="showDemoProfile()">
           <div class="test-card-banner">🧪 სატესტო ოსტატი</div>
           <div class="master-card">
             <div class="avatar av-green">ზუ</div>
@@ -1577,9 +1577,9 @@
           </div>
         </div>
 
-        <div class="profile-section">
+        <div class="profile-section" id="pf-gallery-section">
           <h3 data-t="pf_gallery_h">ნამუშევრების გალერეა</h3>
-          <div class="portfolio-grid">
+          <div class="portfolio-grid" id="pf-gallery-grid">
             <div class="portfolio-item"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect width="100" height="100" fill="#E1F5EE"/><circle cx="50" cy="40" r="18" fill="#0F6E56" opacity="0.3"/><rect x="30" y="58" width="40" height="25" rx="3" fill="#0F6E56" opacity="0.4"/></svg></div>
             <div class="portfolio-item"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect width="100" height="100" fill="#FAECE7"/><rect x="25" y="25" width="50" height="50" rx="5" fill="#D85A30" opacity="0.3"/><circle cx="50" cy="50" r="12" fill="#D85A30" opacity="0.5"/></svg></div>
             <div class="portfolio-item"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect width="100" height="100" fill="#E6F1FB"/><path d="M20 80 L50 20 L80 80 Z" fill="#185FA5" opacity="0.3"/></svg></div>
@@ -1602,7 +1602,7 @@
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr; gap: 6px; padding: 16px 20px; background: var(--bg); border-radius: 12px; margin-bottom: 20px;">
+          <div id="pf-demo-distribution" style="display: grid; grid-template-columns: 1fr; gap: 6px; padding: 16px 20px; background: var(--bg); border-radius: 12px; margin-bottom: 20px;">
             <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;" data-t="pf_distribution">შეფასებების განაწილება</div>
 
             <div style="display: grid; grid-template-columns: 24px 1fr 40px; gap: 10px; align-items: center; font-size: 13px;">
@@ -1642,7 +1642,7 @@
             </div>
           </div>
 
-          <div style="padding: 16px 20px; background: var(--bg); border-radius: 12px; margin-bottom: 24px;">
+          <div id="pf-demo-criteria" style="padding: 16px 20px; background: var(--bg); border-radius: 12px; margin-bottom: 24px;">
             <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;" data-t="pf_what_rated">რას აფასებენ კლიენტები</div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
@@ -2956,7 +2956,7 @@
       
       const card = document.createElement('div');
       card.className = 'master-card db-master';
-      card.onclick = () => showPage('profile');
+      card.onclick = () => openMasterProfile(master);
       
       // 📸 ავატარი — ფოტო ან initials
       const avatarHTML = master.avatar_url 
@@ -2980,6 +2980,161 @@
       `;
       listContainer.appendChild(card);
     });
+  }
+
+  // ============================================
+  // 👤 რეალური ოსტატის პროფილის გახსნა (ბაზიდან)
+  // ============================================
+  let currentMasterId = null;
+  let currentProfileMaster = null;
+
+  function openMasterProfile(master) {
+    if (!master) { showPage('profile'); return; }
+    currentMasterId = master.id || null;
+    currentProfileMaster = master;
+
+    const L = (typeof currentLang !== 'undefined') ? currentLang : 'ka';
+    const first = master.first_name || '';
+    const last = master.last_name || '';
+    if (first && master.phone) masterPhones[first] = master.phone;
+
+    const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    const hide = (id) => { const e = document.getElementById(id); if (e) e.style.display = 'none'; };
+    const show = (id, disp) => { const e = document.getElementById(id); if (e) e.style.display = disp || ''; };
+
+    // 🧪 დემო-ჩრდილების მოცილება
+    const banner = document.querySelector('#page-profile .test-banner-top');
+    if (banner) banner.style.display = 'none';
+    const testBadge = document.querySelector('#page-profile .badge-test');
+    if (testBadge) testBadge.style.setProperty('display', 'none', 'important');
+
+    // სახელი
+    setTxt('pf-name', (first + ' ' + last).trim());
+
+    // ავატარი
+    const av = document.getElementById('pf-avatar');
+    if (av) {
+      if (master.avatar_url) {
+        av.textContent = '';
+        av.style.backgroundImage = "url('" + master.avatar_url + "')";
+        av.style.backgroundSize = 'cover';
+        av.style.backgroundPosition = 'center';
+        av.style.backgroundColor = 'transparent';
+      } else {
+        av.style.backgroundImage = '';
+        av.textContent = (first.charAt(0) || '') + (last.charAt(0) || '');
+      }
+    }
+
+    // როლის badge (PRO / ჩვეულებრივი)
+    const roleBadge = document.getElementById('pf-role-badge');
+    if (roleBadge) {
+      if (master.is_pro === true) {
+        roleBadge.style.display = '';
+        roleBadge.textContent = 'PRO';
+      } else {
+        roleBadge.style.display = 'none';
+      }
+    }
+
+    // ქალაქის badge
+    const cityBadge = document.getElementById('pf-city-badge');
+    if (cityBadge) {
+      const ck = master.city || 'batumi';
+      const emoji = (CITY_LABELS[ck] && CITY_LABELS[ck].emoji) ? CITY_LABELS[ck].emoji : '📍';
+      const clabel = (typeof getCityLabel === 'function') ? getCityLabel(ck) : ck;
+      cityBadge.textContent = emoji + ' ' + clabel;
+    }
+
+    // რეიტინგი
+    const rating = (typeof master.rating === 'number') ? master.rating : 0;
+    const reviewsCount = parseInt(master.reviews_count) || 0;
+    const expYears = parseInt(master.experience_years) || 0;
+    const starStr = '★★★★★';
+    const expWord = { ka: 'წ. გამოცდილება', ru: 'г. опыта', en: 'yrs experience' }[L];
+    const revWord = { ka: 'შეფასება', ru: 'отзывов', en: 'reviews' }[L];
+    const ratingLine = document.getElementById('pf-rating');
+    if (ratingLine) {
+      const rTxt = rating > 0 ? rating.toFixed(1) : '—';
+      ratingLine.innerHTML = '<span style="color: var(--orange)">' + starStr + '</span> ' +
+        rTxt + ' (' + reviewsCount + ' ' + revWord + ') · ' + expYears + ' ' + expWord;
+    }
+    setTxt('pf-rating-num', rating > 0 ? rating.toFixed(1) : '—');
+    setTxt('pf-reviews-count', reviewsCount + ' ' + { ka: 'დადასტურებული შეფასება', ru: 'подтверждённых отзыва', en: 'verified reviews' }[L]);
+
+    // ჩემ შესახებ
+    setTxt('pf-about', master.bio || { ka: 'აღწერა არ არის მითითებული.', ru: 'Описание не указано.', en: 'No description provided.' }[L]);
+
+    // რას ვაკეთებ — კატეგორია + უბნები
+    const skills = document.getElementById('pf-skills');
+    if (skills) {
+      const cat = master.category || '';
+      const catLabel = (L === 'ka') ? cat : ((DYN_I18N[cat] && DYN_I18N[cat][L]) ? DYN_I18N[cat][L] : cat);
+      let h = '';
+      if (catLabel) h += '<span class="skill-pill">' + escapeHTML(catLabel) + '</span>';
+      const areas = Array.isArray(master.areas) ? master.areas : [];
+      areas.forEach(a => { if (a) h += '<span class="skill-pill">📍 ' + escapeHTML(a) + '</span>'; });
+      skills.innerHTML = h || '<span class="skill-pill">—</span>';
+    }
+
+    // ფასი
+    setTxt('pf-price', (parseInt(master.price_per_hour) || 0) + '₾');
+    const priceNote = document.getElementById('pf-price-note');
+    if (priceNote) priceNote.textContent = { ka: 'ფასზე თავად შეთანხმდით ოსტატთან', ru: 'Цену согласуете напрямую с мастером', en: 'Agree on the price directly with the pro' }[L];
+
+    // ტელეფონი + ღილაკები
+    setTxt('pf-phone', master.phone || '');
+    const waBtn = document.getElementById('pf-wa');
+    const callBtn = document.getElementById('pf-call');
+    const nameArg = first.replace(/'/g, '');
+    if (waBtn) waBtn.onclick = () => contactMaster(nameArg);
+    if (callBtn) callBtn.onclick = () => contactMaster(nameArg);
+
+    // 🚫 დემო-ბლოკები (განაწილება, კრიტერიუმები, გალერეა) — რეალურ ოსტატზე ვმალავთ
+    hide('pf-demo-distribution');
+    hide('pf-demo-criteria');
+    hide('pf-gallery-section');
+
+    // შეფასებები — რეალურ ოსტატს ჯერ არ აქვს დემო შეფასებები
+    const reviewsBox = document.getElementById('pf-reviews');
+    if (reviewsBox) {
+      if (reviewsCount === 0) {
+        reviewsBox.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--text-muted); background: var(--bg); border-radius: 12px;">' +
+          { ka: 'ჯერ არ არის შეფასება — გახდი პირველი კლიენტი!', ru: 'Пока нет отзывов — станьте первым клиентом!', en: 'No reviews yet — be the first client!' }[L] + '</div>';
+      } else {
+        reviewsBox.innerHTML = '';
+        loadReviewsForMaster(master.id);
+      }
+    }
+
+    showPage('profile');
+    window.scrollTo(0, 0);
+  }
+  window.openMasterProfile = openMasterProfile;
+
+  // 📝 რეალური შეფასებების ჩატვირთვა ბაზიდან (თუ არსებობს)
+  async function loadReviewsForMaster(masterId) {
+    if (!sb || !masterId) return;
+    const box = document.getElementById('pf-reviews');
+    if (!box) return;
+    try {
+      const { data, error } = await sb
+        .from('reviews')
+        .select('customer_name, rating, comment, created_at')
+        .eq('master_id', masterId)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error || !data || !data.length) return;
+      const L = (typeof currentLang !== 'undefined') ? currentLang : 'ka';
+      box.innerHTML = data.map(r => {
+        const stars = '★★★★★☆☆☆☆☆'.slice(5 - Math.round(r.rating || 0), 10 - Math.round(r.rating || 0));
+        return '<div class="review"><div class="review-head"><div><div class="review-author">' +
+          escapeHTML(r.customer_name || '—') + '</div></div></div>' +
+          '<div class="review-stars" style="letter-spacing: 2px; font-size: 14px;">' + stars + '</div>' +
+          '<div class="review-text">' + escapeHTML(r.comment || '') + '</div></div>';
+      }).join('');
+    } catch(e) { console.warn('reviews load:', e); }
   }
 
   // ============================================
@@ -3081,7 +3236,21 @@
   // ვტვირთავთ საწყისად
   document.addEventListener('DOMContentLoaded', function() {
     setTimeout(loadMastersFromDB, 500);
+    // 📸 დემო-პროფილის სუფთა ასლი — რომ სატესტო ბარათზე დაჭერისას აღდგეს
+    const pl = document.querySelector('#page-profile .profile-layout');
+    if (pl) window._demoProfileHTML = pl.innerHTML;
   });
+
+  // 🧪 სატესტო (დემო) პროფილის ჩვენება — აღვადგენთ ორიგინალ HTML-ს
+  function showDemoProfile() {
+    const pl = document.querySelector('#page-profile .profile-layout');
+    if (pl && window._demoProfileHTML) pl.innerHTML = window._demoProfileHTML;
+    currentMasterId = null; currentProfileMaster = null;
+    if (typeof applyTranslations === 'function') applyTranslations();
+    showPage('profile');
+    window.scrollTo(0, 0);
+  }
+  window.showDemoProfile = showDemoProfile;
 </script>
 
 <script>
