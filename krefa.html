@@ -740,6 +740,56 @@ function exportReportExcel(){
   var head={fill:{fgColor:{rgb:'0369A1'}},font:{color:{rgb:'FFFFFF'},bold:true},alignment:{horizontal:'center'},border:bd()};
   var tot={fill:{fgColor:{rgb:'E2E8F0'}},font:{bold:true},border:bd()}, cell={border:bd()};
   var wb=XLSX.utils.book_new();
+  // ── ფურცელი 0: მკრეფავების დეტალური (ჰორიზონტალურად — დღეები მარჯვნივ) ──
+  (function(){
+    var byP=_reportByPicker(rows);
+    var dset={}; rows.forEach(function(s){ if(s.date) dset[s.date]=1; });
+    var days=Object.keys(dset).sort(); // ასწრაფად → ზრდადობით
+    var fromD=(document.getElementById('rFrom')||{}).value||(days[0]||'');
+    var toD=(document.getElementById('rTo')||{}).value||(days[days.length-1]||'');
+    function pinfo(puid,name){ return PICKERS.find(function(x){ return (puid&&x.uid===puid)||pName(x)===name; })||{}; }
+    var r2=function(n){ return Math.round((+n||0)*100)/100; };
+    // ჯგუფის სათაურები (row index 3)
+    var grp=['','','','','','','ჯამური','','','',''];
+    days.forEach(function(d){ grp.push(d.slice(5),'','','',''); });
+    // ქვე-სათაურები (row index 4)
+    var sub=['#','სახელი / გვარი','პ/ნ','ტელეფონი','ადგილმდებარეობა','ტიპი','ყუთი','სულ კგ','თანხა ₾','ბონუსი ₾','გასაცემი ₾'];
+    days.forEach(function(){ sub.push('ყუთი','კგ','ფასი','ბონუსი','ჯამი ₾'); });
+    var ncol=sub.length;
+    // ჯამები
+    var tB=0,tK=0,tE=0,tBn=0; byP.forEach(function(m){ tB+=m.box; tK+=m.kg; tE+=m.earn; tBn+=(m.bonus||0); });
+    var dayTot={}; days.forEach(function(d){ dayTot[d]={box:0,kg:0,bonus:0,tot:0}; });
+    byP.forEach(function(m){ days.forEach(function(d){ var dd=m.dmap[d]; if(dd){ dayTot[d].box+=dd.box; dayTot[d].kg+=dd.kg; dayTot[d].bonus+=(dd.bonus||0); dayTot[d].tot+=(dd.earn+(dd.bonus||0)); } }); });
+    var totR=['','ჯამი (ყველა)','','','','',tB,r2(tK),r2(tE),r2(tBn),r2(tE+tBn)];
+    days.forEach(function(d){ var t=dayTot[d]; totR.push(t.box||'',r2(t.kg)||'','',r2(t.bonus)||'',r2(t.tot)||''); });
+    var aoa=[['AgroInTechSol — მკრეფავების დეტალური'],['თარიღი:',(fromD||'')+' — '+(toD||'')],[],grp,sub,totR];
+    byP.forEach(function(m,ix){
+      var pi=pinfo(m.puid,m.name);
+      var role=roleOf(m.puid,m.name)==='carrier'?'გამომტანი':'მკრეფავი';
+      var row=[ix+1,m.name,pi.id||pi.personal_id||'',pi.phone||'',pi.address||'',role,m.box,r2(m.kg),r2(m.earn),r2(m.bonus||0),r2(m.earn+(m.bonus||0))];
+      days.forEach(function(d){ var dd=m.dmap[d];
+        if(dd){ var pr=dd.kg>0?(dd.earn/dd.kg):0; row.push(dd.box,r2(dd.kg),r2(pr),r2(dd.bonus||0),r2(dd.earn+(dd.bonus||0))); }
+        else { row.push('','','','',''); }
+      });
+      aoa.push(row);
+    });
+    var ws0=XLSX.utils.aoa_to_sheet(aoa);
+    var merges=[{s:{r:0,c:0},e:{r:0,c:Math.min(ncol-1,10)}},{s:{r:3,c:6},e:{r:3,c:10}}];
+    days.forEach(function(d,i){ var c=11+i*5; merges.push({s:{r:3,c:c},e:{r:3,c:c+4}}); });
+    ws0['!merges']=merges;
+    for(var R=0;R<aoa.length;R++){ for(var C=0;C<ncol;C++){ var ref=XLSX.utils.encode_cell({r:R,c:C}); if(!ws0[ref])ws0[ref]={t:'s',v:''};
+      if(R===0) ws0[ref].s={font:{bold:true,sz:13,color:{rgb:'0369A1'}}};
+      else if(R===1) ws0[ref].s={font:{bold:true}};
+      else if(R===3) ws0[ref].s={fill:{fgColor:{rgb:'0369A1'}},font:{color:{rgb:'FFFFFF'},bold:true},alignment:{horizontal:'center'},border:bd()};
+      else if(R===4) ws0[ref].s={fill:{fgColor:{rgb:'DBEAFE'}},font:{bold:true},alignment:{horizontal:'center'},border:bd()};
+      else if(R===5) ws0[ref].s={fill:{fgColor:{rgb:'E2E8F0'}},font:{bold:true},border:bd()};
+      else ws0[ref].s=cell;
+    }}
+    var cols=[{wch:4},{wch:22},{wch:13},{wch:12},{wch:18},{wch:10},{wch:7},{wch:9},{wch:10},{wch:10},{wch:11}];
+    days.forEach(function(){ cols.push({wch:6},{wch:7},{wch:6},{wch:7},{wch:8}); });
+    ws0['!cols']=cols;
+    XLSX.utils.book_append_sheet(wb,ws0,'მკრეფავების დეტალური');
+  })();
   // ფურცელი 1: მკრეფავი×დღე
   var a1=[['მკრეფავი','თარიღი','პალეტი','ყუთი','კგ','₾/კგ','₾','🎁 ბონუსი','ჯამი ₾']]; var tB=0,tK=0,tE=0,tBn=0;
   daily.forEach(function(m){ tB+=m.box; tK+=m.kg; tE+=m.earn; tBn+=(m.bonus||0); var ppk=m.kg>0?(m.earn/m.kg):0; a1.push([m.name,m.date,Object.keys(m.pallets).length,m.box,Math.round(m.kg*100)/100,Math.round(ppk*100)/100,Math.round(m.earn*100)/100,Math.round((m.bonus||0)*100)/100,Math.round((m.earn+(m.bonus||0))*100)/100]); });
