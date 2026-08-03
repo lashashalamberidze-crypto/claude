@@ -677,17 +677,18 @@ async function fixPriceForFilter(){
   var list=all.filter(function(s){ return s.id; }); // ღრუბელში დამახსოვრებული
   var noId=all.length-list.length;
   if(!list.length){ alert('ამ ფილტრით ღრუბელში ჩაწონვა არ არის (შეამოწმე თარიღები/მკრეფავი)'); return; }
-  // მკრეფავები + დღეები (გადასამოწმებლად)
-  var pset={}, dset={};
-  list.forEach(function(s){ pset[s.picker_id||s.picker_name||'—']=1; if(s.date) dset[s.date]=1; });
-  var nPick=Object.keys(pset).length, dts=Object.keys(dset).sort();
+  // მკრეფავები/გამომტანები + დღეები (გადასამოწმებლად — როგორც ბარათზე)
+  var pk={}, cr={}, dset={};
+  list.forEach(function(s){ var key=s.picker_id||('n:'+(s.picker_name||'')); if(roleOf(s.picker_id,s.picker_name)==='carrier') cr[key]=1; else pk[key]=1; if(s.date) dset[s.date]=1; });
+  var nPick=Object.keys(pk).length, nCarr=Object.keys(cr).length, dts=Object.keys(dset).sort();
+  var whoStr='👥 მკრეფავი: '+nPick+(nCarr?(' · 🚚 გამომტანი: '+nCarr):'');
   var range=dts.length?(dts[0]+(dts.length>1?(' … '+dts[dts.length-1]):'')):'—';
-  var v=prompt('ახალი ფასი ₾/კგ.\n\n📅 '+range+' ('+dts.length+' დღე)\n👥 მკრეფავი: '+nPick+'\n🧺 ჩაწონვა: '+list.length+'\n\nყველა ამ ჩაწონვას გადაეყენება ეს ფასი და თანხა ხელახლა დაითვლება (კგ × ფასი).', '2');
+  var v=prompt('ახალი ფასი ₾/კგ.\n\n📅 '+range+' ('+dts.length+' დღე)\n'+whoStr+'\n🧺 ჩაწონვა: '+list.length+'\n\nყველა ამ ჩაწონვას გადაეყენება ეს ფასი და თანხა ხელახლა დაითვლება (კგ × ფასი).', '2');
   if(v==null) return;
   var np=parseFloat(String(v).replace(',','.')); if(isNaN(np)||np<0){ alert('არასწორი ფასი'); return; }
   var before=0, after=0, payload=list.map(function(s){ var w=+s.weight||0, e=Math.round(w*np*100)/100; before+=(+s.earned||0); after+=e; return {id:s.id,user_id:uid,price:np,earned:e}; });
   before=Math.round(before*100)/100; after=Math.round(after*100)/100;
-  if(!confirm('📅 თარიღი: '+range+' ('+dts.length+' დღე)\n👥 მკრეფავი: '+nPick+'\n🧺 ჩაწონვა: '+list.length+(noId?('\n⚠️ '+noId+' ვერ განახლდება (ჯერ არ დასინქრდა)'):'')+'\n\nფასი → '+np.toFixed(2)+' ₾/კგ\nთანხა: '+before+' ₾  →  '+after+' ₾\n\nგავაგრძელო?')) return;
+  if(!confirm('📅 თარიღი: '+range+' ('+dts.length+' დღე)\n'+whoStr+'\n🧺 ჩაწონვა: '+list.length+(noId?('\n⚠️ '+noId+' ვერ განახლდება (დასწრება/არ დასინქრდა)'):'')+'\n\nფასი → '+np.toFixed(2)+' ₾/კგ\nთანხა: '+before+' ₾  →  '+after+' ₾\n\nგავაგრძელო?')) return;
   var done=0;
   try{
     for(var i=0;i<payload.length;i+=40){
