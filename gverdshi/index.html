@@ -2824,27 +2824,36 @@
   // ============================================
   // ოსტატების ჩატვირთვა ბაზიდან
   // ============================================
+  let _allApprovedMasters = [];
   async function loadMastersFromDB() {
     if (!sb) return;
     try {
-      const cityFilter = (typeof selectedCity !== 'undefined' && selectedCity) ? selectedCity : 'batumi';
+      // ვტვირთავთ ყველა დამტკიცებულ ოსტატს (ქალაქით client-side ვფილტრავთ)
       const { data, error } = await sb
         .from('masters')
         .select('id, first_name, last_name, phone, category, areas, price_per_hour, experience_years, bio, is_pro, rating, reviews_count, city, avatar_url')
         .eq('status', 'approved')
-        .eq('city', cityFilter)
         .order('rating', { ascending: false });
-      
+
       if (error) {
         console.error('ოსტატების ჩატვირთვა ვერ მოხერხდა:', error);
         return;
       }
-      
-      console.log('✓ ჩაიტვირთა ოსტატები:', data.length);
-      renderMasters(data);
+
+      _allApprovedMasters = data || [];
+      console.log('✓ ჩაიტვირთა ოსტატები (სულ approved):', _allApprovedMasters.length);
+      renderCurrentCityMasters();
     } catch(e) {
       console.error('შეცდომა:', e);
     }
+  }
+
+  // მიმდინარე ქალაქის ოსტატების ჩვენება (ქეშირებული approved-ებიდან)
+  function renderCurrentCityMasters() {
+    const city = (typeof selectedCity !== 'undefined' && selectedCity) ? selectedCity : 'batumi';
+    const filtered = (_allApprovedMasters || []).filter(m => m.city === city);
+    console.log('🏙️ ქალაქი:', city, '· ნაჩვენები ოსტატები:', filtered.length, '/ სულ:', (_allApprovedMasters||[]).length);
+    renderMasters(filtered);
   }
 
   // ============================================
@@ -2904,9 +2913,12 @@
     const listContainer = document.querySelector('#page-list main');
     if (!listContainer) return;
 
-    // თუ მონაცემები არ არის — დავტოვოთ დემო ოსტატები (test banners-ით)
+    // 🧹 წავშალოთ ადრე ბაზიდან დამატებული ბარათები (სუფთა ხელახლა-რენდერი ქალაქის ცვლილებაზე)
+    listContainer.querySelectorAll('.master-card.db-master').forEach(c => c.remove());
+
+    // თუ ამ ქალაქში ოსტატი არ არის — დავტოვოთ დემო (თუ ჯერ არ წაშლილა)
     if (!masters || masters.length === 0) {
-      console.log('ℹ️ DB-დან ოსტატები არ მოვიდა — ვტოვებთ სატესტო მაგალითებს');
+      console.log('ℹ️ ამ ქალაქში დამტკიცებული ოსტატი არ არის — ვტოვებთ სატესტო მაგალითს');
       return;
     }
 
@@ -2914,9 +2926,6 @@
     listContainer.querySelectorAll('.demo-card-wrapper').forEach(c => c.remove());
     const topBanner = listContainer.querySelector('.test-banner-top');
     if (topBanner) topBanner.remove();
-    
-    // ასევე ვშლით dynamic-ად დამატებულ master-card-ებს (თუ ადრე ჩატვირთულა)
-    listContainer.querySelectorAll('.master-card:not(.demo-card-wrapper .master-card)').forEach(c => c.remove());
 
     // masterPhones განახლება (ინახავს დემო ნომრებსაც)
     masters.forEach(m => {
@@ -2946,7 +2955,7 @@
       const price = parseInt(master.price_per_hour) || 0;
       
       const card = document.createElement('div');
-      card.className = 'master-card';
+      card.className = 'master-card db-master';
       card.onclick = () => showPage('profile');
       
       // 📸 ავატარი — ფოტო ან initials
@@ -5950,7 +5959,7 @@
       const lp = document.getElementById('page-list');
       const agroBody = document.getElementById('agro-list-body');
       const inAgro = agroBody && agroBody.style.display !== 'none';
-      if (lp && lp.classList.contains('active') && !inAgro && typeof loadMastersFromDB === 'function') loadMastersFromDB();
+      if (lp && lp.classList.contains('active') && !inAgro && typeof renderCurrentCityMasters === 'function') renderCurrentCityMasters();
     } catch(e) {}
 
     showToast('📍 ქალაქი: ' + emoji + ' ' + cityLabel);
