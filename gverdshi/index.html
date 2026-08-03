@@ -5165,7 +5165,8 @@
         const bio = escapeHTML((m.bio || '').substring(0, 80)) + (m.bio && m.bio.length > 80 ? '...' : '');
         const price = parseInt(m.price_per_hour) || 0;
         const exp = parseInt(m.experience_years) || 0;
-        const cityBadge = escapeHTML(cityEmoji[m.city] || m.city || '—');
+        const _cl = (typeof CITY_LABELS !== 'undefined') ? CITY_LABELS[m.city] : null;
+        const cityBadge = _cl ? escapeHTML((_cl.emoji || '📍') + ' ' + (_cl.ka || m.city)) : escapeHTML(cityEmoji[m.city] || m.city || '—');
         const initials = escapeHTML(
           (m.first_name || '?').charAt(0) + (m.last_name || '').charAt(0)
         );
