@@ -15284,6 +15284,10 @@ window.swDeductForSale = function(product, kg, buyer, saleId, gvRef){
 };
 // WS-1/2: კრეფა → საწყობი — მოკრეფილი ყუთი ემატება პალეტის ლოტში (იმავე scope-ში — swLots/swOps/swSave ხელმისაწვდომია)
 window.swAddHarvest = function(pallet, product, kg, date, ref){
+  // #DUP-FIX: სრულად გამორთულია — ეს ფუნქცია ყოველ კრეფის ყუთს ცალკე „შემოსვლად" წერდა საწყობში
+  // (17,758 ბლოტის წყარო). კრეფა უკვე ინახება harvest_sessions-ში და დაფაზე იქიდან ჩანს.
+  // საწყობის მარაგი ცალკე იმართება. აღარ ვქმნით per-box ოპერაციებს.
+  return {ok:true, disabled:true};
   try{
     pallet=(''+(pallet||'')).trim(); product=(''+(product||'')).trim()||'მოსავალი'; kg=+kg||0;
     if(!pallet || kg<=0) return {ok:false, reason:'noargs'};
