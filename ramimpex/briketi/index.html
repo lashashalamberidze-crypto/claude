@@ -18,8 +18,10 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdro
 .back{display:inline-flex;align-items:center;gap:6px;color:var(--mut);font-weight:600;font-size:.9rem;padding:8px 12px;border-radius:10px;text-decoration:none}
 .back:hover{background:var(--bg)}
 .hero{background:linear-gradient(120deg,#14181c,#23282e 60%,#0b6b3c 145%);color:#fff}
-.hero .wrap{padding:40px 20px;display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+.hero .wrap{padding:40px 20px;display:flex;align-items:center;gap:28px;flex-wrap:wrap;position:relative}
 .hero .txt{flex:1;min-width:280px}
+.dl{position:absolute;top:18px;right:20px;display:inline-flex;align-items:center;gap:7px;background:#fff;color:var(--dgreen);text-decoration:none;font-weight:800;font-size:.88rem;padding:10px 18px;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.18)}
+@media(max-width:640px){.dl{position:static;display:inline-flex;margin-top:14px;top:auto;right:auto}}
 .eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.32);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700}
 .hero h1{font-size:38px;font-weight:800;margin:12px 0 8px;line-height:1.05}
 .hero p{font-size:16px;opacity:.9;max-width:560px}
@@ -55,6 +57,7 @@ footer a{color:#8fd6a8;text-decoration:none}
 </div></header>
 
 <section class="hero"><div class="wrap">
+  <a class="dl" href="../files/antracitis-briketi.pdf" download>⬇ PDF</a>
   <div class="txt">
     <span class="eyebrow">🔥 ახალი მიმართულება</span>
     <h1>ანთრაციტის ქვანახშირის ბრიკეტი</h1>
@@ -91,12 +94,6 @@ footer a{color:#8fd6a8;text-decoration:none}
   <div class="why"><div class='wcard'><div class='wt'>🌲 ეკოლოგია</div><div class='wd'>1 ტ ბრიკეტი ცვლის ~2 ტ შეშას — ამცირებს ტყის ჩეხვას და დეგრადაციას, განსაკუთრებით მაღალმთაში.</div></div><div class='wcard'><div class='wt'>🏫 სკოლები</div><div class='wd'>1 ჩაყრა = 8–12 საათი — კლასი თბილია მთელი დღე. ნაკლები კვამლი და ჭვარტლი, სტაბილური ტემპერატურა.</div></div><div class='wcard'><div class='wt'>🚚 ლოგისტიკა</div><div class='wd'>გამძლე (99,4%) და კომპაქტური (2× ენერგია). არ ლპება — ზაფხულში წინასწარ მიწოდება შესაძლებელია.</div></div><div class='wcard'><div class='wt'>👨‍👩‍👧 ოჯახები</div><div class='wd'>ნაკლები საწვავი და შრომა, პროგნოზირებადი ხარჯი. სეზონზე დაზოგვა ≈ 1 410 ₾ + უწყვეტი ღამის ძილი.</div></div></div>
 </div></section>
 
-<section class="blk"><div class="wrap">
-  <div class="order">
-    <div><h3>სრული ანალიზი — ჩამოტვირთე</h3><p>ლაბ. მონაცემები, სიმტკიცე, შეშასთან შედარება და სარგებელი — PDF-ში.</p></div>
-    <a class="btn" href="../files/antracitis-briketi.pdf" download>⬇ ჩამოტვირთე PDF</a>
-  </div>
-</div></section>
 
 <footer><div class="wrap">
   <div>© 2026 RAM IMPEX — ანთრაციტის ბრიკეტი</div>

@@ -19,7 +19,9 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdro
 .back{display:inline-flex;align-items:center;gap:6px;color:var(--mut);font-weight:600;font-size:.9rem;padding:8px 12px;border-radius:10px;text-decoration:none}
 .back:hover{background:var(--bg)}
 .hero{background:linear-gradient(125deg,#0b6b3c,#0f8a4d 46%,#1ca7d0 128%);color:#fff}
-.hero .wrap{padding:46px 20px}
+.hero .wrap{padding:46px 20px;position:relative}
+.dl{position:absolute;top:18px;right:20px;display:inline-flex;align-items:center;gap:7px;background:#fff;color:var(--dgreen);text-decoration:none;font-weight:800;font-size:.88rem;padding:10px 18px;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.18)}
+@media(max-width:640px){.dl{position:static;display:inline-flex;margin-top:14px;top:auto;right:auto}}
 .eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700}
 .hero h1{font-size:40px;font-weight:800;margin:14px 0 8px;line-height:1.05}
 .hero p{font-size:16px;opacity:.95;max-width:640px}
@@ -56,6 +58,7 @@ footer a{color:#8fd6a8;text-decoration:none}
 </div></header>
 
 <section class="hero"><div class="wrap">
+  <a class="dl" href="../files/kutxovani-damcavebi.pdf" download>⬇ PDF</a>
   <span class="eyebrow">🛠 ახალი მიმართულება</span>
   <h1>მუყაოს კუთხოვანი დამცავები</h1>
   <p>ქაღალდის/მუყაოს L-ფორმის კუთხოვანი პროფილები — პალეტზე ყუთების კიდეების დაცვისა და გამაგრებისთვის ტრანსპორტირებისა და ექსპორტის დროს. მდგრადი, მსუბუქი და ეკოლოგიური.</p>
@@ -98,12 +101,6 @@ footer a{color:#8fd6a8;text-decoration:none}
   </div>
 </div></section>
 
-<section class="blk"><div class="wrap">
-  <div class="order">
-    <div><h3>ჩამოტვირთე დეტალური ინფორმაცია</h3><p>კუთხოვანი დამცავების სრული ინფორმაცია PDF ფაილში.</p></div>
-    <a class="btn" href="../files/kutxovani-damcavebi.pdf" download>⬇ ჩამოტვირთე PDF</a>
-  </div>
-</div></section>
 
 <footer><div class="wrap">
   <div>© 2026 RAM IMPEX — მუყაოს კუთხოვანი დამცავები</div>
