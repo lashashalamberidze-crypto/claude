@@ -6335,7 +6335,10 @@ window.renderHomeDashboard = function(){
     // #DASH-FIX: შესყიდული კგ — გაყიდვების მოდულის შესყიდვებიდან (იგივე წყარო, საიდანაც ხარჯი)
     inP=purch.reduce(function(s,x){return s+(saleC(x)?n(x.kg):0);},0);
     // #DASH-FIX: მარაგი = კრეფა + შესყიდვა + მიღება − გაყიდული − სხვა გასვლა (ნაკადებიდან — ყოველთვის ჯდება)
-    var outOther=0; ops.forEach(function(o){ if(o.type==='out' && o.purpose!=='sale' && matchC(o.product)) outOther+=n(o.kg); });
+    // #DASH-FIX: გაყიდვა-out ვცნოთ purpose ('sale' ან 'გაყიდვა') ან gv_ref 'sale_'-ით — თორემ საწყობის
+    // ყოველი გაყიდვა (purpose='გაყიდვა') ორმაგად ითვლებოდა: ერთხელ soldKg-ში, მეორედ outOther-ში.
+    var _isSaleOut=function(o){ return o.purpose==='sale' || o.purpose==='გაყიდვა' || String(o.gv_ref||'').indexOf('sale_')===0; };
+    var outOther=0; ops.forEach(function(o){ if(o.type==='out' && !_isSaleOut(o) && matchC(o.product)) outOther+=n(o.kg); });
     var stockCalc=+(inH+inM+inP-soldKg-outOther).toFixed(1);
     // #DASH-FIX: შესყიდვის თანხა (დიდი ბარათისთვის)
     var purMoney=purch.reduce(function(s,x){return s+(saleC(x)?(n(x.total)||n(x.kg)*n(x.price)):0);},0);
