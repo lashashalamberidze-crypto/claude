@@ -2485,7 +2485,7 @@
 
 <div id="review-modal" class="modal-overlay">
   <div class="modal" style="max-width: 520px;">
-    <h2>შეაფასე ზურაბ ცინცაძე</h2>
+    <h2 id="review-modal-title">დატოვე შეფასება</h2>
     <p>შენი გამოცდილება დაეხმარება სხვა კლიენტებს</p>
 
     <div style="margin-bottom: 20px;">
@@ -2876,11 +2876,39 @@
     }
   }
 
-  // მიმდინარე ქალაქის ოსტატების ჩვენება (ქეშირებული approved-ებიდან)
+  // 🔎 ძებნის სერვისის slug → ქართული კატეგორია (ოსტატები ქართულ კატეგორიას ინახავენ)
+  const SLUG2CAT = {
+    plumber: 'სანტექნიკოსი', electrician: 'ელექტრიკოსი', ac: 'კონდიციონერის ოსტატი',
+    cleaner: 'დამლაგებელი', renovation: 'რემონტის ოსტატი', furniture: 'ავეჯის ამწყობი',
+    pet: 'ცხოველების მომვლელი', car: 'მანქანის ხელოსანი', tutor: 'რეპეტიტორი',
+    beauty: 'სილამაზე სახლში', moving: 'გადაზიდვა', 'furniture-moving': 'ავეჯის გადაზიდვა',
+    tech: 'ტექნიკის შეკეთება', family: 'ოჯახის დახმარება', restorer: 'რესტავრატორი'
+  };
+
+  // მიმდინარე ქალაქის ოსტატების ჩვენება (ქეშირებული approved-ებიდან) + ძებნის ფილტრები
   function renderCurrentCityMasters() {
     const city = (typeof selectedCity !== 'undefined' && selectedCity) ? selectedCity : 'batumi';
-    const filtered = (_allApprovedMasters || []).filter(m => m.city === city);
-    console.log('🏙️ ქალაქი:', city, '· ნაჩვენები ოსტატები:', filtered.length, '/ სულ:', (_allApprovedMasters||[]).length);
+    let filtered = (_allApprovedMasters || []).filter(m => m.city === city);
+
+    // 🔎 hero-ძებნის ფილტრები (სერვისი + უბანი), თუ არსებობს
+    const sf = window._searchFilters;
+    if (sf) {
+      if (Array.isArray(sf.services) && sf.services.length) {
+        const cats = sf.services.map(s => SLUG2CAT[s]).filter(Boolean);
+        if (cats.length) filtered = filtered.filter(m => cats.includes(m.category));
+      }
+      if (Array.isArray(sf.areas) && sf.areas.length) {
+        const cityAreas = (typeof CITY_AREAS !== 'undefined' && CITY_AREAS[city] && CITY_AREAS[city].areas) ? CITY_AREAS[city].areas : [];
+        const labels = sf.areas.map(v => { const a = cityAreas.find(x => x.value === v); return a ? a.label : null; }).filter(Boolean);
+        if (labels.length) filtered = filtered.filter(m => {
+          const ma = Array.isArray(m.areas) ? m.areas : [];
+          if (ma.some(x => String(x).indexOf('მთელი') === 0)) return true; // "მთელი <city>" ყველა უბანს ფარავს
+          return ma.some(x => labels.includes(x));
+        });
+      }
+    }
+
+    console.log('🏙️ ქალაქი:', city, '· ნაჩვენები ოსტატები:', filtered.length, '/ სულ:', (_allApprovedMasters||[]).length, sf ? '(ფილტრით)' : '');
     renderMasters(filtered);
   }
 
@@ -2962,14 +2990,22 @@
 
     // ვამატებთ ახალ ბარათებს ბაზიდან
     const colors = ['av-green', 'av-orange', 'av-purple', 'av-pink', 'av-amber'];
+    const _L = (typeof currentLang !== 'undefined') ? currentLang : 'ka';
+    const _lbl = {
+      verified: { ka: '✓ ვერიფიცირებული', ru: '✓ Проверен', en: '✓ Verified' }[_L],
+      reviews:  { ka: 'შეფასება', ru: 'отзывов', en: 'reviews' }[_L],
+      exp:      { ka: 'წ. გამოცდილება', ru: 'г. опыта', en: 'yrs exp.' }[_L],
+      perHour:  { ka: '/სთ-დან', ru: '/час', en: '/hr' }[_L],
+      contact:  { ka: 'დაკავშირება', ru: 'Связаться', en: 'Contact' }[_L]
+    };
     masters.forEach((master, i) => {
       // 🛡️ ყველა user-input-ის escape
       const firstName = escapeHTML(master.first_name || '');
       const lastName = escapeHTML(master.last_name || '');
       const bio = escapeHTML(master.bio || '');
       const category = escapeHTML(master.category || '');
-      const areasStr = Array.isArray(master.areas) 
-        ? master.areas.map(a => escapeHTML(a)).join(', ') 
+      const areasStr = Array.isArray(master.areas)
+        ? master.areas.map(a => escapeHTML((typeof getAreaLabel === 'function') ? getAreaLabel(a) : a)).join(', ')
         : '';
       
       const initials = escapeHTML(
@@ -2995,15 +3031,15 @@
         ${avatarHTML}
         <div class="master-info">
           <h3>${firstName} ${lastName}
-            <span class="badge badge-verified">✓ ვერიფიცირებული</span>
+            <span class="badge badge-verified">${_lbl.verified}</span>
             ${isPro ? '<span class="badge badge-pro">PRO</span>' : ''}
           </h3>
-          <div class="master-meta"><span class="star">★</span> ${rating} · ${reviewsCount} შეფასება · ${expYears} წ. გამოცდილება</div>
+          <div class="master-meta"><span class="star">★</span> ${rating} · ${reviewsCount} ${_lbl.reviews} · ${expYears} ${_lbl.exp}</div>
           <div class="master-skills">${areasStr}${bio ? ' · ' + bio.substring(0, 60) + (bio.length > 60 ? '...' : '') : ''}</div>
         </div>
         <div class="master-right">
-          <div class="price">${price}₾<span class="unit">/სთ-დან</span></div>
-          <button class="btn-contact" onclick="event.stopPropagation(); contactMaster('${firstName.replace(/'/g, '')}')">დაკავშირება</button>
+          <div class="price">${price}₾<span class="unit">${_lbl.perHour}</span></div>
+          <button class="btn-contact" onclick="event.stopPropagation(); contactMaster('${firstName.replace(/'/g, '')}', '${master.id}', '${(master.phone||'').replace(/[^\d+]/g,'')}')">${_lbl.contact}</button>
         </div>
       `;
       listContainer.appendChild(card);
@@ -3101,7 +3137,7 @@
       let h = '';
       if (catLabel) h += '<span class="skill-pill">' + escapeHTML(catLabel) + '</span>';
       const areas = Array.isArray(master.areas) ? master.areas : [];
-      areas.forEach(a => { if (a) h += '<span class="skill-pill">📍 ' + escapeHTML(a) + '</span>'; });
+      areas.forEach(a => { if (a) h += '<span class="skill-pill">📍 ' + escapeHTML((typeof getAreaLabel === 'function') ? getAreaLabel(a) : a) + '</span>'; });
       skills.innerHTML = h || '<span class="skill-pill">—</span>';
     }
 
@@ -3115,8 +3151,8 @@
     const waBtn = document.getElementById('pf-wa');
     const callBtn = document.getElementById('pf-call');
     const nameArg = first.replace(/'/g, '');
-    if (waBtn) waBtn.onclick = () => contactMaster(nameArg);
-    if (callBtn) callBtn.onclick = () => contactMaster(nameArg);
+    if (waBtn) waBtn.onclick = () => contactMaster(nameArg, master.id, master.phone);
+    if (callBtn) callBtn.onclick = () => contactMaster(nameArg, master.id, master.phone);
 
     // 🚫 დემო-ბლოკები (განაწილება, კრიტერიუმები, გალერეა) — რეალურ ოსტატზე ვმალავთ
     hide('pf-demo-distribution');
@@ -3148,19 +3184,21 @@
     try {
       const { data, error } = await sb
         .from('reviews')
-        .select('customer_name, rating, comment, created_at')
+        .select('author_name, rating, text, created_at')
         .eq('master_id', masterId)
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
         .limit(20);
       if (error || !data || !data.length) return;
       const L = (typeof currentLang !== 'undefined') ? currentLang : 'ka';
+      const anon = { ka: 'კლიენტი', ru: 'Клиент', en: 'Client' }[L];
       box.innerHTML = data.map(r => {
-        const stars = '★★★★★☆☆☆☆☆'.slice(5 - Math.round(r.rating || 0), 10 - Math.round(r.rating || 0));
+        const rr = Math.max(0, Math.min(5, Math.round(r.rating || 0)));
+        const stars = '★★★★★☆☆☆☆☆'.slice(5 - rr, 10 - rr);
         return '<div class="review"><div class="review-head"><div><div class="review-author">' +
-          escapeHTML(r.customer_name || '—') + '</div></div></div>' +
+          escapeHTML(r.author_name || anon) + '</div></div></div>' +
           '<div class="review-stars" style="letter-spacing: 2px; font-size: 14px;">' + stars + '</div>' +
-          '<div class="review-text">' + escapeHTML(r.comment || '') + '</div></div>';
+          '<div class="review-text">' + escapeHTML(r.text || '') + '</div></div>';
       }).join('');
     } catch(e) { console.warn('reviews load:', e); }
   }
@@ -3175,10 +3213,27 @@
     }
     
     try {
+      // 🔁 დუბლიკატის შემოწმება — ამ ნომრით რეგისტრაცია უკვე ხომ არ არსებობს
+      try {
+        const { data: existing } = await sb
+          .from('masters')
+          .select('id, status')
+          .eq('phone', registrationData.phone)
+          .in('status', ['pending', 'approved'])
+          .limit(1);
+        if (existing && existing.length > 0) {
+          const st = existing[0].status;
+          showToast(st === 'approved'
+            ? 'ℹ️ ამ ნომრით ოსტატი უკვე დარეგისტრირებულია'
+            : 'ℹ️ ამ ნომრით განაცხადი უკვე გაგზავნილია და დამტკიცებას ელოდება');
+          return false;
+        }
+      } catch(dupErr) { console.warn('დუბლიკატის შემოწმება ვერ მოხერხდა (ვაგრძელებთ):', dupErr); }
+
       // 📤 ფოტოების ატვირთვა Storage-ზე (თუ აქვს)
       let avatarUrl = null;
       let idDocumentUrl = null;
-      
+
       const avatarFile = window._photoFiles && window._photoFiles['profile-preview'];
       const idFile = window._photoFiles && window._photoFiles['id-preview'];
       const portfolioFiles = (window._photoFiles && window._photoFiles['portfolio-preview']) || [];
@@ -4012,6 +4067,28 @@
     refreshCityLabels();
     // 📝 ბოლოს — [data-t] + დინამიური სერვისების თარგმანი (localizeDynamic შიგნით)
     applyTranslations();
+
+    // 📝 რეგისტრაციის უბნების grid — ხელახლა ავაგოთ არჩეული მუნიციპალიტეტით (მიმდინარე ენაზე)
+    try {
+      const mun = document.getElementById('reg-municipality');
+      if (mun && mun.value && typeof updateRegAreas === 'function') updateRegAreas(mun.value);
+    } catch(e) {}
+
+    // 🔄 სიის გვერდი აქტიურია — ხელახლა დავხატოთ ოსტატები ახალ ენაზე
+    try {
+      const lp = document.getElementById('page-list');
+      const agroBody = document.getElementById('agro-list-body');
+      const inAgro = agroBody && agroBody.style.display !== 'none';
+      if (lp && lp.classList.contains('active') && !inAgro && typeof renderCurrentCityMasters === 'function') renderCurrentCityMasters();
+    } catch(e) {}
+
+    // 🔄 პროფილის გვერდი აქტიურია (რეალური ოსტატი) — ხელახლა შევავსოთ ახალ ენაზე
+    try {
+      const pp = document.getElementById('page-profile');
+      if (pp && pp.classList.contains('active') && typeof currentProfileMaster !== 'undefined' && currentProfileMaster && typeof openMasterProfile === 'function') {
+        openMasterProfile(currentProfileMaster);
+      }
+    } catch(e) {}
   }
 
   // 🏙️ ყველა ქალაქის label-ის განახლება (ენის შეცვლისას)
@@ -4097,7 +4174,7 @@
     'სანტექნიკოსი': { ru: 'Сантехник', en: 'Plumber' },
     'ელექტრიკოსი': { ru: 'Электрик', en: 'Electrician' },
     'კონდიციონერი': { ru: 'Кондиционер', en: 'Air conditioning' },
-    'დამლაგებელი': { ru: 'Уборка', en: 'Cleaning' },
+    'დამლაგებელი': { ru: 'Уборщик', en: 'Cleaner' },
     'რემონტი': { ru: 'Ремонт', en: 'Renovation' },
     'ავეჯის აწყობა': { ru: 'Сборка мебели', en: 'Furniture assembly' },
     'ავეჯის ამწყობი': { ru: 'Сборщик мебели', en: 'Furniture assembler' },
@@ -4175,6 +4252,9 @@
       const _agro = !!window._openAgro;
       applyListMode(_agro ? 'agro' : 'home');
       window._openAgro = false;
+      // 🔎 ძებნის ფილტრები რჩება მხოლოდ hero-ძებნიდან მოსვლისას; სხვა ნავიგაციაზე ვასუფთავებთ
+      if (!window._pendingHeroSearch) window._searchFilters = null;
+      window._pendingHeroSearch = false;
       // 🔄 ჩვეულებრივი სია — თავიდან ჩავტვირთოთ ბაზიდან მიმდინარე ქალაქისთვის
       if (!_agro && typeof loadMastersFromDB === 'function') loadMastersFromDB();
     }
@@ -4339,6 +4419,11 @@
   // 🌱 აგრო დემო-სპეციალისტის სრული პროფილი (იგივე სტილი რაც ჩვეულებრივ ოსტატებს)
   function openAgroProfile(id) {
     const d = AGRO_DEMOS.find(x => x.id === id); if (!d) return;
+    // 🧹 აღვადგინოთ დემო-პროფილის სუფთა HTML (თუ ადრე რეალური ოსტატი ვნახეთ და ბლოკები დაიმალა)
+    const _pl = document.querySelector('#page-profile .profile-layout');
+    if (_pl && window._demoProfileHTML) _pl.innerHTML = window._demoProfileHTML;
+    // 🎯 აგრო დემოა — არ მიება რეალურ ოსტატს (currentMasterId იწმინდება)
+    currentMasterId = null; currentProfileMaster = null;
     const set = (elId, val) => { const el = document.getElementById(elId); if (el) el.textContent = val; };
     const av = document.getElementById('pf-avatar');
     if (av) { av.className = 'avatar ' + (d.av || 'av-green'); av.textContent = d.initials; }
@@ -4414,8 +4499,11 @@
   
   let currentContactMaster = null;
   
-  function contactMaster(name) {
+  function contactMaster(name, id, phone) {
     currentContactMaster = name;
+    // 🎯 ვამაგრებთ სწორ ოსტატს (id) — რომ კონტაქტი/შეფასება სწორ ოსტატს მიება
+    currentMasterId = (id !== undefined && id !== null && id !== '') ? id : null;
+    if (phone) masterPhones[name] = phone;
 
     document.getElementById('contact-master-name').textContent = name;
     document.getElementById('contact-customer-phone').value = '';
@@ -4537,38 +4625,38 @@
   }
   
   async function submitContact() {
-    // 🔒 დავცავ double-submit-ისგან (Enter + Submit ღილაკი)
-    if (window._submittingContact) return;
-    window._submittingContact = true;
-    setTimeout(() => { window._submittingContact = false; }, 3000);
-    
     const phone = document.getElementById('contact-customer-phone').value.trim();
     const customerName = document.getElementById('contact-customer-name').value.trim();
-    
+
     // ვალიდაცია
     if (!phone || phone.length < 9) {
       showToast('⚠️ შეიყვანე სწორი ტელეფონი');
       return;
     }
-    
+
     // 🚫 SMS flood დაცვა — ერთი ბრაუზერიდან მაქს 3/სთ
     if (!canSendSMS()) {
       showToast('⚠️ ძალიან ბევრი ცდა. გთხოვთ სცადეთ 1 საათში');
       return;
     }
-    
+
     // ტელეფონის გასუფთავება (+995 და 5XXXXXXXX-ამდე)
     let cleanPhone = phone.replace(/[\s\-()]/g, '');
     if (!cleanPhone.startsWith('+')) {
       cleanPhone = cleanPhone.startsWith('995') ? '+' + cleanPhone : '+995' + cleanPhone;
     }
-    
+
     // დამატებითი ვალიდაცია — ქართული მობილურია?
     if (!/^\+995\d{9}$/.test(cleanPhone)) {
       showToast('⚠️ ქართული მობილური საჭიროა (+995 5XX XXX XXX)');
       return;
     }
-    
+
+    // 🔒 double-submit დაცვა — ვალიდაციის შემდეგ (რომ არასწორ ნომერზე ღილაკი არ დაიბლოკოს)
+    if (window._submittingContact) return;
+    window._submittingContact = true;
+    setTimeout(() => { window._submittingContact = false; }, 3000);
+
     const masterName = currentContactMaster;
     let masterPhone = masterPhones[masterName] || null;
     
@@ -4933,6 +5021,13 @@
   };
 
   function openReviewModal() {
+    // 🎯 სათაური — მიმდინარე ოსტატის სახელით (და არა ჰარდკოდ "ზურაბ ცინცაძე")
+    const _t = document.getElementById('review-modal-title');
+    if (_t) {
+      const nm = (typeof currentProfileMaster !== 'undefined' && currentProfileMaster)
+        ? ((currentProfileMaster.first_name || '') + ' ' + (currentProfileMaster.last_name || '')).trim() : '';
+      _t.textContent = nm ? ('შეაფასე ' + nm) : 'დატოვე შეფასება';
+    }
     document.getElementById('review-modal').classList.add('active');
     currentRating = 0;
     subRatings = { timing: 0, quality: 0, price: 0, communication: 0 };
@@ -5771,8 +5866,9 @@
     
     // შეინახე ფილტრები და გადადი სიის გვერდზე
     window._searchFilters = { services, areas };
+    window._pendingHeroSearch = true; // ერთჯერადი დროშა — showPage-მა არ წაშალოს ეს ფილტრები
     console.log('🔍 ძებნა:', window._searchFilters);
-    
+
     showPage('list');
   }
 
@@ -6214,7 +6310,8 @@
     const reg = document.getElementById('reg-municipality');
     if (hero) hero.innerHTML = heroHTML;
     if (ms) ms.innerHTML = msHTML;
-    if (reg) reg.innerHTML = regHTML;
+    // 🎯 ვინახავთ რეგისტრაციის არჩეულ მუნიციპალიტეტს — რომ ენის შეცვლისას არ დაიკარგოს
+    if (reg) { const _prev = reg.value; reg.innerHTML = regHTML; if (_prev) reg.value = _prev; }
   }
   document.addEventListener('DOMContentLoaded', buildLocationPickers);
 
@@ -6323,21 +6420,9 @@
       ).join('');
     }
 
-    // 3) Registration form — area checkboxes (value რჩება ქართული, ჩვენება ითარგმნება)
-    const regGrid = document.getElementById('reg-areas-grid');
-    if (regGrid) {
-      regGrid.innerHTML = `
-        <label class="check-row" style="padding: 4px 0; font-size: 13px;">
-          <input type="checkbox" value="all" onchange="toggleAllAreas(this)">
-          <strong>${(ALL_OF_PREFIX[currentLang]||ALL_OF_PREFIX.ka)} ${getCityLabel(cityKey)}</strong>
-        </label>
-      ` + areas.map(a => `
-        <label class="check-row" style="padding: 4px 0; font-size: 13px;">
-          <input type="checkbox" class="area-check" value="${a.label}">
-          <span>${getAreaLabel(a.label)}</span>
-        </label>
-      `).join('');
-    }
+    // 3) Registration form — უბნების grid-ს აღარ ვეხებით აქ.
+    //    ის მხოლოდ reg-municipality-ს არჩევანით იმართება (updateRegAreas),
+    //    რომ გლობალურმა ქალაქმა/ენის შეცვლამ არ გადააწეროს არასწორი ქალაქის უბნები.
   }
 
   // რეგისტრაციის select-იდან გამოიძახება (onchange)
