@@ -6,7 +6,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
 <style>
   *{box-sizing:border-box;font-family:'Noto Sans Georgian',system-ui,-apple-system,"Segoe UI",sans-serif}
   body{margin:0;background:#f7fafd;color:#0f172a;padding:14px;max-width:1040px;margin:0 auto}
@@ -699,8 +700,35 @@ window.genFullAnalytics=function(){
     var _sumRow=a7.length; a7.push(['სულ ხარჯი',rd2(TOTPAY+purchtot+exptot),'']);
     if(EXPS.length){ a7.push([]); a7.push(['დეტალური ხარჯი','₾','თარიღი']); EXPS.forEach(function(x){ a7.push([x.category||'—',nf(x.amount),x.date||'']); }); } else { a7.push([]); a7.push(['ℹ️ დეტალური ხარჯები ჯერ არ არის შეტანილი','','']); }
     var w7=add('ხარჯები',a7,[{wch:30},{wch:14},{wch:22}],3,3); for(var c7=0;c7<3;c7++) sS(w7,_sumRow,c7,TO);
-    XLSX.writeFile(wb,'სრული_ანალიტიკა_'+dateStr+'.xlsx');
+    (window._writeAnalyticsXlsx||function(w,n){ XLSX.writeFile(w,n); })(wb,'სრული_ანალიტიკა_'+dateStr+'.xlsx');
   }catch(e){ alert('შეცდომა: '+(e&&e.message||e)); }
+};
+
+// ── FREEZE-PANE WRITER ──────────────────────────────────────────────
+// xlsx-js-style ვერ წერს გაყინულ პანელს (freeze). ამიტომ ფაილს ვქმნით, ვშლით (fflate),
+// ვამატებთ <pane/>-ს მთავარი მონაცემ-ფურცლების XML-ში და ისევ ვაარქივებთ.
+// ფურცლების რიგი = book_append_sheet-ის რიგი: 1=მკრეფავების დეტალური, 3=მკრეფავები×დღეები, 5=რიგების სტატისტიკა.
+window._writeAnalyticsXlsx=function(wb, fname){
+  try{
+    if(typeof fflate==='undefined' || !fflate.unzipSync){ XLSX.writeFile(wb,fname); return; }
+    var arr=XLSX.write(wb,{type:'array',bookType:'xlsx'});
+    var files=fflate.unzipSync(new Uint8Array(arr));
+    var FR={ '1':{x:2,y:6,tl:'C7'}, '3':{x:2,y:7,tl:'C8'}, '5':{x:6,y:6,tl:'G7'} };
+    var dec=new TextDecoder(), enc=new TextEncoder();
+    Object.keys(FR).forEach(function(idx){
+      var key='xl/worksheets/sheet'+idx+'.xml'; if(!files[key]) return;
+      var xml=dec.decode(files[key]); var f=FR[idx];
+      var pane='<pane xSplit="'+f.x+'" ySplit="'+f.y+'" topLeftCell="'+f.tl+'" activePane="bottomRight" state="frozen"/><selection pane="bottomRight" activeCell="'+f.tl+'" sqref="'+f.tl+'"/>';
+      if(/<sheetView[^>]*\/>/.test(xml)) xml=xml.replace(/<sheetView([^>]*)\/>/, '<sheetView$1>'+pane+'</sheetView>');
+      else if(/<sheetView[^>]*>/.test(xml)) xml=xml.replace(/(<sheetView[^>]*>)/, '$1'+pane);
+      files[key]=enc.encode(xml);
+    });
+    var zipped=fflate.zipSync(files);
+    var blob=new Blob([zipped],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ try{ URL.revokeObjectURL(a.href); a.remove(); }catch(e){} }, 1500);
+  }catch(e){ console.warn('freeze writer failed → plain save', e); try{ XLSX.writeFile(wb,fname); }catch(_e){} }
 };
 
 window.genFullAnalyticsExcel=function(){
