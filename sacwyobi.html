@@ -849,19 +849,17 @@ function swRenderStock(){
   }).join('');
 }
 
-// ── STOCK RECOMPUTE (self-heal) ──────────────────────────────────────
-// ლოტების remaining თავიდან დაითვლის რეალური out-ოპერაციებიდან: remaining = qty − გაყიდული,
+// ── STOCK RECALC CORE (self-heal) ────────────────────────────────────
+// ლოტების remaining ყოველთვის ითვლება რეალური out-ოპერაციებიდან: remaining = qty − გაყიდული,
 // პროდუქტ-პროდუქტზე, FIFO-ით (ძველი ლოტი ჯერ იყიდება). ფიზიკური qty არ იცვლება.
-// ერთი დაჭერით ასწორებს ნებისმიერ დაგროვილ აცდენას — SQL აღარ სჭირდება.
-function swRecomputeStock(){
-  if(!confirm('🛠️ მარაგის გადათვლა?\n\nყოველი ლოტის ნაშთი თავიდან დაითვლება რეალური გაყიდვებიდან\n(qty − გაყიდული, FIFO-ით). ფიზიკური qty (შესული) არ იცვლება.\n\nგავაგრძელო?')) return;
+// ეს ფუნქცია მდუმარეა (dialog/save/notify გარეშე) — მას ვიძახებთ ყოველი წაშლის/ცვლილების შემდეგ,
+// რომ ნაშთი ვერასდროს ჩამორჩეს რეალობას. აბრუნებს შეცვლილი ლოტების რაოდენობას.
+function _swRecalcLots(){
   var norm=function(s){ return String(s||'').trim(); };
-  // 1) სულ გატანილი (out) თითო პროდუქტზე
   var outByProd={};
   (swOps||[]).forEach(function(o){
     if(o && o.type==='out'){ var p=norm(o.product); outByProd[p]=(outByProd[p]||0)+(+o.kg||0); }
   });
-  // 2) ლოტები დავაჯგუფოთ პროდუქტით, FIFO (თარიღი → id)
   var byProd={};
   (swLots||[]).forEach(function(l){ var p=norm(l.product); (byProd[p]=byProd[p]||[]).push(l); });
   var changed=0;
@@ -880,6 +878,15 @@ function swRecomputeStock(){
     });
     // თუ toConsume>0 დარჩა — მეტი გაიყიდა ვიდრე შესულა (over-sold); ლოტები 0-ზე რჩება.
   });
+  return changed;
+}
+window._swRecalcLots = _swRecalcLots;
+
+// ── STOCK RECOMPUTE (ღილაკი — ხელით გამოძახება) ──────────────────────
+// ერთი დაჭერით ასწორებს ნებისმიერ დაგროვილ აცდენას — SQL აღარ სჭირდება.
+function swRecomputeStock(){
+  if(!confirm('🛠️ მარაგის გადათვლა?\n\nყოველი ლოტის ნაშთი თავიდან დაითვლება რეალური გაყიდვებიდან\n(qty − გაყიდული, FIFO-ით). ფიზიკური qty (შესული) არ იცვლება.\n\nგავაგრძელო?')) return;
+  var changed=_swRecalcLots();
   swSave(); // ღრუბელში შენახვა (debounced)
   try{ swUpdateStats(); }catch(e){}
   swRenderStock();
@@ -2143,7 +2150,8 @@ function swDeleteOp(id){
   if(!o || !confirm('წაშლა: '+(o.type==='in'?'მიღება':'გატანა')+' '+(+o.kg||0).toFixed(1)+'კგ?')) return;
   const ref = String(o.gv_ref||'');
   swOps = swOps.filter(x=>x.id!==id);
-  swSave(); swUpdateStats(); swRenderHistory(); swRenderSales(); swRenderPurchases(); swBuildContactLists();
+  try{ _swRecalcLots(); }catch(e){ console.warn('recalc after delete', e); } // #STOCK-RESTORE: წაშლისას მარაგი აღდგეს
+  swSave(); swUpdateStats(); swRenderHistory(); swRenderSales(); swRenderPurchases(); swRenderStock(); swBuildContactLists();
   if(_sb && currentUser && currentUser.id){
     var u=currentUser.id;
     _sb.from('sacwyobi_ops').delete().eq('id', id).eq('user_id', u).then(function(){}).catch(function(e){ console.warn('swDeleteOp', e); });
