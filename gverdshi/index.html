@@ -5050,10 +5050,13 @@
   async function uploadPhotoToStorage(file, bucketName, phone) {
     if (!sb || !file) return null;
     try {
-      // უნიკალური ფაილის სახელი — ტელეფონი + timestamp + extension
+      // უნიკალური ფაილის სახელი — ტელეფონი + timestamp + random + extension
+      // (random აუცილებელია: რამდენიმე ფოტო ერთ ციკლში ერთსა და იმავე მილიწამში
+      //  ატვირთვისას Date.now() ერთნაირია → სახელი ემთხვევა → მხოლოდ ერთი აიტვირთება)
       const ext = file.name.split('.').pop().toLowerCase();
       const cleanPhone = String(phone || 'unknown').replace(/[^\d]/g, '');
-      const fileName = cleanPhone + '_' + Date.now() + '.' + ext;
+      const rand = Math.random().toString(36).slice(2, 8);
+      const fileName = cleanPhone + '_' + Date.now() + '_' + rand + '.' + ext;
       
       const { data, error } = await sb.storage
         .from(bucketName)
