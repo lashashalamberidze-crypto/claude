@@ -15255,6 +15255,9 @@ window.swDeductForSale = function(product, kg, buyer, saleId, gvRef){
     product=(''+(product||'')).trim(); kg=+kg||0;
     if(kg<=0) return {ok:false, reason:'noargs'};
     if(typeof swLots==='undefined' || !Array.isArray(swLots)) return {ok:false, reason:'nolots'};
+    // #DUP-FIX: იდემპოტენტურობა — თუ ამ გაყიდვის out-ოპერაცია უკვე არსებობს (gv_ref/saleId-ით), აღარ გამოვაკლოთ ხელახლა (დუბლის წყარო)
+    var _sref=(gvRef||(saleId?('sale_'+saleId):''));
+    if(_sref){ for(var _di=0;_di<swOps.length;_di++){ var _do=swOps[_di]; if(_do && _do.type==='out' && _do.gv_ref===_sref) return {ok:true, dup:true}; } }
     var pnorm=product.toLowerCase();
     // ჯერ პროდუქტის ზუსტი დამთხვევით (FIFO), თუ ვერ მოიძებნა — ნებისმიერი ლოტიდან (FIFO),
     // რომ გაყიდვა ყოველთვის გამოაკლდეს მარაგს (ჯამური მარაგი სწორი იყოს).
@@ -15285,6 +15288,8 @@ window.swAddHarvest = function(pallet, product, kg, date, ref){
     pallet=(''+(pallet||'')).trim(); product=(''+(product||'')).trim()||'მოსავალი'; kg=+kg||0;
     if(!pallet || kg<=0) return {ok:false, reason:'noargs'};
     if(typeof swLots==='undefined' || !Array.isArray(swLots)) return {ok:false, reason:'nolots'};
+    // #DUP-FIX: იდემპოტენტურობა — თუ ამ კრეფის ყუთის in-ოპერაცია უკვე არსებობს (ref-ით), აღარ დავამატოთ (17,758 დუბლის წყარო)
+    if(ref){ for(var _hi=0;_hi<swOps.length;_hi++){ var _ho=swOps[_hi]; if(_ho && _ho.type==='in' && _ho.gv_ref===ref) return {ok:true, dup:true}; } }
     date = date || (new Date().toISOString().slice(0,10));
     var pn=product.toLowerCase();
     var lot = swLots.find(function(l){ return (''+(l.pallet_code||'')).trim()===pallet && (''+(l.product||'')).trim().toLowerCase()===pn; });
@@ -15325,6 +15330,10 @@ window.swAddPurchaseStock = function(lotCode, product, kg, date, gvRef){
 // იდემპოტენტურია — ერთსა და იმავეს ორჯერ არ დაამატებს (gv_ref / lot-კოდი / note-ით).
 // ════════════════════════════════════════════════════════════════════════
 window.swReconcileFromGv = function(){
+  // #DUP-FIX: გამორთულია — ეს ფუნქცია ქმნიდა დუბლ გაყიდვა/შესყიდვა ოპერაციებს ღრუბლის სინქრონისას.
+  // ახლა მონაცემი პირდაპირ ღრუბლიდან იტვირთება, ამიტომ „reconcile" აღარ საჭიროა და ვთიშავთ.
+  return {ok:true, disabled:true};
+  /* eslint-disable no-unreachable */
   try{
     if(typeof swLots==='undefined' || !Array.isArray(swLots) || typeof swOps==='undefined' || !Array.isArray(swOps)) return {ok:false, reason:'noledger'};
     var _u='guest'; try{ if(typeof currentUser!=='undefined'&&currentUser&&currentUser.id) _u=currentUser.id; }catch(e){} try{ if(_u==='guest'&&window.currentUser&&window.currentUser.id) _u=window.currentUser.id; }catch(e){}

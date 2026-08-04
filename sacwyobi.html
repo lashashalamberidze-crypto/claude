@@ -1134,8 +1134,8 @@ function swRenderSales(){
   const to   = (swEl('sw-sales-to')||{}).value||'';
   let outs = swOps.filter(o=>o.type==='out');
   // summary numbers live in the TOP dashboard — no duplicate cards here
-  // filtered list, newest first
-  let list=[...outs].reverse();
+  // ძველიდან ახლისკენ (თარიღით ზრდადობით — ძველი ზემოთ, ახალი ქვემოთ)
+  let list=[...outs].sort((a,b)=> String(a.date||a.time||'').localeCompare(String(b.date||b.time||'')) || String(a.id||'').localeCompare(String(b.id||'')));
   if(from) list=list.filter(o=>(o.date||'')>=from);
   if(to)   list=list.filter(o=>(o.date||'')<=to);
   const cntEl=swEl('sw-sales-count'); if(cntEl) cntEl.textContent = '· ჩანაწერი: '+list.length;
@@ -2099,12 +2099,19 @@ window.swSavePayment = swSavePayment;
 function swDeleteOp(id){
   const o = swOps.find(x=>x.id===id);
   if(!o || !confirm('წაშლა: '+(o.type==='in'?'მიღება':'გატანა')+' '+(+o.kg||0).toFixed(1)+'კგ?')) return;
+  const ref = String(o.gv_ref||'');
   swOps = swOps.filter(x=>x.id!==id);
   swSave(); swUpdateStats(); swRenderHistory(); swRenderSales(); swRenderPurchases(); swBuildContactLists();
   if(_sb && currentUser && currentUser.id){
-    _sb.from('sacwyobi_ops').delete().eq('id', id).eq('user_id', currentUser.id).then(function(){}).catch(function(e){ console.warn('swDeleteOp', e); });
+    var u=currentUser.id;
+    _sb.from('sacwyobi_ops').delete().eq('id', id).eq('user_id', u).then(function(){}).catch(function(e){ console.warn('swDeleteOp', e); });
+    // ღრუბლის ასლიდანაც წაიშალოს — gv_sales / gv_purchases (რაც წაიშალა, ღრუბელშიც წაიშალოს)
+    try{
+      if(ref.indexOf('sale_')===0){ _sb.from('gv_sales').delete().eq('id', ref.slice(5)).eq('user_id', u).then(function(){}).catch(function(e){ console.warn('del gv_sales', e); }); }
+      else if(ref.indexOf('pur_')===0){ _sb.from('gv_purchases').delete().eq('id', ref.slice(4)).eq('user_id', u).then(function(){}).catch(function(e){ console.warn('del gv_purchases', e); }); }
+    }catch(e){ console.warn('swDeleteOp mirror', e); }
   }
-  swNotify('🗑 ოპერაცია წაშლილია');
+  swNotify('🗑 ოპერაცია წაშლილია (ღრუბელშიც)');
 }
 window.swDeleteOp = swDeleteOp;
 
