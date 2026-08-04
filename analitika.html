@@ -628,9 +628,14 @@ window.genFullAnalytics=function(){
       secOrder.sort(function(a,b){ return String(a).localeCompare(String(b),undefined,{numeric:true}); });
       var hdr=['სექტორი','რიგი','ჯიში','ნერგი','საშ. კგ','სულ კგ'].concat(datesM.map(function(d){ return String(d).slice(5); }));
       var ncR=hdr.length;
+      // #ROWSTAT-FORMULAS: „სულ კგ" = დღეების ჯამი; „საშ. კგ" = სულ კგ ÷ დღეები რომელზეც კრეფდნენ (>0).
+      //  ფორმულებად ვწერთ — უჯრაზე დაჭერისას ზუსტად ჩანს საიდან ითვლება.
+      var _fdc=XU.encode_col(6), _ldc=XU.encode_col(ncR-1); // პირველი/ბოლო დღის სვეტი (G … )
+      function _sumF(R,v){ return {t:'n', f:'SUM('+_fdc+R+':'+_ldc+R+')', v:v}; }
+      function _avgF(R,v){ var g=_fdc+R+':'+_ldc+R; return {t:'n', f:'IF(COUNTIF('+g+',">0")=0,0,ROUND(SUM('+g+')/COUNTIF('+g+',">0"),2))', v:v}; }
       var wxRow=['','🌦️ ამინდი','','','',''].concat(datesM.map(function(d){ var w=WX[d]; return w?((w.icon||'')+' '+(w.temp_max!=null?w.temp_max+'°':'')+(w.condition==='bad'?' ცუდი':'')):''; }));
       var _dayTot={}, _grandAll=0; Object.keys(kgIdx).forEach(function(k){ var _d=k.split('||')[2]; _dayTot[_d]=(_dayTot[_d]||0)+kgIdx[k]; _grandAll+=kgIdx[k]; });
-      var dayTotRow=['🌿 დღის ჯამი (ყველა სექტ.)','','','','',rd2(_grandAll)].concat(datesM.map(function(d){ return rd2(_dayTot[d]||0); }));
+      var dayTotRow=['🌿 დღის ჯამი (ყველა სექტ.)','','','','',_sumF(6,rd2(_grandAll))].concat(datesM.map(function(d){ return rd2(_dayTot[d]||0); }));
       var a4=[[comp],['🧱 რიგების სტატისტიკა — რიგი × თარიღი (კგ)'],[],wxRow,hdr,dayTotRow];
       var _secRowIdx=[]; var _seenKey={};
       secOrder.forEach(function(sec){
@@ -648,8 +653,8 @@ window.genFullAnalytics=function(){
         var secAvg=sp.length?rd2(sp.reduce(function(a,b){return a+b;},0)/sp.length):0;
         var secPlants=rows.reduce(function(a,rw){return a+(rw.plants||0);},0);
         var secVar=blkVar[sec]||(rows[0]&&rows[0].variety)||'';
-        _secRowIdx.push(a4.length); a4.push(['📍 სექტ. '+sec,'',secVar,secPlants,secAvg,secTot].concat(secBand));
-        childRows.forEach(function(cr){ var rw=cr.rw, vals=cr.vals; var pk=vals.filter(function(v){return v>0;}); var avg=pk.length?rd2(pk.reduce(function(a,b){return a+b;},0)/pk.length):0; a4.push([sec,rw.name,rw.variety,rw.plants,avg,cr.tot].concat(vals)); });
+        var _Rb=a4.length+1; _secRowIdx.push(a4.length); a4.push(['📍 სექტ. '+sec,'',secVar,secPlants,_avgF(_Rb,secAvg),_sumF(_Rb,secTot)].concat(secBand));
+        childRows.forEach(function(cr){ var rw=cr.rw, vals=cr.vals; var pk=vals.filter(function(v){return v>0;}); var avg=pk.length?rd2(pk.reduce(function(a,b){return a+b;},0)/pk.length):0; var _Rc=a4.length+1; a4.push([sec,rw.name,rw.variety,rw.plants,_avgF(_Rc,avg),_sumF(_Rc,cr.tot)].concat(vals)); });
       });
       var validKey={}; ZR.forEach(function(r){ var sec=blkName[r.block_id]||'?'; validKey[sec+'||'+String(r.name)]=1; });
       var orphanByDate={}, orphanTot=0;
@@ -659,8 +664,8 @@ window.genFullAnalytics=function(){
         var ovals=datesM.map(function(d){ return rd2(orphanByDate[d]||0); });
         var opk=ovals.filter(function(v){return v>0;});
         var oavg=opk.length?rd2(opk.reduce(function(a,b){return a+b;},0)/opk.length):0;
-        _orphanRowIdx=a4.length;
-        a4.push(['⚠️ უცნობი','დაურეგ.','—',0,oavg,rd2(ovals.reduce(function(a,b){return a+b;},0))].concat(ovals));
+        _orphanRowIdx=a4.length; var _Ro=a4.length+1;
+        a4.push(['⚠️ უცნობი','დაურეგ.','—',0,_avgF(_Ro,oavg),_sumF(_Ro,rd2(ovals.reduce(function(a,b){return a+b;},0)))].concat(ovals));
       }
       var colsR=[{wch:11},{wch:8},{wch:13},{wch:8},{wch:9},{wch:10}].concat(datesM.map(function(){return {wch:8};}));
       var w4=add('რიგების სტატისტიკა',a4,colsR,ncR,4);
