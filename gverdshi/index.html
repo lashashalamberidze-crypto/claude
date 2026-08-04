@@ -5181,7 +5181,7 @@
     if (sb) {
       try {
         const masterId = (typeof currentMasterId !== 'undefined' && currentMasterId) ? currentMasterId : null;
-        const { error } = await sb.from('reviews').insert([{
+        let { error } = await sb.from('reviews').insert([{
           master_id: masterId,
           rating: currentRating,
           rating_timing: subRatings.timing || null,
@@ -5191,15 +5191,24 @@
           text: text,
           status: 'pending'
         }]);
+        // 🛟 თუ დეტალური სვეტები ბაზაში არ არსებობს — ვცდით მინიმალურ ჩანაწერს
+        if (error && /column|schema|rating_|does not exist/i.test(error.message || '')) {
+          console.warn('დეტალური სვეტების გარეშე ვცდით:', error.message);
+          ({ error } = await sb.from('reviews').insert([{
+            master_id: masterId, rating: currentRating, text: text, status: 'pending'
+          }]));
+        }
         if (error) {
           console.error('შეფასება ვერ შეინახა:', error);
-          showToast('❌ შეფასება ვერ გაიგზავნა, სცადე ხელახლა');
+          showToast('❌ ვერ გაიგზავნა: ' + (error.message || 'შეცდომა'));
+          window._submittingReview = false;
           return;
         }
         console.log('✓ შეფასება შეინახა ბაზაში (pending)');
       } catch(e) {
         console.error('შეფასების შენახვის შეცდომა:', e);
         showToast('❌ შეფასება ვერ გაიგზავნა, სცადე ხელახლა');
+        window._submittingReview = false;
         return;
       }
     }
