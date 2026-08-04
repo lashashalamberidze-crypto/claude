@@ -1,13 +1,8 @@
 # RAM IMPEX — always serve fresh HTML after deploys (no stale cache)
 
-# Force HTTPS (SSL active). Exclude ACME challenge so AutoSSL renewals keep working.
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteCond %{HTTPS} !=on
-  RewriteCond %{HTTP:X-Forwarded-Proto} !https
-  RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
-  RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
-</IfModule>
+# NOTE: http→https redirect is DISABLED until the SSL certificate actually serves
+# HTTPS for ramimpex.com.ge (currently "site doesn't support secure connection").
+# Re-enable only after https://ramimpex.com.ge loads with a valid padlock.
 
 # Browsers/proxies: never cache HTML (static assets in /img can still cache)
 <IfModule mod_headers.c>
