@@ -6309,8 +6309,10 @@ window.renderHomeDashboard = function(){
     var scope=window._homeDashScope||'active';
     var filtering=false; /* დაშბორდი ერთიან ციფრებს აჩვენებს — ცალკე პლანტაცია = ცალკე ანგარიში */
     function matchC(prod){ if(!filtering) return true; return String(prod||'').trim().toLowerCase()===apCult.toLowerCase(); }
-    var ops=(typeof swOps!=='undefined'&&Array.isArray(swOps)&&swOps.length)?swOps:rd('its_sw_ops__'+uid);
-    var lots=(typeof swLots!=='undefined'&&Array.isArray(swLots)&&swLots.length)?swLots:rd('its_sw_lots__'+uid);
+    // #DASH-CLOUD: ღრუბლიდან სრულად ჩატვირთული მონაცემი უპირატესია (ერთი და იგივე ყველა კომპიუტერზე)
+    var _dc=window.__dashCloud||null;
+    var ops=(_dc&&_dc.ops)?_dc.ops:((typeof swOps!=='undefined'&&Array.isArray(swOps)&&swOps.length)?swOps:rd('its_sw_ops__'+uid));
+    var lots=(_dc&&_dc.lots)?_dc.lots:((typeof swLots!=='undefined'&&Array.isArray(swLots)&&swLots.length)?swLots:rd('its_sw_lots__'+uid));
     // #DASH-FIX-DUP: ოპერაციების დედუპლიკაცია id-ით (ხშირად dublikatoria sb-load-დან)
     var _seenOp={}; ops=(ops||[]).filter(function(o){ var k=o&&o.id; if(!k) return true; if(_seenOp[k]) return false; _seenOp[k]=1; return true; });
     // #DASH-FIX-HARVEST: კრეფის კგ — ღრუბლიდან (სრული), თუ ჩატვირთულია; თუ არა — ლოკალური
@@ -6318,6 +6320,7 @@ window.renderHomeDashboard = function(){
     if(window.__harvCloud && window.__harvCloud.length){ _harv=window.__harvCloud; }
     else { try{ _harv=rd((typeof window._ksK==='function')?window._ksK():('its_s__'+uid)); }catch(e){ _harv=[]; } }
     if(!window.__harvCloudLoaded && typeof window.__loadHomeHarvestCloud==='function'){ window.__harvCloudLoaded=true; window.__loadHomeHarvestCloud(); }
+    if(!window.__dashCloudLoaded && typeof window.__loadHomeCloudAll==='function'){ window.__dashCloudLoaded=true; window.__loadHomeCloudAll(); }
     var inH=_harv.reduce(function(s,h){ var prod=h.product||h.culture||h.crop||''; return s+((matchC(prod)&&h.source!=='sms_phantom')?n(h.weight||h.kg):0); },0);
     var _today=(function(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);})(); /* #TZ-LOCAL: ადგილობრივი (საქართველო) თარიღი — ემთხვევა ყუთის ლოკალურ თარიღს */
     var inHToday=_harv.reduce(function(s,h){ var prod=h.product||h.culture||h.crop||''; return s+((matchC(prod)&&h.source!=='sms_phantom'&&String(h.date||'').slice(0,10)===_today)?n(h.weight||h.kg):0); },0);
@@ -6325,9 +6328,9 @@ window.renderHomeDashboard = function(){
     inM=0; /* #DASH-FIX: ჩარჩენილი „მიღება" აღარ ჩაითვლება — შემოსული = სუფთა კრეფა */
     var stock=lots.reduce(function(s,l){ return s+(matchC(l.product)?n(l.remaining):0); },0);
     var stockLots=lots.filter(function(l){ return matchC(l.product) && n(l.remaining)>0; }).length;
-    var sales=window._dashSales(), purch=window._dashPurch();
+    var sales=(_dc&&_dc.sales)?_dc.sales:window._dashSales(), purch=(_dc&&_dc.purch)?_dc.purch:window._dashPurch();
     function saleC(x){ return matchC(x.product||x.culture||x.crop); }
-    var exps=window._dashExps();
+    var exps=(_dc&&_dc.exps)?_dc.exps:window._dashExps();
     var soldKg=sales.reduce(function(s,x){return s+(saleC(x)?n(x.kg):0);},0);
     // #DASH-FIX: შესყიდული კგ — გაყიდვების მოდულის შესყიდვებიდან (იგივე წყარო, საიდანაც ხარჯი)
     inP=purch.reduce(function(s,x){return s+(saleC(x)?n(x.kg):0);},0);
@@ -28617,6 +28620,31 @@ window.__loadHomeHarvestCloud = async function(){
     window.__harvCloud = all.map(function(x){ var k=(+x.kg||+x.weight||0); return { kg:k, weight:k, date:(x.date||''), product:'', source:(x.source||'') }; });
     if(typeof window.renderHomeDashboard==='function') window.renderHomeDashboard();
   }catch(e){ console.warn('loadHomeHarvestCloud', e); }
+};
+
+// #DASH-CLOUD: მთავარი დაფის ყველა მონაცემი სრულად ღრუბლიდან — რომ ყველა კომპიუტერზე ერთი და იგივე ჩანდეს
+window.__loadHomeCloudAll = async function(){
+  try{
+    var cu=window.currentUser||null; if(!cu||!cu.id) return;
+    if(typeof _sb==='undefined'||!_sb) return;
+    var uid=cu.id;
+    async function loadAll(table){
+      var out=[], from=0, step=1000;
+      while(true){
+        var r=await _sb.from(table).select('*').eq('user_id',uid).range(from, from+step-1);
+        if(r.error){ console.warn('home cloud '+table, r.error.message); break; }
+        var ch=r.data||[]; out=out.concat(ch);
+        if(ch.length<step) break; from+=step; if(from>400000) break;
+      }
+      return out;
+    }
+    var res=await Promise.all([
+      loadAll('gv_sales'), loadAll('gv_purchases'),
+      loadAll('sacwyobi_lots'), loadAll('sacwyobi_ops'), loadAll('agro_expenses')
+    ]);
+    window.__dashCloud={ sales:res[0]||[], purch:res[1]||[], lots:res[2]||[], ops:res[3]||[], exps:res[4]||[] };
+    if(typeof window.renderHomeDashboard==='function') window.renderHomeDashboard();
+  }catch(e){ console.warn('loadHomeCloudAll', e); }
 };
 </script>
 
