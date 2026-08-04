@@ -406,6 +406,25 @@ async function _anaLoadFullData(){
     if(ds.length){ var first=new Date(ds[0]), last=new Date(ds[ds.length-1]), all=[]; for(var d=new Date(first); d<=last; d.setDate(d.getDate()+1)){ all.push(d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)); } window._allDates=all; } else window._allDates=[];
   }catch(e){ window._allDates=[]; }
   window._wxMap={}; // ამინდი ჯერ ცარიელი — ციფრებზე გავლენას არ ახდენს
+  // #EXPENSE-REAL: ხარჯების ჩაშლა შემოსავალი/ხარჯების გვერდის ზუსტი ლოგიკით (ფაქტობრივად გადახდილი).
+  //  once + შესყიდვები + პრეპარატები + მკრეფავი(გადახდილი krepa_payroll) + პერსონალი(agro_payroll)
+  try{
+    var PAYROLL=await pageAll('krepa_payroll');   // მკრეფავის გადახდები (paid)
+    var PREPP  =await pageAll('agro_prep_purchases'); // პრეპარატები
+    var STAFFP =await pageAll('agro_payroll');     // პერსონალის ხელფასი
+    var _n=function(v){ return +v||0; };
+    var krepaPaid=Math.round((PAYROLL||[]).reduce(function(s,r){
+      var pays=Array.isArray(r.payments)?r.payments:[];
+      if(!pays.length && _n(r.amount)>0) pays=[{amount:_n(r.amount)}];
+      return s + pays.reduce(function(a,x){ return a+_n(x.amount); },0);
+    },0)*100)/100;
+    var prep =Math.round((PREPP ||[]).reduce(function(s,x){ return s+_n(x.total); },0)*100)/100;
+    var staff=Math.round((STAFFP||[]).reduce(function(s,x){ return s+_n(x.amount); },0)*100)/100;
+    var once =Math.round((EXPS||[]).reduce(function(s,x){ var c=''+((x&&x.category)||''); return s+((/ხელფას|პრეპარატ|სასუქ/.test(c))?0:_n(x.amount)); },0)*100)/100;
+    var purch=Math.round((PURCH||[]).reduce(function(s,x){ return s+(_n(x.total)||_n(x.kg)*_n(x.price)||_n(x.cost)); },0)*100)/100;
+    var total=Math.round((once+purch+prep+krepaPaid+staff)*100)/100;
+    window.__anaExp={ once:once, purch:purch, prep:prep, krepa:krepaPaid, staff:staff, total:total };
+  }catch(e){ console.warn('[full] expense breakdown', e); window.__anaExp=null; }
 }
 window._anaLoadFullData=_anaLoadFullData;
 
@@ -551,41 +570,48 @@ window.genFullAnalytics=function(){
       ws['!rows']=[{hpt:22},{hpt:18}];
       XU.book_append_sheet(wb,ws,name); return ws;
     }
+    // #EXPENSE-REAL: ხარჯი = ფაქტობრივად გადახდილი (შემოსავალი/ხარჯების გვერდის ლოგიკა).
+    var _EXP = window.__anaExp || { once:rd2(exptot), purch:rd2(purchtot), prep:0, krepa:rd2(TOTPAY), staff:0, total:rd2(exptot+purchtot+TOTPAY) };
     var ov=[[comp],['📊 სრული ანალიტიკა · '+(dlist[0]||'—')+' → '+(dlist[dlist.length-1]||'—')+' · '+dateStr],[],['მაჩვენებელი','მნიშვნელობა'],
       ['— 🌿 მოსავალი —',''],
       ['🌿 სულ მოკრეფილი (კგ)',TOTKG],
       ['🛒 გაყიდული (კგ)',SKG],
       ['📦 მარაგში / გასაყიდი (კგ)',{t:'n',f:'B6-B7',v:rd2(TOTKG-SKG)}],
-      ['— 💰 ფინანსები —',''],
+      ['— 💰 შემოსავალი —',''],
       ['💰 რეალიზაცია (₾)',STOT],
-      ['✅ მიღებული (₾)',SPAID],
-      ['⏳ დარჩენილი / დებიტორი (₾)',{t:'n',f:'B10-B11',v:rd2(STOT-SPAID)}],
-      ['— 👷 გასაცემი მკრეფავს —',''],
-      ['💵 ანაზღაურება კგ×ფასი (₾)',TOTEARN],
+      ['✅ მიღებული მყიდველისგან (₾)',SPAID],
+      ['⏳ დებიტორი — მისაღები (₾)',{t:'n',f:'B10-B11',v:rd2(STOT-SPAID)}],
+      ['— 👷 მკრეფავები —',''],
+      ['💵 დარიცხული — კგ×ფასი (₾)',TOTEARN],
       ['🎁 ბონუსი (₾)',rd2(totBonus)],
-      ['🧱 ბაზა (₾)',rd2(baseTot)],
-      ['💰 სულ გასაცემი მკრეფავს (₾)',{t:'n',f:'B14+B15+B16',v:TOTPAY}],
-      ['🛒 შესყიდვები (₾)',rd2(purchtot)],
-      ['🧾 სხვა ხარჯი (₾)',rd2(exptot)],
-      ['— 📊 შედეგი —',''],
-      ['🧾 სულ ხარჯი — მკრეფავი+შესყ.+სხვა (₾)',{t:'n',f:'B17+B18+B19',v:rd2(TOTPAY+purchtot+exptot)}],
-      ['📈 სუფთა მოგება — რეალიზაცია − ხარჯი (₾)',{t:'n',f:'B10-B21',v:rd2(STOT-(TOTPAY+purchtot+exptot))}],
+      ['💰 სულ დარიცხული მკრეფავს (₾)',{t:'n',f:'B14+B15',v:rd2(TOTEARN+totBonus)}],
+      ['✅ გადახდილი მკრეფავს (₾)',_EXP.krepa],
+      ['⏳ დარჩენილი მკრეფავს (₾)',{t:'n',f:'B16-B17',v:rd2((TOTEARN+totBonus)-_EXP.krepa)}],
+      ['— 📊 ხარჯი (ფაქტ. გადახდილი) —',''],
+      ['🧾 ერთჯერადი ხარჯი (₾)',_EXP.once],
+      ['🛒 შესყიდვები (₾)',_EXP.purch],
+      ['🧪 პრეპარატები (₾)',_EXP.prep],
+      ['👥 პერსონალი — ხელფასი (₾)',_EXP.staff],
+      ['🧾 სულ ხარჯი — გადახდილი (₾)',{t:'n',f:'B17+B20+B21+B22+B23',v:_EXP.total}],
+      ['📈 სუფთა მოგება — რეალიზაცია − ხარჯი (₾)',{t:'n',f:'B10-B24',v:rd2(STOT-_EXP.total)}],
       ['— 📈 სხვა —',''],
       ['👥 სულ რეგისტრირებული მკრეფავი',(function(){ try{ var _rp=JSON.parse(localStorage.getItem('its_p')||localStorage.getItem('its_pickers')||'[]'); return (Array.isArray(_rp)&&_rp.length)?_rp.length:plist.length; }catch(e){ return plist.length; } })()],
       ['🟢 აქტიური მკრეფავი (დაკრიფა)',plist.length],
       ['📅 ნამუშევარი დღე',dlist.length],
       ['🏆 ტოპ მკრეფავი',plist.length?(plist[0].name+' ('+plist[0].kg+' კგ)'):'—'],
       ['🥇 ტოპ მყიდველი',topBuyer]];
-    var wOv=add('მიმოხილვა',ov,[{wch:40},{wch:22}],2,3);
-    // #OV-COLOR: სექცია-სათაურები + ჯამები/მოგება ფერადად
+    var wOv=add('მიმოხილვა',ov,[{wch:42},{wch:22}],2,3);
+    // #OV-COLOR: სექცია-სათაურები + ჯამები/მოგება/გადახდილი ფერადად
     (function(){
       var SECROW={fill:{fgColor:{rgb:'E0E7FF'}},font:{bold:true,sz:11,color:{rgb:'3730A3'}}};
       var TOTROW={fill:{fgColor:{rgb:'FEF3C7'}},font:{bold:true,color:{rgb:'92400E'}}};
+      var PAIDROW={fill:{fgColor:{rgb:'D1FAE5'}},font:{bold:true,color:{rgb:'047857'}}};
       var PROFIT={fill:{fgColor:{rgb:'DCFCE7'}},font:{bold:true,sz:12,color:{rgb:'065F46'}}};
-      // 0-indexed rows: სექციები 4,8,12,19,23 · ჯამები 7,11,16,20 · მოგება 21
-      [4,8,12,19,23].forEach(function(r){ sS(wOv,r,0,SECROW); sS(wOv,r,1,SECROW); });
-      [7,11,16,20].forEach(function(r){ sS(wOv,r,0,TOTROW); sS(wOv,r,1,TOTROW); });
-      sS(wOv,21,0,PROFIT); sS(wOv,21,1,PROFIT);
+      // 0-indexed: სექციები 4,8,12,18,25 · ჯამები 7,11,15,17,23 · გადახდილი მკრეფავს 16 · მოგება 24
+      [4,8,12,18,25].forEach(function(r){ sS(wOv,r,0,SECROW); sS(wOv,r,1,SECROW); });
+      [7,11,15,17,23].forEach(function(r){ sS(wOv,r,0,TOTROW); sS(wOv,r,1,TOTROW); });
+      sS(wOv,16,0,PAIDROW); sS(wOv,16,1,PAIDROW);
+      sS(wOv,24,0,PROFIT); sS(wOv,24,1,PROFIT);
     })();
     var h2=['#','სახელი / გვარი'].concat(dlist.map(function(d){return d.slice(5);})).concat(['სულ კგ','სულ ₾']);
     var nc=h2.length;
@@ -722,12 +748,20 @@ window.genFullAnalytics=function(){
     Object.keys(bybuyer).sort(function(a,b){return bybuyer[b].tot-bybuyer[a].tot;}).forEach(function(b){ a6.push(['','',b,'',rd2(bybuyer[b].kg),'',rd2(bybuyer[b].tot),'','']); });
     var w6=add('გაყიდვები',a6,[{wch:12},{wch:11},{wch:28},{wch:12},{wch:9},{wch:8},{wch:12},{wch:11},{wch:13}],9,3);
     for(var _fr=4;_fr<a6.length;_fr++){ var _fref=XU.encode_cell({r:_fr,c:5}); if(w6[_fref]&&w6[_fref].t==='n') w6[_fref].z='0.00'; }
-    var a7=[[comp],['💸 ხარჯები'],[],['კატეგორია','თანხა ₾','შენიშვნა'],['💵 მკრეფავის ანაზღაურება',TOTEARN,'კგ×ფასი'],['🎁 ბონუსი',rd2(totBonus),'მკრეფავების ბონუსი']];
-    if(BASE>0) a7.push(['🧱 ბაზა',rd2(baseTot),'ბაზა×დღეები']);
-    a7.push(['🛒 შესყიდვები',rd2(purchtot),PURCH.length+' ჩანაწერი']); a7.push(['🧾 სხვა ხარჯი',rd2(exptot),EXPS.length+' ჩანაწერი']);
-    var _sumRow=a7.length; a7.push(['სულ ხარჯი',rd2(TOTPAY+purchtot+exptot),'']);
-    if(EXPS.length){ a7.push([]); a7.push(['დეტალური ხარჯი','₾','თარიღი']); EXPS.forEach(function(x){ a7.push([x.category||'—',nf(x.amount),x.date||'']); }); } else { a7.push([]); a7.push(['ℹ️ დეტალური ხარჯები ჯერ არ არის შეტანილი','','']); }
-    var w7=add('ხარჯები',a7,[{wch:30},{wch:14},{wch:22}],3,3); for(var c7=0;c7<3;c7++) sS(w7,_sumRow,c7,TO);
+    // ხარჯი = ფაქტობრივად გადახდილი (შემოსავალი/ხარჯების გვერდის ლოგიკა)
+    var a7=[[comp],['💸 ხარჯები — ფაქტობრივად გადახდილი'],[],['კატეგორია','თანხა ₾','შენიშვნა'],
+      ['🧾 ერთჯერადი ხარჯი',_EXP.once,'agro_expenses'],
+      ['🛒 შესყიდვები',_EXP.purch,PURCH.length+' ჩანაწერი'],
+      ['🧪 პრეპარატები',_EXP.prep,'agro_prep_purchases'],
+      ['💵 მკრეფავი — გადახდილი',_EXP.krepa,'krepa_payroll'],
+      ['👥 პერსონალი — ხელფასი',_EXP.staff,'agro_payroll']];
+    var _sumRow=a7.length; a7.push(['სულ ხარჯი (გადახდილი)',{t:'n',f:'B5+B6+B7+B8+B9',v:_EXP.total},'']);
+    // საინფორმაციო: მკრეფავს დარიცხული (owed) vs გადახდილი
+    a7.push([]); a7.push(['ℹ️ მკრეფავს დარიცხული (კგ×ფასი+ბონუსი)',rd2(TOTEARN+totBonus),'ჯერ სრულად არ არის გადახდილი']);
+    a7.push(['ℹ️ აქედან გადახდილი',_EXP.krepa,'krepa_payroll']);
+    a7.push(['ℹ️ დარჩენილი მკრეფავს',rd2((TOTEARN+totBonus)-_EXP.krepa),'გასაცემი']);
+    if(EXPS.length){ a7.push([]); a7.push(['დეტალური ერთჯერადი ხარჯი','₾','თარიღი']); EXPS.forEach(function(x){ a7.push([x.category||'—',nf(x.amount),x.date||'']); }); }
+    var w7=add('ხარჯები',a7,[{wch:34},{wch:16},{wch:26}],3,3); for(var c7=0;c7<3;c7++) sS(w7,_sumRow,c7,TO);
     try{ var _mi=wb.SheetNames.indexOf('მიმოხილვა'); if(_mi>0){ wb.SheetNames.splice(_mi,1); wb.SheetNames.unshift('მიმოხილვა'); } }catch(e){} // #ORDER: მიმოხილვა პირველ ფურცლად
     (window._writeAnalyticsXlsx||function(w,n){ XLSX.writeFile(w,n); })(wb,'სრული_ანალიტიკა_'+dateStr+'.xlsx');
   }catch(e){ alert('შეცდომა: '+(e&&e.message||e)); }
