@@ -158,13 +158,13 @@
   var ICONS={
     box:'<svg width="28" height="28" fill="none" stroke="#1ca7d0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-5 9 5-9 5-9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>',
     leaf:'<svg width="28" height="28" fill="none" stroke="#0f8a4d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a9 9 0 0 0-9 9c0 5 4 9 9 11 5-2 9-6 9-11a9 9 0 0 0-9-9Z"/><path d="M12 8c-3 0-5 2-5 5"/></svg>',
-    plus:'<svg width="28" height="28" fill="none" stroke="#5c6b62" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
+    plus:'<svg width="28" height="28" fill="none" stroke="#5c6b62" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+    angle:'<svg width="28" height="28" fill="none" stroke="#1ca7d0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v13a2 2 0 0 0 2 2h13"/><path d="M6 3l3 2M6 3L3 5M21 18l-2 3M21 18l2 3"/></svg>'
   };
   var DIRECTIONS=[
     {icon:'box', title:'მუყაოს ყუთები', desc:'გოფრომუყაოს ლანგრები, ყუთები და ქვესადგამები. კატალოგი, კალკულატორი და ონლაინ შეკვეთა.', link:'shesafuti/', cta:'კატალოგზე გადასვლა', tag:'ახალი'},
+    {icon:'angle', title:'კუთხოვანი დამცავები', desc:'მუყაოს L-პროფილები (3მმ/5მმ) — პალეტზე ყუთების კუთხეების დაცვა და გამაგრება ექსპორტისთვის.', link:'kutxovani/', cta:'დეტალურად', tag:'ახალი'},
     {icon:'leaf', title:'აგროპროდუქცია და მიწოდება', desc:'ბოსტნეული, ხილი და სასურსათო პროდუქცია — ტენდერები და მიწოდების მართვა.', link:'mitsodeba/', cta:'სისტემაზე გადასვლა'}
-    // მაგ. ახალი მიმართულება:
-    // ,{icon:'plus', title:'ახალი მიმართულება', desc:'აღწერა…', link:'gverdi/', cta:'ნახვა'}
   ];
   var wrap=document.getElementById('dirs');
   DIRECTIONS.forEach(function(d){
