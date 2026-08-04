@@ -1437,29 +1437,29 @@
 
         <div class="filter-group">
           <div class="filter-label" data-t="filter_category">კატეგორია</div>
-          <select>
-            <option data-t="filter_all">ყველა</option>
-            <option>სანტექნიკოსი</option>
-            <option>ელექტრიკოსი</option>
-            <option>კონდიციონერი</option>
-            <option>დამლაგებელი</option>
-            <option>რემონტი</option>
-            <option>ავეჯის აწყობა</option>
-            <option>ავეჯის გადაზიდვა</option>
-            <option>რესტავრატორი</option>
-            <option>ცხოველების მომვლელი</option>
-            <option>მანქანის ხელოსანი</option>
-            <option>რეპეტიტორი</option>
-            <option>სილამაზე სახლში</option>
-            <option>გადაზიდვა</option>
-            <option>ტექნიკის შეკეთება</option>
-            <option>ოჯახის დახმარება</option>
+          <select id="list-filter-category" onchange="renderCurrentCityMasters()">
+            <option value="" data-t="filter_all">ყველა</option>
+            <option value="სანტექნიკოსი">სანტექნიკოსი</option>
+            <option value="ელექტრიკოსი">ელექტრიკოსი</option>
+            <option value="კონდიციონერის ოსტატი">კონდიციონერის ოსტატი</option>
+            <option value="დამლაგებელი">დამლაგებელი</option>
+            <option value="რემონტის ოსტატი">რემონტის ოსტატი</option>
+            <option value="ავეჯის ამწყობი">ავეჯის ამწყობი</option>
+            <option value="ავეჯის გადაზიდვა">ავეჯის გადაზიდვა</option>
+            <option value="რესტავრატორი">რესტავრატორი</option>
+            <option value="ცხოველების მომვლელი">ცხოველების მომვლელი</option>
+            <option value="მანქანის ხელოსანი">მანქანის ხელოსანი</option>
+            <option value="რეპეტიტორი">რეპეტიტორი</option>
+            <option value="სილამაზე სახლში">სილამაზე სახლში</option>
+            <option value="გადაზიდვა">გადაზიდვა</option>
+            <option value="ტექნიკის შეკეთება">ტექნიკის შეკეთება</option>
+            <option value="ოჯახის დახმარება">ოჯახის დახმარება</option>
             <optgroup label="🌱 აგრონომია">
-              <option>აგრონომი</option>
-              <option>ვეტერინარი</option>
-              <option>მცენარეთა დამცველი</option>
-              <option>ტექნოლოგი</option>
-              <option>მკრეფავი</option>
+              <option value="აგრონომი">აგრონომი</option>
+              <option value="ვეტერინარი">ვეტერინარი</option>
+              <option value="მცენარეთა დამცველი">მცენარეთა დამცველი</option>
+              <option value="ტექნოლოგი">ტექნოლოგი</option>
+              <option value="მკრეფავი">მკრეფავი</option>
             </optgroup>
           </select>
         </div>
@@ -2859,7 +2859,7 @@
       // ვტვირთავთ ყველა დამტკიცებულ ოსტატს (ქალაქით client-side ვფილტრავთ)
       const { data, error } = await sb
         .from('masters')
-        .select('id, first_name, last_name, phone, category, areas, price_per_hour, experience_years, bio, is_pro, rating, reviews_count, city, avatar_url')
+        .select('id, first_name, last_name, phone, category, areas, price_per_hour, experience_years, bio, is_pro, rating, reviews_count, city, avatar_url, portfolio_urls')
         .eq('status', 'approved')
         .order('rating', { ascending: false });
 
@@ -2889,6 +2889,11 @@
   function renderCurrentCityMasters() {
     const city = (typeof selectedCity !== 'undefined' && selectedCity) ? selectedCity : 'batumi';
     let filtered = (_allApprovedMasters || []).filter(m => m.city === city);
+
+    // 🗂️ სიის გვერდის კატეგორიის ფილტრი (მარცხენა პანელი)
+    const catSel = document.getElementById('list-filter-category');
+    const catFilter = catSel ? catSel.value : '';
+    if (catFilter) filtered = filtered.filter(m => m.category === catFilter);
 
     // 🔎 hero-ძებნის ფილტრები (სერვისი + უბანი), თუ არსებობს
     const sf = window._searchFilters;
@@ -3154,10 +3159,25 @@
     if (waBtn) waBtn.onclick = () => contactMaster(nameArg, master.id, master.phone);
     if (callBtn) callBtn.onclick = () => contactMaster(nameArg, master.id, master.phone);
 
-    // 🚫 დემო-ბლოკები (განაწილება, კრიტერიუმები, გალერეა) — რეალურ ოსტატზე ვმალავთ
+    // 🚫 დემო-ბლოკები (განაწილება, კრიტერიუმები) — რეალურ ოსტატზე ვმალავთ
     hide('pf-demo-distribution');
     hide('pf-demo-criteria');
-    hide('pf-gallery-section');
+
+    // 🖼️ ნამუშევრების გალერეა — რეალური ფოტოებით (portfolio_urls), თუ აქვს
+    const gallerySection = document.getElementById('pf-gallery-section');
+    const galleryGrid = document.getElementById('pf-gallery-grid');
+    const portfolio = Array.isArray(master.portfolio_urls) ? master.portfolio_urls.filter(Boolean) : [];
+    if (galleryGrid && gallerySection) {
+      if (portfolio.length > 0) {
+        galleryGrid.innerHTML = portfolio.map(url =>
+          '<a href="' + escapeHTML(url) + '" target="_blank" rel="noopener" class="portfolio-item" style="display:block;overflow:hidden;">' +
+          '<img src="' + escapeHTML(url) + '" alt="" style="width:100%;height:100%;object-fit:cover;display:block;"></a>'
+        ).join('');
+        gallerySection.style.display = '';
+      } else {
+        gallerySection.style.display = 'none';
+      }
+    }
 
     // შეფასებები — რეალურ ოსტატს ჯერ არ აქვს დემო შეფასებები
     const reviewsBox = document.getElementById('pf-reviews');
@@ -4253,7 +4273,10 @@
       applyListMode(_agro ? 'agro' : 'home');
       window._openAgro = false;
       // 🔎 ძებნის ფილტრები რჩება მხოლოდ hero-ძებნიდან მოსვლისას; სხვა ნავიგაციაზე ვასუფთავებთ
-      if (!window._pendingHeroSearch) window._searchFilters = null;
+      if (!window._pendingHeroSearch) {
+        window._searchFilters = null;
+        const _cf = document.getElementById('list-filter-category'); if (_cf) _cf.value = '';
+      }
       window._pendingHeroSearch = false;
       // 🔄 ჩვეულებრივი სია — თავიდან ჩავტვირთოთ ბაზიდან მიმდინარე ქალაქისთვის
       if (!_agro && typeof loadMastersFromDB === 'function') loadMastersFromDB();
