@@ -4996,14 +4996,17 @@
     if (!preview) return;
 
     if (previewId === 'portfolio-preview') {
-      window._photoFiles['portfolio-preview'] = [];
-      for (let i = 0; i < input.files.length && i < 5; i++) {
+      const MAX = 8;
+      // 🎯 არსებულებს არ ვშლით — ვამატებთ (რამდენიმე ჯერზე არჩევა გროვდება)
+      const store = window._photoFiles['portfolio-preview'] || (window._photoFiles['portfolio-preview'] = []);
+      for (let i = 0; i < input.files.length; i++) {
+        if (store.length >= MAX) { showToast('მაქს. ' + MAX + ' ფოტო'); break; }
         const file = input.files[i];
         if (file.size > 2 * 1024 * 1024) {
           showToast('ფოტო ძალიან დიდია (მაქს. 2MB)');
           continue;
         }
-        window._photoFiles['portfolio-preview'].push(file);
+        store.push(file);
         const reader = new FileReader();
         reader.onload = function(e) {
           const div = document.createElement('div');
@@ -5012,6 +5015,8 @@
         };
         reader.readAsDataURL(file);
       }
+      // რომ იგივე/ახალი ფაილები ხელახლა აირჩეს და onchange კვლავ იმუშაოს
+      input.value = '';
     } else {
       const file = input.files[0];
       if (!file) return;
