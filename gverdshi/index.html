@@ -2783,6 +2783,29 @@
       <div class="form-group"><label>გამოცდილება (წელი)</label><input type="number" id="edit-exp" min="0" max="70"></div>
     </div>
     <div class="form-group"><label>აღწერა (ბიო)</label><textarea id="edit-bio" rows="3" style="width:100%; padding:12px 14px; border:1px solid var(--border-strong); border-radius:10px; font-family:inherit; font-size:14px; resize:vertical;"></textarea></div>
+
+    <!-- 📸 ფოტოები -->
+    <div class="form-group">
+      <label>პროფილის ფოტო (ავატარი)</label>
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div id="edit-avatar-preview" style="width:64px; height:64px; border-radius:14px; background:var(--bg) center/cover no-repeat; border:1px solid var(--border); flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--text-muted);">📷</div>
+        <label style="cursor:pointer; padding:10px 16px; background:var(--green-light); color:var(--green-dark); border-radius:10px; font-size:14px; font-weight:600;">
+          ფოტოს არჩევა
+          <input type="file" accept="image/*" id="edit-avatar-file" onchange="onEditAvatarPick(this)" style="display:none;">
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>ნამუშევრების ფოტოები</label>
+      <div id="edit-portfolio-preview" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;"></div>
+      <label style="cursor:pointer; display:inline-block; padding:10px 16px; background:var(--green-light); color:var(--green-dark); border-radius:10px; font-size:14px; font-weight:600;">
+        ➕ ნამუშევრების დამატება
+        <input type="file" accept="image/*" multiple id="edit-portfolio-file" onchange="onEditPortfolioPick(this)" style="display:none;">
+      </label>
+      <div id="edit-portfolio-new" style="font-size:13px; color:var(--green-dark); margin-top:6px;"></div>
+    </div>
+
     <label class="check-row" style="display:flex; align-items:center; gap:10px; margin:8px 0 18px; cursor:pointer;">
       <input type="checkbox" id="edit-pro"> <strong>⭐ PRO ოსტატი</strong>
     </label>
@@ -5850,9 +5873,67 @@
     document.getElementById('edit-bio').value = m.bio || '';
     document.getElementById('edit-pro').checked = m.is_pro === true;
     buildEditAreas(m.city || 'batumi', m.areas || []);
+
+    // 📸 ფოტოების საწყისი მდგომარეობა
+    _editAvatarFile = null;
+    _editPortfolioFiles = [];
+    _editExistingPortfolio = Array.isArray(m.portfolio_urls) ? m.portfolio_urls.filter(Boolean) : [];
+    const avPrev = document.getElementById('edit-avatar-preview');
+    if (avPrev) {
+      if (m.avatar_url) { avPrev.style.backgroundImage = "url('" + m.avatar_url + "')"; avPrev.textContent = ''; }
+      else { avPrev.style.backgroundImage = ''; avPrev.textContent = '📷'; }
+    }
+    const avFile = document.getElementById('edit-avatar-file'); if (avFile) avFile.value = '';
+    const pfFile = document.getElementById('edit-portfolio-file'); if (pfFile) pfFile.value = '';
+    const newInfo = document.getElementById('edit-portfolio-new'); if (newInfo) newInfo.textContent = '';
+    renderEditPortfolio();
+
     document.getElementById('edit-master-modal').classList.add('active');
   }
   window.openEditMaster = openEditMaster;
+
+  let _editAvatarFile = null;
+  let _editPortfolioFiles = [];
+  let _editExistingPortfolio = [];
+
+  function renderEditPortfolio() {
+    const box = document.getElementById('edit-portfolio-preview');
+    if (!box) return;
+    if (!_editExistingPortfolio.length) { box.innerHTML = '<span style="font-size:13px;color:var(--text-muted);">ნამუშევრები ჯერ არ აქვს</span>'; return; }
+    box.innerHTML = _editExistingPortfolio.map((url, i) =>
+      '<div style="position:relative;width:64px;height:64px;">' +
+        '<img src="' + escapeHTML(url) + '" style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--border);">' +
+        '<button onclick="removeEditPortfolio(' + i + ')" title="წაშლა" style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#E5484D;color:#fff;border:none;cursor:pointer;font-size:13px;line-height:1;">✕</button>' +
+      '</div>'
+    ).join('');
+  }
+  function removeEditPortfolio(i) {
+    _editExistingPortfolio.splice(i, 1);
+    renderEditPortfolio();
+  }
+  window.removeEditPortfolio = removeEditPortfolio;
+
+  function onEditAvatarPick(input) {
+    const f = input.files && input.files[0];
+    if (!f) return;
+    if (f.size > 2 * 1024 * 1024) { showToast('⚠️ ფოტო მაქს. 2MB'); input.value = ''; return; }
+    _editAvatarFile = f;
+    const prev = document.getElementById('edit-avatar-preview');
+    if (prev) { prev.style.backgroundImage = "url('" + URL.createObjectURL(f) + "')"; prev.textContent = ''; }
+  }
+  window.onEditAvatarPick = onEditAvatarPick;
+
+  function onEditPortfolioPick(input) {
+    const files = Array.from(input.files || []);
+    for (const f of files) {
+      if (f.size > 2 * 1024 * 1024) { showToast('⚠️ ' + f.name + ' — მაქს. 2MB'); continue; }
+      _editPortfolioFiles.push(f);
+    }
+    const info = document.getElementById('edit-portfolio-new');
+    if (info) info.textContent = _editPortfolioFiles.length ? ('➕ ასატვირთი ახალი ფოტო: ' + _editPortfolioFiles.length) : '';
+    input.value = '';
+  }
+  window.onEditPortfolioPick = onEditPortfolioPick;
 
   function closeEditMaster() {
     _editMasterId = null;
@@ -5892,11 +5973,33 @@
 
     if (btn) { btn.disabled = true; btn.textContent = '⏳ ინახება...'; }
     try {
-      const { error } = await sb.from('masters').update({
+      const payload = {
         first_name: first, last_name: last, phone: phone, category: category,
         city: city, areas: areas, price_per_hour: price, experience_years: exp,
         bio: bio, is_pro: isPro
-      }).eq('id', _editMasterId);
+      };
+
+      // 📸 ავატარის ატვირთვა (თუ ახალი აირჩია)
+      if (_editAvatarFile) {
+        if (btn) btn.textContent = '📤 ფოტო...';
+        const url = await uploadPhotoToStorage(_editAvatarFile, 'master-avatars', phone);
+        if (url) payload.avatar_url = url;
+        else { showToast('⚠️ ავატარი ვერ აიტვირთა'); }
+      }
+
+      // 🖼️ ახალი ნამუშევრების ატვირთვა + არსებულებთან შერწყმა
+      let portfolio = _editExistingPortfolio.slice();
+      if (_editPortfolioFiles.length) {
+        if (btn) btn.textContent = '📤 ნამუშევრები...';
+        for (const f of _editPortfolioFiles) {
+          const url = await uploadPhotoToStorage(f, 'master-portfolio', phone);
+          if (url) portfolio.push(url);
+        }
+      }
+      // portfolio-ს ვანახლებთ თუ რამე შეიცვალა (დამატება ან წაშლა)
+      payload.portfolio_urls = portfolio;
+
+      const { error } = await sb.from('masters').update(payload).eq('id', _editMasterId);
       if (error) {
         console.error('რედაქტირება ვერ შეინახა:', error);
         showToast('❌ ვერ შეინახა: ' + error.message);
