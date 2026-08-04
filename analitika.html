@@ -6,6 +6,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   *{box-sizing:border-box;font-family:'Noto Sans Georgian',system-ui,-apple-system,"Segoe UI",sans-serif}
   body{margin:0;background:#f7fafd;color:#0f172a;padding:14px;max-width:1040px;margin:0 auto}
@@ -60,7 +61,8 @@
     <button id="anaM6" class="perbtn on" onclick="setAnaMonths(6)">6 თვე</button>
     <button id="anaM12" class="perbtn" onclick="setAnaMonths(12)">12 თვე</button>
     <button id="anaD30" class="perbtn" onclick="setAnaDays(30)">📅 30 დღე</button>
-    <button class="perbtn noprint" style="margin-left:auto" onclick="window.print()">🖨 ბეჭდვა / PDF</button>
+    <button class="perbtn noprint" style="margin-left:auto;background:#16a34a;color:#fff;border-color:#16a34a" onclick="exportAnalyticsExcel()">📥 Excel (ღრუბლიდან)</button>
+    <button class="perbtn noprint" onclick="window.print()">🖨 ბეჭდვა / PDF</button>
     <button id="reloadBtn" class="perbtn noprint" onclick="reloadData()">🔄 განახლება</button>
   </div>
 
@@ -273,6 +275,79 @@ window.renderAnalyticsCharts=function(){
     +kc('🧾','გაყიდვა',salesCount+'','#8b5cf6');
   try{ requestAnimationFrame(function(){ (window._anaCharts||[]).forEach(function(c){ try{ c.resize(); c.update('none'); }catch(e){} }); }); }catch(e){}
   setTimeout(function(){ (window._anaCharts||[]).forEach(function(c){ try{ c.resize(); }catch(e){} }); }, 250);
+};
+
+// ══════════ EXCEL EXPORT (ALL cloud data — read-only) ══════════
+window.exportAnalyticsExcel=function(){
+  if(typeof XLSX==='undefined'){ alert('Excel ბიბლიოთეკა ვერ ჩაიტვირთა. სცადე განახლება.'); return; }
+  var n=function(v){return +v||0;};
+  var rnd=function(v,d){ var m=Math.pow(10,d||0); return Math.round((+v||0)*m)/m; };
+  var WB=XLSX.utils.book_new();
+  var dateStr=new Date().toISOString().slice(0,10);
+
+  // ── raw harvest ──
+  var harv=HARV.filter(function(s){ return s && s.source!=='sms_phantom'; });
+  // ── totals across ALL cloud data ──
+  var totH=harv.reduce(function(s,x){return s+n(x.weight);},0);
+  var totI=SALES.reduce(function(s,x){return s+(n(x.total)||n(x.kg)*n(x.price));},0);
+  var totPurch=PURCH.reduce(function(s,x){return s+(n(x.total)||n(x.kg)*n(x.price));},0);
+  var totExpOnly=EXPS.reduce(function(s,x){return s+n(x.amount);},0);
+  var totE=totExpOnly+totPurch;
+  var soldKg=SALES.reduce(function(s,x){return s+n(x.kg);},0);
+  var paidSum=SALES.reduce(function(s,x){return s+(n(x.paid)||n(x.paid_amount));},0);
+
+  var sum=[
+    ['📈 ANALYTICS — სრული მონაცემი ღრუბლიდან'],
+    ['თარიღი', dateStr],
+    ['შესული', document.getElementById('whoami')?document.getElementById('whoami').textContent:''],
+    [],
+    ['მაჩვენებელი','მნიშვნელობა'],
+    ['🌾 კრეფა სულ (კგ)', rnd(totH,1)],
+    ['🧺 ჩაწონვების რაოდ.', harv.length],
+    ['💰 შემოსავალი — გაყიდვები (₾)', rnd(totI,2)],
+    ['🧾 გაყიდული (კგ)', rnd(soldKg,1)],
+    ['💵 გადახდილი (₾)', rnd(paidSum,2)],
+    ['⚖️ საშ. ფასი (₾/კგ)', soldKg>0?rnd(totI/soldKg,2):0],
+    ['🛒 შესყიდვები (₾)', rnd(totPurch,2)],
+    ['🧾 პირდაპირი ხარჯი (₾)', rnd(totExpOnly,2)],
+    ['🧾 ხარჯი სულ (₾)', rnd(totE,2)],
+    ['📈 მოგება (₾)', rnd(totI-totE,2)],
+    ['🧾 გაყიდვების რაოდ.', SALES.length],
+    ['🛒 შესყიდვების რაოდ.', PURCH.length],
+    ['👷 მკრეფავები (უნიკ.)', (function(){ var s={}; harv.forEach(function(h){ if(h.pickerName) s[h.pickerName]=1; }); return Object.keys(s).length; })()]
+  ];
+  var ws0=XLSX.utils.aoa_to_sheet(sum); ws0['!cols']=[{wch:32},{wch:20}];
+  XLSX.utils.book_append_sheet(WB,ws0,'შეჯამება');
+
+  // ── კრეფა ──
+  var h1=[['თარიღი','მკრეფავი','კულტურა','ბლოკი/კვარტ.','რიგი','წყარო','წონა (კგ)']];
+  harv.slice().sort(function(a,b){ return String(a.date||'').localeCompare(String(b.date||'')); })
+    .forEach(function(s){ h1.push([s.date||'', s.pickerName||'', s.culture||'', s.quarter||s.blockName||'', s.row||'', s.source||'', rnd(s.weight,1)]); });
+  var wsH=XLSX.utils.aoa_to_sheet(h1); wsH['!cols']=[{wch:12},{wch:18},{wch:14},{wch:14},{wch:8},{wch:12},{wch:12}];
+  XLSX.utils.book_append_sheet(WB,wsH,'კრეფა');
+
+  // ── გაყიდვები ──
+  var s2=[['თარიღი','მყიდველი','პროდუქტი','კგ','ფასი','ჯამი (₾)','გადახდილი','სტატუსი','ინვოისი']];
+  SALES.slice().sort(function(a,b){ return String(a.date||'').localeCompare(String(b.date||'')); })
+    .forEach(function(s){ s2.push([s.date||'', s.buyerName||s.buyer_name||'', s.product||'', rnd(s.kg,1), rnd(s.price,2), rnd(n(s.total)||n(s.kg)*n(s.price),2), rnd(n(s.paid)||n(s.paid_amount),2), s.status||'', s.invoice||'']); });
+  var wsS=XLSX.utils.aoa_to_sheet(s2); wsS['!cols']=[{wch:12},{wch:20},{wch:14},{wch:10},{wch:9},{wch:12},{wch:11},{wch:12},{wch:12}];
+  XLSX.utils.book_append_sheet(WB,wsS,'გაყიდვები');
+
+  // ── შესყიდვები ──
+  var s3=[['თარიღი','მიმწოდებელი/კომპ.','პროდუქტი','კგ','ფასი','ჯამი (₾)']];
+  PURCH.slice().sort(function(a,b){ return String(a.date||'').localeCompare(String(b.date||'')); })
+    .forEach(function(p){ s3.push([p.date||'', p.supName||p.supplier||p.company||'', p.product||'', rnd(p.kg,1), rnd(p.price,2), rnd(n(p.total)||n(p.kg)*n(p.price),2)]); });
+  var wsP=XLSX.utils.aoa_to_sheet(s3); wsP['!cols']=[{wch:12},{wch:22},{wch:14},{wch:10},{wch:9},{wch:12}];
+  XLSX.utils.book_append_sheet(WB,wsP,'შესყიდვები');
+
+  // ── ხარჯები ──
+  var s4=[['თარიღი','კატეგორია','კულტურა','თანხა (₾)','შენიშვნა']];
+  EXPS.slice().sort(function(a,b){ return String(a.date||'').localeCompare(String(b.date||'')); })
+    .forEach(function(e){ s4.push([e.date||'', e.category||'', e.crop||'', rnd(e.amount,2), e.note||'']); });
+  var wsE=XLSX.utils.aoa_to_sheet(s4); wsE['!cols']=[{wch:12},{wch:18},{wch:14},{wch:12},{wch:30}];
+  XLSX.utils.book_append_sheet(WB,wsE,'ხარჯები');
+
+  XLSX.writeFile(WB,'ანალიტიკა_ღრუბელი_'+dateStr+'.xlsx');
 };
 
 // ══ session resume on load ══
