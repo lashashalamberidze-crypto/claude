@@ -1,5 +1,14 @@
 # RAM IMPEX — always serve fresh HTML after deploys (no stale cache)
 
+# Force HTTPS (SSL active). Exclude ACME challenge so AutoSSL renewals keep working.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [L,R=301]
+</IfModule>
+
 # Browsers/proxies: never cache HTML (static assets in /img can still cache)
 <IfModule mod_headers.c>
   <FilesMatch "\.html$">
