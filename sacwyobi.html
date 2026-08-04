@@ -372,31 +372,50 @@ window.showHubToast=showHubToast;
 // ══════════════════════════════════════════════════════
 async function sbSaveSacwyobi(userId, lots, ops, temps){
   const u = userId || uid; if(!u || !_sb) return;
+  const CH=300; // პორციებად შენახვა — დიდ მოცულობაზეც საიმედოდ აიტვირთოს
+  async function up(table, arr, mapfn){
+    for(var i=0;i<arr.length;i+=CH){
+      var r=await _sb.from(table).upsert(arr.slice(i,i+CH).map(mapfn), { onConflict:'id' });
+      if(r&&r.error) console.warn('sbSave '+table, r.error.message);
+    }
+  }
   try{
     if(lots && lots.length){
-      await _sb.from('sacwyobi_lots').upsert(lots.map(l => ({ ...l, pallet_code: l.pallet_code||'', user_id: u })), { onConflict:'id' });
-      // prune orphans (lots deleted locally)
+      await up('sacwyobi_lots', lots, function(l){ return Object.assign({}, l, { pallet_code: l.pallet_code||'', user_id: u }); });
+      // prune orphans (lots deleted locally) — ლოტების სრული სია ღრუბლიდან (გვერდებით)
       try{
         var _lids = new Set(lots.map(function(l){ return String(l.id); }));
-        var _cr = await _sb.from('sacwyobi_lots').select('id').eq('user_id', u);
-        var _orph = (_cr.data||[]).map(function(x){ return String(x.id); }).filter(function(id){ return !_lids.has(id); });
+        var _all=[], _from=0; for(var _g=0;_g<50;_g++){ var _cr = await _sb.from('sacwyobi_lots').select('id').eq('user_id', u).range(_from,_from+999); if(_cr.error)break; var _d=_cr.data||[]; _all=_all.concat(_d); if(_d.length<1000)break; _from+=1000; }
+        var _orph = _all.map(function(x){ return String(x.id); }).filter(function(id){ return !_lids.has(id); });
         for(var _i=0; _i<_orph.length; _i+=80){ await _sb.from('sacwyobi_lots').delete().eq('user_id', u).in('id', _orph.slice(_i,_i+80)); }
       }catch(_pe){ console.warn('WH prune', _pe); }
     }
-    if(ops && ops.length)     await _sb.from('sacwyobi_ops').upsert(ops.map(o => Object.assign({}, o, { pallet_code: o.pallet_code||'', user_id: u })), { onConflict:'id' }); // #GVREF-PERSIST: gv_ref ინახება — გადახდის კორექტირება გადატვირთვის შემდეგაც სინქრდება
-    if(temps && temps.length) await _sb.from('sacwyobi_temps').upsert(temps.map(t => ({ ...t, user_id: u })), { onConflict:'id' });
+    if(ops && ops.length)     await up('sacwyobi_ops', ops, function(o){ return Object.assign({}, o, { pallet_code: o.pallet_code||'', user_id: u }); }); // #GVREF-PERSIST
+    if(temps && temps.length) await up('sacwyobi_temps', temps, function(t){ return Object.assign({}, t, { user_id: u }); });
   }catch(e){ console.warn('Sacwyobi Supabase save error:', e); }
 }
 async function sbLoadSacwyobi(userId){
   const u = userId || uid; if(!u || !_sb) return null;
+  const STEP=1000;
+  // გვერდებად ჩატვირთვა — 1000-ის ლიმიტი აღარ ჭრის მონაცემს
+  async function loadAll(builder){
+    var out=[], from=0;
+    for(var g=0; g<500; g++){
+      var r=await builder().range(from, from+STEP-1);
+      if(r.error){ console.warn('sbLoadSacwyobi', r.error.message); break; }
+      var ch=r.data||[]; out=out.concat(ch);
+      if(ch.length<STEP) break; from+=STEP;
+    }
+    return out;
+  }
   try{
-    const [lRes,oRes,tRes] = await Promise.all([
-      _sb.from('sacwyobi_lots').select('*').eq('user_id', u),
-      _sb.from('sacwyobi_ops').select('*').eq('user_id', u).order('date', { ascending:false }),
-      _sb.from('sacwyobi_temps').select('*').eq('user_id', u).order('time', { ascending:false })
+    const [lots, opsRaw, temps] = await Promise.all([
+      loadAll(function(){ return _sb.from('sacwyobi_lots').select('*').eq('user_id', u).order('id', { ascending:true }); }),
+      loadAll(function(){ return _sb.from('sacwyobi_ops').select('*').eq('user_id', u).order('date', { ascending:false }).order('id', { ascending:true }); }),
+      loadAll(function(){ return _sb.from('sacwyobi_temps').select('*').eq('user_id', u).order('time', { ascending:false }).order('id', { ascending:true }); })
     ]);
-    const ops = (oRes.data||[]).map(o => ({ ...o, amount: (o.amount==null?null:+o.amount), paid_amount: (+o.paid_amount||0), paid: o.paid===true })); // coalesce nulls
-    return { lots: lRes.data||[], ops, temps: tRes.data||[] };
+    const ops = opsRaw.map(o => ({ ...o, amount: (o.amount==null?null:+o.amount), paid_amount: (+o.paid_amount||0), paid: o.paid===true })); // coalesce nulls
+    return { lots: lots||[], ops: ops, temps: temps||[] };
   }catch(e){ return null; }
 }
 async function sacwyobiLoadFromSupabase(){
