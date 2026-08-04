@@ -1047,7 +1047,7 @@
         <span data-t="hero_free_badge">🆓 მომხმარებლისთვის სრულიად უფასო</span>
       </div>
       <h1 data-t="hero_title" data-t-html="true">პროფესიონალები თქვენს გვერდში —<br><em>როცა გჭირდებათ!</em></h1>
-      <p data-t="hero_subtitle">სანტექნიკოსი, ელექტრიკოსი, დამლაგებელი — ბათუმის ყველა უბანში. სწრაფად, სანდოდ, ფასი წინასწარ.</p>
+      <p data-t="hero_subtitle">სანტექნიკოსი, ელექტრიკოსი, დამლაგებელი — ბათუმში, ყველა უბანში. სწრაფად, სანდოდ, ფასი წინასწარ.</p>
 
       <div class="city-selector">
         <button type="button" class="city-trigger" id="city-trigger" onclick="toggleCityPanel(event)">
@@ -1918,12 +1918,12 @@
 
           <div class="form-group">
             <label data-t="label_price">ფასი საათში (₾) *</label>
-            <input type="number" id="reg-price" placeholder="40" min="5" max="500">
+            <input type="number" id="reg-price" placeholder="40" min="5" max="1000">
           </div>
 
           <div class="form-group">
             <label data-t="label_experience">გამოცდილება (წელი) *</label>
-            <input type="number" id="reg-experience" placeholder="5" min="0" max="60">
+            <input type="number" id="reg-experience" placeholder="5" min="0" max="70">
           </div>
 
           <div class="form-group">
@@ -3344,7 +3344,7 @@
       nav_become: "გახდი ოსტატი",
       hero_title: 'პროფესიონალები თქვენს გვერდში —<br><em>როცა გჭირდებათ!</em>',
       hero_free_badge: "🆓 მომხმარებლისთვის სრულიად უფასო",
-      hero_subtitle: "სანტექნიკოსი, ელექტრიკოსი, დამლაგებელი — ბათუმის ყველა უბანში. სწრაფად, სანდოდ, ფასი წინასწარ.",
+      hero_subtitle: "სანტექნიკოსი, ელექტრიკოსი, დამლაგებელი — {city}, ყველა უბანში. სწრაფად, სანდოდ, ფასი წინასწარ.",
       search_service: "რა სერვისი გჭირდება?",
       search_area: "უბანი",
       search_btn: "მოძებნა",
@@ -3581,7 +3581,7 @@
       nav_become: "Стать мастером",
       hero_title: 'Профессионалы рядом —<br><em>когда нужно!</em>',
       hero_free_badge: "🆓 Сервис полностью бесплатный для клиентов",
-      hero_subtitle: "Сантехник, электрик, уборщик — в каждом районе Батуми. Быстро, надёжно, с фиксированной ценой.",
+      hero_subtitle: "Сантехник, электрик, уборщик — {city}, в каждом районе. Быстро, надёжно, с фиксированной ценой.",
       search_service: "Какая услуга нужна?",
       search_area: "Район",
       search_btn: "Найти",
@@ -3818,7 +3818,7 @@
       nav_become: "Become a Master",
       hero_title: 'Professionals at your side —<br><em>when you need them!</em>',
       hero_free_badge: "🆓 Completely free for customers",
-      hero_subtitle: "Plumber, electrician, cleaner — in every Batumi neighborhood. Fast, trusted, with upfront pricing.",
+      hero_subtitle: "Plumber, electrician, cleaner — {city}, in every neighborhood. Fast, trusted, with upfront pricing.",
       search_service: "What service do you need?",
       search_area: "Area",
       search_btn: "Search",
@@ -4111,7 +4111,7 @@
       const span = label.querySelector('.ms-opt-label');
       if (!cb || !span) return;
       const onclickStr = label.getAttribute('onclick') || '';
-      const match = onclickStr.match(/selectCity\('(\w+)'/);
+      const match = onclickStr.match(/selectCity\('([\w-]+)'/);
       if (match && match[1] && CITY_LABELS[match[1]]) {
         const key = match[1];
         span.textContent = CITY_LABELS[key].emoji + ' ' + getCityLabel(key);
@@ -4173,7 +4173,7 @@
   const DYN_I18N = {
     'სანტექნიკოსი': { ru: 'Сантехник', en: 'Plumber' },
     'ელექტრიკოსი': { ru: 'Электрик', en: 'Electrician' },
-    'კონდიციონერი': { ru: 'Кондиционер', en: 'Air conditioning' },
+    'კონდიციონერი': { ru: 'Кондиционер', en: 'AC technician' },
     'დამლაგებელი': { ru: 'Уборщик', en: 'Cleaner' },
     'რემონტი': { ru: 'Ремонт', en: 'Renovation' },
     'ავეჯის აწყობა': { ru: 'Сборка мебели', en: 'Furniture assembly' },
@@ -5945,13 +5945,23 @@
 
   // 🌍 ქალაქის ლოკატივი ფორმა ("ბათუმში" / "в Батуми" / "in Batumi")
   const CITY_LOCATIVES = {
-    batumi:   { ka: 'ბათუმში',   ru: 'в Батуми',  en: 'in Batumi'   },
-    rustavi:  { ka: 'რუსთავში',  ru: 'в Рустави', en: 'in Rustavi'  },
-    kutaisi:  { ka: 'ქუთაისში',  ru: 'в Кутаиси', en: 'in Kutaisi'  },
-    zugdidi:  { ka: 'ზუგდიდში',  ru: 'в Зугдиди', en: 'in Zugdidi'  },
-    telavi:   { ka: 'თელავში',   ru: 'в Телави',  en: 'in Telavi'   },
-    marneuli: { ka: 'მარნეულში', ru: 'в Марнеули', en: 'in Marneuli' },
-    racha:    { ka: 'რაჭაში',    ru: 'в Раче',    en: 'in Racha'    }
+    batumi:            { ka: 'ბათუმში',        ru: 'в Батуми',            en: 'in Batumi'   },
+    rustavi:           { ka: 'რუსთავში',       ru: 'в Рустави',           en: 'in Rustavi'  },
+    kutaisi:           { ka: 'ქუთაისში',       ru: 'в Кутаиси',           en: 'in Kutaisi'  },
+    zugdidi:           { ka: 'ზუგდიდში',       ru: 'в Зугдиди',           en: 'in Zugdidi'  },
+    telavi:            { ka: 'თელავში',        ru: 'в Телави',            en: 'in Telavi'   },
+    marneuli:          { ka: 'მარნეულში',      ru: 'в Марнеули',          en: 'in Marneuli' },
+    racha:             { ka: 'რაჭაში',         ru: 'в Раче',              en: 'in Racha'    },
+    tbilisi:           { ka: 'თბილისში',       ru: 'в Тбилиси',           en: 'in Tbilisi'  },
+    adjara:            { ka: 'აჭარაში',        ru: 'в Аджарии',           en: 'in Adjara'   },
+    imereti:           { ka: 'იმერეთში',       ru: 'в Имеретии',          en: 'in Imereti'  },
+    kakheti:           { ka: 'კახეთში',        ru: 'в Кахетии',           en: 'in Kakheti'  },
+    'kvemo-kartli':    { ka: 'ქვემო ქართლში',  ru: 'в Квемо-Картли',      en: 'in Kvemo Kartli' },
+    samegrelo:         { ka: 'სამეგრელოში',    ru: 'в Самегрело',         en: 'in Samegrelo' },
+    'shida-kartli':    { ka: 'შიდა ქართლში',   ru: 'в Шида-Картли',       en: 'in Shida Kartli' },
+    samtskhe:          { ka: 'სამცხე-ჯავახეთში', ru: 'в Самцхе-Джавахети', en: 'in Samtskhe-Javakheti' },
+    'mtskheta-mtianeti': { ka: 'მცხეთა-მთიანეთში', ru: 'в Мцхета-Мтианети', en: 'in Mtskheta-Mtianeti' },
+    guria:             { ka: 'გურიაში',        ru: 'в Гурии',             en: 'in Guria'    }
   };
 
   function getCityLocative(cityKey) {
