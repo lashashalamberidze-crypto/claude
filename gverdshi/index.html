@@ -5252,11 +5252,12 @@
     }
 
     try {
-      // ყველა ოსტატი
+      // ყველა ოსტატი (rejected/უარყოფილები არ ითვლება — ისინი სატესტო/გაუქმებულია)
       const { count: totalMasters, error: e1 } = await sb
         .from('masters')
-        .select('*', { count: 'exact', head: true });
-      
+        .select('*', { count: 'exact', head: true })
+        .neq('status', 'rejected');
+
       const totalEl = document.getElementById('stat-masters-total');
       if (totalEl && !e1) totalEl.textContent = totalMasters || 0;
 
@@ -5280,8 +5281,8 @@
       const pendingCountEl = document.getElementById('pending-count');
       if (pendingCountEl) pendingCountEl.textContent = (pendingMasters || 0) + ' ელოდება';
 
-      // უფასო ადგილები
-      const spotsLeft = Math.max(0, 50 - (totalMasters || 0));
+      // უფასო ადგილები — მხოლოდ დადასტურებული ოსტატები იკავებენ ადგილს (50-დან)
+      const spotsLeft = Math.max(0, 50 - (approvedMasters || 0));
       const freeEl = document.getElementById('stat-free-spots');
       if (freeEl) freeEl.textContent = spotsLeft;
 
@@ -5302,17 +5303,18 @@
         .eq('status', 'approved')
         .not('rating', 'is', null);
       
-      if (masterRatings && masterRatings.length > 0) {
-        const totalReviews = masterRatings.reduce((s, m) => s + (m.reviews_count || 0), 0);
-        const avgRating = masterRatings.reduce((s, m) => s + (m.rating || 0), 0) / masterRatings.length;
-        const ratingEl = document.getElementById('stat-avg-rating');
+      const totalReviews = (masterRatings || []).reduce((s, m) => s + (m.reviews_count || 0), 0);
+      const rated = (masterRatings || []).filter(m => (m.reviews_count || 0) > 0);
+      const ratingEl = document.getElementById('stat-avg-rating');
+      const reviewsEl = document.getElementById('stat-reviews-count');
+      if (rated.length > 0) {
+        const avgRating = rated.reduce((s, m) => s + (m.rating || 0), 0) / rated.length;
         if (ratingEl) ratingEl.textContent = avgRating.toFixed(1);
-        const reviewsEl = document.getElementById('stat-reviews-count');
-        if (reviewsEl) reviewsEl.textContent = totalReviews + ' შეფასება';
       } else {
-        const ratingEl = document.getElementById('stat-avg-rating');
+        // ჯერ არავის აქვს შეფასება — 0.0-ს ნაცვლად ვაჩვენოთ —
         if (ratingEl) ratingEl.textContent = '—';
       }
+      if (reviewsEl) reviewsEl.textContent = totalReviews + ' შეფასება';
 
       console.log('✓ ადმინ სტატისტიკა განახლდა');
 
