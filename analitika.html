@@ -565,13 +565,28 @@ window.genFullAnalytics=function(){
       ['🎁 ბონუსი (₾)',rd2(totBonus)],
       ['🧱 ბაზა (₾)',rd2(baseTot)],
       ['💰 სულ გასაცემი მკრეფავს (₾)',{t:'n',f:'B14+B15+B16',v:TOTPAY}],
+      ['🛒 შესყიდვები (₾)',rd2(purchtot)],
+      ['🧾 სხვა ხარჯი (₾)',rd2(exptot)],
+      ['— 📊 შედეგი —',''],
+      ['🧾 სულ ხარჯი — მკრეფავი+შესყ.+სხვა (₾)',{t:'n',f:'B17+B18+B19',v:rd2(TOTPAY+purchtot+exptot)}],
+      ['📈 სუფთა მოგება — რეალიზაცია − ხარჯი (₾)',{t:'n',f:'B10-B21',v:rd2(STOT-(TOTPAY+purchtot+exptot))}],
       ['— 📈 სხვა —',''],
       ['👥 სულ რეგისტრირებული მკრეფავი',(function(){ try{ var _rp=JSON.parse(localStorage.getItem('its_p')||localStorage.getItem('its_pickers')||'[]'); return (Array.isArray(_rp)&&_rp.length)?_rp.length:plist.length; }catch(e){ return plist.length; } })()],
       ['🟢 აქტიური მკრეფავი (დაკრიფა)',plist.length],
       ['📅 ნამუშევარი დღე',dlist.length],
       ['🏆 ტოპ მკრეფავი',plist.length?(plist[0].name+' ('+plist[0].kg+' კგ)'):'—'],
       ['🥇 ტოპ მყიდველი',topBuyer]];
-    add('მიმოხილვა',ov,[{wch:34},{wch:34}],2,3);
+    var wOv=add('მიმოხილვა',ov,[{wch:40},{wch:22}],2,3);
+    // #OV-COLOR: სექცია-სათაურები + ჯამები/მოგება ფერადად
+    (function(){
+      var SECROW={fill:{fgColor:{rgb:'E0E7FF'}},font:{bold:true,sz:11,color:{rgb:'3730A3'}}};
+      var TOTROW={fill:{fgColor:{rgb:'FEF3C7'}},font:{bold:true,color:{rgb:'92400E'}}};
+      var PROFIT={fill:{fgColor:{rgb:'DCFCE7'}},font:{bold:true,sz:12,color:{rgb:'065F46'}}};
+      // 0-indexed rows: სექციები 4,8,12,19,23 · ჯამები 7,11,16,20 · მოგება 21
+      [4,8,12,19,23].forEach(function(r){ sS(wOv,r,0,SECROW); sS(wOv,r,1,SECROW); });
+      [7,11,16,20].forEach(function(r){ sS(wOv,r,0,TOTROW); sS(wOv,r,1,TOTROW); });
+      sS(wOv,21,0,PROFIT); sS(wOv,21,1,PROFIT);
+    })();
     var h2=['#','სახელი / გვარი'].concat(dlist.map(function(d){return d.slice(5);})).concat(['სულ კგ','სულ ₾']);
     var nc=h2.length;
     var a2=[[comp],['👥 მკრეფავები × დღეები (უჯრა: კგ / ანაზღაურება₾, ბონუსით)'],[],
@@ -620,13 +635,21 @@ window.genFullAnalytics=function(){
       var _secRowIdx=[]; var _seenKey={};
       secOrder.forEach(function(sec){
         var rows=bySec[sec].slice().sort(function(a,b){ return String(a.name).localeCompare(String(b.name),undefined,{numeric:true}); });
-        var secBand=datesM.map(function(d){ var sum=0,seen={}; rows.forEach(function(rw){ if(seen[rw.name]) return; seen[rw.name]=1; var v=kgIdx[sec+'||'+rw.name+'||'+d]||0; if(v>0){ sum+=v; } }); return rd2(sum); });
+        // #SECTOR-FIX: ჯერ ბავშვ-რიგების დღიური მნიშვნელობები (გლობალური dedup), მერე სექტორის ზოლი =
+        //  ბავშვ-რიგების ზუსტი ჯამი — რომ სექტორის ჯამი ყოველთვის ემთხვეოდეს ხელით დათვლილს.
+        var childRows=rows.map(function(rw){
+          var _kk=sec+'||'+rw.name; var _dup=_seenKey[_kk]; _seenKey[_kk]=1;
+          var vals=datesM.map(function(d){ return _dup?0:rd2(kgIdx[_kk+'||'+d]||0); });
+          return { rw:rw, vals:vals, tot:rd2(vals.reduce(function(x,y){return x+y;},0)) };
+        });
+        var secBand=datesM.map(function(d,di){ var s=0; childRows.forEach(function(cr){ s+=cr.vals[di]; }); return rd2(s); });
+        var secTot=rd2(childRows.reduce(function(a,cr){ return a+cr.tot; },0)); // = ბავშვ-რიგების ჯამების ჯამი
         var sp=secBand.filter(function(v){return v>0;});
         var secAvg=sp.length?rd2(sp.reduce(function(a,b){return a+b;},0)/sp.length):0;
         var secPlants=rows.reduce(function(a,rw){return a+(rw.plants||0);},0);
         var secVar=blkVar[sec]||(rows[0]&&rows[0].variety)||'';
-        _secRowIdx.push(a4.length); a4.push(['📍 სექტ. '+sec,'',secVar,secPlants,secAvg,rd2(secBand.reduce(function(a,b){return a+b;},0))].concat(secBand));
-        rows.forEach(function(rw){ var _kk=sec+'||'+rw.name; var _dup=_seenKey[_kk]; _seenKey[_kk]=1; var vals=datesM.map(function(d){ return _dup?0:rd2(kgIdx[_kk+'||'+d]||0); }); var pk=vals.filter(function(v){return v>0;}); var avg=pk.length?rd2(pk.reduce(function(a,b){return a+b;},0)/pk.length):0; a4.push([sec,rw.name,rw.variety,rw.plants,avg,rd2(vals.reduce(function(a,b){return a+b;},0))].concat(vals)); });
+        _secRowIdx.push(a4.length); a4.push(['📍 სექტ. '+sec,'',secVar,secPlants,secAvg,secTot].concat(secBand));
+        childRows.forEach(function(cr){ var rw=cr.rw, vals=cr.vals; var pk=vals.filter(function(v){return v>0;}); var avg=pk.length?rd2(pk.reduce(function(a,b){return a+b;},0)/pk.length):0; a4.push([sec,rw.name,rw.variety,rw.plants,avg,cr.tot].concat(vals)); });
       });
       var validKey={}; ZR.forEach(function(r){ var sec=blkName[r.block_id]||'?'; validKey[sec+'||'+String(r.name)]=1; });
       var orphanByDate={}, orphanTot=0;
@@ -700,6 +723,7 @@ window.genFullAnalytics=function(){
     var _sumRow=a7.length; a7.push(['სულ ხარჯი',rd2(TOTPAY+purchtot+exptot),'']);
     if(EXPS.length){ a7.push([]); a7.push(['დეტალური ხარჯი','₾','თარიღი']); EXPS.forEach(function(x){ a7.push([x.category||'—',nf(x.amount),x.date||'']); }); } else { a7.push([]); a7.push(['ℹ️ დეტალური ხარჯები ჯერ არ არის შეტანილი','','']); }
     var w7=add('ხარჯები',a7,[{wch:30},{wch:14},{wch:22}],3,3); for(var c7=0;c7<3;c7++) sS(w7,_sumRow,c7,TO);
+    try{ var _mi=wb.SheetNames.indexOf('მიმოხილვა'); if(_mi>0){ wb.SheetNames.splice(_mi,1); wb.SheetNames.unshift('მიმოხილვა'); } }catch(e){} // #ORDER: მიმოხილვა პირველ ფურცლად
     (window._writeAnalyticsXlsx||function(w,n){ XLSX.writeFile(w,n); })(wb,'სრული_ანალიტიკა_'+dateStr+'.xlsx');
   }catch(e){ alert('შეცდომა: '+(e&&e.message||e)); }
 };
@@ -713,11 +737,17 @@ window._writeAnalyticsXlsx=function(wb, fname){
     if(typeof fflate==='undefined' || !fflate.unzipSync){ XLSX.writeFile(wb,fname); return; }
     var arr=XLSX.write(wb,{type:'array',bookType:'xlsx'});
     var files=fflate.unzipSync(new Uint8Array(arr));
-    var FR={ '1':{x:2,y:6,tl:'C7'}, '3':{x:2,y:7,tl:'C8'}, '5':{x:6,y:6,tl:'G7'} };
     var dec=new TextDecoder(), enc=new TextEncoder();
-    Object.keys(FR).forEach(function(idx){
-      var key='xl/worksheets/sheet'+idx+'.xml'; if(!files[key]) return;
-      var xml=dec.decode(files[key]); var f=FR[idx];
+    // ფრიზი ფურცლის სახელით (რიგის მიხედვით რომ არ აცდეს) — workbook.xml-ის რიგი = sheetN.xml
+    var FRname={ 'მკრეფავების დეტალური':{x:2,y:6,tl:'C7'}, 'მკრეფავები × დღეები':{x:2,y:7,tl:'C8'}, 'რიგების სტატისტიკა':{x:6,y:6,tl:'G7'} };
+    var order=[]; try{
+      var wbx=dec.decode(files['xl/workbook.xml']); var re=/<sheet [^>]*name="([^"]*)"[^>]*\/>/g, mm;
+      while((mm=re.exec(wbx))){ order.push(mm[1].replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'")); }
+    }catch(e){}
+    order.forEach(function(nm, i){
+      var f=FRname[nm]; if(!f) return;
+      var key='xl/worksheets/sheet'+(i+1)+'.xml'; if(!files[key]) return;
+      var xml=dec.decode(files[key]);
       var pane='<pane xSplit="'+f.x+'" ySplit="'+f.y+'" topLeftCell="'+f.tl+'" activePane="bottomRight" state="frozen"/><selection pane="bottomRight" activeCell="'+f.tl+'" sqref="'+f.tl+'"/>';
       if(/<sheetView[^>]*\/>/.test(xml)) xml=xml.replace(/<sheetView([^>]*)\/>/, '<sheetView$1>'+pane+'</sheetView>');
       else if(/<sheetView[^>]*>/.test(xml)) xml=xml.replace(/(<sheetView[^>]*>)/, '$1'+pane);
