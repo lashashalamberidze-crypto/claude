@@ -14923,17 +14923,16 @@ setTimeout(function(){
 (function(){
 try {
 
-// ── STATE ──
-let swLots    = JSON.parse(localStorage.getItem(_swK('lots'))   ||'[]');
-let swOps     = JSON.parse(localStorage.getItem(_swK('ops'))    ||'[]');
-let swTemps   = JSON.parse(localStorage.getItem(_swK('temps'))  ||'[]');
+// ── STATE ── #CLOUD-ONLY: ლოკალურიდან არ ვსეიდავთ — თორემ ძველი ჩანაწერები ღრუბელს დაემატება შესვლისას.
+let swLots    = [];
+let swOps     = [];
+let swTemps   = [];
+let _swCloudLoaded = false;   // ღრუბლიდან ჩატვირთვამდე ცლაუდში ჩაწერა აკრძალულია
 
 let _swSaveTimer = null;
 const swSave = () => {
-  localStorage.setItem(_swK('lots'),  JSON.stringify(swLots));
-  localStorage.setItem(_swK('ops'),   JSON.stringify(swOps));
-  localStorage.setItem(_swK('temps'), JSON.stringify(swTemps));
-  // ── Supabase sync — debounced 800ms (single timer, no duplicate) ──
+  // #CLOUD-ONLY: სანამ ღრუბლიდან ერთხელ არ ჩაიტვირთა, ცლაუდში არ ვწერთ (ცარიელი/ძველი ვერ გადააწერს).
+  if(!_swCloudLoaded){ return; }
   if(typeof _sb !== 'undefined' && typeof currentUser !== 'undefined' && currentUser && !currentUser.isDemo){
     clearTimeout(_swSaveTimer);
     _swSaveTimer = setTimeout(function(){
@@ -14985,19 +14984,11 @@ async function _swInitLocal(){
   if(typeof currentUser !== 'undefined' && currentUser && !currentUser.isDemo){
     sbLoadSacwyobi((currentUser&&currentUser.id)||'').then(function(data){
       if(!data) return;
-      if(data.lots && data.lots.length){
-        swLots = data.lots;
-        localStorage.setItem(_swK('lots'), JSON.stringify(swLots));
-      }
-      if(data.ops && data.ops.length){
-        swOps = data.ops;
-        localStorage.setItem(_swK('ops'), JSON.stringify(swOps));
-      }
-      if(data.temps && data.temps.length){
-        swTemps = data.temps;
-        localStorage.setItem(_swK('temps'), JSON.stringify(swTemps));
-      }
-      try{ if(window.swReconcileAll) swReconcileAll(); }catch(e){}
+      // #CLOUD-ONLY: ღრუბელი ჭეშმარიტების წყაროა — ყოველთვის ვსახავთ (ცარიელიც კი), მერე ვრთავთ ჩაწერას
+      swLots  = Array.isArray(data.lots)?data.lots:[];
+      swOps   = Array.isArray(data.ops)?data.ops:[];
+      swTemps = Array.isArray(data.temps)?data.temps:[];
+      _swCloudLoaded = true;
       swUpdateStats();
       swRenderStock();
       swRenderTempLog();
@@ -15471,7 +15462,10 @@ window.swReconcileHarvest = function(){
 // დუბლირება შეუძლებელია, ციფრები ყოველთვის ჯდება. ხელით დამატებული ლოტები/გატანები რჩება.
 // ════════════════════════════════════════════════════════════════════════
 window.swReconcileAll = function(){
-  try{
+  // #NO-REBUILD: საწყობი ახლა ღრუბლიდან იტვირთება (sacwyobi_ops = ჭეშმარიტების წყარო).
+  //  gv/კრეფიდან თავიდან აწყობა ქმნიდა out-ოპერაციებს ახალი id-ებით → ყოველ გახსნაზე ორმაგდებოდა.
+  return {ok:true, disabled:true};
+  try{ // eslint-disable-line no-unreachable
     if(typeof swLots==='undefined'||!Array.isArray(swLots)||typeof swOps==='undefined'||!Array.isArray(swOps)) return {ok:false};
     var _u='guest'; try{ if(window.currentUser&&window.currentUser.id)_u=window.currentUser.id; }catch(e){}
     function rd(k){ try{ var v=JSON.parse(localStorage.getItem(k)||'[]'); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
