@@ -8820,11 +8820,9 @@ function phSaveEntries(arr){
             return _sb.from('phenocal_entries').upsert(rowsMin)
               .then(function(res2){
                 if(res2 && res2.error){
+                  // #NO-DESTRUCTIVE: აღარ ვშლით ყველა ღრუბლის ჩანაწერს (delete-all + insert)
+                  //  — ეს სტალე/ნაწილობრივ ლოკალურზე ღრუბელს ანადგურებდა. მხოლოდ ვაფრთხილებთ.
                   console.warn('phenocal minimal upsert failed:', res2.error.message);
-                  // Last resort: delete all for this user then insert fresh
-                  return _sb.from('phenocal_entries').delete().eq('user_id', uid)
-                    .then(function(){ return _sb.from('phenocal_entries').insert(rowsMin); })
-                    .catch(function(e){ console.warn('phenocal insert fallback failed', e); });
                 }
               });
           }
@@ -14601,7 +14599,7 @@ function asSave(){
         try {
           await _sb.from('agroshop_entries').upsert(asEntries.map(function(e){ return {...e, user_id:(window.currentUser&&window.currentUser.id)||''}; }).filter(function(e){ return e&&e.id; }).map(function(e){
             return {...e, saved_by: uid};
-          }));
+          }), { onConflict:'id' });
         } catch(err){ console.warn('asSave error', err); }
       }
     }, 800);
@@ -16070,6 +16068,7 @@ window._dashExps=function(){ try{ if(window.__expenses&&window.__expenses.length
 let gvSuppliers = gvRead('suppliers', []);
 let gvInvNum    = parseInt(gvReadPlain('inv','1')||'1');
 let gvPurNum    = parseInt(gvReadPlain('pur_num','1')||'1');
+let _gvCloudLoaded = false;   // #NO-LOCAL-PUSH: ღრუბლიდან ჩატვირთვამდე ცლაუდში არ ვწერთ
 
 let _gvSaveTimer = null;
 const gvSave = () => {
@@ -16081,7 +16080,8 @@ const gvSave = () => {
   gvWritePlain('pur_num', gvPurNum);
   gvDropLegacy();
   // Supabase sync — debounced batch upsert (fixes N+1 problem)
-  if(typeof _sb !== 'undefined' && typeof currentUser !== 'undefined' && currentUser && currentUser.id && !currentUser.isDemo){
+  // #NO-LOCAL-PUSH: მხოლოდ მას შემდეგ, რაც ღრუბლიდან ჩაიტვირთა (თორემ ძველი ლოკალური გადააწერდა).
+  if(_gvCloudLoaded && typeof _sb !== 'undefined' && typeof currentUser !== 'undefined' && currentUser && currentUser.id && !currentUser.isDemo){
     clearTimeout(_gvSaveTimer);
     _gvSaveTimer = setTimeout(async () => {
       const uid = currentUser.id;
@@ -16110,6 +16110,7 @@ async function gvLoadFromSupabase(){
       _sb.from('gv_suppliers').select('*').eq('user_id', uid),
       _sb.from('gv_settings').select('*').eq('user_id', uid).maybeSingle()
     ]);
+    _gvCloudLoaded = true;   // #NO-LOCAL-PUSH: ღრუბლიდან ჩაიტვირთა — ახლა შენახვა ნებადართულია
     if(Array.isArray(sRes.data)){
       gvSales = sRes.data;
       gvWrite('sales', gvSales);
