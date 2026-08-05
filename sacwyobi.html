@@ -700,19 +700,20 @@ window.addEventListener('load', async function(){
 (function(){
 try {
 
-// ── STATE ──
-let swLots  = JSON.parse(localStorage.getItem(_swK('lots'))  ||'[]');
-let swOps   = JSON.parse(localStorage.getItem(_swK('ops'))   ||'[]');
-let swTemps = JSON.parse(localStorage.getItem(_swK('temps')) ||'[]');
-let swShipments = JSON.parse(localStorage.getItem(_swK('ships')) ||'[]');
+// ── STATE ── #CLOUD-ONLY: ლოკალურიდან არაფერს ვკითხულობთ. მხოლოდ ღრუბელი წყაროა.
+//  (ლოკალურის კითხვა იწვევდა ძველი ჩანაწერების ღრუბელში დამატებას შესვლისას → გაორმაგება.)
+let swLots  = [];
+let swOps   = [];
+let swTemps = [];
+let swShipments = [];
+let _swCloudLoaded = false;   // ღრუბლიდან ჩატვირთვამდე ცლაუდში ჩაწერა აკრძალულია
 
 let _swSaveTimer = null;
 const swSave = () => {
-  localStorage.setItem(_swK('lots'),  JSON.stringify(swLots));
-  localStorage.setItem(_swK('ops'),   JSON.stringify(swOps));
-  localStorage.setItem(_swK('temps'), JSON.stringify(swTemps));
-  try{ localStorage.setItem(_swK('ships'), JSON.stringify(swShipments)); }catch(e){}
-  // ── Supabase sync — debounced 800ms (cloud is source of truth) ──
+  // #CLOUD-ONLY: ვწერთ პირდაპირ ღრუბელში. localStorage-ს არ ვიყენებთ — არც წყაროდ, არც ასლად.
+  // დაცვა: სანამ ღრუბლიდან ერთხელ მაინც არ ჩაიტვირთა, ცლაუდში არ ვწერთ — თორემ ცარიელი/ძველი
+  // მდგომარეობა კარგ ღრუბლის მონაცემს გადააწერდა.
+  if(!_swCloudLoaded){ return; }
   if(_sb && currentUser && currentUser.id){
     clearTimeout(_swSaveTimer);
     _swSaveTimer = setTimeout(function(){
@@ -731,10 +732,9 @@ const swMoney = v => { const n=+v||0; return n.toLocaleString('en-US',{minimumFr
 async function initSacwyobiFromHub(){
   if(_sb && uid){
     try{
-      await sacwyobiLoadFromSupabase();
-      swLots  = JSON.parse(localStorage.getItem(_swK('lots'))  ||'[]');
-      swOps   = JSON.parse(localStorage.getItem(_swK('ops'))   ||'[]');
-      swTemps = JSON.parse(localStorage.getItem(_swK('temps')) ||'[]');
+      // #CLOUD-ONLY: პირდაპირ ღრუბლიდან მეხსიერებაში (localStorage-ის გვერდის ავლით)
+      var _res = await sbLoadSacwyobi(uid);
+      if(_res){ swLots = _res.lots||[]; swOps = _res.ops||[]; swTemps = _res.temps||[]; _swCloudLoaded = true; }
     }catch(_e){ console.warn('initSacwyobi cloud', _e); }
   }
   swUpdateStats(); swRenderStock(); swRenderTempLog(); swRenderHistory(); swBuildContactLists();
