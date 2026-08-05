@@ -161,7 +161,6 @@
     <div class="sw-card">
       <div class="sw-card-title" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <span>📦 მიმდინარე მარაგი — რა დევს მაცივარში</span>
-        <button class="sw-btn sw-btn-outline" style="padding:5px 12px;font-size:.74rem;font-weight:400" onclick="swCleanDuplicates()" title="ერთი და იგივე გაყიდვის განმეორებული ჩანაწერები ერთამდე დაიყვანება (ღრუბელშიც). ავტო-„კრეფა" ბლოტიც მოცილდება.">🧹 დუბლიკატების გასუფთავება</button>
         <button class="sw-btn sw-btn-outline" style="padding:5px 12px;font-size:.74rem;font-weight:400" onclick="swRecomputeStock()" title="ლოტების ნაშთს თავიდან დაითვლის რეალური გაყიდვებიდან (qty − გაყიდული). ფიზიკური qty არ იცვლება.">🛠️ მარაგის გადათვლა</button>
       </div>
       <div class="sw-table-wrap">
@@ -255,10 +254,7 @@
     <div class="sw-card">
       <div class="sw-card-title" style="justify-content:space-between">
         <span>💰 გაყიდვები <span id="sw-sales-count" class="muted" style="font-weight:400;letter-spacing:0;text-transform:none"></span></span>
-        <span style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="sw-btn sw-btn-outline" style="padding:6px 12px;font-size:.76rem;font-weight:400" onclick="swCleanDuplicates()" title="განმეორებული გაყიდვები ერთამდე დაიყვანება (ღრუბელშიც).">🧹 დუბლიკატების გასუფთავება</button>
-          <button class="sw-btn sw-btn-gold" style="padding:6px 14px;font-size:.78rem" onclick="swNewSale()">➕ ახალი გაყიდვა</button>
-        </span>
+        <button class="sw-btn sw-btn-gold" style="padding:6px 14px;font-size:.78rem" onclick="swNewSale()">➕ ახალი გაყიდვა</button>
       </div>
       <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
         <input type="date" id="sw-sales-from" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
@@ -909,7 +905,9 @@ async function swCleanDuplicates(){
   if(!_swCloudLoaded){ swNotify('⚠️ ჯერ ღრუბლიდან ჩაიტვირთოს — სცადე წამში', true); return; }
   var u=currentUser.id;
   var norm=function(s){ return String(s==null?'':s).trim().toLowerCase(); };
-  var sigOf=function(o){ var ref=String(o.gv_ref||'').trim(); if(ref) return 'ref:'+ref; return [o.date||'', norm(o.buyer), (+o.kg||0).toFixed(1), norm(o.product)].join('|'); };
+  // #DEDUP-SIG: ვაჯგუფებთ თარიღი+მყიდველი+კგ+პროდუქტით (გვ_ref-ს არ ვიყენებთ — დუბლებს ხშირად სხვა
+  //  gv_ref აქვთ და ვერ ჯგუფდებოდნენ). ჯგუფში op_clean_ რჩება, დანარჩენი დუბლი იშლება.
+  var sigOf=function(o){ return [o.date||'', norm(o.buyer), (+o.kg||0).toFixed(1), norm(o.product)].join('|'); };
   var toDelete=[];
   // 1) out-ოპერაციები — დუბლი, op_clean_ რჩება
   var groups={};
