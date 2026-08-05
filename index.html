@@ -3156,7 +3156,11 @@ async function agrosLoadFromSupabase(){
 window.agrosLoadFromSupabase = agrosLoadFromSupabase;
 
 // ── Generic: auto-sync localStorage → Supabase on login ──
+// #NO-LOCAL-PUSH: გამორთულია. ეს ფუნქცია შესვლისას localStorage-იდან ღრუბელში bulk-ს ტვირთავდა
+//  (საწყობის ოპერაციები, krepa პიკერები/სესიები, gv, phenocal) — ძველი ლოკალური ჩანაწერები
+//  ღრუბელს ემატებოდა/ორმაგდებოდა ყოველ შესვლაზე. ღრუბელი ერთადერთი წყაროა — ლოკალი აღარ იტვირთება.
 async function sbSyncAllModules(userId) {
+  return; // eslint-disable-line no-unreachable  (ლოკალურიდან ღრუბელში ატვირთვა სრულად გამორთულია)
   if(!userId) return;
   try {
     // Sync plantations first — only pending queue, never legacy full local list
