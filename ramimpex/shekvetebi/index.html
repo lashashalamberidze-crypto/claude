@@ -1,0 +1,78 @@
+<!doctype html><html lang="ka"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAM IMPEX — შეკვეთები (ადმინი)</title>
+<style>
+:root{--green-d:#0B6B3C;--green:#0F8A4D;--bg:#f4f7f5;--card:#fff;--line:#dce7e0;--ink:#14261C;--muted:#5C6B62}
+*{box-sizing:border-box;margin:0}
+body{font-family:system-ui,'Noto Sans Georgian',sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+.top{background:linear-gradient(120deg,var(--green-d),var(--green));color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
+.top .lg{font-size:20px;font-weight:800}.top .su{font-size:12px;opacity:.9}
+.wrap{max-width:900px;margin:0 auto;padding:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px;font-weight:600}
+input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font:inherit}
+.btn{background:var(--green-d);color:#fff;border:none;border-radius:10px;padding:10px 16px;font:inherit;font-weight:700;cursor:pointer}
+.btn.sm{padding:6px 11px;font-size:12px}
+.btn.line{background:#fff;color:var(--green-d);border:1.5px solid var(--green-d)}
+.muted{color:var(--muted)}
+.ord{border:1px solid var(--line);border-left:4px solid var(--green-d);border-radius:12px;padding:14px;margin-bottom:12px}
+.ord.new{border-left-color:#E6A200;background:#fffdf5}
+.ord .h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.ord .who{font-weight:800}
+.ord .meta{font-size:12px;color:var(--muted)}
+.pill{display:inline-block;background:#E3F1E8;color:var(--green-d);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700}
+.pill.new{background:#FFF0CC;color:#8a6a00}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid #eef4f0}
+th{background:#f2f9f5;color:var(--green-d)}
+.imgs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.imgs img{width:90px;height:90px;object-fit:cover;border:1px solid var(--line);border-radius:8px;cursor:zoom-in}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:60;padding:20px}
+.ov.on{display:flex}.ov img{max-width:92vw;max-height:90vh;border-radius:10px}
+.empty{text-align:center;color:var(--muted);padding:40px}
+</style></head>
+<body>
+<div class="top"><div><div class="lg">RAM IMPEX</div><div class="su">შეკვეთები — ადმინი</div></div><button class="btn line sm" id="logout" style="display:none">გასვლა</button></div>
+<div class="wrap" id="app"><div class="empty">იტვირთება…</div></div>
+<div class="ov" id="ov"><img id="ovImg" src=""></div>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/+esm";
+const sb=createClient("https://mhyoqypzacvztwhntsvv.supabase.co","sb_publishable_FXhFmDRboFeOEqxyvwUePg_SgIwnmmM",{auth:{persistSession:true,autoRefreshToken:true}});
+const $=id=>document.getElementById(id), app=$('app');
+const esc=s=>(s==null?'':(''+s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const DIR={boxes:'მუყაოს ყუთები',edge:'კუთხოვანი',anth:'ანთრაციტი'};
+window.zoom=src=>{$('ovImg').src=src;$('ov').classList.add('on');};
+$('ov').onclick=()=>$('ov').classList.remove('on');
+$('logout').onclick=async()=>{await sb.auth.signOut();location.reload();};
+
+function loginView(msg){
+ $('logout').style.display='none';
+ app.innerHTML='<div class="card" style="max-width:380px;margin:40px auto"><h2 style="color:var(--green-d);margin-bottom:6px">შესვლა</h2><p class="muted" style="font-size:12px;margin-bottom:8px">ადმინის ელ.ფოსტა/პაროლი (Supabase)</p>'+(msg?'<p style="color:#c62828;font-size:12px;margin-bottom:6px">'+esc(msg)+'</p>':'')+'<label>ელ. ფოსტა</label><input id="em" type="email"><label>პაროლი</label><input id="pw" type="password"><button class="btn" id="lg" style="width:100%;margin-top:12px">შესვლა</button></div>';
+ $('lg').onclick=async()=>{$('lg').disabled=true;$('lg').textContent='...';const {error}=await sb.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});if(error){loginView(error.message);}else{load();}};
+ $('em')&&$('em').focus();
+}
+function orderCard(o){
+ const items=(o.items||[]).map((it,i)=>{const ex=[];if(it.qty)ex.push('რაოდ: '+it.qty);if(it.brand)ex.push('ბრენდ: '+it.brand);if(it.note)ex.push(it.note);
+  return '<tr><td>'+(i+1)+'</td><td><b>'+esc(it.code||it.name||'')+'</b></td><td>'+esc(it.size||'')+(it.type?' '+esc(it.type):'')+'</td><td>'+esc(it.cat||'')+'</td><td>'+esc(ex.join(' · '))+'</td></tr>';}).join('');
+ const imgs=(o.images||[]).map(u=>'<img src="'+u+'" onclick="zoom(this.src)">').join('');
+ const isNew=o.status==='new';
+ return '<div class="ord'+(isNew?' new':'')+'"><div class="h"><div><div class="who">'+esc(o.cust_name||'—')+' <span class="pill'+(isNew?' new':'')+'">'+esc(o.status)+'</span> <span class="pill">'+esc(DIR[o.direction]||o.direction||'')+'</span></div>'+
+  '<div class="meta">📞 '+esc(o.cust_phone||'—')+' · ✉ '+esc(o.cust_email||'—')+' · '+esc((o.created_at||'').replace('T',' ').slice(0,16))+'</div></div>'+
+  '<div>'+(isNew?'<button class="btn sm" data-seen="'+o.id+'">✔ ნანახია</button>':'')+'</div></div>'+
+  (items?'<table><thead><tr><th>#</th><th>კოდი</th><th>ზომა</th><th>კატეგორია</th><th>დამატებით</th></tr></thead><tbody>'+items+'</tbody></table>':'')+
+  (o.req_title||o.req_desc?'<div style="margin-top:8px;font-size:13px"><b>კონკრეტული მოთხოვნა:</b> '+esc(o.req_title||'')+' '+esc(o.req_desc||'')+'</div>':'')+
+  (imgs?'<div class="imgs">'+imgs+'</div>':'')+'</div>';
+}
+async function load(){
+ $('logout').style.display='';
+ app.innerHTML='<div class="empty">იტვირთება…</div>';
+ const {data,error}=await sb.from('orders').select('*').order('created_at',{ascending:false});
+ if(error){app.innerHTML='<div class="card"><p style="color:#c62828">'+esc(error.message)+'</p></div>';return;}
+ if(!data.length){app.innerHTML='<div class="empty">ჯერ შეკვეთა არ არის.</div>';return;}
+ const nNew=data.filter(o=>o.status==='new').length;
+ app.innerHTML='<div class="card" style="display:flex;justify-content:space-between;align-items:center"><b>სულ '+data.length+' შეკვეთა'+(nNew?' · '+nNew+' ახალი':'')+'</b><button class="btn line sm" id="refresh">↻ განახლება</button></div>'+data.map(orderCard).join('');
+ $('refresh').onclick=load;
+ app.querySelectorAll('[data-seen]').forEach(b=>b.onclick=async()=>{b.disabled=true;await sb.from('orders').update({status:'seen'}).eq('id',b.dataset.seen);load();});
+}
+(async()=>{const {data}=await sb.auth.getSession();if(data.session)load();else loginView();})();
+</script>
+</body></html>
