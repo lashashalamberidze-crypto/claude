@@ -81,6 +81,8 @@ const tr=s=>{if(!s)return s;let o=''+s;Object.keys(GW).sort((a,b)=>b.length-a.le
 const catRu=c=>CAT_RU[c]||c;
 const CYR={PL:'ПЛ',PG:'ПГ',PK:'ПК',PO:'ПО',PP:'ПП'};
 const ruCode=c=>{if(!c)return c;return (''+c).replace(/^(PL|PG|PK|PO|PP)/,m=>CYR[m]);};
+const LAT={'ПЛ':'PL','ПГ':'PG','ПК':'PK','ПО':'PO','ПП':'PP'};
+const latCode=c=>{if(!c)return c;return (''+c).replace(/^(ПЛ|ПГ|ПК|ПО|ПП)/,m=>LAT[m]);};
 window.zoom=src=>{$('ovImg').src=src;$('ov').classList.add('on');};
 $('ov').onclick=()=>$('ov').classList.remove('on');
 $('logout').onclick=async()=>{await sb.auth.signOut();location.reload();};
@@ -195,7 +197,7 @@ function renderCat(){
     d.items.forEach((it,idx)=>{
       if(q && ((it.code||'')+' '+(it.size||'')+' '+(it.name||'')).toLowerCase().indexOf(q)<0) return;
       const c=calcRow(d,it);
-      rh+='<tr><td>'+(idx+1)+'</td><td><input value="'+esc(it.code)+'" style="width:66px" data-f="code" data-i="'+idx+'"></td>'+
+      rh+='<tr><td>'+(idx+1)+'</td><td><input value="'+esc(ruCode(it.code))+'" style="width:74px" data-f="code" data-i="'+idx+'"></td>'+
         '<td><input value="'+esc(it.name||'')+'" style="min-width:150px" data-f="name" data-i="'+idx+'">'+(it.pack?'<div class="muted" style="font-size:9.5px;margin-top:2px">📦 '+esc(it.pack)+'</div>':'')+'</td>'+
         '<td><input value="'+esc(it.size||'')+'" style="width:96px" data-f="size" data-i="'+idx+'"></td>'+
         '<td><input value="'+esc(it.mark||'')+'" style="width:66px" data-f="mark" data-i="'+idx+'"></td>'+
@@ -212,6 +214,7 @@ function renderCat(){
     rowsHost.querySelectorAll('input[data-f]').forEach(inp=>inp.onchange=()=>{const it=d.items[+inp.dataset.i];const f=inp.dataset.f;
       if(f==='rub'){it[f]=inp.value===''?0:(parseFloat(inp.value)||0);}
       else if(f==='pfinal'||f==='cap'){it[f]=inp.value===''?'':(parseFloat(inp.value)||0);if(f==='cap')pushCapacity(it.code,it.cap);}
+      else if(f==='code'){it.code=latCode(inp.value.trim());}
       else{it[f]=inp.value;}
       saveDirs();paintRows();});
     rowsHost.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(!confirm('წავშალო?'))return;d.items.splice(+b.dataset.del,1);saveDirs();paintRows();});
