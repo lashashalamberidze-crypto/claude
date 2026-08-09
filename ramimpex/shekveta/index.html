@@ -213,7 +213,7 @@ $('bSend').onclick=async function(){
   if(res.error) throw res.error;
   // მეილის გაგზავნა Edge Function-ით (თუ არ არსებობს — შეკვეთა მაინც შენახულია)
   try{var atts=[],n=1;for(var k in rqImgs){var parts=(''+rqImgs[k]).split(',');if(parts[1])atts.push({filename:'foto'+(n++)+'.jpg',content:parts[1]});}
-   await fetch('https://mhyoqypzacvztwhntsvv.supabase.co/functions/v1/send-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:'Новый заказ — '+($('cName').value||''),text:orderText(),attachments:atts})});}catch(_e){}
+   await fetch('https://mhyoqypzacvztwhntsvv.supabase.co/functions/v1/smooth-action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:'Новый заказ — '+($('cName').value||''),text:orderText(),attachments:atts})});}catch(_e){}
   document.querySelector('.wrap').innerHTML='<div style="max-width:520px;margin:60px auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:16px;padding:44px 28px"><div style="font-size:52px">✅</div><h2 style="color:var(--green-d);margin:12px 0 6px">მოთხოვნა გაიგზავნა!</h2><p class="muted">მადლობა — RAM IMPEX მალე დაგიკავშირდებათ.</p><a class="btn" href="/" style="display:inline-block;margin-top:18px;text-decoration:none">← მთავარ გვერდზე</a></div>';
   window.scrollTo(0,0);
  }catch(e){ alert('ვერ გაიგზავნა: '+(e.message||e)); btn.disabled=false; btn.textContent=old; }
