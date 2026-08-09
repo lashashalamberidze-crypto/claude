@@ -147,8 +147,10 @@ const PLABEL={usdRub:'1 USD = ₽',usdGel:'USD → ₾',transpUsd:'ტრან�
 const PORDER=['usdRub','usdGel','transpUsd','container','setkaRub','vat','profit','step'];
 function calcRow(d,it){
   const p=d.params;let box,setka,transp;
+  // ტრანსპ. 1 ცალზე = ტრანსპ.სულ ÷ ინდივიდუალური ტევადობა (it.cap); თუ ცარიელია — ნაგულისხმევი p.container
+  const perCont=(it.cap!=null&&it.cap!==''&&+it.cap>0)?+it.cap:p.container;
   if(it.setkaOnly){box=0;setka=(+it.rub||0)/p.usdRub;transp=0;}
-  else{box=(+it.rub||0)/p.usdRub;setka=d.hasSetka?(p.setkaRub/p.usdRub):0;transp=p.transpUsd/p.container;}
+  else{box=(+it.rub||0)/p.usdRub;setka=d.hasSetka?(p.setkaRub/p.usdRub):0;transp=perCont?p.transpUsd/perCont:0;}
   const sub=box+setka+transp,vat=sub*p.vat,profit=(sub+vat)*p.profit,totUsd=sub+vat+profit,totGel=totUsd*p.usdGel;
   const price=Math.ceil(totGel/p.step-1e-9)*p.step;
   return {box,setka,transp,vat,profit,totUsd,totGel,price:Math.round(price*100)/100};
@@ -200,7 +202,7 @@ function renderCat(){
   h+='<div class="card parambox"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2>⚙️ პარამეტრები — '+esc(d.name)+'</h2><span class="saveflag" id="saveflag"></span></div><div class="prow" style="margin-top:8px">';
   PORDER.forEach(k=>{if(d.params[k]==null)return;const step=(k==='vat'||k==='profit'||k==='step'||k==='usdGel')?'0.01':'1';
     h+='<div class="f"><label>'+PLABEL[k]+'</label><input type="number" step="'+step+'" value="'+d.params[k]+'" data-pk="'+k+'"></div>';});
-  h+='</div><div class="muted" style="margin-top:8px;font-size:12px">ტრანსპ. 1 ცალზე: <b>'+(d.params.transpUsd/d.params.container).toFixed(4)+' $</b> · ლოგიკა: RUB÷'+d.params.usdRub+(d.hasSetka?' + სეტკა(₽÷'+d.params.usdRub+')':'')+' + ტრანსპ → +დღგ → +მოგება → ×'+d.params.usdGel+' → მრგვალდება '+d.params.step+'-ზე</div></div>';
+  h+='</div><div class="muted" style="margin-top:8px;font-size:12px">ტრანსპ. 1 ცალზე = ტრანსპ.სულ ÷ თითო ყუთის <b>„კონტ. ცალი"</b> (თუ ცარიელია — ნაგულისხმევი '+d.params.container+') · ლოგიკა: RUB÷'+d.params.usdRub+(d.hasSetka?' + სეტკა(₽÷'+d.params.usdRub+')':'')+' + ტრანსპ → +დღგ → +მოგება → ×'+d.params.usdGel+' → მრგვალდება '+d.params.step+'-ზე</div></div>';
   if(d.note)h+='<div class="card" style="background:#FFF7D6;border-color:#E6C200;font-size:12px;color:#5a4b00;padding:10px 14px">📋 <b>შენიშვნა:</b> '+esc(d.note)+'</div>';
   h+='<div class="card"><div class="row" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><button class="btn line sm" data-add>+ პროდუქტის დამატება</button><input id="cq" placeholder="🔍 ძებნა კოდით/ზომით (ამ ჯგუფში)" style="max-width:280px"><span class="muted" style="align-self:center;font-size:11.5px">🔵 დოლარი · 🟢 ფასი ₾ (ავტო) · 🟡 ხელით</span></div>';
   h+='<div class="scroll"><table id="catTbl"><thead><tr><th>№</th><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>მარკა</th><th>ფერი</th><th class="right">RUB</th><th class="right" title="რამდენი ეტევა კონტეინერში">კონტ. ცალი</th><th class="right usdcol">ყუთი $</th>'+(d.hasSetka?'<th class="right usdcol">სეტკა $</th>':'')+'<th class="right usdcol">ტრანსპ $</th><th class="right usdcol">დღგ $</th><th class="right usdcol">მოგება $</th><th class="right usdcol">ჯამი $</th><th class="right">ჯამი ₾</th><th class="right finalcol">ფასი ₾ (ავტო)</th><th class="right">ფასი ₾ (ხელით)</th><th></th></tr></thead><tbody id="catRows"></tbody></table></div></div>';
