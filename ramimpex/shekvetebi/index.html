@@ -73,6 +73,7 @@ async function load(){
  $('refresh').onclick=load;
  app.querySelectorAll('[data-seen]').forEach(b=>b.onclick=async()=>{b.disabled=true;await sb.from('orders').update({status:'seen'}).eq('id',b.dataset.seen);load();});
 }
-(async()=>{const {data}=await sb.auth.getSession();if(data.session)load();else loginView();})();
+loginView();  // ფორმა მაშინვე ჩანს
+(async()=>{try{const {data}=await sb.auth.getSession();if(data&&data.session)load();}catch(e){console.error(e);}})();
 </script>
 </body></html>
