@@ -132,7 +132,7 @@
       <div class="crow"><div class="ic"><svg width="20" height="20" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke-linecap="round"/></svg></div><div><div class="lb2">სამუშაო საათები</div><div class="vl">ორშ.–შაბ. · 10:00–19:00</div></div></div>
     </div>
     <form class="form" id="reqForm">
-      <h3>განაცხადის გაგზავნა</h3><p>შეავსეთ — გაიხსნება ელფოსტის აპლიკაცია მზა წერილით.</p>
+      <h3>განაცხადის გაგზავნა</h3><p>შეავსეთ და გამოგვიგზავნეთ — მალე დაგიკავშირდებით.</p>
       <div class="field"><label>სახელი / კომპანია</label><input name="name" required placeholder="თქვენი სახელი ან კომპანია"></div>
       <div class="field"><label>ტელეფონი ან ელფოსტა</label><input name="contact" required placeholder="+995… ან you@mail.com"></div>
       <div class="field"><label>შეტყობინება</label><textarea name="msg" placeholder="რით შეგვიძლია დაგეხმაროთ?"></textarea></div>
@@ -178,12 +178,21 @@
     wrap.appendChild(el);
   });
 
-  document.getElementById('reqForm').addEventListener('submit',function(e){
-    e.preventDefault();var f=e.target;
-    var body='სახელი/კომპანია: '+f.name.value+'\nკონტაქტი: '+f.contact.value+'\n\n'+(f.msg.value||'');
-    window.location.href='mailto:ramimpexltd@gmail.com?subject='+encodeURIComponent('განაცხადი — RAM IMPEX საიტიდან')+'&body='+encodeURIComponent(body);
+  document.getElementById('reqForm').addEventListener('submit',async function(e){
+    e.preventDefault();var f=e.target;var btn=f.querySelector('.btn-primary,button[type=submit]');var old=btn?btn.textContent:'';
+    if(btn){btn.disabled=true;btn.textContent='⏳ იგზავნება…';}
+    try{
+      if(!window.sb) throw new Error('კავშირი ვერ დამყარდა — სცადე განახლება (F5)');
+      var r=await window.sb.from('orders').insert({direction:'contact',cust_name:f.name.value||null,cust_phone:f.contact.value||null,req_title:'კონტაქტი (საიტიდან)',req_desc:f.msg.value||null,items:[]});
+      if(r.error) throw r.error;
+      f.innerHTML='<div style="text-align:center;padding:24px 6px"><div style="font-size:46px">✅</div><h3 style="color:#fff;margin:8px 0">გაიგზავნა!</h3><p style="color:#a9b8ae">მადლობა — RAM IMPEX მალე დაგიკავშირდებათ.</p></div>';
+    }catch(err){alert('ვერ გაიგზავნა: '+(err.message||err));if(btn){btn.disabled=false;btn.textContent=old;}}
   });
 })();
+</script>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/+esm";
+window.sb=createClient("https://mhyoqypzacvztwhntsvv.supabase.co","sb_publishable_FXhFmDRboFeOEqxyvwUePg_SgIwnmmM");
 </script>
 <a href="/shekvetebi/" style="position:fixed;left:10px;bottom:10px;z-index:9999;font-size:11px;color:#8a9a90;text-decoration:none;background:rgba(255,255,255,.9);padding:5px 10px;border-radius:8px;border:1px solid #e0e6e2;font-family:system-ui,'Noto Sans Georgian',sans-serif">🔒 ადმინი — შეკვეთები</a>
 </body>
