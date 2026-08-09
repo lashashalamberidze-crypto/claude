@@ -42,11 +42,13 @@ td.right,th.right{text-align:right}
 .parambox .prow{display:flex;gap:12px;flex-wrap:wrap}
 .parambox .f{flex:1;min-width:110px}.parambox .f input{padding:8px 10px}
 .scroll{overflow-x:auto}
-#catTbl{min-width:900px;font-size:12.5px}
-#catTbl th{white-space:nowrap;font-size:11.5px}
-#catTbl td{padding:4px 6px;border-bottom:1px solid #eef4f0}
-#catTbl input{padding:6px 7px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:12.5px}
+#catTbl{min-width:760px;font-size:10.5px}
+#catTbl th{white-space:nowrap;font-size:9px;padding:4px 4px;letter-spacing:-.01em}
+#catTbl td{padding:2px 4px;border-bottom:1px solid #eef4f0}
+#catTbl input{padding:4px 5px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:10.5px}
 #catTbl input[data-f=rub],#catTbl input[data-f=pfinal],#catTbl input[data-f=cap]{text-align:right}
+#catTbl input[data-f=cap]{background:#fff7df;border-color:#e6c98a}
+.capcol{background:#fffdf3}
 .usdcol{background:#eef4fb;color:#25507a}
 .finalcol{background:#f2faf5;font-weight:800;color:var(--green-d)}
 #catTbl input[data-f=pfinal]{background:#fffbea}
@@ -210,17 +212,17 @@ function renderCat(){
     d.items.forEach((it,idx)=>{
       if(q && ((it.code||'')+' '+(it.size||'')+' '+(it.name||'')).toLowerCase().indexOf(q)<0) return;
       const c=calcRow(d,it);
-      rh+='<tr><td>'+(idx+1)+'</td><td><input value="'+esc(ruCode(it.code))+'" style="width:74px" data-f="code" data-i="'+idx+'"></td>'+
-        '<td><input value="'+esc(it.name||'')+'" style="min-width:150px" data-f="name" data-i="'+idx+'">'+(it.pack?'<div class="muted" style="font-size:9.5px;margin-top:2px">📦 '+esc(it.pack)+'</div>':'')+'</td>'+
-        '<td><input value="'+esc(it.size||'')+'" style="width:96px" data-f="size" data-i="'+idx+'"></td>'+
-        '<td><input value="'+esc(it.mark||'')+'" style="width:66px" data-f="mark" data-i="'+idx+'"></td>'+
-        '<td><input value="'+esc(it.color||'')+'" style="width:62px" data-f="color" data-i="'+idx+'"></td>'+
-        '<td class="right"><input type="number" step="0.01" value="'+(it.rub!=null?it.rub:'')+'" style="width:72px" data-f="rub" data-i="'+idx+'"></td>'+
-        '<td class="right"><input type="number" step="1" placeholder="ცალი" value="'+(it.cap!=null&&it.cap!==''?it.cap:'')+'" style="width:72px" data-f="cap" data-i="'+idx+'"></td>'+
+      rh+='<tr><td>'+(idx+1)+'</td><td><input value="'+esc(ruCode(it.code))+'" style="width:64px" data-f="code" data-i="'+idx+'"></td>'+
+        '<td><input value="'+esc(it.name||'')+'" style="min-width:120px" data-f="name" data-i="'+idx+'">'+(it.pack?'<div class="muted" style="font-size:9px;margin-top:1px">📦 '+esc(it.pack)+'</div>':'')+'</td>'+
+        '<td><input value="'+esc(it.size||'')+'" style="width:82px" data-f="size" data-i="'+idx+'"></td>'+
+        '<td><input value="'+esc(it.mark||'')+'" style="width:50px" data-f="mark" data-i="'+idx+'"></td>'+
+        '<td><input value="'+esc(it.color||'')+'" style="width:50px" data-f="color" data-i="'+idx+'"></td>'+
+        '<td class="right"><input type="number" step="0.01" value="'+(it.rub!=null?it.rub:'')+'" style="width:58px" data-f="rub" data-i="'+idx+'"></td>'+
+        '<td class="right capcol"><input type="number" step="1" placeholder="ცალი" title="რამდენი ეტევა კონტეინერში (ინდივიდ.)" value="'+(it.cap!=null&&it.cap!==''?it.cap:'')+'" style="width:60px" data-f="cap" data-i="'+idx+'"></td>'+
         '<td class="right usdcol">'+c.box.toFixed(4)+'</td>'+(d.hasSetka?'<td class="right usdcol">'+c.setka.toFixed(4)+'</td>':'')+
         '<td class="right usdcol">'+c.transp.toFixed(4)+'</td><td class="right usdcol">'+c.vat.toFixed(4)+'</td><td class="right usdcol">'+c.profit.toFixed(4)+'</td><td class="right usdcol">'+c.totUsd.toFixed(4)+'</td>'+
         '<td class="right">'+c.totGel.toFixed(4)+'</td><td class="right finalcol">'+money(c.price)+'</td>'+
-        '<td class="right"><input type="number" step="0.01" placeholder="'+money(c.price)+'" value="'+(it.pfinal!=null&&it.pfinal!==''?it.pfinal:'')+'" style="width:82px" data-f="pfinal" data-i="'+idx+'"></td>'+
+        '<td class="right"><input type="number" step="0.01" placeholder="'+money(c.price)+'" value="'+(it.pfinal!=null&&it.pfinal!==''?it.pfinal:'')+'" style="width:64px" data-f="pfinal" data-i="'+idx+'"></td>'+
         '<td class="right"><button class="btn danger sm" data-del="'+idx+'">✕</button></td></tr>';
     });
     rowsHost.innerHTML=rh||'<tr><td colspan="18" class="empty">ვერ მოიძებნა</td></tr>';
