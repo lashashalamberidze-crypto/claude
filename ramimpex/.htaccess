@@ -1,8 +1,11 @@
 # RAM IMPEX — always serve fresh HTML after deploys (no stale cache)
 
-# NOTE: http→https redirect is DISABLED until the SSL certificate actually serves
-# HTTPS for ramimpex.com.ge (currently "site doesn't support secure connection").
-# Re-enable only after https://ramimpex.com.ge loads with a valid padlock.
+# Force HTTPS (SSL certificate is active for ramimpex.com.ge)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} off
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+</IfModule>
 
 # Browsers/proxies: never cache HTML (static assets in /img can still cache)
 <IfModule mod_headers.c>
