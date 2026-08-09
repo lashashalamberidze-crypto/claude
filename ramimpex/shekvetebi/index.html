@@ -31,11 +31,14 @@ th{background:#f2f9f5;color:var(--green-d)}
 .ov.on{display:flex}.ov img{max-width:92vw;max-height:90vh;border-radius:10px}
 .empty{text-align:center;color:var(--muted);padding:40px}
 .ru{background:#f7fbf9;border:1px dashed #cfe6d8;border-radius:8px;padding:8px 10px;font-size:12px;color:#33413a;margin-top:8px;white-space:pre-wrap}
+#printArea{display:none}
+@media print{body>*{display:none!important}#printArea{display:block!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head>
 <body>
 <div class="top"><div><div class="lg">RAM IMPEX</div><div class="su">შეკვეთები — ადმინი</div></div><button class="btn line sm" id="logout" style="display:none">გასვლა</button></div>
 <div class="wrap" id="app"><div class="empty">იტვირთება…</div></div>
 <div class="ov" id="ov"><img id="ovImg" src=""></div>
+<div id="printArea"></div>
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/+esm";
 const sb=createClient("https://mhyoqypzacvztwhntsvv.supabase.co","sb_publishable_FXhFmDRboFeOEqxyvwUePg_SgIwnmmM",{auth:{persistSession:true,autoRefreshToken:true}});
@@ -82,7 +85,7 @@ function orderCard(o){
  const imgs=(o.images||[]).map(u=>'<img src="'+u+'" onclick="zoom(this.src)">').join('');
  return '<div class="ord'+(isNew?' new':'')+'" data-id="'+o.id+'"><div class="h"><div><div class="who">'+esc(o.cust_name||'—')+' <span class="pill'+(isNew?' new':'')+'">'+(isNew?'ახალი':esc(o.status))+'</span> <span class="pill">'+esc(DIR_RU[o.direction]||o.direction||'')+'</span></div>'+
   '<div class="meta">📞 '+esc(o.cust_phone||'—')+' · ✉ '+esc(o.cust_email||'—')+' · '+esc((o.created_at||'').replace('T',' ').slice(0,16))+'</div></div>'+
-  '<div class="acts"><button class="btn line sm" data-copy="'+o.id+'">📋 копировать (RU)</button>'+(isNew?'<button class="btn sm" data-seen="'+o.id+'">✔ ნანახია</button>':'')+'</div></div>'+
+  '<div class="acts"><button class="btn line sm" data-print="'+o.id+'">🖨 PDF</button><button class="btn line sm" data-copy="'+o.id+'">📋 копировать (RU)</button>'+(isNew?'<button class="btn sm" data-seen="'+o.id+'">✔ ნანახია</button>':'')+'</div></div>'+
   (items?'<table><thead><tr><th>#</th><th>Код</th><th>Размер</th><th>Категория</th><th>Доп.</th></tr></thead><tbody>'+items+'</tbody></table>':'')+
   (o.req_title||o.req_desc?'<div style="margin-top:8px;font-size:13px"><b>Индив. запрос:</b> '+esc(tr(o.req_title||''))+' '+esc(tr(o.req_desc||''))+'</div>':'')+
   (imgs?'<div class="imgs">'+imgs+'</div>':'')+'</div>';
@@ -99,6 +102,21 @@ async function load(){
  window.__orders=data;
  app.querySelectorAll('[data-seen]').forEach(b=>b.onclick=async()=>{b.disabled=true;await sb.from('orders').update({status:'seen'}).eq('id',b.dataset.seen);load();});
  app.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{const o=(window.__orders||[]).find(x=>x.id===b.dataset.copy);if(!o)return;try{await navigator.clipboard.writeText(ruText(o));b.textContent='✔ დაკოპირდა';setTimeout(()=>b.textContent='📋 копировать (RU)',1500);}catch(e){alert(ruText(o));}});
+ app.querySelectorAll('[data-print]').forEach(b=>b.onclick=()=>{const o=(window.__orders||[]).find(x=>x.id===b.dataset.print);if(o)printOrder(o);});
+}
+function printOrder(o){
+ const items=(o.items||[]).map((it,i)=>{const name=it.name?(NAME_RU[it.name]||it.name):it.code;const ex=[];if(it.qty)ex.push('Кол-во: '+tr(it.qty));if(it.brand)ex.push('Брендир.: да');if(it.note)ex.push(tr(it.note));
+  return '<tr><td style="border:1px solid #ccc;padding:5px 8px">'+(i+1)+'</td><td style="border:1px solid #ccc;padding:5px 8px"><b>'+esc(name)+'</b></td><td style="border:1px solid #ccc;padding:5px 8px">'+esc(tr(it.size||''))+(it.type?' '+esc(it.type):'')+'</td><td style="border:1px solid #ccc;padding:5px 8px">'+esc(catRu(it.cat))+'</td><td style="border:1px solid #ccc;padding:5px 8px">'+esc(ex.join(' · '))+'</td></tr>';}).join('');
+ const imgs=(o.images||[]).map(u=>'<img src="'+u+'" style="width:150px;height:150px;object-fit:contain;border:1px solid #ccc;margin:4px">').join('');
+ $('printArea').innerHTML='<div style="font-family:Arial,sans-serif;padding:24px;color:#111">'+
+  '<div style="border-bottom:3px solid #0B6B3C;padding-bottom:8px;margin-bottom:12px"><span style="font-size:24px;font-weight:800;color:#0B6B3C">RAM IMPEX</span> &nbsp; Заказ</div>'+
+  '<p><b>Заказчик:</b> '+esc(o.cust_name||'—')+' &nbsp; 📞 '+esc(o.cust_phone||'—')+' &nbsp; ✉ '+esc(o.cust_email||'—')+'</p>'+
+  '<p><b>Направление:</b> '+esc(DIR_RU[o.direction]||o.direction||'')+' &nbsp;·&nbsp; '+esc((o.created_at||'').replace('T',' ').slice(0,16))+'</p>'+
+  (items?'<table style="border-collapse:collapse;width:100%;font-size:13px;margin-top:8px"><thead><tr><th style="border:1px solid #ccc;padding:5px 8px;background:#eef7f1">#</th><th style="border:1px solid #ccc;padding:5px 8px;background:#eef7f1">Код</th><th style="border:1px solid #ccc;padding:5px 8px;background:#eef7f1">Размер</th><th style="border:1px solid #ccc;padding:5px 8px;background:#eef7f1">Категория</th><th style="border:1px solid #ccc;padding:5px 8px;background:#eef7f1">Доп.</th></tr></thead><tbody>'+items+'</tbody></table>':'')+
+  (o.req_title||o.req_desc?'<p style="margin-top:10px"><b>Индивидуальный запрос:</b> '+esc(tr(o.req_title||''))+' '+esc(tr(o.req_desc||''))+'</p>':'')+
+  (imgs?'<div style="margin-top:10px">'+imgs+'</div>':'')+
+  '<p style="margin-top:16px;border-top:2px solid #0F8A4D;padding-top:8px;font-size:12px;color:#555">RAM IMPEX · 595 533 500 · ramimpexltd@gmail.com</p></div>';
+ window.print();
 }
 loginView();
 (async()=>{try{const {data}=await sb.auth.getSession();if(data&&data.session)load();}catch(e){console.error(e);}})();
