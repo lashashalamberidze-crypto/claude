@@ -384,10 +384,20 @@ async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამ�
 }
 function renderInvList(){const host=$('iList');if(!host)return;if(!INVOICES.length){host.innerHTML='<div class="empty" style="padding:16px">ჯერ ინვოისი არ არის.</div>';return;}
   host.innerHTML='<div class="scroll"><table><thead><tr><th>№</th><th>თარიღი</th><th>მყიდველი</th><th class="right">სულ ₾</th><th></th></tr></thead><tbody>'+
-   INVOICES.map(inv=>'<tr><td><b>'+esc(inv.no||'—')+'</b></td><td>'+esc(inv.date||'')+'</td><td>'+esc(inv.cust||'—')+'</td><td class="right">'+money(inv.grand)+'</td><td class="right" style="white-space:nowrap"><button class="btn sm" data-ed="'+esc(inv.id)+'">✏ რედაქტ.</button> <button class="btn line sm" data-rp="'+esc(inv.id)+'">🖨</button></td></tr>').join('')+
+   INVOICES.map(inv=>'<tr><td><b>'+esc(inv.no||'—')+'</b></td><td>'+esc(inv.date||'')+'</td><td>'+esc(inv.cust||'—')+'</td><td class="right">'+money(inv.grand)+'</td><td class="right" style="white-space:nowrap"><button class="btn sm" data-ed="'+esc(inv.id)+'">✏ რედაქტ.</button> <button class="btn line sm" data-rp="'+esc(inv.id)+'">🖨</button> <button class="btn danger sm" data-del="'+esc(inv.id)+'">🗑</button></td></tr>').join('')+
    '</tbody></table></div>';
   host.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{const inv=INVOICES.find(x=>String(x.id)===b.dataset.rp);if(inv)printInvoice(inv);});
   host.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>{const inv=INVOICES.find(x=>String(x.id)===b.dataset.ed);if(inv)editInvoice(inv);});
+  host.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteInvoice(b.dataset.del));
+}
+async function deleteInvoice(id){
+  const inv=INVOICES.find(x=>String(x.id)===String(id));if(!inv)return;
+  if(!confirm('წავშალო ინვოისი № '+(inv.no||inv.id)+'?\nეს მოქმედება შეუქცევადია.'))return;
+  try{const {error}=await sb.from('invoices').delete().eq('id',inv.id);if(error)throw error;
+    INVOICES=INVOICES.filter(x=>String(x.id)!==String(id));
+    if(String(editingInvId)===String(id)){editingInvId=null;invDraft=[];const eb=$('editBanner');if(eb)eb.style.display='none';renderInvLines();}
+    renderInvList();
+  }catch(e){alert('ვერ წაიშალა: '+(e.message||e));}
 }
 function printInvoice(inv){
   $('printArea').innerHTML=invoiceHTML(inv);
