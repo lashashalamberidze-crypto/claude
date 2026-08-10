@@ -327,7 +327,7 @@ function renderInvoice(){
    '<div class="row" style="margin-top:12px"><button class="btn" id="iPrint">🖨 ბეჭდვა / PDF</button><button class="btn line" id="iSave">💾 შენახვა</button><button class="btn danger" id="iClear">🗑 გასუფთავება</button></div></div>'+
    '<div class="card"><h2>📚 ბოლო ინვოისები</h2><div id="iList"></div></div>';
   $('iAdd').onclick=()=>{const code=$('iPick').value;if(!code)return;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ex=invDraft.find(l=>l.code===code);if(ex)ex.qty+=qty;else invDraft.push({code,price:p.price,qty});renderInvLines();};
-  $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}$('printArea').innerHTML=invoiceHTML(currentInv());window.print();};
+  $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}printInvoice(currentInv());};
   $('iSave').onclick=saveInvoice;
   $('iClear').onclick=()=>{invDraft=[];editingInvId=null;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iNo','brandAmt','transAmt'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();};
   ['brandAmt','transAmt'].forEach(id=>$(id).oninput=renderInvLines);
@@ -365,8 +365,18 @@ function renderInvList(){const host=$('iList');if(!host)return;if(!INVOICES.leng
   host.innerHTML='<div class="scroll"><table><thead><tr><th>№</th><th>თარიღი</th><th>მყიდველი</th><th class="right">სულ ₾</th><th></th></tr></thead><tbody>'+
    INVOICES.map(inv=>'<tr><td><b>'+esc(inv.no||'—')+'</b></td><td>'+esc(inv.date||'')+'</td><td>'+esc(inv.cust||'—')+'</td><td class="right">'+money(inv.grand)+'</td><td class="right" style="white-space:nowrap"><button class="btn sm" data-ed="'+esc(inv.id)+'">✏ რედაქტ.</button> <button class="btn line sm" data-rp="'+esc(inv.id)+'">🖨</button></td></tr>').join('')+
    '</tbody></table></div>';
-  host.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{const inv=INVOICES.find(x=>String(x.id)===b.dataset.rp);if(inv){$('printArea').innerHTML=invoiceHTML(inv);window.print();}});
+  host.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{const inv=INVOICES.find(x=>String(x.id)===b.dataset.rp);if(inv)printInvoice(inv);});
   host.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>{const inv=INVOICES.find(x=>String(x.id)===b.dataset.ed);if(inv)editInvoice(inv);});
+}
+function printInvoice(inv){
+  $('printArea').innerHTML=invoiceHTML(inv);
+  const fname=((inv&&inv.no)?(''+inv.no):'ინვოისი').replace(/[\\/:*?"<>|]/g,'-').trim();
+  const prev=document.title;
+  document.title=fname;
+  const restore=()=>{document.title=prev;window.removeEventListener('afterprint',restore);};
+  window.addEventListener('afterprint',restore);
+  window.print();
+  setTimeout(restore,4000);
 }
 function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map((l,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+esc(l.name||'')+(l.color?' · '+esc(l.color):'')+'</td><td>'+esc(l.size||'')+'</td><td style="text-align:right">'+money(l.price)+'</td><td style="text-align:right">'+l.qty+'</td><td style="text-align:right">'+money(l.price*l.qty)+'</td></tr>').join('');
   return '<div style="max-width:720px;margin:0 auto;color:#14261C;padding:20px;font-family:system-ui,\'Noto Sans Georgian\',sans-serif">'+
