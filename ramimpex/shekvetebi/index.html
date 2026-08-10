@@ -308,7 +308,10 @@ function invTotals(){let sub=0;invDraft.forEach(l=>sub+=l.price*l.qty);const vat
   const bAmt=parseFloat(($('brandAmt')||{}).value)||0, tAmt=parseFloat(($('transAmt')||{}).value)||0;
   return {sub,vat,brandAmt:bAmt,transAmt:tAmt,grand:sub+bAmt+tAmt};}
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
-function nextInvNo(){let mx=0;(INVOICES||[]).forEach(v=>{const n=parseInt((''+(v.no||'')).replace(/\D/g,''),10);if(!isNaN(n)&&n>mx)mx=n;});const n=mx+1;return ('000'+n).slice(-3);}
+function invSeqOf(no){const s=(''+(no||''));const last=s.split('-').pop().replace(/\D/g,'');const n=parseInt(last,10);return isNaN(n)?0:n;}
+function nextInvSeq(){let mx=0;(INVOICES||[]).forEach(v=>{const n=invSeqOf(v.no);if(n>mx)mx=n;});return mx+1;}
+function makeInvNo(dateStr,seq){return 'RAMIMPEX-'+(dateStr||todayStr())+'-'+('000'+seq).slice(-4);}
+function nextInvNo(){return makeInvNo(todayStr(),nextInvSeq());}
 function renderInvoice(){
   invEl.innerHTML=
    '<div class="card"><h2>🧾 ინვოისი</h2>'+
@@ -328,6 +331,7 @@ function renderInvoice(){
   $('iSave').onclick=saveInvoice;
   $('iClear').onclick=()=>{invDraft=[];editingInvId=null;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iNo','brandAmt','transAmt'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();};
   ['brandAmt','transAmt'].forEach(id=>$(id).oninput=renderInvLines);
+  if(!editingInvId&&$('iDate'))$('iDate').onchange=()=>{$('iNo').value=makeInvNo($('iDate').value,nextInvSeq());};
   renderInvLines();renderInvList();
 }
 function renderInvLines(){
