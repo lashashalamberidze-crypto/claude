@@ -298,11 +298,12 @@ function invTotals(){let sub=0;invDraft.forEach(l=>sub+=l.price*l.qty);const vat
   const bAmt=parseFloat(($('brandAmt')||{}).value)||0, tAmt=parseFloat(($('transAmt')||{}).value)||0;
   return {sub,vat,brandAmt:bAmt,transAmt:tAmt,grand:sub+bAmt+tAmt};}
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+function nextInvNo(){let mx=0;(INVOICES||[]).forEach(v=>{const n=parseInt((''+(v.no||'')).replace(/\D/g,''),10);if(!isNaN(n)&&n>mx)mx=n;});const n=mx+1;return ('000'+n).slice(-3);}
 function renderInvoice(){
   invEl.innerHTML=
    '<div class="card"><h2>🧾 ინვოისი</h2>'+
    '<div id="editBanner" style="display:'+(editingInvId?'':'none')+';background:#FFF0CC;color:#8a6a00;font-weight:700;border-radius:8px;padding:7px 12px;margin-bottom:8px;font-size:13px">✏ რედაქტირდება</div>'+
-   '<div class="row"><div><label>ინვოისის №</label><input id="iNo" placeholder="მაგ. 001"></div><div><label>თარიღი</label><input id="iDate" type="date" value="'+todayStr()+'"></div></div>'+
+   '<div class="row"><div><label>ინვოისის № (ავტომატური)</label><input id="iNo" value="'+(editingInvId?'':nextInvNo())+'" placeholder="ავტომ."></div><div><label>თარიღი</label><input id="iDate" type="date" value="'+todayStr()+'"></div></div>'+
    '<div class="row"><div><label>მყიდველი</label><input id="iCust" placeholder="შპს ..."></div><div><label>ს/კ (არჩ.)</label><input id="iId" placeholder="საიდ. კოდი"></div></div>'+
    '<label style="margin-top:10px">პროდუქტის დამატება</label><div class="row"><div style="flex:3"><select id="iPick">'+invPickerOptions()+'</select></div><div style="flex:0 0 90px;min-width:80px"><input id="iQty" type="number" min="1" value="1"></div><div style="flex:0 0 auto"><button class="btn" id="iAdd" style="margin-top:0">＋ დამატება</button></div></div>'+
    '</div>'+
