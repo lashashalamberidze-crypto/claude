@@ -338,7 +338,7 @@ function renderInvLines(){
   const tb=$('iRows');$('iEmpty').style.display=invDraft.length?'none':'block';$('iTbl').style.display=invDraft.length?'':'none';
   tb.innerHTML=invDraft.map((l,i)=>{const p=byCode(l.code)||{};return '<tr><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+esc(l.name||p.name||'')+(p.color?' <span class="muted">· '+esc(p.color)+'</span>':'')+'</td><td>'+esc(l.size||p.size||'')+'</td>'+
     '<td class="right"><input type="number" step="0.01" value="'+l.price+'" style="width:80px;text-align:right;background:#fffbea" data-p="'+i+'"></td>'+
-    '<td class="right"><input type="number" min="1" value="'+l.qty+'" style="width:64px;text-align:right" data-q="'+i+'"></td>'+
+    '<td class="right"><input type="number" min="1" value="'+l.qty+'" style="width:96px;min-width:96px;text-align:right" data-q="'+i+'"></td>'+
     '<td class="right">'+money(l.price*l.qty)+'</td><td class="right"><button class="btn danger sm" data-x="'+i+'">✕</button></td></tr>';}).join('');
   tb.querySelectorAll('input[data-q]').forEach(inp=>inp.oninput=()=>{invDraft[+inp.dataset.q].qty=parseInt(inp.value)||1;renderInvLines();});
   tb.querySelectorAll('input[data-p]').forEach(inp=>inp.oninput=()=>{invDraft[+inp.dataset.p].price=parseFloat(inp.value)||0;renderInvLines();});
