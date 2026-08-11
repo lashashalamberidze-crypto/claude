@@ -52,6 +52,7 @@ td.right,th.right{text-align:right}
 .capcol{background:#fffdf3}
 .usdcol{background:#eef4fb;color:#25507a}
 .finalcol{background:#f2faf5;font-weight:800;color:var(--green-d)}
+.costcol{background:#fff4e0;font-weight:800;color:#8a5a00}
 #catTbl input[data-f=pfinal]{background:#fffbea}
 .saveflag{font-size:12px;font-weight:700;color:var(--green);margin-left:auto;align-self:center}
 .ttl{max-width:340px;margin-left:auto;margin-top:14px}
@@ -241,7 +242,7 @@ function renderCat(){
   h+='</div><div class="muted" style="margin-top:8px;font-size:12px">ტრანსპ. 1 ცალზე = ტრანსპ.სულ ÷ თითო ყუთის <b>„კონტ. ცალი"</b> (თუ ცარიელია — ნაგულისხმევი '+d.params.container+') · ლოგიკა: RUB÷'+d.params.usdRub+(d.hasSetka?' + სეტკა(₽÷'+d.params.usdRub+')':'')+' + ტრანსპ → +დღგ → +მოგება → ×'+d.params.usdGel+' → მრგვალდება '+d.params.step+'-ზე</div></div>';
   if(d.note)h+='<div class="card" style="background:#FFF7D6;border-color:#E6C200;font-size:12px;color:#5a4b00;padding:10px 14px">📋 <b>შენიშვნა:</b> '+esc(d.note)+'</div>';
   h+='<div class="card"><div class="row" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><button class="btn line sm" data-add>+ პროდუქტის დამატება</button><input id="cq" placeholder="🔍 ძებნა კოდით/ზომით (ამ ჯგუფში)" style="max-width:280px"><span class="muted" style="align-self:center;font-size:11.5px">🔵 დოლარი · 🟢 ფასი ₾ (ავტო) · 🟡 ხელით</span></div>';
-  h+='<div class="scroll"><table id="catTbl"><thead><tr><th>№</th><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>მარკა</th><th>ფერი</th><th class="right">RUB</th><th class="right" title="რამდენი ეტევა კონტეინერში">კონტ. ცალი</th><th class="right usdcol">ყუთი $</th>'+(d.hasSetka?'<th class="right usdcol">სეტკა $</th>':'')+'<th class="right usdcol">ტრანსპ $</th><th class="right usdcol">დღგ $</th><th class="right usdcol">მოგება $</th><th class="right usdcol">ჯამი $</th><th class="right">ჯამი ₾</th><th class="right finalcol">ფასი ₾ (ავტო)</th><th class="right finalcol">ფასი $ (ავტო)</th><th class="right">ფასი ₾ (ხელით)</th><th class="right">ფასი $ (ხელით)</th><th></th></tr></thead><tbody id="catRows"></tbody></table></div></div>';
+  h+='<div class="scroll"><table id="catTbl"><thead><tr><th>№</th><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>მარკა</th><th>ფერი</th><th class="right">RUB</th><th class="right" title="რამდენი ეტევა კონტეინერში">კონტ. ცალი</th><th class="right usdcol">ყუთი $</th>'+(d.hasSetka?'<th class="right usdcol">სეტკა $</th>':'')+'<th class="right usdcol">ტრანსპ $</th><th class="right usdcol">დღგ $</th><th class="right costcol" title="თვითღირებულება მოგებამდე (ყუთი+ტრანსპ+დღგ)">ჯამი $ მოგებამდე</th><th class="right costcol" title="თვითღირებულება მოგებამდე, ლარში">ჯამი ₾ მოგებამდე</th><th class="right usdcol">მოგება $</th><th class="right usdcol">ჯამი $</th><th class="right">ჯამი ₾</th><th class="right finalcol">ფასი ₾ (ავტო)</th><th class="right finalcol">ფასი $ (ავტო)</th><th class="right">ფასი ₾ (ხელით)</th><th class="right">ფასი $ (ხელით)</th><th></th></tr></thead><tbody id="catRows"></tbody></table></div></div>';
   body.innerHTML=h;
   const rowsHost=$('catRows');
   function paintRows(){
@@ -250,6 +251,7 @@ function renderCat(){
     d.items.forEach((it,idx)=>{
       if(q && ((it.code||'')+' '+(it.size||'')+' '+(it.name||'')).toLowerCase().indexOf(q)<0) return;
       const c=calcRow(d,it);
+      const pre=c.totUsd-c.profit, preGel=pre*(d.params.usdGel||0);
       rh+='<tr><td>'+(idx+1)+'</td><td><input value="'+esc(ruCode(it.code))+'" style="width:64px" data-f="code" data-i="'+idx+'"></td>'+
         '<td><input value="'+esc(it.name||'')+'" style="min-width:120px" data-f="name" data-i="'+idx+'">'+(it.pack?'<div class="muted" style="font-size:9px;margin-top:1px">📦 '+esc(it.pack)+'</div>':'')+'</td>'+
         '<td><input value="'+esc(it.size||'')+'" style="width:82px" data-f="size" data-i="'+idx+'"></td>'+
@@ -258,14 +260,16 @@ function renderCat(){
         '<td class="right"><input type="number" step="0.01" value="'+(it.rub!=null?it.rub:'')+'" style="width:58px" data-f="rub" data-i="'+idx+'"></td>'+
         '<td class="right capcol"><input type="number" step="1" placeholder="ცალი" title="რამდენი ეტევა კონტეინერში (ინდივიდ.)" value="'+(it.cap!=null&&it.cap!==''?it.cap:'')+'" style="width:60px" data-f="cap" data-i="'+idx+'"></td>'+
         '<td class="right usdcol">'+c.box.toFixed(4)+'</td>'+(d.hasSetka?'<td class="right usdcol">'+c.setka.toFixed(4)+'</td>':'')+
-        '<td class="right usdcol">'+c.transp.toFixed(4)+'</td><td class="right usdcol">'+c.vat.toFixed(4)+'</td><td class="right usdcol">'+c.profit.toFixed(4)+'</td><td class="right usdcol">'+c.totUsd.toFixed(4)+'</td>'+
+        '<td class="right usdcol">'+c.transp.toFixed(4)+'</td><td class="right usdcol">'+c.vat.toFixed(4)+'</td>'+
+        '<td class="right costcol">'+pre.toFixed(4)+'</td><td class="right costcol">'+money(preGel)+'</td>'+
+        '<td class="right usdcol">'+c.profit.toFixed(4)+'</td><td class="right usdcol">'+c.totUsd.toFixed(4)+'</td>'+
         '<td class="right">'+c.totGel.toFixed(4)+'</td><td class="right finalcol">'+money(c.price)+'</td>'+
         '<td class="right finalcol" style="color:#0B6B3C;font-weight:800">$'+(d.params.usdGel?(c.price/d.params.usdGel):0).toFixed(2)+'</td>'+
         '<td class="right"><input type="number" step="0.01" placeholder="'+money(c.price)+'" value="'+(it.pfinal!=null&&it.pfinal!==''?it.pfinal:'')+'" style="width:64px" data-f="pfinal" data-i="'+idx+'"></td>'+
         '<td class="right" style="color:#0B6B3C;font-weight:800">'+((it.pfinal!=null&&it.pfinal!=='')?'$'+(d.params.usdGel?((+it.pfinal)/d.params.usdGel):0).toFixed(2):'<span class="muted">—</span>')+'</td>'+
         '<td class="right"><button class="btn danger sm" data-del="'+idx+'">✕</button></td></tr>';
     });
-    rowsHost.innerHTML=rh||'<tr><td colspan="20" class="empty">ვერ მოიძებნა</td></tr>';
+    rowsHost.innerHTML=rh||'<tr><td colspan="22" class="empty">ვერ მოიძებნა</td></tr>';
     rowsHost.querySelectorAll('input[data-f]').forEach(inp=>inp.onchange=()=>{const it=d.items[+inp.dataset.i];const f=inp.dataset.f;
       if(f==='rub'){it[f]=inp.value===''?0:(parseFloat(inp.value)||0);}
       else if(f==='pfinal'||f==='cap'){it[f]=inp.value===''?'':(parseFloat(inp.value)||0);if(f==='cap')pushCapacity(it.code,it.cap);}
