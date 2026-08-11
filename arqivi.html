@@ -5,6 +5,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
   *{box-sizing:border-box;font-family:'Noto Sans Georgian',system-ui,-apple-system,"Segoe UI",sans-serif}
   body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:920px;margin:0 auto}
@@ -202,6 +203,32 @@ async function previewCounts(){
   g('archiveBtn').disabled=false;
 }
 
+// ── ლოკალური ქეშის გასუფთავება (სეზონური მოდულები) ──
+// აპი მონაცემს ღრუბლიდან კითხულობს, მაგრამ localStorage-ში ინახავს ასლს — არქივის შემდეგ
+// სწორედ ეს ასლი აჩვენებდა ძველ ციფრებს. ვშლით მხოლოდ სეზონურ გასაღებებს (პარამეტრები რჩება).
+const SEASONAL_LS_PREFIXES=[
+  'its_krepa_sessions','its_krepa_pending','its_krepa_payroll','its_krepa_filter',
+  'its_pallet_','its_current_pallet',
+  'its_gv_sales','its_gv_purchases','its_gv_inv','its_gv_pur_num',
+  'its_expenses','its_prepstore_usage',
+  'its_s__','its_sacwyobi_lots','its_sw_',
+  'its_agroshop','its_plantmon','its_phenocal',
+  'its_mvp_v39_inventory_checks'
+];
+function clearSeasonalLocal(){
+  var removed=0;
+  try{
+    var keys=[]; for(var i=0;i<localStorage.length;i++){ keys.push(localStorage.key(i)); }
+    keys.forEach(function(k){
+      if(!k) return;
+      for(var j=0;j<SEASONAL_LS_PREFIXES.length;j++){
+        if(k.indexOf(SEASONAL_LS_PREFIXES[j])===0){ try{ localStorage.removeItem(k); removed++; }catch(e){} break; }
+      }
+    });
+  }catch(e){}
+  return removed;
+}
+
 // ── ARCHIVE (snapshot all → insert → clear seasonal) ──
 async function doArchive(){
   var season=val('seasonName'); if(!season){ toast('ჩაწერე სეზონის სახელი','bad'); g('seasonName').focus(); return; }
@@ -235,7 +262,8 @@ async function doArchive(){
     if(clearErr.length){
       toast('არქივი შენახულია. ზოგი ცხრილი ვერ გასუფთავდა: '+clearErr.join(', '),'bad');
     }else{
-      toast('✅ სეზონი დაარქივდა და ცარიელი დაიწყო','good');
+      var rm=clearSeasonalLocal();
+      toast('✅ სეზონი დაარქივდა და ცარიელი დაიწყო'+(rm?(' · ლოკ. ქეში გასუფთავდა ('+rm+')'):''),'good');
     }
     g('previewBox').innerHTML=''; _preview=null;
     await loadArchives();
@@ -265,7 +293,8 @@ async function loadArchives(){
         '<td>'+(tot.rows!=null?tot.rows:'?')+' ჩანაწ. / '+(tot.tables!=null?tot.tables:'?')+' მოდ.</td>'+
         '<td><div class="mini">'+
           '<button class="blue" onclick="viewArchive(\''+esc(a.id)+'\')">👁️ ნახვა</button>'+
-          '<button class="green" onclick="downloadArchive(\''+esc(a.id)+'\')">⬇️ JSON</button>'+
+          '<button class="green" onclick="archiveToExcel(\''+esc(a.id)+'\')">⬇️ Excel</button>'+
+          '<button class="gray" onclick="downloadArchive(\''+esc(a.id)+'\')">⬇️ JSON</button>'+
           '<button class="sec" onclick="restoreArchive(\''+esc(a.id)+'\')">♻️ აღდგენა</button>'+
           '<button class="r" onclick="deleteArchive(\''+esc(a.id)+'\',\''+esc(a.season_name||'')+'\')">🗑</button>'+
         '</div></td>'+
@@ -298,6 +327,36 @@ async function downloadArchive(id){
   document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1500);
   toast('⬇️ ჩამოიტვირთა','good');
+}
+
+// ── EXCEL export of an archived season (styled, one sheet per module + overview) ──
+function _flattenRow(row){ var o={}; Object.keys(row||{}).forEach(function(k){ var v=row[k]; if(v&&typeof v==='object'){ try{ v=JSON.stringify(v); }catch(e){ v=String(v); } } o[k]=(v==null?'':v); }); return o; }
+function _styleHeader(ws,fill){ if(!ws||!ws['!ref']) return; var rng=XLSX.utils.decode_range(ws['!ref']); for(var c=rng.s.c;c<=rng.e.c;c++){ var addr=XLSX.utils.encode_cell({r:0,c:c}); var cell=ws[addr]; if(!cell) continue; cell.s={font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:fill||'F59E0B'}},alignment:{horizontal:'center',vertical:'center'}}; } ws['!freeze']={xSplit:0,ySplit:1,topLeftCell:'A2',activePane:'bottomLeft',state:'frozen'}; }
+function _autoCols(ws){ if(!ws||!ws['!ref']) return; var rng=XLSX.utils.decode_range(ws['!ref']); var cols=[]; for(var c=rng.s.c;c<=rng.e.c;c++){ var w=10; for(var r=rng.s.r;r<=rng.e.r;r++){ var cell=ws[XLSX.utils.encode_cell({r:r,c:c})]; if(cell&&cell.v!=null){ var l=String(cell.v).length; if(l>w) w=l; } } cols.push({wch:Math.min(46,w+2)}); } ws['!cols']=cols; }
+function _sheetName(label,used){ var n=String(label).replace(/[\\\/\?\*\[\]:]/g,'').replace(/[^Ⴀ-ჿ A-Za-z0-9._-]/g,'').trim()||'sheet'; n=n.slice(0,28); var base=n,i=2; while(used[n]){ n=base.slice(0,25)+'_'+(i++); } used[n]=1; return n; }
+async function archiveToExcel(id){
+  if(!window.XLSX){ toast('Excel ბიბლიოთეკა ვერ ჩაიტვირთა','bad'); return; }
+  toast('Excel მზადდება…');
+  var r=await sb.from(ARCH_TABLE).select('*').eq('id',id).eq('user_id',userId).maybeSingle();
+  if(r.error||!r.data){ toast('ვერ ჩაიტვირთა','bad'); return; }
+  var payload=r.data.payload||{};
+  var wb=XLSX.utils.book_new(), used={};
+  // overview sheet
+  var ov=[];
+  SEASON_TABLES.forEach(function(m){ if(payload[m.t]) ov.push({'მოდული':m.label,'ჩანაწერი':payload[m.t].length,'ტიპი':m.seasonal?'სეზონური':'ძირითადი'}); });
+  if(!ov.length) ov=[{'მოდული':'—','ჩანაწერი':0,'ტიპი':'—'}];
+  var wsO=XLSX.utils.json_to_sheet(ov); _styleHeader(wsO,'0F766E'); _autoCols(wsO);
+  XLSX.utils.book_append_sheet(wb,wsO,_sheetName('მიმოხილვა',used));
+  // one sheet per table that has rows
+  SEASON_TABLES.forEach(function(m){
+    var rows=payload[m.t]; if(!rows||!rows.length) return;
+    var flat=rows.map(_flattenRow);
+    var ws=XLSX.utils.json_to_sheet(flat); _styleHeader(ws, m.seasonal?'F59E0B':'2563EB'); _autoCols(ws);
+    XLSX.utils.book_append_sheet(wb,ws,_sheetName(m.label,used));
+  });
+  var fn='arqivi_'+String(r.data.season_name||'sezoni').replace(/[^\w-]+/g,'_')+'.xlsx';
+  try{ XLSX.writeFile(wb,fn); toast('⬇️ Excel ჩამოიტვირთა','good'); }
+  catch(e){ toast('Excel ვერ შეიქმნა','bad'); }
 }
 
 // ── RESTORE: re-insert archived seasonal rows back into their tables ──
@@ -337,6 +396,7 @@ async function deleteArchive(id,name){
 window.doLogin=doLogin; window.doLogout=doLogout; window.previewCounts=previewCounts;
 window.doArchive=doArchive; window.loadArchives=loadArchives; window.viewArchive=viewArchive;
 window.downloadArchive=downloadArchive; window.restoreArchive=restoreArchive; window.deleteArchive=deleteArchive;
+window.archiveToExcel=archiveToExcel;
 
 // ── auto-resume session ──
 window.addEventListener('load', async function(){
