@@ -24,7 +24,8 @@
     --shadow:0 8px 24px rgba(0,0,0,.4);
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-size:14px;
+  html{font-size:17.6px}
+  body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;
     font-family:"Noto Sans Georgian","BPG Nato",system-ui,-apple-system,"Segoe UI",sans-serif;
     line-height:1.45;-webkit-font-smoothing:antialiased}
   .wrap{max-width:1080px;margin:0 auto;padding:20px 18px 54px}
@@ -272,7 +273,7 @@
       <div class="dt"><div class="dt-time" id="clock">--:--:--</div><div class="dt-date" id="dateEl">—</div></div>
     </div>
     <div class="appbar-actions">
-      <button class="abtn guide" onclick="__go('guide')">📘 გზამკვლევი</button>
+      <a class="abtn guide" href="gzamkvlevi.pdf" target="_blank" rel="noopener">📘 გზამკვლევი</a>
       <a class="abtn site" href="https://agrointechsol.ge">🌐 agrointechsol.ge</a>
       <button class="abtn login" onclick="__go('login')">👤 შესვლა</button>
     </div>
