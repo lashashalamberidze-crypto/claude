@@ -6337,14 +6337,14 @@ window.renderHomeDashboard = function(){
     function matchC(prod){ if(!filtering) return true; return String(prod||'').trim().toLowerCase()===apCult.toLowerCase(); }
     // #DASH-CLOUD: ღრუბლიდან სრულად ჩატვირთული მონაცემი უპირატესია (ერთი და იგივე ყველა კომპიუტერზე)
     var _dc=window.__dashCloud||null;
-    var ops=(_dc&&_dc.ops)?_dc.ops:((typeof swOps!=='undefined'&&Array.isArray(swOps)&&swOps.length)?swOps:rd('its_sw_ops__'+uid));
-    var lots=(_dc&&_dc.lots)?_dc.lots:((typeof swLots!=='undefined'&&Array.isArray(swLots)&&swLots.length)?swLots:rd('its_sw_lots__'+uid));
+    // #NO-LOCAL-READ: მხოლოდ ღრუბელი/in-memory — localStorage fallback მოხსნილია (ძველი ციფრები აღარ დარჩება)
+    var ops=(_dc&&_dc.ops)?_dc.ops:((typeof swOps!=='undefined'&&Array.isArray(swOps))?swOps:[]);
+    var lots=(_dc&&_dc.lots)?_dc.lots:((typeof swLots!=='undefined'&&Array.isArray(swLots))?swLots:[]);
     // #DASH-FIX-DUP: ოპერაციების დედუპლიკაცია id-ით (ხშირად dublikatoria sb-load-დან)
     var _seenOp={}; ops=(ops||[]).filter(function(o){ var k=o&&o.id; if(!k) return true; if(_seenOp[k]) return false; _seenOp[k]=1; return true; });
     // #DASH-FIX-HARVEST: კრეფის კგ — ღრუბლიდან (სრული), თუ ჩატვირთულია; თუ არა — ლოკალური
-    var _harv=[];
-    if(window.__harvCloud && window.__harvCloud.length){ _harv=window.__harvCloud; }
-    else { try{ _harv=rd((typeof window._ksK==='function')?window._ksK():('its_s__'+uid)); }catch(e){ _harv=[]; } }
+    // #NO-LOCAL-READ: კრეფის კგ მხოლოდ ღრუბლიდან (in-memory) — localStorage-ს აღარ ვკითხულობთ
+    var _harv=(window.__harvCloud && window.__harvCloud.length)?window.__harvCloud:[];
     if(!window.__harvCloudLoaded && typeof window.__loadHomeHarvestCloud==='function'){ window.__harvCloudLoaded=true; window.__loadHomeHarvestCloud(); }
     if(!window.__dashCloudLoaded && typeof window.__loadHomeCloudAll==='function'){ window.__dashCloudLoaded=true; window.__loadHomeCloudAll(); }
     var inH=_harv.reduce(function(s,h){ var prod=h.product||h.culture||h.crop||''; return s+((matchC(prod)&&h.source!=='sms_phantom')?n(h.weight||h.kg):0); },0);
@@ -16084,9 +16084,10 @@ let gvSales     = gvRead('sales', []);
 let gvBuyers    = gvRead('buyers', []);
 let gvPurchases = gvRead('purchases', []);
 // #DASH-CLOUD: ღრუბელ-first აქსესორები დაშბორდებისთვის (localStorage მხოლ fallback)
-window._dashSales=function(){ try{ if(typeof gvSales!=='undefined'&&gvSales&&gvSales.length) return gvSales; }catch(_e){} try{ var u=(window.currentUser&&currentUser.id)||'guest'; var v=JSON.parse(localStorage.getItem('its_gv_sales__'+u)||'[]'); return Array.isArray(v)?v:[]; }catch(_e){ return []; } };
-window._dashPurch=function(){ try{ if(typeof gvPurchases!=='undefined'&&gvPurchases&&gvPurchases.length) return gvPurchases; }catch(_e){} try{ var u=(window.currentUser&&currentUser.id)||'guest'; var v=JSON.parse(localStorage.getItem('its_gv_purchases__'+u)||'[]'); return Array.isArray(v)?v:[]; }catch(_e){ return []; } };
-window._dashExps=function(){ try{ if(window.__expenses&&window.__expenses.length) return window.__expenses; }catch(_e){} try{ return ((window.AG&&AG.read)?AG.read(AG.nsKey('its_expenses','')):[])||[]; }catch(_e){ return []; } };
+// #NO-LOCAL-READ: სეზონური მონაცემი მხოლოდ ღრუბლიდან (in-memory) — localStorage-იდან წაკითხვა აღარ ხდება
+window._dashSales=function(){ try{ if(typeof gvSales!=='undefined'&&Array.isArray(gvSales)) return gvSales; }catch(_e){} return []; };
+window._dashPurch=function(){ try{ if(typeof gvPurchases!=='undefined'&&Array.isArray(gvPurchases)) return gvPurchases; }catch(_e){} return []; };
+window._dashExps=function(){ try{ if(window.__expenses&&Array.isArray(window.__expenses)) return window.__expenses; }catch(_e){} return []; };
 let gvSuppliers = gvRead('suppliers', []);
 let gvInvNum    = parseInt(gvReadPlain('inv','1')||'1');
 let gvPurNum    = parseInt(gvReadPlain('pur_num','1')||'1');
@@ -23403,14 +23404,15 @@ window.shRenderIncome = function(){
 (function(){
   function _uid(){ try{ if(typeof currentUser!=='undefined'&&currentUser&&currentUser.id) return String(currentUser.id); }catch(e){} try{ if(window.currentUser&&window.currentUser.id) return String(window.currentUser.id); }catch(e){} return 'guest'; }
   function _ks(){ try{ if(typeof window._ksK==='function') return window._ksK(); }catch(e){} return 'its_s__'+_uid(); }
-  function readSessions(){ try{ if(window._hSessions && window._hSessions.length) return window._hSessions; }catch(e){} try{ if(window.__cloudSessions && window.__cloudSessions.length) return window.__cloudSessions; }catch(e){} try{ var v=JSON.parse(localStorage.getItem(_ks())||'[]'); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
-  function readBonuses(){ try{ return window.agro_bonuses || JSON.parse(localStorage.getItem('its_bonuses')||'{}') || {}; }catch(e){ return {}; } }
+  // #NO-LOCAL-READ: სეზონური მონაცემი მხოლოდ ღრუბლიდან (in-memory) — localStorage-ს აღარ ვკითხულობთ
+  function readSessions(){ try{ if(window._hSessions && window._hSessions.length) return window._hSessions; }catch(e){} try{ if(window.__cloudSessions && window.__cloudSessions.length) return window.__cloudSessions; }catch(e){} return []; }
+  function readBonuses(){ try{ return window.agro_bonuses || {}; }catch(e){ return {}; } }
   function payKey(){ return 'its_krepa_payroll__'+_uid(); }
-  function readPay(){ var v; try{ v=JSON.parse(localStorage.getItem(payKey())||'{}'); }catch(e){ v={}; } if(!v||typeof v!=='object') v={};
+  function readPay(){ var v=(window.__krepaPayroll && typeof window.__krepaPayroll==='object')?window.__krepaPayroll:{}; if(!v||typeof v!=='object') v={};
     Object.keys(v).forEach(function(k){ var p=v[k]; if(!p||typeof p!=='object') return; if(!Array.isArray(p.payments)){ p.payments=[]; if(p.status==='გადახდილია' && (+p.paidAmount||0)>0){ p.payments.push({amount:+p.paidAmount||0, method:p.method||'ნაღდი', date:p.paidDate||''}); } } });
     return v; }
   function paidCum(p){ if(!p||!Array.isArray(p.payments)) return 0; return Math.round(p.payments.reduce(function(s,x){return s+(+x.amount||0);},0)*100)/100; }
-  function savePay(m){ try{ localStorage.setItem(payKey(), JSON.stringify(m)); }catch(e){ alert('შენახვა ვერ მოხერხდა — დოკუმენტი შესაძლოა ძალიან დიდია'); } }
+  function savePay(m){ window.__krepaPayroll=m; try{ localStorage.setItem(payKey(), JSON.stringify(m)); }catch(e){ /* localStorage მხოლოდ backup-ია; ძირითადი ღრუბელია */ } }
 
   // #PAYROLL-SYNC: ღრუბელში შენახვა (krepa_payroll ცხრილი) — დაგროვებადი გადახდები
   function _pushPayrollRow(uid, p){
@@ -23432,6 +23434,7 @@ window.shRenderIncome = function(){
         if(!pays.length && (+r.amount||0)>0){ pays=[{amount:+r.amount||0, method:r.method||'ნაღდი', date:r.paid_date||''}]; }
         m[String(r.picker_uid)]={ name:(r.picker_name||''), method:(r.method||'ნაღდი'), payments:pays, docName:(r.doc_name||''), docData:(r.doc_data||'') };
       });
+      window.__krepaPayroll=m;   // #NO-LOCAL-READ: ღრუბლიდან in-memory
       try{ localStorage.setItem(payKey(), JSON.stringify(m)); }catch(e){}
       try{ if(window.shRenderKrepaPayroll && document.getElementById('sh-tab-krepa')) shRenderKrepaPayroll(); }catch(e){}
       try{ if(window.shRenderIncome) shRenderIncome(); }catch(e){}
