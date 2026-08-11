@@ -185,7 +185,7 @@
     <div class="ofield"><label>ტელეფონი ან ელფოსტა *</label><input id="oContact" required placeholder="+995… ან you@mail.com"></div>
     <div class="ofield"><label>კომენტარი</label><textarea id="oNote" rows="2" placeholder="მისამართი, ვადა, სხვა…"></textarea></div>
     <button class="sendbtn" id="sendOrder">📧 შეკვეთის გაგზავნა</button>
-    <div class="cart-note" style="text-align:center;margin-top:10px;margin-bottom:0">იგზავნება: <b>ramimpexltd@gmail.com</b></div>
+    <div class="cart-note" style="text-align:center;margin-top:10px;margin-bottom:0">იგზავნება: <b>info@ramimpex.com.ge</b></div>
   </div>
 </aside>
 
@@ -3177,7 +3177,7 @@
 (function(){
   var DATA=JSON.parse(document.getElementById('catalog-data').textContent);
   var PRICES={}; try{PRICES=JSON.parse(document.getElementById('fasebi').textContent)||{};}catch(e){}
-  var EMAIL="ramimpexltd@gmail.com";
+  var EMAIL="info@ramimpex.com.ge";
   var totalProducts=0; DATA.forEach(function(s){s.pages.forEach(function(p){p.groups.forEach(function(g){totalProducts+=g.rows.length;});});});
   document.getElementById('yr').textContent=new Date().getFullYear();
   window.dimgFail=function(img){var d=img.closest(".dimg");if(d)d.remove();};
