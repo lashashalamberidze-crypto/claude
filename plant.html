@@ -270,6 +270,20 @@ const GEO_REGION_CENTERS={
   'გურია':[41.95,42.05],'სამეგრელო-ზემო სვანეთი':[42.55,42.00],'რაჭა-ლეჩხუმი და ქვემო სვანეთი':[42.55,43.10],
   'მცხეთა-მთიანეთი':[42.30,44.60],'იმერეთი':[42.25,42.90],'სხვა':[41.90,44.00]
 };
+// მუნიციპალიტეტების მიახლოებითი ცენტრები — უფრო ზუსტი პინისთვის, სანამ ბაღის კონტური არ არის დახაზული
+const GEO_MUNIC_CENTERS={
+  'ახმეტა':[42.03,45.21],'გურჯაანი':[41.74,45.80],'დედოფლისწყარო':[41.46,46.10],'თელავი':[41.92,45.47],'თიანეთი':[42.11,44.96],'კახი':[41.42,46.92],'ლაგოდეხი':[41.82,46.27],'საგარეჯო':[41.73,45.33],'სიღნაღი':[41.62,45.92],'ყვარელი':[41.95,45.81],
+  'თბილისი':[41.72,44.79],
+  'გორი':[41.98,44.11],'კასპი':[41.92,44.42],'ქარელი':[42.02,43.90],'ხაშური':[41.99,43.60],'ცხინვალი':[42.22,43.97],
+  'ბოლნისი':[41.45,44.54],'დმანისი':[41.33,44.20],'გარდაბანი':[41.46,45.09],'თეთრიწყარო':[41.54,44.46],'მარნეული':[41.48,44.81],'რუსთავი':[41.55,45.00],'წალკა':[41.59,44.09],
+  'ადიგენი':[41.68,42.70],'ასპინძა':[41.51,43.25],'ახალქალაქი':[41.40,43.48],'ახალციხე':[41.64,42.98],'ბორჯომი':[41.84,43.38],'ნინოწმინდა':[41.26,43.59],
+  'ბათუმი':[41.64,41.64],'ქედა':[41.60,42.06],'ქობულეთი':[41.82,41.78],'შუახევი':[41.63,42.24],'ხელვაჩაური':[41.58,41.68],'ხულო':[41.65,42.31],
+  'ლანჩხუთი':[42.09,42.03],'ოზურგეთი':[41.93,42.00],'ჩოხატაური':[42.00,42.29],
+  'აბაშა':[42.20,42.20],'ზუგდიდი':[42.51,41.87],'კალა':[43.00,42.70],'მარტვილი':[42.41,42.38],'მესტია':[43.04,42.73],'სენაკი':[42.27,42.07],'ჩხოროწყუ':[42.52,42.10],'წალენჯიხა':[42.62,42.10],'ხობი':[42.31,41.90],
+  'ამბროლაური':[42.52,43.15],'ლენტეხი':[42.79,42.72],'ონი':[42.58,43.45],'ცაგერი':[42.65,42.76],
+  'დუშეთი':[42.08,44.70],'მცხეთა':[41.84,44.72],'ყაზბეგი':[42.66,44.64],'ახალგორი':[42.12,44.48],
+  'ბაღდათი':[42.08,42.83],'ვანი':[42.08,42.52],'ზესტაფონი':[42.11,43.05],'თერჯოლა':[42.18,43.02],'ქუთაისი':[42.27,42.70],'სამტრედია':[42.16,42.34],'საჩხერე':[42.34,43.40],'ტყიბული':[42.35,42.99],'წყალტუბო':[42.34,42.60],'ჭიათურა':[42.29,43.29],'ხარაგაული':[42.02,43.19],'ხონი':[42.32,42.42]
+};
 function fillRegions(){
   var r=document.getElementById('plRegion');
   r.innerHTML='<option value="">— აირჩიეთ —</option>'+Object.keys(GEO_MUNICIPALITIES).map(function(k){ return '<option>'+esc(k)+'</option>'; }).join('');
@@ -859,7 +873,8 @@ function renderListMap(){
     baseTiles(listMap);
     var fg=L.featureGroup().addTo(listMap);
     function pin(color){ return L.divIcon({html:'<div style="background:'+color+';width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>',iconSize:[26,26],iconAnchor:[13,26],className:''}); }
-    PLANTS.forEach(function(p,idx){
+    var fallbacks=[];
+    PLANTS.forEach(function(p){
       if(Array.isArray(p.mapCoords)&&p.mapCoords.length>=3){
         try{
           var pg=L.polygon(p.mapCoords,{color:'#10b981',fillOpacity:.18,weight:2}).addTo(listMap);
@@ -872,17 +887,27 @@ function renderListMap(){
           mk.bindPopup('<b>'+esc(p.name||'პლანტაცია')+'</b><br>'+esc(p.culture||''));
           fg.addLayer(mk);
         }catch(e){}
-      } else if(p.region && GEO_REGION_CENTERS[p.region]){
-        // კონტური არ არის დახაზული — ვდებთ პინს რეგიონის მიახლოებით ცენტრზე (მცირე გადანაცვლებით, რომ არ ეფაროს)
+      } else {
+        // კონტური/GPS არ არის — ვიმახსოვრებთ, რომ მუნიციპალიტეტის/რეგიონის ცენტრზე დავდოთ
+        var base=(p.munic&&GEO_MUNIC_CENTERS[p.munic])||(p.region&&GEO_REGION_CENTERS[p.region])||null;
+        if(base) fallbacks.push({p:p,base:base,approx:(p.munic&&GEO_MUNIC_CENTERS[p.munic])?p.munic:p.region});
+      }
+    });
+    // ერთ წერტილში მოხვედრილი ბაღები წრიულად გავფანტოთ, რომ ერთმანეთს არ დაეფაროს
+    var groups={};
+    fallbacks.forEach(function(f){ var k=f.base[0].toFixed(3)+','+f.base[1].toFixed(3); (groups[k]=groups[k]||[]).push(f); });
+    Object.keys(groups).forEach(function(k){
+      var arr=groups[k], n=arr.length;
+      arr.forEach(function(f,i){
+        var pos=f.base;
+        if(n>1){ var ang=i/n*2*Math.PI, R=0.06; pos=[f.base[0]+R*Math.cos(ang), f.base[1]+R*Math.sin(ang)]; }
         try{
-          var c=GEO_REGION_CENTERS[p.region];
-          var pos=[c[0]+((idx%4)-1.5)*0.03, c[1]+((idx%3)-1)*0.04];
           var mk2=L.marker(pos,{icon:pin('#f59e0b')}).addTo(listMap);
-          mk2.bindPopup('<b>'+esc(p.name||'პლანტაცია')+'</b><br>'+esc(p.culture||'')+(p.area>0?' · '+(+p.area).toFixed(2)+' ha':'')+
-            '<br><span style="color:#b45309">📍 '+esc(p.region)+' (მიახლოებითი)</span><br><span style="font-size:.8em;color:#64748b">ზუსტი მდებარეობისთვის დახაზეთ ბაღის კონტური რედაქტირებაში</span>');
+          mk2.bindPopup('<b>'+esc(f.p.name||'პლანტაცია')+'</b><br>'+esc(f.p.culture||'')+(f.p.area>0?' · '+(+f.p.area).toFixed(2)+' ha':'')+
+            '<br><span style="color:#b45309">📍 '+esc(f.approx)+' (მიახლოებითი)</span><br><span style="font-size:.8em;color:#64748b">ზუსტი მდებარეობისთვის დახაზეთ ბაღის კონტური რედაქტირებაში</span>');
           fg.addLayer(mk2);
         }catch(e){}
-      }
+      });
     });
     setTimeout(function(){
       try{ listMap.invalidateSize(false); var b=fg.getBounds(); if(b&&b.isValid&&b.isValid()) listMap.fitBounds(b,{padding:[40,40],maxZoom:13,animate:false}); }catch(e){}
