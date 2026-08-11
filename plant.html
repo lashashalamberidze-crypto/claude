@@ -263,6 +263,13 @@ const GEO_MUNICIPALITIES={
   'იმერეთი':['ბაღდათი','ვანი','ზესტაფონი','თერჯოლა','ქუთაისი','სამტრედია','საჩხერე','ტყიბული','წყალტუბო','ჭიათურა','ხარაგაული','ხონი'],
   'სხვა':['სხვა']
 };
+// მიახლოებითი ცენტრები რეგიონებზე — გამოიყენება რუკაზე პინის დასადებად, თუ ბაღის კონტური არ არის დახაზული
+const GEO_REGION_CENTERS={
+  'კახეთი':[41.65,45.70],'თბილისი':[41.72,44.79],'შიდა ქართლი':[42.00,44.10],
+  'ქვემო ქართლი':[41.47,44.77],'სამცხე-ჯავახეთი':[41.55,43.20],'აჭარა':[41.64,42.10],
+  'გურია':[41.95,42.05],'სამეგრელო-ზემო სვანეთი':[42.55,42.00],'რაჭა-ლეჩხუმი და ქვემო სვანეთი':[42.55,43.10],
+  'მცხეთა-მთიანეთი':[42.30,44.60],'იმერეთი':[42.25,42.90],'სხვა':[41.90,44.00]
+};
 function fillRegions(){
   var r=document.getElementById('plRegion');
   r.innerHTML='<option value="">— აირჩიეთ —</option>'+Object.keys(GEO_MUNICIPALITIES).map(function(k){ return '<option>'+esc(k)+'</option>'; }).join('');
@@ -851,7 +858,8 @@ function renderListMap(){
     listMap=L.map('listMap').setView([41.8,44.8],7);
     baseTiles(listMap);
     var fg=L.featureGroup().addTo(listMap);
-    PLANTS.forEach(function(p){
+    function pin(color){ return L.divIcon({html:'<div style="background:'+color+';width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>',iconSize:[26,26],iconAnchor:[13,26],className:''}); }
+    PLANTS.forEach(function(p,idx){
       if(Array.isArray(p.mapCoords)&&p.mapCoords.length>=3){
         try{
           var pg=L.polygon(p.mapCoords,{color:'#10b981',fillOpacity:.18,weight:2}).addTo(listMap);
@@ -860,10 +868,19 @@ function renderListMap(){
         }catch(e){}
       } else if(Array.isArray(p.mapCenter)&&p.mapCenter.length===2){
         try{
-          var icon=L.divIcon({html:'<div style="background:#0ea5e9;width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>',iconSize:[26,26],iconAnchor:[13,26],className:''});
-          var mk=L.marker(p.mapCenter,{icon:icon}).addTo(listMap);
+          var mk=L.marker(p.mapCenter,{icon:pin('#0ea5e9')}).addTo(listMap);
           mk.bindPopup('<b>'+esc(p.name||'პლანტაცია')+'</b><br>'+esc(p.culture||''));
           fg.addLayer(mk);
+        }catch(e){}
+      } else if(p.region && GEO_REGION_CENTERS[p.region]){
+        // კონტური არ არის დახაზული — ვდებთ პინს რეგიონის მიახლოებით ცენტრზე (მცირე გადანაცვლებით, რომ არ ეფაროს)
+        try{
+          var c=GEO_REGION_CENTERS[p.region];
+          var pos=[c[0]+((idx%4)-1.5)*0.03, c[1]+((idx%3)-1)*0.04];
+          var mk2=L.marker(pos,{icon:pin('#f59e0b')}).addTo(listMap);
+          mk2.bindPopup('<b>'+esc(p.name||'პლანტაცია')+'</b><br>'+esc(p.culture||'')+(p.area>0?' · '+(+p.area).toFixed(2)+' ha':'')+
+            '<br><span style="color:#b45309">📍 '+esc(p.region)+' (მიახლოებითი)</span><br><span style="font-size:.8em;color:#64748b">ზუსტი მდებარეობისთვის დახაზეთ ბაღის კონტური რედაქტირებაში</span>');
+          fg.addLayer(mk2);
         }catch(e){}
       }
     });
