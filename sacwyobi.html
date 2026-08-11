@@ -736,9 +736,8 @@ async function initSacwyobiFromHub(){
       // #CLOUD-ONLY: პირდაპირ ღრუბლიდან მეხსიერებაში (localStorage-ის გვერდის ავლით)
       var _res = await sbLoadSacwyobi(uid);
       if(_res){ swLots = _res.lots||[]; swOps = _res.ops||[]; swTemps = _res.temps||[]; _swCloudLoaded = true; }
-      // #AUTO-HEAL: ყოველ ჩატვირთვაზე ჩუმად ვასუფთავებთ დუბლებს — თუ ძველ-კოდიანი კომპი კიდევ დაამატებს,
-      //  შემდეგ გახსნაზევე თავისით სწორდება (ქეშზე/ტაბებზე დამოკიდებული აღარ არის).
-      try{ await _swAutoHeal(); }catch(_he){ console.warn('autoheal', _he); }
+      // #AUTO-HEAL მოხსნილია — ხელფასა (date+buyer+kg) ერთნაირ რეალურ გაყიდვებს ვერ არჩევდა დუბლს
+      //  და ჩუმად წაშლიდა. წყარო (ლოკალი→ღრუბელი) ისედაც ჩაკეტილია; დარჩენილს ხელით ვასუფთავებთ.
     }catch(_e){ console.warn('initSacwyobi cloud', _e); }
   }
   swUpdateStats(); swRenderStock(); swRenderTempLog(); swRenderHistory(); swBuildContactLists();
@@ -898,35 +897,6 @@ function swRecomputeStock(){
   swNotify('🛠️ მარაგი გადაითვალა — '+changed+' ლოტი განახლდა · ნაშთი '+tot.toFixed(1)+' კგ');
 }
 window.swRecomputeStock = swRecomputeStock;
-
-// ── AUTO-HEAL (ჩუმად, ყოველ ჩატვირთვაზე) ─────────────────────────────
-// აშორებს განმეორებულ out-ოპერაციებს + „კრეფა"-ბლოტს ღრუბლიდან, დიალოგის გარეშე. აბრუნებს წაშლილთა რაოდ.
-// ამის შემდეგ ხელახლა ითვლის მარაგს (dedup-ის მერე უსაფრთხოა). თუ სუფთაა — არაფერს აკეთებს.
-async function _swAutoHeal(){
-  if(!_sb || !currentUser || !currentUser.id || !_swCloudLoaded) return 0;
-  var u=currentUser.id;
-  var norm=function(s){ return String(s==null?'':s).trim().toLowerCase(); };
-  var sigOf=function(o){ return [o.date||'', norm(o.buyer), (+o.kg||0).toFixed(1), norm(o.product)].join('|'); };
-  var toDelete=[], groups={};
-  (swOps||[]).forEach(function(o){ if(o&&o.type==='out'){ (groups[sigOf(o)]=groups[sigOf(o)]||[]).push(o); } });
-  Object.keys(groups).forEach(function(k){ var g=groups[k]; if(g.length<2) return;
-    g.sort(function(a,b){ var ca=String(a.id||'').indexOf('op_clean_')===0?0:1, cb=String(b.id||'').indexOf('op_clean_')===0?0:1; return ca-cb || String(a.id||'').localeCompare(String(b.id||'')); });
-    g.slice(1).forEach(function(o){ toDelete.push(o.id); });
-  });
-  (swOps||[]).forEach(function(o){ if(o&&o.type==='in' && (String(o.id||'').indexOf('op_krepa_all')===0 || String(o.id||'').indexOf('sw_h_all')===0 || norm(o.section)==='კრეფა')) toDelete.push(o.id); });
-  toDelete=Array.from(new Set(toDelete.filter(Boolean)));
-  if(!toDelete.length) return 0;
-  for(var i=0;i<toDelete.length;i+=80){
-    try{ await _sb.from('sacwyobi_ops').delete().eq('user_id',u).in('id', toDelete.slice(i,i+80)); }catch(e){ console.warn('autoheal del', e); }
-  }
-  var del={}; toDelete.forEach(function(id){ del[id]=1; });
-  swOps = (swOps||[]).filter(function(o){ return !del[o.id]; });
-  try{ _swRecalcLots(); }catch(e){}
-  try{ sbSaveSacwyobi(u, swLots, swOps, swTemps); }catch(e){ console.warn('autoheal save', e); }
-  try{ swNotify('🧹 ავტო-გასუფთავდა '+toDelete.length+' დუბლი'); }catch(e){}
-  return toDelete.length;
-}
-window._swAutoHeal = _swAutoHeal;
 
 // ── DEDUP (self-heal) ────────────────────────────────────────────────
 // ერთი დაჭერით აშორებს განმეორებულ out-ოპერაციებს ღრუბლიდან. დაჯგუფება: gv_ref (ან თარიღი+მყიდველი+კგ+
