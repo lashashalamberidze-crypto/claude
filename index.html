@@ -9563,6 +9563,9 @@ window.loadUserSettings = async function(){
       if(!r || !r.skey) return;
       try{ localStorage.setItem(r.skey, r.sval); }catch(e){}
     });
+    // #SETTINGS-SEED: თუ ღრუბელში ჯერ არაფერია (ახალი ცხრილი) — ავტვირთოთ ამ კომპიუტერის მიმდინარე პარამეტრები,
+    // რომ სხვა კომპიუტერზე შესვლისას უკვე იყოს. (ცარიელი კომპიუტერი ცარიელს არ ატვირთავს — getItem null → გამოტოვება.)
+    if(!data || !data.length){ try{ if(window.pushUserSettings) window.pushUserSettings(); }catch(e){} }
     // in-memory ცვლადების განახლება (სადაც მარტივია)
     try{ if(localStorage.getItem('its_price')!=null) agro_price=parseFloat(localStorage.getItem('its_price'))||agro_price; }catch(e){}
     try{ if(localStorage.getItem('its_base')!=null) window.agro_base=parseFloat(localStorage.getItem('its_base'))||0; }catch(e){}
