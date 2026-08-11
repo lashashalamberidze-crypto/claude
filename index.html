@@ -2661,6 +2661,26 @@ window._ADMIN_TOKEN = null;
 </head>
 
 <body>
+<!-- ══ HOME LANDING (ახალი მთავარი გვერდი — home.html, იზოლირებული iframe-ით) ══ -->
+<div id="homeLanding" style="position:fixed;inset:0;z-index:390;background:#0a1f18;">
+  <iframe id="homeLandingFrame" src="home.html" title="AgroInTechSol" style="display:block;width:100%;height:100%;border:0;"></iframe>
+</div>
+<script>
+/* ── მთავარი გვერდი ↔ აპლიკაცია ხიდი ──
+   home.html (iframe) აჩვენებს ლამაზ landing-ს; "შესვლა" გახსნის აპის ლოგინს.
+   შესვლის შემდეგ showPage('hub') დამალავს ამ overlay-ს; გასვლისას ისევ გამოჩნდება. */
+window.itsHideHome=function(){ var h=document.getElementById('homeLanding'); if(h) h.style.display='none'; };
+window.itsShowHome=function(){ var h=document.getElementById('homeLanding'); if(h){ h.style.display=''; try{ window.scrollTo(0,0); }catch(e){} } };
+window.itsGo=function(kind){
+  try{
+    if(kind==='login' || kind==='guide'){ if(typeof openAuth==='function'){ openAuth('login'); return; } }
+  }catch(e){}
+  try{ var v=document.getElementById('authOverlay'); if(v) v.classList.add('open'); }catch(e){}
+};
+window.addEventListener('load', function(){
+  try{ if(location.search.indexOf('login=1')>=0){ setTimeout(function(){ if(window.itsGo) window.itsGo('login'); }, 400); } }catch(e){}
+});
+</script>
 <script>
 /* WS-fix #6: საწყობის localStorage გასაღებები იუზერზე მიბმული (scoped) — ახალ იუზერს სუფთა მარაგი */
 window._swK = function(name){
@@ -5820,6 +5840,7 @@ document.addEventListener('keydown', function(e){
 // Cloudflare email-decode script is loaded earlier (around line 3410) — duplicate removed
 (function(){
   function showPage(page){
+    try{ if(page==='landing'){ if(window.itsShowHome) window.itsShowHome(); } else { if(window.itsHideHome) window.itsHideHome(); } }catch(e){}
     if(page==='sacwyobi' && typeof window.openWarehouse==='function'){ return window.openWarehouse('stock'); }
     if(page==='gayvida'  && typeof window.openWarehouse==='function'){ return window.openWarehouse('sales'); }
     ['hub','agro','krepa','sacwyobi','gayvida','agroshop','shemosavali','sasuki','warehouse'].forEach(function(id){
