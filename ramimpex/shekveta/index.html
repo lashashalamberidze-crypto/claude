@@ -10,7 +10,8 @@ body{font-family:system-ui,'Noto Sans Georgian',sans-serif;background:var(--bg);
 .top .lg{font-size:22px;font-weight:800}.top .su{font-size:12px;opacity:.92}
 .top a{color:#fff;text-decoration:none;font-size:13px;border:1px solid rgba(255,255,255,.4);padding:6px 12px;border-radius:20px}
 .grid{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;align-items:start}
-@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
 .card h2{font-size:15px;color:var(--green-d);margin-bottom:12px;display:flex;align-items:center;gap:7px}
 .step{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:var(--green-d);color:#fff;border-radius:50%;font-size:12px;font-weight:800}
@@ -61,42 +62,47 @@ textarea{min-height:60px;resize:vertical}
 <body>
 <div class="wrap">
  <div class="top"><div><div class="lg">RAM IMPEX</div><div class="su" id="topsu">შეკვეთის გაფორმება</div></div><a href="/">← მთავარზე</a></div>
+ <div class="card">
+   <h2><span class="step">1</span> შემკვეთის მონაცემები</h2>
+   <div class="muted" style="margin-bottom:6px">სახელი და ტელეფონი — <b style="color:#c62828">სავალდებულოა</b></div>
+   <div class="row"><div><label>სახელი / კომპანია *</label><input id="cName" placeholder="შპს ..." required></div><div><label>ტელეფონი *</label><input id="cPhone" placeholder="5xx xx xx xx" required></div></div>
+   <label>ელ. ფოსტა</label><input id="cEmail" placeholder="mail@company.ge">
+ </div>
+ <div class="grid2">
+  <div class="card">
+   <h2>📋 აირჩიე კატალოგიდან</h2>
+   <div class="muted" style="margin-bottom:8px">აირჩიე პროდუქტი, მიუთითე რაოდენობა და დაამატე.</div>
+   <div class="tabs" id="tabs"></div>
+   <input id="search" placeholder="🔍 ძებნა: კოდი ან ზომა">
+   <div class="plist" id="plist"></div>
+  </div>
+  <div class="card">
+   <h2>✍️ ან შეავსე სპეციალური მოთხოვნა</h2>
+   <div class="muted" style="margin-bottom:8px">კატალოგში რომ ვერ ნახე — დაწერე თვითონ: დასახელება, ზომა, რისთვის და რაოდენობა.</div>
+   <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+     <input id="cxName" placeholder="დასახელება (მაგ. გოფროყუთი)" style="width:100%;padding:9px 11px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit">
+     <div style="display:flex;gap:8px">
+       <input id="cxSize" placeholder="ზომა (მაგ. 400×300×200)" style="flex:1;padding:9px 11px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit">
+       <input id="cxQty" type="number" min="1" placeholder="რაოდ. *" style="width:104px;padding:9px 11px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit">
+     </div>
+     <input id="cxPurpose" placeholder="რისთვის (მაგ. ხილისთვის)" style="width:100%;padding:9px 11px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit">
+     <button class="addbtn" id="cxAdd" style="width:100%">＋ დამატება შეკვეთაში</button>
+   </div>
+   <label>დამატებითი შენიშვნა / დიზაინი (არჩ.)</label><input id="rqTitle" placeholder="მაგ. ლოგო, ფერი, ვადა…">
+   <label>აღწერა</label><textarea id="rqDesc" placeholder="დამატებითი დეტალები…"></textarea>
+   <label>სურათები / ნახაზები</label><div class="gal" id="rqGal"></div>
+  </div>
+ </div>
  <div class="grid">
   <div>
    <div class="card">
-    <h2><span class="step">1</span> შემკვეთის მონაცემები</h2>
-    <div class="muted" style="margin-bottom:6px">სახელი და ტელეფონი — <b style="color:#c62828">სავალდებულოა</b></div>
-    <div class="row"><div><label>სახელი / კომპანია *</label><input id="cName" placeholder="შპს ..." required></div><div><label>ტელეფონი *</label><input id="cPhone" placeholder="5xx xx xx xx" required></div></div>
-    <label>ელ. ფოსტა</label><input id="cEmail" placeholder="mail@company.ge">
-   </div>
-   <div class="card">
-    <h2><span class="step">2</span> აირჩიე მიმართულება და პროდუქცია</h2>
-    <div class="tabs" id="tabs"></div>
-    <input id="search" placeholder="🔍 ძებნა: კოდი ან ზომა">
-    <div class="plist" id="plist"></div>
-   </div>
-   <div class="card">
-    <h2><span class="step">3</span> შენი შეკვეთა <span class="muted" id="lineCount"></span></h2>
+    <h2>🧾 შენი შეკვეთა <span class="muted" id="lineCount"></span></h2>
     <div id="lines"></div>
-   </div>
-   <div class="card">
-    <h2><span class="step">4</span> სპეც-შეკვეთა — შენი ზომებით (არასავალდებულო)</h2>
-    <div class="muted" style="margin-bottom:8px">კატალოგში რომ ვერ ნახე — დაწერე თვითონ: დასახელება, ზომა, რისთვის და რაოდენობა.</div>
-    <div class="addrow" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
-      <input id="cxName" placeholder="დასახელება (მაგ. გოფროყუთი)" style="flex:2 1 160px;padding:9px 11px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit">
-      <input id="cxSize" placeholder="ზომა (მაგ. 400×300×200)" style="flex:1.3 1 120px;padding:9px 11px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit">
-      <input id="cxPurpose" placeholder="რისთვის (მაგ. ხილისთვის)" style="flex:1.3 1 120px;padding:9px 11px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit">
-      <input id="cxQty" type="number" min="1" placeholder="რაოდ. *" style="width:96px;padding:9px 11px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit">
-      <button class="addbtn" id="cxAdd">＋ დამატება</button>
-    </div>
-    <label>დამატებითი შენიშვნა / დიზაინი (არჩ.)</label><input id="rqTitle" placeholder="მაგ. ლოგო, ფერი, ვადა…">
-    <label>აღწერა</label><textarea id="rqDesc" placeholder="დამატებითი დეტალები…"></textarea>
-    <label>სურათები / ნახაზები</label><div class="gal" id="rqGal"></div>
    </div>
   </div>
   <div>
    <div class="card sum">
-    <h2>🧾 შეკვეთის შეჯამება</h2>
+    <h2>შეჯამება</h2>
     <div id="summary"><div class="empty">ჯერ პროდუქცია არ არის არჩეული</div></div>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
      <button class="btn line2" id="bPreview">👁 ნახვა</button>
