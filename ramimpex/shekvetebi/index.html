@@ -237,7 +237,12 @@ function printZapros(o){
    '<table style="border-collapse:collapse;width:100%;font-size:13px"><thead><tr>'+th('№')+th('Код')+th('Наименование')+th('Размер')+'<th style="'+td+';background:#eef7f1;text-align:right">Кол-во</th>'+th('Цена ₽')+'</tr></thead><tbody>'+rows+'</tbody></table>'+
    (o.req_title||o.req_desc?'<p style="margin-top:10px;font-size:13px"><b>Доп.:</b> '+esc(tr(o.req_title||''))+' '+esc(tr(o.req_desc||''))+'</p>':'')+
    '<p style="margin-top:18px;border-top:2px solid #0F8A4D;padding-top:8px;font-size:12px;color:#555">RAM IMPEX · 595 533 500 · info@ramimpex.com.ge · ramimpex.com.ge</p></div>';
+ const fname=('Заказ '+orderNo(o)).replace(/[\\/:*?"<>|]/g,'-').trim();
+ const prev=document.title;document.title=fname;
+ const restore=()=>{document.title=prev;window.removeEventListener('afterprint',restore);};
+ window.addEventListener('afterprint',restore);
  window.print();
+ setTimeout(restore,4000);
 }
 /* ========================= FINANCE CATALOG + INVOICE (shared DIRS) ========================= */
 let DIRS=null, curGid=null, saveTimer=null;
