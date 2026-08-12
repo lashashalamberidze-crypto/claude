@@ -131,22 +131,90 @@ const ORD_TABS=[['all','ყველა'],['boxes','მუყაოს ყუთ
 function ruText(o){let t='Новый заказ — RAM IMPEX\n\nЗаказчик: '+(o.cust_name||'—')+'\nТелефон: '+(o.cust_phone||'—')+'\nE-mail: '+(o.cust_email||'—')+'\n\nПродукция:\n';(o.items||[]).forEach((it,i)=>{const name=it.name?(NAME_RU[it.name]||it.name):ruCode(it.code);const ex=[];if(it.qty)ex.push('Кол-во: '+tr(it.qty));if(it.brand)ex.push('Брендирование: да');if(it.note)ex.push('Прим.: '+tr(it.note));t+=(i+1)+'. '+name+' ('+tr(it.size||'')+(it.type?' '+it.type:'')+', '+catRu(it.cat)+')'+(ex.length?' — '+ex.join(', '):'')+'\n';});if(o.req_title||o.req_desc)t+='\nИндивидуальный запрос: '+tr(o.req_title||'')+' '+tr(o.req_desc||'');return t;}
 // запрос цен для поставщика (Артур) — его кодами (ПЛ-), с местом под цену
 function zaprosText(o){let t='Запрос цен — RAM IMPEX\nПрошу указать цену (₽) по позициям:\n\n';(o.items||[]).forEach((it,i)=>{const name=it.name?(NAME_RU[it.name]||it.name):'';const parts=[ruCode(it.code)];if(name)parts.push(name);if(it.size)parts.push(tr(it.size));if(it.type)parts.push(it.type);t+=(i+1)+'. '+parts.join(' · ')+(it.qty?'  — Кол-во: '+tr(it.qty):'')+'  — Цена: ______\n';});if(o.req_title||o.req_desc)t+='\nДоп.: '+tr(o.req_title||'')+' '+tr(o.req_desc||'');t+='\n\nСпасибо!';return t;}
-function orderCard(o){const isNew=o.status==='new';
+function orderCard(o){const isNew=o.status==='new';const isManual=o.status==='manual'||o.source==='manual';
  const items=(o.items||[]).map((it,i)=>{const name=it.name?(NAME_RU[it.name]||it.name):ruCode(it.code);const ex=[];if(it.qty)ex.push('Кол-во: '+tr(it.qty));if(it.brand)ex.push('Брендир.: да');if(it.note)ex.push(tr(it.note));return '<tr><td>'+(i+1)+'</td><td><b>'+esc(ruCode(it.code))+'</b></td><td>'+esc(name)+'</td><td>'+esc(tr(it.size||''))+(it.type?' '+esc(it.type):'')+'</td><td>'+esc(catRu(it.cat))+'</td><td>'+esc(ex.join(' · '))+'</td></tr>';}).join('');
  const imgs=(o.images||[]).map(u=>'<img src="'+u+'" onclick="zoom(this.src)">').join('');
- return '<div class="ord'+(isNew?' new':'')+'"><div class="h"><div><div class="who">'+esc(o.cust_name||'—')+' <span class="pill'+(isNew?' new':'')+'">'+(isNew?'ახალი':esc(o.status))+'</span> <span class="pill">'+esc(DIR_RU[o.direction]||o.direction||'')+'</span></div><div class="meta">📞 '+esc(o.cust_phone||'—')+' · ✉ '+esc(o.cust_email||'—')+' · '+esc((o.created_at||'').replace('T',' ').slice(0,16))+'</div></div><div class="acts"><button class="btn sm" data-inv="'+o.id+'" title="ამ შეკვეთიდან ავტომატურად ინვოისის აწყობა">🧾 ინვოისის გენერაცია</button><button class="btn line sm" data-zap="'+o.id+'" title="PDF — არტურასთვის, ПЛ- კოდებით და ცარიელი ფასის სვეტით">📤 არტურას ფასები</button>'+(isNew?'<button class="btn line sm" data-seen="'+o.id+'">✔ ნანახია</button>':'')+'</div></div>'+(items?'<table><thead><tr><th>#</th><th>Код</th><th>Наимен.</th><th>Размер</th><th>Категория</th><th>Доп.</th></tr></thead><tbody>'+items+'</tbody></table>':'')+(o.req_title||o.req_desc?'<div style="margin-top:8px;font-size:13px"><b>Индив. запрос:</b> '+esc(tr(o.req_title||''))+' '+esc(tr(o.req_desc||''))+'</div>':'')+(imgs?'<div class="imgs">'+imgs+'</div>':'')+'</div>';}
+ return '<div class="ord'+(isNew?' new':'')+'"><div class="h"><div><div class="who">'+esc(o.cust_name||'—')+' <span class="pill'+(isNew?' new':'')+'" style="'+(isManual?'background:#fff4e0;color:#8a5a00':'')+'">'+(isNew?'ახალი':isManual?'✋ ხელით დამატებული':esc(o.status))+'</span> <span class="pill">'+esc(DIR_RU[o.direction]||o.direction||'')+'</span></div><div class="meta">📞 '+esc(o.cust_phone||'—')+' · ✉ '+esc(o.cust_email||'—')+' · '+esc((o.created_at||'').replace('T',' ').slice(0,16))+'</div></div><div class="acts"><button class="btn sm" data-inv="'+o.id+'" title="ამ შეკვეთიდან ავტომატურად ინვოისის აწყობა">🧾 ინვოისის გენერაცია</button><button class="btn line sm" data-zap="'+o.id+'" title="PDF — არტურასთვის, ПЛ- კოდებით და ცარიელი ფასის სვეტით">📤 არტურას ფასები</button>'+(isNew?'<button class="btn line sm" data-seen="'+o.id+'">✔ ნანახია</button>':'')+'<button class="btn line sm" data-oe="'+o.id+'">✏ რედაქტ.</button><button class="btn danger sm" data-odel="'+o.id+'">🗑</button></div></div>'+(items?'<table><thead><tr><th>#</th><th>Код</th><th>Наимен.</th><th>Размер</th><th>Категория</th><th>Доп.</th></tr></thead><tbody>'+items+'</tbody></table>':'')+(o.req_title||o.req_desc?'<div style="margin-top:8px;font-size:13px"><b>Индив. запрос:</b> '+esc(tr(o.req_title||''))+' '+esc(tr(o.req_desc||''))+'</div>':'')+(imgs?'<div class="imgs">'+imgs+'</div>':'')+'</div>';}
 function renderOrders(){
  const all=window.__orders||[];
  const data=ORD_DIR==='all'?all:all.filter(o=>(o.direction||'')===ORD_DIR);
  const tabs='<div class="dirtabs">'+ORD_TABS.map(([k,lab])=>{const n=k==='all'?all.length:all.filter(o=>(o.direction||'')===k).length;return '<button class="dirbtn'+(k===ORD_DIR?' on':'')+'" data-od="'+k+'">'+esc(lab)+' · '+n+'</button>';}).join('')+'</div>';
  const nNew=data.filter(o=>o.status==='new').length;
- const head='<div class="card" style="display:flex;justify-content:space-between;align-items:center"><b>'+data.length+' შეკვეთა'+(nNew?' · '+nNew+' ახალი':'')+'</b><button class="btn line sm" id="refresh">↻ განახლება</button></div>';
- app.innerHTML=tabs+head+(data.length?data.map(orderCard).join(''):'<div class="empty">ამ მიმართულებაზე შეკვეთა ჯერ არ არის.</div>');
+ const head='<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b>'+data.length+' შეკვეთა'+(nNew?' · '+nNew+' ახალი':'')+'</b><div style="display:flex;gap:8px"><button class="btn sm" id="addOrder">➕ ხელით შეკვეთის დამატება</button><button class="btn line sm" id="refresh">↻ განახლება</button></div></div>';
+ app.innerHTML=tabs+head+'<div id="ordFormWrap"></div>'+(data.length?data.map(orderCard).join(''):'<div class="empty">ამ მიმართულებაზე შეკვეთა ჯერ არ არის.</div>');
  app.querySelectorAll('[data-od]').forEach(b=>b.onclick=()=>{ORD_DIR=b.dataset.od;renderOrders();});
  $('refresh').onclick=loadOrders;
+ $('addOrder').onclick=()=>openOrderForm(null);
  app.querySelectorAll('[data-seen]').forEach(b=>b.onclick=async()=>{b.disabled=true;await sb.from('orders').update({status:'seen'}).eq('id',b.dataset.seen);const o=window.__orders.find(x=>x.id===b.dataset.seen);if(o)o.status='seen';renderOrders();});
  app.querySelectorAll('[data-zap]').forEach(b=>b.onclick=()=>{const o=window.__orders.find(x=>x.id===b.dataset.zap);if(o)printZapros(o);});
  app.querySelectorAll('[data-inv]').forEach(b=>b.onclick=()=>{const o=window.__orders.find(x=>x.id===b.dataset.inv);if(o)invoiceFromOrder(o);});
+ app.querySelectorAll('[data-oe]').forEach(b=>b.onclick=()=>{const o=window.__orders.find(x=>String(x.id)===b.dataset.oe);if(o)openOrderForm(o);});
+ app.querySelectorAll('[data-odel]').forEach(b=>b.onclick=()=>deleteOrder(b.dataset.odel));
+}
+/* ---- ხელით შეკვეთის დამატება / რედაქტირება ---- */
+let manualItems=[], manualImgs=[], editingOrderId=null;
+const ORD_DIRS=[['boxes','მუყაოს ყუთები'],['edge','კუთხოვანი დამცავები'],['anth','ანთრაციტის ბრიკეტი'],['contact','შეტყობინება']];
+async function openOrderForm(o){
+  try{await ensureDirs();}catch(e){}
+  editingOrderId=o?o.id:null;
+  manualItems=o?((o.items||[]).map(it=>({code:it.code||'',name:it.name||'',size:it.size||'',type:it.type||it.mark||'',cat:it.cat||'',qty:parseInt(it.qty)||1}))):[];
+  manualImgs=o?((o.images||[]).slice()):[];
+  const w=$('ordFormWrap');if(!w)return;
+  w.innerHTML='<div class="card" style="border:2px solid var(--green)"><h2 style="margin-bottom:8px">'+(editingOrderId?'✏ შეკვეთის რედაქტირება':'➕ ხელით შეკვეთის დამატება')+'</h2>'+
+    '<div class="row"><div><label>სახელი / კომპანია *</label><input id="mName" value="'+esc(o&&o.cust_name||'')+'" placeholder="დამკვეთი"></div><div><label>ტელეფონი *</label><input id="mPhone" value="'+esc(o&&o.cust_phone||'')+'" placeholder="5xx xx xx xx"></div></div>'+
+    '<div class="row"><div><label>ელფოსტა (არჩ.)</label><input id="mEmail" value="'+esc(o&&o.cust_email||'')+'" placeholder="—"></div><div><label>მიმართულება</label><select id="mDir">'+ORD_DIRS.map(([k,l])=>'<option value="'+k+'"'+((o&&o.direction===k)?' selected':'')+'>'+esc(l)+'</option>').join('')+'</select></div></div>'+
+    '<label style="margin-top:10px">პროდუქტი კატალოგიდან (არჩ.)</label><div class="row"><div style="flex:3"><select id="mPick">'+invPickerOptions()+'</select></div><div style="flex:0 0 84px"><input id="mQty" type="number" min="1" value="1"></div><div style="flex:0 0 auto"><button class="btn sm" id="mAdd" style="margin-top:0">＋</button></div></div>'+
+    '<label style="margin-top:10px">ან სპეც-პროდუქტი (კატალოგში არ არის)</label><div class="row"><div style="flex:2"><input id="cName" placeholder="დასახელება (მაგ. გოფროყუთი)"></div><div style="flex:1.4"><input id="cSize" placeholder="ზომა (მაგ. 400×300×200)"></div><div style="flex:0 0 84px"><input id="cQty" type="number" min="1" value="1"></div><div style="flex:0 0 auto"><button class="btn sm" id="cAdd" style="margin-top:0">＋</button></div></div>'+
+    '<div id="mItems" style="margin-top:8px"></div>'+
+    '<label style="margin-top:10px">კომენტარი / დანიშნულება (რისთვის, ვადა…)</label><textarea id="mNote" rows="2" placeholder="მაგ. „ხილისთვის, თეთრი, ლოგოთი, 2 კვირაში"…">'+esc(o&&(o.req_desc||o.req_title)||'')+'</textarea>'+
+    '<label style="margin-top:10px">ფოტოები (არჩ.)</label><div id="mGal" style="display:flex;gap:8px;flex-wrap:wrap"></div>'+
+    '<div class="row" style="margin-top:12px"><button class="btn" id="mSave">💾 შენახვა</button><button class="btn line" id="mCancel">გაუქმება</button></div></div>';
+  $('mAdd').onclick=()=>{const code=$('mPick').value;if(!code)return;const p=byCode(code);if(!p)return;const qty=parseInt($('mQty').value)||1;const ex=manualItems.find(x=>x.code===code);if(ex)ex.qty+=qty;else manualItems.push({code,name:p.name,size:p.size,type:p.mark,cat:p.group,qty});renderManualItems();};
+  $('cAdd').onclick=()=>{const nm=$('cName').value.trim(),sz=$('cSize').value.trim();if(!nm&&!sz){alert('შეავსე დასახელება ან ზომა.');return;}manualItems.push({code:'',name:nm||'სპეც-პროდუქტი',size:sz,type:'',cat:'სპეც შეკვეთა',qty:parseInt($('cQty').value)||1});$('cName').value='';$('cSize').value='';$('cQty').value='1';renderManualItems();};
+  $('mSave').onclick=saveManualOrder;
+  $('mCancel').onclick=()=>{editingOrderId=null;manualItems=[];manualImgs=[];$('ordFormWrap').innerHTML='';};
+  renderManualItems();buildManualGal();
+  w.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function buildManualGal(){const g=$('mGal');if(!g)return;g.innerHTML='';
+  manualImgs.forEach((src,i)=>{const d=document.createElement('div');d.style.cssText='position:relative;width:84px;height:84px;border-radius:10px;overflow:hidden;border:1px solid var(--line)';
+    d.innerHTML='<img src="'+src+'" style="width:100%;height:100%;object-fit:cover"><button class="btn danger sm" data-ix="'+i+'" style="position:absolute;top:2px;right:2px;padding:2px 6px">✕</button>';g.appendChild(d);
+    d.querySelector('[data-ix]').onclick=()=>{manualImgs.splice(i,1);buildManualGal();};});
+  if(manualImgs.length<4){const d=document.createElement('label');d.style.cssText='width:84px;height:84px;border:1.5px dashed var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--green);font-size:22px';d.textContent='📷+';
+    const fi=document.createElement('input');fi.type='file';fi.accept='image/*';fi.style.display='none';d.appendChild(fi);
+    fi.onchange=()=>{const f=fi.files&&fi.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const mx=900,sc=Math.min(1,mx/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=im.width*sc;c.height=im.height*sc;c.getContext('2d').drawImage(im,0,0,c.width,c.height);manualImgs.push(c.toDataURL('image/jpeg',0.7));buildManualGal();};im.src=r.result;};r.readAsDataURL(f);};
+    g.appendChild(d);}
+}
+function renderManualItems(){const h=$('mItems');if(!h)return;
+  if(!manualItems.length){h.innerHTML='<div class="muted" style="font-size:12px">პროდუქტი ჯერ არ არის (შეგიძლია მხოლოდ კომენტარით დაამატო).</div>';return;}
+  h.innerHTML='<div class="scroll"><table><thead><tr><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th class="right">რაოდ.</th><th></th></tr></thead><tbody>'+
+    manualItems.map((l,i)=>'<tr><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+esc(l.name||'')+'</td><td>'+esc(l.size||'')+'</td><td class="right"><input type="number" min="1" value="'+l.qty+'" style="width:80px;text-align:right" data-mq="'+i+'"></td><td class="right"><button class="btn danger sm" data-mx="'+i+'">✕</button></td></tr>').join('')+'</tbody></table></div>';
+  h.querySelectorAll('input[data-mq]').forEach(inp=>inp.onchange=()=>{manualItems[+inp.dataset.mq].qty=parseInt(inp.value)||1;});
+  h.querySelectorAll('[data-mx]').forEach(b=>b.onclick=()=>{manualItems.splice(+b.dataset.mx,1);renderManualItems();});
+}
+async function saveManualOrder(){
+  const name=$('mName').value.trim(), phone=$('mPhone').value.trim();
+  if(!name||!phone){alert('შეავსე სახელი და ტელეფონი.');return;}
+  const note=$('mNote').value.trim();
+  if(!manualItems.length && !note){alert('დაამატე პროდუქტი ან კომენტარი.');return;}
+  const payload={direction:$('mDir').value,cust_name:name,cust_phone:phone,cust_email:$('mEmail').value.trim()||null,
+    items:manualItems.map(x=>({code:x.code,name:x.name,size:x.size,type:x.type,cat:x.cat,qty:x.qty})),
+    images:manualImgs,req_desc:note||null,status:'manual'};
+  const btn=$('mSave');btn.disabled=true;btn.textContent='...';
+  try{let error;
+    if(editingOrderId){({error}=await sb.from('orders').update(payload).eq('id',editingOrderId));}
+    else{({error}=await sb.from('orders').insert(payload));}
+    if(error)throw error;
+    editingOrderId=null;manualItems=[];manualImgs=[];
+    await loadOrders();
+  }catch(e){btn.disabled=false;btn.textContent='💾 შენახვა';alert('ვერ შეინახა: '+(e.message||e));}
+}
+async function deleteOrder(id){
+  const o=window.__orders.find(x=>String(x.id)===String(id));if(!o)return;
+  if(!confirm('წავშალო შეკვეთა?\n'+(o.cust_name||'')+' · '+(o.cust_phone||'')+'\nეს შეუქცევადია.'))return;
+  try{const {error}=await sb.from('orders').delete().eq('id',o.id);if(error)throw error;
+    window.__orders=(window.__orders||[]).filter(x=>String(x.id)!==String(id));renderOrders();
+  }catch(e){alert('ვერ წაიშალა: '+(e.message||e));}
 }
 async function loadOrders(){app.innerHTML='<div class="empty">იტვირთება…</div>';const {data,error}=await sb.from('orders').select('*').order('created_at',{ascending:false});if(error){app.innerHTML='<div class="card"><p style="color:#c62828">'+esc(error.message)+'</p></div>';return;}window.__orders=data||[];renderOrders();}
 function printOrder(o){const items=(o.items||[]).map((it,i)=>{const name=it.name?(NAME_RU[it.name]||it.name):ruCode(it.code);const ex=[];if(it.qty)ex.push('Кол-во: '+tr(it.qty));if(it.brand)ex.push('Брендир.: да');if(it.note)ex.push(tr(it.note));return '<tr><td style="border:1px solid #ccc;padding:5px 8px">'+(i+1)+'</td><td style="border:1px solid #ccc;padding:5px 8px"><b>'+esc(ruCode(it.code))+'</b></td><td style="border:1px solid #ccc;padding:5px 8px">'+esc(name)+'</td><td style="border:1px solid #ccc;padding:5px 8px">'+esc(tr(it.size||''))+(it.type?' '+esc(it.type):'')+'</td><td style="border:1px solid #ccc;padding:5px 8px">'+esc(catRu(it.cat))+'</td><td style="border:1px solid #ccc;padding:5px 8px">'+esc(ex.join(' · '))+'</td></tr>';}).join('');const imgs=(o.images||[]).map(u=>'<img src="'+u+'" style="width:150px;height:150px;object-fit:contain;border:1px solid #ccc;margin:4px">').join('');$('printArea').innerHTML='<div style="font-family:Arial;padding:24px;color:#111"><div style="border-bottom:3px solid #0B6B3C;padding-bottom:8px;margin-bottom:12px"><span style="font-size:24px;font-weight:800;color:#0B6B3C">RAM IMPEX</span> &nbsp; Заказ</div><p><b>Заказчик:</b> '+esc(o.cust_name||'—')+' &nbsp; 📞 '+esc(o.cust_phone||'—')+' &nbsp; ✉ '+esc(o.cust_email||'—')+'</p><p><b>Направление:</b> '+esc(DIR_RU[o.direction]||'')+' &nbsp;·&nbsp; '+esc((o.created_at||'').replace('T',' ').slice(0,16))+'</p>'+(items?'<table style="border-collapse:collapse;width:100%;font-size:13px;margin-top:8px"><thead><tr><th style="border:1px solid #ccc;padding:5px 8px;background:#eef7f1">#</th><th style="border:1px solid #ccc;padding:5px 8px;background:#eef7f1">Код</th><th style="border:1px solid #ccc;padding:5px 8px;background:#eef7f1">Наимен.</th><th style="border:1px solid #ccc;padding:5px 8px;background:#eef7f1">Размер</th><th style="border:1px solid #ccc;padding:5px 8px;background:#eef7f1">Категория</th><th style="border:1px solid #ccc;padding:5px 8px;background:#eef7f1">Доп.</th></tr></thead><tbody>'+items+'</tbody></table>':'')+(o.req_title||o.req_desc?'<p style="margin-top:10px"><b>Индивидуальный запрос:</b> '+esc(tr(o.req_title||''))+' '+esc(tr(o.req_desc||''))+'</p>':'')+(imgs?'<div style="margin-top:10px">'+imgs+'</div>':'')+'<p style="margin-top:16px;border-top:2px solid #0F8A4D;padding-top:8px;font-size:12px;color:#555">RAM IMPEX · 595 533 500 · info@ramimpex.com.ge</p></div>';window.print();}
