@@ -191,9 +191,11 @@ function buildManualGal(){const g=$('mGal');if(!g)return;g.innerHTML='';
 }
 function renderManualItems(){const h=$('mItems');if(!h)return;
   if(!manualItems.length){h.innerHTML='<div class="muted" style="font-size:12px">პროდუქტი ჯერ არ არის (შეგიძლია მხოლოდ კომენტარით დაამატო).</div>';return;}
-  h.innerHTML='<div class="scroll"><table><thead><tr><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th class="right">რაოდ.</th><th></th></tr></thead><tbody>'+
-    manualItems.map((l,i)=>'<tr><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+esc(l.name||'')+'</td><td>'+esc(l.size||'')+'</td><td class="right"><input type="number" min="1" value="'+l.qty+'" style="width:80px;text-align:right" data-mq="'+i+'"></td><td class="right"><button class="btn danger sm" data-mx="'+i+'">✕</button></td></tr>').join('')+'</tbody></table></div>';
-  h.querySelectorAll('input[data-mq]').forEach(inp=>inp.onchange=()=>{manualItems[+inp.dataset.mq].qty=parseInt(inp.value)||1;});
+  h.innerHTML='<div class="muted" style="font-size:11.5px;margin-bottom:4px">✏ დასახელება/ზომა/რაოდენობა რედაქტირებადია — შეცვალე პირდაპირ.</div><div class="scroll"><table><thead><tr><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th class="right">რაოდ.</th><th></th></tr></thead><tbody>'+
+    manualItems.map((l,i)=>'<tr><td>'+(l.code?'<b>'+esc(ruCode(l.code))+'</b>':'<span class="muted">—</span>')+'</td><td><input value="'+esc(l.name||'')+'" placeholder="დასახელება" style="min-width:130px" data-mn="'+i+'"></td><td><input value="'+esc(l.size||'')+'" placeholder="ზომა" style="width:120px" data-ms="'+i+'"></td><td class="right"><input type="number" min="1" value="'+l.qty+'" style="width:84px;text-align:right" data-mq="'+i+'"></td><td class="right"><button class="btn danger sm" data-mx="'+i+'">✕</button></td></tr>').join('')+'</tbody></table></div>';
+  h.querySelectorAll('input[data-mn]').forEach(inp=>inp.oninput=()=>{manualItems[+inp.dataset.mn].name=inp.value;});
+  h.querySelectorAll('input[data-ms]').forEach(inp=>inp.oninput=()=>{manualItems[+inp.dataset.ms].size=inp.value;});
+  h.querySelectorAll('input[data-mq]').forEach(inp=>inp.oninput=()=>{manualItems[+inp.dataset.mq].qty=parseInt(inp.value)||1;});
   h.querySelectorAll('[data-mx]').forEach(b=>b.onclick=()=>{manualItems.splice(+b.dataset.mx,1);renderManualItems();});
 }
 async function saveManualOrder(){
