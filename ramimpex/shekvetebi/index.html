@@ -205,18 +205,20 @@ async function saveManualOrder(){
     items:manualItems.map(x=>({code:x.code,name:x.name,size:x.size,type:x.type,cat:x.cat,qty:x.qty})),
     images:manualImgs,req_desc:note||null,status:'manual'};
   const btn=$('mSave');btn.disabled=true;btn.textContent='...';
-  try{let error;
-    if(editingOrderId){({error}=await sb.from('orders').update(payload).eq('id',editingOrderId));}
-    else{({error}=await sb.from('orders').insert(payload));}
+  try{let error,data;
+    if(editingOrderId){({data,error}=await sb.from('orders').update(payload).eq('id',editingOrderId).select());}
+    else{({data,error}=await sb.from('orders').insert(payload).select());}
     if(error)throw error;
+    if(!data||!data.length){btn.disabled=false;btn.textContent='💾 შენახვა';alert('❌ ვერ შეინახა ღრუბელში — ბაზას არ აქვს ჩაწერის უფლება (RLS policy).\nგაუშვი Supabase-ში ქვემოთ მოცემული SQL (RamImpex_orders_admin_policies.sql).');return;}
     editingOrderId=null;manualItems=[];manualImgs=[];
     await loadOrders();
   }catch(e){btn.disabled=false;btn.textContent='💾 შენახვა';alert('ვერ შეინახა: '+(e.message||e));}
 }
 async function deleteOrder(id){
   const o=window.__orders.find(x=>String(x.id)===String(id));if(!o)return;
-  if(!confirm('წავშალო შეკვეთა?\n'+(o.cust_name||'')+' · '+(o.cust_phone||'')+'\nეს შეუქცევადია.'))return;
-  try{const {error}=await sb.from('orders').delete().eq('id',o.id);if(error)throw error;
+  if(!confirm('წავშალო შეკვეთა № '+orderNo(o)+'?\n'+(o.cust_name||'')+' · '+(o.cust_phone||'')+'\nეს შეუქცევადია.'))return;
+  try{const {data,error}=await sb.from('orders').delete().eq('id',o.id).select();if(error)throw error;
+    if(!data||!data.length){alert('❌ ვერ წაიშალა — ბაზას არ აქვს წაშლის უფლება (RLS policy).\nგაუშვი Supabase-ში:\ncreate policy "auth delete orders" on orders for delete to authenticated using (true);');return;}
     window.__orders=(window.__orders||[]).filter(x=>String(x.id)!==String(id));renderOrders();
   }catch(e){alert('ვერ წაიშალა: '+(e.message||e));}
 }
