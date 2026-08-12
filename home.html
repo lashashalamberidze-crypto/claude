@@ -308,7 +308,9 @@
       <a href="https://intechsol.ge">intechsol.ge</a>
       <a href="https://ls.com.ge">ls.com.ge</a>
     </nav>
-    <div class="ft-copy">© 2026 InTechSol · სასოფლო-სამეურნეო პლატფორმა</div>
+    <div class="ft-copy">© 2026 InTechSol · სასოფლო-სამეურნეო პლატფორმა
+      <span onclick="__go('admin')" title="admin" style="cursor:pointer;color:rgba(255,255,255,.18);user-select:none;font-size:.9em;padding:2px 8px;margin-left:8px;border-radius:6px;transition:color .2s" onmouseover="this.style.color='rgba(255,255,255,.55)'" onmouseout="this.style.color='rgba(255,255,255,.18)'">⚙</span>
+    </div>
   </footer>
 
   <div class="foot">💡 მაკეტი — დააჭირე მოდულს ან ტარიფს, გაიხსნება სრული ინფორმაცია.</div>
@@ -652,7 +654,11 @@ function __go(kind){
     }
   }catch(e){}
   // standalone fallback (home.html გახსნილია პირდაპირ)
-  location.href='index.html'+(kind==='login'?'?login=1':'');
+  location.href='index.html'+(kind==='login'?'?login=1':kind==='admin'?'?admin=1':'');
 }
+// ადმინის მალსახმობი: Ctrl+Shift+Z (ძველ გვერდზე რომ იყო)
+document.addEventListener('keydown', function(e){
+  if(e.ctrlKey && e.shiftKey && (e.key==='Z' || e.key==='z')){ e.preventDefault(); __go('admin'); }
+});
 </script>
 </body></html>

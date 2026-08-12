@@ -2673,12 +2673,14 @@ window.itsHideHome=function(){ var h=document.getElementById('homeLanding'); if(
 window.itsShowHome=function(){ var h=document.getElementById('homeLanding'); if(h){ h.style.display=''; try{ window.scrollTo(0,0); }catch(e){} } };
 window.itsGo=function(kind){
   try{
+    if(kind==='admin'){ if(typeof openAdmin==='function'){ openAdmin(); return; } if(window._openAdminPanel){ window._openAdminPanel(); return; } }
     if(kind==='login' || kind==='guide'){ if(typeof openAuth==='function'){ openAuth('login'); return; } }
   }catch(e){}
   try{ var v=document.getElementById('authOverlay'); if(v) v.classList.add('open'); }catch(e){}
 };
 window.addEventListener('load', function(){
   try{ if(location.search.indexOf('login=1')>=0){ setTimeout(function(){ if(window.itsGo) window.itsGo('login'); }, 400); } }catch(e){}
+  try{ if(location.search.indexOf('admin=1')>=0){ setTimeout(function(){ if(window.itsGo) window.itsGo('admin'); }, 400); } }catch(e){}
 });
 </script>
 <script>
