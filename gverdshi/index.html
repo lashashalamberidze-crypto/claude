@@ -2887,10 +2887,26 @@
     }
   }
 
+  // 📨 Telegram შეტყობინება ადმინს (Edge Function-ით — ბოტის ტოკენი secret-ია)
+  const TELEGRAM_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/notify-telegram`;
+  async function notifyTelegram(message) {
+    try {
+      await fetch(TELEGRAM_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'apikey': SUPABASE_KEY
+        },
+        body: JSON.stringify({ message })
+      });
+    } catch(e) { console.error('Telegram notify:', e); }
+  }
+
   async function notifyAdmin(message) {
-    // ადმინისტრატორს (შენ) გაუგზავნე SMS
-    // არ ელოდება, ფონზე იგზავნება
+    // ადმინისტრატორს (შენ) — SMS + Telegram (ორივე ფონზე, არ ელოდება)
     sendSMS(ADMIN_PHONE, message).catch(e => console.error('Admin SMS:', e));
+    notifyTelegram(message).catch(e => console.error('Admin TG:', e));
   }
 
   // 📱 ოსტატისთვის ახალი მომხმარებლის შესახებ SMS
