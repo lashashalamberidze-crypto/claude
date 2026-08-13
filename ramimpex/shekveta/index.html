@@ -85,7 +85,7 @@ textarea{min-height:60px;resize:vertical}
        <input id="cxSize" placeholder="ზომა (მაგ. 400×300×200)" style="flex:1;padding:9px 11px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit">
        <input id="cxQty" type="number" min="1" placeholder="რაოდ. *" style="width:104px;padding:9px 11px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit">
      </div>
-     <input id="cxPurpose" placeholder="რისთვის (მაგ. ხილისთვის)" style="width:100%;padding:9px 11px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit">
+     <div style="display:flex;gap:8px"><input id="cxPurpose" placeholder="რისთვის (მაგ. ხილისთვის)" style="flex:1;padding:9px 11px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><input id="cxPly" placeholder="შრე (მაგ. 3/5)" style="width:120px;padding:9px 11px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"></div>
      <button class="addbtn" id="cxAdd" style="width:100%">＋ დამატება შეკვეთაში</button>
    </div>
    <label>დამატებითი შენიშვნა / დიზაინი (არჩ.)</label><input id="rqTitle" placeholder="მაგ. ლოგო, ფერი, ვადა…">
@@ -174,40 +174,40 @@ function list(){
      var media='';
      if(pg.img&&pg.img.r) media+='<img src="'+imgSrc(pg.img.r)+'" onclick="zoom(this.src)" onerror="this.style.display=\'none\'" alt="ფოტო">';
      if(pg.img&&pg.img.d) media+='<img src="'+imgSrc(pg.img.d)+'" onclick="zoom(this.src)" onerror="this.style.display=\'none\'" alt="სქემა">';
-     html+='<div class="ptype"><div class="media">'+(media||'<div class="muted" style="font-size:10px">ფოტო მალე</div>')+'</div><div class="info"><div class="tt">'+esc(pg.title)+'</div><div class="cc">'+sizes.length+' ზომა · დააჭირე სურათს გასადიდებლად</div><div class="addrow"><select id="sel_'+pi+'">'+opts+'</select><input id="qty_'+pi+'" type="number" min="1" placeholder="რაოდ. *" style="width:96px;padding:8px 10px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><button class="addbtn" data-box="'+pi+'">＋ დამატება</button></div></div></div>';
+     html+='<div class="ptype"><div class="media">'+(media||'<div class="muted" style="font-size:10px">ფოტო მალე</div>')+'</div><div class="info"><div class="tt">'+esc(pg.title)+'</div><div class="cc">'+sizes.length+' ზომა · დააჭირე სურათს გასადიდებლად</div><div class="addrow"><select id="sel_'+pi+'">'+opts+'</select><input id="ply_'+pi+'" placeholder="შრე" style="width:74px;padding:8px 10px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><input id="qty_'+pi+'" type="number" min="1" placeholder="რაოდ. *" style="width:90px;padding:8px 10px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><button class="addbtn" data-box="'+pi+'">＋ დამატება</button></div></div></div>';
    });
  } else {
    c.products.forEach(function(p,pi){
      if(q && (p.code+' '+p.name+' '+p.size).toLowerCase().indexOf(q)<0) return;
-     html+='<div class="ptype simple"><div class="icon">📦</div><div class="info"><div class="tt">'+esc(p.name)+' <span class="muted" style="font-size:11px">'+esc(ruCode(p.code)||'')+'</span></div><div class="cc">'+esc(p.size||'')+(capOf(p.code)!=null?' · 📦 '+capFmt(capOf(p.code))+' ცალი/კონტ.':'')+'</div><div class="addrow"><input id="qty_s_'+pi+'" type="number" min="1" placeholder="რაოდ. *" style="width:96px;padding:8px 10px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><button class="addbtn" data-simple="'+pi+'">＋ დამატება</button></div></div></div>';
+     html+='<div class="ptype simple"><div class="icon">📦</div><div class="info"><div class="tt">'+esc(p.name)+' <span class="muted" style="font-size:11px">'+esc(ruCode(p.code)||'')+'</span></div><div class="cc">'+esc(p.size||'')+(capOf(p.code)!=null?' · 📦 '+capFmt(capOf(p.code))+' ცალი/კონტ.':'')+'</div><div class="addrow"><input id="ply_s_'+pi+'" placeholder="შრე" style="width:74px;padding:8px 10px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><input id="qty_s_'+pi+'" type="number" min="1" placeholder="რაოდ. *" style="width:90px;padding:8px 10px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><button class="addbtn" data-simple="'+pi+'">＋ დამატება</button></div></div></div>';
    });
  }
  $('plist').innerHTML=html||'<div class="empty">ვერ მოიძებნა</div>';
- $('plist').querySelectorAll('[data-box]').forEach(function(b){b.onclick=function(){var pi=+b.dataset.box;var pg=VIEW[curCat].pages[pi];var si=+$('sel_'+pi).value;var s=pg.sizes[si];var qi=$('qty_'+pi),qv=qi?qi.value:'';if(!(parseInt(qv)>0)){alert('შეიყვანეთ რაოდენობა — რამდენი ცალი გჭირდებათ.');if(qi)qi.focus();return;}addLine({code:s.code,size:s.size,type:s.type,img:(pg.img&&pg.img.r)?imgSrc(pg.img.r):'',cat:VIEW[curCat].name,kind:'box',qty:qv});if(qi)qi.value='';};});
- $('plist').querySelectorAll('[data-simple]').forEach(function(b){b.onclick=function(){var pi=+b.dataset.simple;var p=VIEW[curCat].products[pi];var qi=$('qty_s_'+pi),qv=qi?qi.value:'';if(!(parseInt(qv)>0)){alert('შეიყვანეთ რაოდენობა — რამდენი გჭირდებათ.');if(qi)qi.focus();return;}addLine({code:p.code,size:p.size,type:'',img:'',cat:VIEW[curCat].name,name:p.name,kind:catKind(VIEW[curCat].name),qty:qv});if(qi)qi.value='';};});
+ $('plist').querySelectorAll('[data-box]').forEach(function(b){b.onclick=function(){var pi=+b.dataset.box;var pg=VIEW[curCat].pages[pi];var si=+$('sel_'+pi).value;var s=pg.sizes[si];var qi=$('qty_'+pi),qv=qi?qi.value:'';var pli=$('ply_'+pi),plv=pli?pli.value:'';if(!(parseInt(qv)>0)){alert('შეიყვანეთ რაოდენობა — რამდენი ცალი გჭირდებათ.');if(qi)qi.focus();return;}addLine({code:s.code,size:s.size,type:s.type,img:(pg.img&&pg.img.r)?imgSrc(pg.img.r):'',cat:VIEW[curCat].name,kind:'box',qty:qv,ply:plv});if(qi)qi.value='';if(pli)pli.value='';};});
+ $('plist').querySelectorAll('[data-simple]').forEach(function(b){b.onclick=function(){var pi=+b.dataset.simple;var p=VIEW[curCat].products[pi];var qi=$('qty_s_'+pi),qv=qi?qi.value:'';var pli=$('ply_s_'+pi),plv=pli?pli.value:'';if(!(parseInt(qv)>0)){alert('შეიყვანეთ რაოდენობა — რამდენი გჭირდებათ.');if(qi)qi.focus();return;}addLine({code:p.code,size:p.size,type:'',img:'',cat:VIEW[curCat].name,name:p.name,kind:catKind(VIEW[curCat].name),qty:qv,ply:plv});if(qi)qi.value='';if(pli)pli.value='';};});
 }
 function zoom(src){$('imgovImg').src=src;$('imgov').classList.add('on');}
 $('imgov').onclick=function(){$('imgov').classList.remove('on');};
-function addLine(o){o.qty=o.qty||'';o.brand=o.brand||'';o.note=o.note||'';lines.push(o);renderLines();renderSummary();}
+function addLine(o){o.qty=o.qty||'';o.brand=o.brand||'';o.note=o.note||'';o.ply=o.ply||'';lines.push(o);renderLines();renderSummary();}
 function renderLines(){
  $('lineCount').textContent=lines.length?('· '+lines.length):'';
  if(!lines.length){$('lines').innerHTML='<div class="empty">ზემოთ აირჩიე პროდუქტი „＋ დამატება"-თი</div>';return;}
  $('lines').innerHTML=lines.map(function(li,idx){
   return '<div class="line">'+(li.img?'<img src="'+li.img+'" onerror="this.style.display=\'none\'">':'')+'<div class="lbody"><div class="hd"><div class="t">'+esc(ruCode(li.code)||li.name||'')+'</div><button class="rm" data-rm="'+idx+'">✕</button></div><div class="sz">'+esc(li.name?li.name+' · ':'')+esc(li.size||'')+(li.type?' · '+esc(li.type):'')+' <span class="muted">('+esc(li.cat)+')</span></div>'+(capOf(li.code)!=null?'<div class="muted" style="font-size:11px;margin-bottom:4px">📦 კონტეინერში ეტევა ≈ '+capFmt(capOf(li.code))+' ცალი</div>':'')+
-   '<div class="row"><div><label>'+(li.kind==='anth'?'რაოდენობა (ტონა) *':'რაოდენობა *')+'</label><input data-l="'+idx+'" data-f="qty" value="'+esc(li.qty)+'" placeholder="სავალდებულო" required></div>'+(li.kind==='box'?'<div><label>ბრენდირება</label><label class="chk" style="display:flex;align-items:center;gap:6px;font-weight:600;padding:9px 0"><input type="checkbox" data-l="'+idx+'" data-f="brand" style="width:auto" '+(li.brand?'checked':'')+'> კი (ლოგოთი)</label></div>':'')+'<div><label>შენიშვნა</label><input data-l="'+idx+'" data-f="note" value="'+esc(li.note)+'" placeholder="არჩ."></div></div></div></div>';
+   '<div class="row"><div><label>'+(li.kind==='anth'?'რაოდენობა (ტონა) *':'რაოდენობა *')+'</label><input data-l="'+idx+'" data-f="qty" value="'+esc(li.qty)+'" placeholder="სავალდებულო" required></div><div><label>შრე</label><input data-l="'+idx+'" data-f="ply" value="'+esc(li.ply||'')+'" placeholder="მაგ. 3/5"></div>'+(li.kind==='box'?'<div><label>ბრენდირება</label><label class="chk" style="display:flex;align-items:center;gap:6px;font-weight:600;padding:9px 0"><input type="checkbox" data-l="'+idx+'" data-f="brand" style="width:auto" '+(li.brand?'checked':'')+'> კი (ლოგოთი)</label></div>':'')+'<div><label>შენიშვნა</label><input data-l="'+idx+'" data-f="note" value="'+esc(li.note)+'" placeholder="არჩ."></div></div></div></div>';
  }).join('');
  $('lines').querySelectorAll('[data-rm]').forEach(function(b){b.onclick=function(){lines.splice(+b.dataset.rm,1);renderLines();renderSummary();};});
  $('lines').querySelectorAll('[data-l]').forEach(function(inp){var ev=inp.type==='checkbox'?'onchange':'oninput';inp[ev]=function(){lines[+inp.dataset.l][inp.dataset.f]=inp.type==='checkbox'?(inp.checked?'კი':''):inp.value;renderSummary();};});
 }
 function renderSummary(){
- var parts=lines.map(function(li){var ex=[];if(li.qty)ex.push('რაოდ: '+li.qty);if(li.brand)ex.push('ბრენდი: '+li.brand);if(li.note)ex.push(li.note);
+ var parts=lines.map(function(li){var ex=[];if(li.ply)ex.push('შრე: '+li.ply);if(li.qty)ex.push('რაოდ: '+li.qty);if(li.brand)ex.push('ბრენდი: '+li.brand);if(li.note)ex.push(li.note);
   return '<div class="sumrow"><b>'+esc(ruCode(li.code)||li.name)+'</b><div class="q">'+esc(li.size||'')+(ex.length?' · '+esc(ex.join(' · ')):'')+'</div></div>';});
  if($('rqTitle').value||$('rqDesc').value||Object.keys(rqImgs).length){var n=Object.keys(rqImgs).length;parts.push('<div class="sumrow"><b>📌 კონკრეტული მოთხოვნა</b><div class="q">'+esc($('rqTitle').value||'')+(n?' · '+n+' ფოტო':'')+'</div></div>');}
  $('summary').innerHTML=parts.length?parts.join(''):'<div class="empty">ჯერ პროდუქცია არ არის არჩეული</div>';
 }
 function buildRqGal(){var g=$('rqGal');g.innerHTML='';for(var i=0;i<3;i++){(function(i){var d=document.createElement('div');d.className='slot';d.innerHTML=(rqImgs[i]?'<img src="'+rqImgs[i]+'">':'<input type="file" accept="image/*"><div class="ph">📷 +</div>');g.appendChild(d);var fi=d.querySelector('input');if(fi)fi.onchange=function(){var f=fi.files&&fi.files[0];if(!f)return;var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){var mx=900,w=im.width,h=im.height,sc=Math.min(1,mx/Math.max(w,h));var c=document.createElement('canvas');c.width=w*sc;c.height=h*sc;c.getContext('2d').drawImage(im,0,0,c.width,c.height);rqImgs[i]=c.toDataURL('image/jpeg',0.7);buildRqGal();renderSummary();};im.src=r.result;};r.readAsDataURL(f);};})(i);}}
 function docHTML(){
- var lh=lines.map(function(li,i){var ex=[];if(li.qty)ex.push('რაოდენობა: '+li.qty);if(li.brand)ex.push('ბრენდირება: '+li.brand);if(li.note)ex.push('შენიშვნა: '+li.note);
+ var lh=lines.map(function(li,i){var ex=[];if(li.ply)ex.push('შრე: '+li.ply);if(li.qty)ex.push('რაოდენობა: '+li.qty);if(li.brand)ex.push('ბრენდირება: '+li.brand);if(li.note)ex.push('შენიშვნა: '+li.note);
   return '<div style="margin:6px 0;padding:6px 0;border-bottom:1px solid #eee"><b>'+(i+1)+'. '+esc(ruCode(li.code)||li.name)+'</b> <span class="muted">'+esc(li.size||'')+(li.type?' '+esc(li.type):'')+' · '+esc(li.cat)+'</span>'+(ex.length?'<div class="muted">'+esc(ex.join(' · '))+'</div>':'')+'</div>';}).join('');
  var imgs='';for(var k in rqImgs)imgs+='<img src="'+rqImgs[k]+'" style="width:31%;border-radius:8px;margin:3px;border:1px solid #ddd">';
  var rq=($('rqTitle').value||$('rqDesc').value||imgs)?'<div class="dsec">კონკრეტული მოთხოვნა</div>'+($('rqTitle').value?'<div class="dkv"><div class="k">სათაური</div><div>'+esc($('rqTitle').value)+'</div></div>':'')+($('rqDesc').value?'<div class="dkv"><div class="k">აღწერა</div><div>'+esc($('rqDesc').value)+'</div></div>':'')+(imgs?'<div style="margin-top:8px">'+imgs+'</div>':''):'';
@@ -215,7 +215,7 @@ function docHTML(){
 }
 function orderText(){ // მეილის ტექსტი — რუსულად (შიდა)
  var t='Новый заказ — RAM IMPEX\n\nЗаказчик: '+($('cName').value||'—')+'\nТелефон: '+($('cPhone').value||'—')+'\nE-mail: '+($('cEmail').value||'—')+'\n\nПродукция:\n';
- lines.forEach(function(li,i){var name=li.name?(NAME_RU[li.name]||li.name):ruCode(li.code);var ex=[];if(li.qty)ex.push('Кол-во: '+tr(li.qty));if(li.brand)ex.push('Брендирование: да');if(li.note)ex.push('Прим.: '+tr(li.note));
+ lines.forEach(function(li,i){var name=li.name?(NAME_RU[li.name]||li.name):ruCode(li.code);var ex=[];if(li.ply)ex.push('Слой: '+tr(li.ply));if(li.qty)ex.push('Кол-во: '+tr(li.qty));if(li.brand)ex.push('Брендирование: да');if(li.note)ex.push('Прим.: '+tr(li.note));
   t+=(i+1)+'. '+name+' ('+tr(li.size||'')+(li.type?' '+li.type:'')+', '+(CAT_RU[li.cat]||li.cat)+')'+(ex.length?' — '+ex.join(', '):'')+'\n';});
  if($('rqTitle').value||$('rqDesc').value)t+='\nИндивидуальный запрос: '+tr($('rqTitle').value||'')+' '+tr($('rqDesc').value||'');
  t+='\n\n(ფოტოები, ასეთის არსებობისას, ცალკე იგზავნება)';
@@ -235,7 +235,7 @@ $('bSend').onclick=async function(){
   if(!window.sb) throw new Error('კავშირი ვერ დამყარდა, სცადე განახლება (F5)');
   var imgs=[]; for(var k in rqImgs) imgs.push(rqImgs[k]);
   var payload={direction:qd||'',cust_name:$('cName').value||null,cust_phone:$('cPhone').value||null,cust_email:$('cEmail').value||null,
-   items:lines.map(function(li){return {code:li.code,name:li.name||null,size:li.size||null,type:li.type||null,cat:li.cat,kind:li.kind||'box',qty:li.qty||null,brand:li.brand||null,note:li.note||null};}),
+   items:lines.map(function(li){return {code:li.code,name:li.name||null,size:li.size||null,type:li.type||null,cat:li.cat,kind:li.kind||'box',qty:li.qty||null,ply:li.ply||null,brand:li.brand||null,note:li.note||null};}),
    req_title:$('rqTitle').value||null,req_desc:$('rqDesc').value||null,images:imgs};
   var res=await window.sb.from('orders').insert(payload);
   if(res.error) throw res.error;
@@ -244,7 +244,7 @@ $('bSend').onclick=async function(){
  }catch(e){ alert('ვერ გაიგზავნა: '+(e.message||e)); btn.disabled=false; btn.textContent=old; }
 };
 $('search').oninput=list;['rqTitle','rqDesc','cName'].forEach(function(id){$(id).oninput=renderSummary;});
-$('cxAdd').onclick=function(){var nm=$('cxName').value.trim(),sz=$('cxSize').value.trim(),pu=$('cxPurpose').value.trim(),qv=$('cxQty').value;if(!nm&&!sz){alert('შეავსე დასახელება ან ზომა.');return;}if(!(parseInt(qv)>0)){alert('შეიყვანე რაოდენობა — რამდენი ცალი გჭირდებათ.');$('cxQty').focus();return;}addLine({code:'',name:nm||'სპეც-პროდუქტი',size:sz,type:'',cat:'სპეც შეკვეთა',kind:'custom',qty:qv,note:pu});$('cxName').value='';$('cxSize').value='';$('cxPurpose').value='';$('cxQty').value='';};
+$('cxAdd').onclick=function(){var nm=$('cxName').value.trim(),sz=$('cxSize').value.trim(),pu=$('cxPurpose').value.trim(),qv=$('cxQty').value;if(!nm&&!sz){alert('შეავსე დასახელება ან ზომა.');return;}if(!(parseInt(qv)>0)){alert('შეიყვანე რაოდენობა — რამდენი ცალი გჭირდებათ.');$('cxQty').focus();return;}addLine({code:'',name:nm||'სპეც-პროდუქტი',size:sz,type:'',cat:'სპეც შეკვეთა',kind:'custom',qty:qv,note:pu,ply:($('cxPly')?$('cxPly').value:'')});$('cxName').value='';$('cxSize').value='';$('cxPurpose').value='';$('cxQty').value='';if($('cxPly'))$('cxPly').value='';};
 window.zoom=zoom;
 if(DIRTITLE)$('topsu').textContent='შეკვეთა · '+DIRTITLE;
 tabs();list();renderLines();renderSummary();buildRqGal();
