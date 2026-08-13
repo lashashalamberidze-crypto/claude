@@ -379,6 +379,7 @@ function editInvoice(inv){
   if($('iDate'))$('iDate').value=inv.date||todayStr();
   if($('iCust'))$('iCust').value=inv.cust||'';
   if($('iId'))$('iId').value=inv.idc||'';
+  if($('iPhone'))$('iPhone').value=inv.phone||'';
   const ex=inv.extra||{};
   if($('brandAmt'))$('brandAmt').value=ex.brandAmt||'';
   if($('transAmt'))$('transAmt').value=ex.transAmt||'';
@@ -396,6 +397,7 @@ async function invoiceFromOrder(o){
   app.style.display='none';catEl.style.display='none';bukEl.style.display='none';invEl.style.display='';
   await openInvoice();
   if($('iCust'))$('iCust').value=o.cust_name||'';
+  if($('iPhone'))$('iPhone').value=o.cust_phone||'';
   const miss=invDraft.filter(l=>!l.price).length;
   window.scrollTo(0,0);
   if(!invDraft.length){alert('ამ შეკვეთას პროდუქცია არ აქვს (მხოლოდ ტექსტური მოთხოვნაა).');}
@@ -424,7 +426,7 @@ function renderInvoice(){
    '<div class="card"><h2>🧾 ინვოისი</h2>'+
    '<div id="editBanner" style="display:'+(editingInvId?'':'none')+';background:#FFF0CC;color:#8a6a00;font-weight:700;border-radius:8px;padding:7px 12px;margin-bottom:8px;font-size:13px">✏ რედაქტირდება</div>'+
    '<div class="row"><div><label>ინვოისის № (ავტომატური)</label><input id="iNo" value="'+(editingInvId?'':nextInvNo())+'" placeholder="ავტომ."></div><div><label>თარიღი</label><input id="iDate" type="date" value="'+todayStr()+'"></div></div>'+
-   '<div class="row"><div><label>მყიდველი</label><input id="iCust" placeholder="შპს ..."></div><div><label>ს/კ (არჩ.)</label><input id="iId" placeholder="საიდ. კოდი"></div></div>'+
+   '<div class="row"><div><label>მყიდველი</label><input id="iCust" placeholder="შპს ..."></div><div><label>ს/კ (არჩ.)</label><input id="iId" placeholder="საიდ. კოდი"></div><div><label>ტელეფონი (არჩ.)</label><input id="iPhone" placeholder="5xx xx xx xx"></div></div>'+
    '<label style="margin-top:10px">პროდუქტის დამატება</label><div class="row"><div style="flex:3"><select id="iPick">'+invPickerOptions()+'</select></div><div style="flex:0 0 90px;min-width:80px"><input id="iQty" type="number" min="1" value="1"></div><div style="flex:0 0 auto"><button class="btn" id="iAdd" style="margin-top:0">＋ დამატება</button></div></div>'+
    '</div>'+
    '<div class="card"><div class="scroll"><table id="iTbl"><thead><tr><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th class="right">ფასი ₾</th><th class="right">რაოდ.</th><th class="right">ჯამი ₾</th><th></th></tr></thead><tbody id="iRows"></tbody></table></div>'+
@@ -436,7 +438,7 @@ function renderInvoice(){
   $('iAdd').onclick=()=>{const code=$('iPick').value;if(!code)return;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ex=invDraft.find(l=>l.code===code);if(ex)ex.qty+=qty;else invDraft.push({code,price:p.price,qty});renderInvLines();};
   $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}printInvoice(currentInv());};
   $('iSave').onclick=saveInvoice;
-  $('iClear').onclick=()=>{invDraft=[];editingInvId=null;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iNo','brandAmt','transAmt'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();};
+  $('iClear').onclick=()=>{invDraft=[];editingInvId=null;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iPhone','iNo','brandAmt','transAmt'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();};
   ['brandAmt','transAmt'].forEach(id=>$(id).oninput=renderInvLines);
   if(!editingInvId&&$('iDate'))$('iDate').onchange=()=>{$('iNo').value=makeInvNo($('iDate').value,nextInvSeq());};
   renderInvLines();renderInvList();
@@ -455,7 +457,7 @@ function renderInvLines(){
 }
 function updInvTotals(){const t=invTotals();$('tSub').textContent=money(t.sub)+' ₾';$('tVat').textContent=money(t.vat)+' ₾';$('tGrand').textContent=money(t.grand)+' ₾';}
 function updInvRow(i,inp){const l=invDraft[i];const tr=inp.closest('tr');if(tr){const s=tr.querySelector('.sum');if(s)s.textContent=money(l.price*l.qty);}updInvTotals();}
-function currentInv(){const t=invTotals();return {no:$('iNo').value,date:$('iDate').value||todayStr(),cust:$('iCust').value,idc:$('iId').value,
+function currentInv(){const t=invTotals();return {no:$('iNo').value,date:$('iDate').value||todayStr(),cust:$('iCust').value,idc:$('iId').value,phone:($('iPhone')?$('iPhone').value:''),
   lines:invDraft.map(l=>{const p=byCode(l.code)||{};return {code:l.code,name:l.name||p.name,size:l.size||p.size,color:p.color,price:l.price,qty:l.qty};}),
   sub:t.sub,vat:t.vat,extra:{brandAmt:t.brandAmt,transAmt:t.transAmt},grand:t.grand};}
 async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}const inv=currentInv();
@@ -465,7 +467,7 @@ async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამ�
     INVOICES.unshift(Object.assign({created_at:new Date().toISOString()},inv));
     alert((isEdit?'განახლდა ✔':'შენახულია ✔')+'  სულ: '+money(inv.grand)+' ₾');
     invDraft=[];editingInvId=null;const eb=$('editBanner');if(eb)eb.style.display='none';
-    ['iCust','iId','iNo','brandAmt','transAmt'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();renderInvList();}
+    ['iCust','iId','iPhone','iNo','brandAmt','transAmt'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();renderInvList();}
   catch(e){alert('ვერ შეინახა: '+(e.message||e)+'\n(გაუშვი RamImpex_invoices_table.sql)');}
 }
 function renderInvList(){const host=$('iList');if(!host)return;if(!INVOICES.length){host.innerHTML='<div class="empty" style="padding:16px">ჯერ ინვოისი არ არის.</div>';return;}
@@ -499,7 +501,7 @@ function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map(
   return '<div style="max-width:720px;margin:0 auto;color:#14261C;padding:20px;font-family:system-ui,\'Noto Sans Georgian\',sans-serif">'+
    '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #0F8A4D;padding-bottom:10px;margin-bottom:14px"><div><div style="font-size:26px;font-weight:800;color:#0B6B3C">RAM IMPEX</div><div style="font-size:12px;color:#5C6B62">შპს „რამ იმპექს" · <b style="color:#0B6B3C">ს/კ: 405565794</b><br>იმპორტი · დისტრიბუცია · 📞 595 533 500 · ✉ info@ramimpex.com.ge · 🌐 ramimpex.com.ge</div></div>'+
    '<div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#0B6B3C">ინვოისი</div><div>№ <b>'+esc(inv.no||"—")+'</b></div><div>თარიღი: '+esc(inv.date||"")+'</div></div></div>'+
-   '<div style="margin-bottom:12px;font-size:13px">მყიდველი: <b>'+esc(inv.cust||"—")+'</b>'+(inv.idc?' · ს/კ: '+esc(inv.idc):'')+'</div>'+
+   '<div style="margin-bottom:12px;font-size:13px">მყიდველი: <b>'+esc(inv.cust||"—")+'</b>'+(inv.idc?' · ს/კ: '+esc(inv.idc):'')+(inv.phone?' · 📞 '+esc(inv.phone):'')+'</div>'+
    '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0F8A4D;color:#fff"><th style="padding:7px">№</th><th style="padding:7px;text-align:left">კოდი</th><th style="padding:7px;text-align:left">დასახელება</th><th style="padding:7px;text-align:left">ზომა</th><th style="padding:7px;text-align:right">ფასი</th><th style="padding:7px;text-align:right">რაოდ.</th><th style="padding:7px;text-align:right">ჯამი</th></tr></thead><tbody>'+rows+'</tbody></table>'+
    '<div style="max-width:300px;margin-left:auto;margin-top:14px;font-size:14px">'+
    '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>ქვეჯამი (დღგ-ით)</span><b>'+money(inv.sub)+' ₾</b></div>'+
