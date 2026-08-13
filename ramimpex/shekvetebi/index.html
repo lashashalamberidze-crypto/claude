@@ -174,7 +174,7 @@ async function openOrderForm(o){
     '<label style="margin-top:10px">კომენტარი / დანიშნულება (რისთვის, ვადა…)</label><textarea id="mNote" rows="2" placeholder="მაგ. „ხილისთვის, თეთრი, ლოგოთი, 2 კვირაში"…">'+esc(o&&(o.req_desc||o.req_title)||'')+'</textarea>'+
     '<label style="margin-top:10px">ფოტოები (არჩ.)</label><div id="mGal" style="display:flex;gap:8px;flex-wrap:wrap"></div>'+
     '<div class="row" style="margin-top:12px"><button class="btn" id="mSave">💾 შენახვა</button><button class="btn line" id="mCancel">გაუქმება</button></div></div>';
-  $('mAdd').onclick=()=>{const code=$('mPick').value;if(!code){alert('აირჩიე პროდუქტი.');return;}const p=byCode(code);if(!p)return;const qty=parseInt($('mQty').value);if(!(qty>0)){alert('შეიყვანე რაოდენობა — რამდენი ცალი.');$('mQty').focus();return;}const ply=($('mPly')?$('mPly').value:'');const ex=manualItems.find(x=>x.code===code);if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else manualItems.push({code,name:p.name,size:p.size,type:p.mark,cat:p.group,qty,ply});$('mQty').value='';if($('mPly'))$('mPly').value='';renderManualItems();};
+  $('mAdd').onclick=()=>{const code=$('mPick').value;if(!code){alert('აირჩიე პროდუქტი.');return;}const p=byCode(code);if(!p)return;const qty=parseInt($('mQty').value);if(!(qty>0)){alert('შეიყვანე რაოდენობა — რამდენი ცალი.');$('mQty').focus();return;}const ply=itmBox({code:code,cat:p.group})?($('mPly')?$('mPly').value:''):'';const ex=manualItems.find(x=>x.code===code);if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else manualItems.push({code,name:p.name,size:p.size,type:p.mark,cat:p.group,qty,ply});$('mQty').value='';if($('mPly'))$('mPly').value='';renderManualItems();};
   $('cAdd').onclick=()=>{const nm=$('cName').value.trim(),sz=$('cSize').value.trim();if(!nm&&!sz){alert('შეავსე დასახელება ან ზომა.');return;}const cq=parseInt($('cQty').value);if(!(cq>0)){alert('შეიყვანე რაოდენობა — რამდენი ცალი.');$('cQty').focus();return;}manualItems.push({code:'',name:nm||'სპეც-პროდუქტი',size:sz,type:'',cat:'სპეც შეკვეთა',qty:cq,ply:($('cPly')?$('cPly').value:'')});$('cName').value='';$('cSize').value='';$('cQty').value='';if($('cPly'))$('cPly').value='';renderManualItems();};
   $('mSave').onclick=saveManualOrder;
   $('mCancel').onclick=()=>{editingOrderId=null;manualItems=[];manualImgs=[];$('ordFormWrap').innerHTML='';};
@@ -193,7 +193,7 @@ function buildManualGal(){const g=$('mGal');if(!g)return;g.innerHTML='';
 function renderManualItems(){const h=$('mItems');if(!h)return;
   if(!manualItems.length){h.innerHTML='<div class="muted" style="font-size:12px">პროდუქტი ჯერ არ არის (შეგიძლია მხოლოდ კომენტარით დაამატო).</div>';return;}
   h.innerHTML='<div class="muted" style="font-size:11.5px;margin-bottom:4px">✏ დასახელება/ზომა/შრე/რაოდენობა რედაქტირებადია — შეცვალე პირდაპირ.</div><div class="scroll"><table><thead><tr><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>შრე</th><th class="right">რაოდ.</th><th></th></tr></thead><tbody>'+
-    manualItems.map((l,i)=>'<tr><td>'+(l.code?'<b>'+esc(ruCode(l.code))+'</b>':'<span class="muted">—</span>')+'</td><td><input value="'+esc(l.name||'')+'" placeholder="დასახელება" style="min-width:130px" data-mn="'+i+'"></td><td><input value="'+esc(l.size||'')+'" placeholder="ზომა" style="width:110px" data-ms="'+i+'"></td><td><input value="'+esc(l.ply||'')+'" placeholder="მაგ. 3/5" style="width:70px" data-mp="'+i+'"></td><td class="right"><input type="number" min="1" value="'+l.qty+'" style="width:84px;text-align:right" data-mq="'+i+'"></td><td class="right"><button class="btn danger sm" data-mx="'+i+'">✕</button></td></tr>').join('')+'</tbody></table></div>';
+    manualItems.map((l,i)=>'<tr><td>'+(l.code?'<b>'+esc(ruCode(l.code))+'</b>':'<span class="muted">—</span>')+'</td><td><input value="'+esc(l.name||'')+'" placeholder="დასახელება" style="min-width:130px" data-mn="'+i+'"></td><td><input value="'+esc(l.size||'')+'" placeholder="ზომა" style="width:110px" data-ms="'+i+'"></td><td>'+(itmBox(l)?'<input value="'+esc(l.ply||'')+'" placeholder="მაგ. 3/5" style="width:70px" data-mp="'+i+'">':'<span class="muted">—</span>')+'</td><td class="right"><input type="number" min="1" value="'+l.qty+'" style="width:84px;text-align:right" data-mq="'+i+'"></td><td class="right"><button class="btn danger sm" data-mx="'+i+'">✕</button></td></tr>').join('')+'</tbody></table></div>';
   h.querySelectorAll('input[data-mn]').forEach(inp=>inp.oninput=()=>{manualItems[+inp.dataset.mn].name=inp.value;});
   h.querySelectorAll('input[data-ms]').forEach(inp=>inp.oninput=()=>{manualItems[+inp.dataset.ms].size=inp.value;});
   h.querySelectorAll('input[data-mp]').forEach(inp=>inp.oninput=()=>{manualItems[+inp.dataset.mp].ply=inp.value;});
@@ -262,6 +262,8 @@ function calcRow(d,it){
 }
 function effective(d,it){if(it.pfinal!=null&&it.pfinal!==''&&!isNaN(+it.pfinal))return Math.round((+it.pfinal)*100)/100;return calcRow(d,it).price;}
 function byCode(c){for(const d of DIRS){for(const it of d.items){if(it.code===c)return {code:c,name:it.name,size:it.size,color:it.color,mark:it.mark,dir:d.dir,group:d.name,price:effective(d,it)};}}return null;}
+// შრე მხოლოდ მუყაოს ყუთებზეა — კუთხოვანებსა და ანთრაციტს არ ჭირდება
+function itmBox(l){if(!l)return true;const c=l.cat||'';if(c==='კუთხოვანი დამცავები'||c==='ანთრაციტის ბრიკეტი')return false;if(l.code){const p=byCode(l.code);if(p&&p.dir&&p.dir!=='მუყაოს ყუთები')return false;}return true;}
 function directions(){const o=[];DIRS.forEach(g=>{if(o.indexOf(g.dir)<0)o.push(g.dir);});return o;}
 function curGroup(){return DIRS.find(x=>x.id===curGid)||DIRS[0];}
 function flagSaving(t){const f=$('saveflag');if(f)f.textContent=t;}
@@ -436,7 +438,7 @@ function renderInvoice(){
    '<div class="ttl"><div class="tr"><span>ქვეჯამი (დღგ-ით)</span><b id="tSub">0.00 ₾</b></div><div class="tr" style="color:var(--muted);font-size:12px"><span>მ.შ. დღგ 18%</span><span id="tVat">0.00 ₾</span></div><div class="tr grand"><span>სულ</span><span id="tGrand">0.00 ₾</span></div></div>'+
    '<div class="row" style="margin-top:12px"><button class="btn" id="iPrint">🖨 ბეჭდვა / PDF</button><button class="btn line" id="iSave">💾 შენახვა</button><button class="btn danger" id="iClear">🗑 გასუფთავება</button></div></div>'+
    '<div class="card"><h2>📚 ბოლო ინვოისები</h2><div id="iList"></div></div>';
-  $('iAdd').onclick=()=>{const code=$('iPick').value;if(!code)return;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ply=($('iPlyAdd')?$('iPlyAdd').value:'');const ex=invDraft.find(l=>l.code===code);if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else invDraft.push({code,price:p.price,qty,ply});if($('iPlyAdd'))$('iPlyAdd').value='';renderInvLines();};
+  $('iAdd').onclick=()=>{const code=$('iPick').value;if(!code)return;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ply=itmBox({code:code})?($('iPlyAdd')?$('iPlyAdd').value:''):'';const ex=invDraft.find(l=>l.code===code);if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else invDraft.push({code,price:p.price,qty,ply});if($('iPlyAdd'))$('iPlyAdd').value='';renderInvLines();};
   $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}printInvoice(currentInv());};
   $('iSave').onclick=saveInvoice;
   $('iClear').onclick=()=>{invDraft=[];editingInvId=null;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iPhone','iNo','brandAmt','transAmt'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();};
@@ -447,7 +449,7 @@ function renderInvoice(){
 function renderInvLines(){
   const tb=$('iRows');$('iEmpty').style.display=invDraft.length?'none':'block';$('iTbl').style.display=invDraft.length?'':'none';
   tb.innerHTML=invDraft.map((l,i)=>{const p=byCode(l.code)||{};return '<tr><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+esc(l.name||p.name||'')+(p.color?' <span class="muted">· '+esc(p.color)+'</span>':'')+'</td><td>'+esc(l.size||p.size||'')+'</td>'+
-    '<td><input value="'+esc(l.ply||'')+'" placeholder="შრე" style="width:64px" data-ply="'+i+'"></td>'+
+    '<td>'+(itmBox(l)?'<input value="'+esc(l.ply||'')+'" placeholder="შრე" style="width:64px" data-ply="'+i+'">':'<span class="muted">—</span>')+'</td>'+
     '<td class="right"><input type="number" step="0.01" value="'+l.price+'" style="width:80px;text-align:right;background:#fffbea" data-p="'+i+'"></td>'+
     '<td class="right"><input type="number" min="1" value="'+l.qty+'" style="width:96px;min-width:96px;text-align:right" data-q="'+i+'"></td>'+
     '<td class="right sum">'+money(l.price*l.qty)+'</td><td class="right"><button class="btn danger sm" data-x="'+i+'">✕</button></td></tr>';}).join('');
