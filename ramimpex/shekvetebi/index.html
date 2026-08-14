@@ -397,7 +397,7 @@ let invDraft=[], INVOICES=[], editingInvId=null;
 // შენახული ინვოისის ჩატვირთვა რედაქტირებისთვის
 function editInvoice(inv){
   editingInvId=inv.id;
-  invDraft=(inv.lines||[]).map(l=>({code:l.code,price:l.price,qty:l.qty,name:l.name,size:l.size,ply:l.ply||''}));
+  invDraft=(inv.lines||[]).map(l=>({code:l.code,price:l.price,qty:l.qty,name:l.name,size:l.size,ply:l.ply||'',brand:l.brand||''}));
   renderInvoice();
   if($('iNo'))$('iNo').value=inv.no||'';
   if($('iDate'))$('iDate').value=inv.date||todayStr();
@@ -453,7 +453,7 @@ function renderInvoice(){
    '<div class="row"><div><label>მყიდველი</label><input id="iCust" placeholder="შპს ..."></div><div><label>ს/კ (არჩ.)</label><input id="iId" placeholder="საიდ. კოდი"></div><div><label>ტელეფონი (არჩ.)</label><input id="iPhone" placeholder="5xx xx xx xx"></div></div>'+
    '<label style="margin-top:10px">პროდუქტის დამატება</label><div class="row"><div style="flex:3"><select id="iPick">'+invPickerOptions()+'</select></div><div style="flex:0 0 74px"><input id="iPlyAdd" placeholder="შრე"></div><div style="flex:0 0 80px"><input id="iQty" type="number" min="1" value="1"></div><div style="flex:0 0 auto"><button class="btn" id="iAdd" style="margin-top:0">＋ დამატება</button></div></div>'+
    '</div>'+
-   '<div class="card"><div class="scroll"><table id="iTbl"><thead><tr><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>შრე</th><th class="right">ფასი ₾</th><th class="right">რაოდ.</th><th class="right">ჯამი ₾</th><th></th></tr></thead><tbody id="iRows"></tbody></table></div>'+
+   '<div class="card"><div class="scroll"><table id="iTbl"><thead><tr><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>შრე</th><th>ბრენდ.</th><th class="right">ფასი ₾</th><th class="right">რაოდ.</th><th class="right">ჯამი ₾</th><th></th></tr></thead><tbody id="iRows"></tbody></table></div>'+
    '<div id="iEmpty" class="empty">ჯერ პროდუქტი არ არის დამატებული.</div>'+
    '<div class="row" style="margin-top:10px"><div><label>დამატ. ბრენდირება ₾ (არჩ.)</label><input id="brandAmt" type="number" step="0.01" placeholder="0.00"></div><div><label>ტრანსპ. თბილისამდე ₾ (არჩ.)</label><input id="transAmt" type="number" step="0.01" placeholder="0.00"></div></div>'+
    '<div class="ttl"><div class="tr"><span>ქვეჯამი (დღგ-ით)</span><b id="tSub">0.00 ₾</b></div><div class="tr" style="color:var(--muted);font-size:12px"><span>მ.შ. დღგ 18%</span><span id="tVat">0.00 ₾</span></div><div class="tr grand"><span>სულ</span><span id="tGrand">0.00 ₾</span></div></div>'+
@@ -471,10 +471,12 @@ function renderInvLines(){
   const tb=$('iRows');$('iEmpty').style.display=invDraft.length?'none':'block';$('iTbl').style.display=invDraft.length?'':'none';
   tb.innerHTML=invDraft.map((l,i)=>{const p=byCode(l.code)||{};return '<tr><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+esc(l.name||p.name||'')+(p.color?' <span class="muted">· '+esc(p.color)+'</span>':'')+'</td><td>'+esc(l.size||p.size||'')+'</td>'+
     '<td>'+(itmBox(l)?'<input value="'+esc(l.ply||'')+'" placeholder="შრე" style="width:64px" data-ply="'+i+'">':'<span class="muted">—</span>')+'</td>'+
+    '<td><select data-brand="'+i+'" style="padding:5px 6px"><option value=""'+(!l.brand?' selected':'')+'>—</option><option value="კი"'+(l.brand==='კი'?' selected':'')+'>კი</option><option value="არა"'+(l.brand==='არა'?' selected':'')+'>არა</option></select></td>'+
     '<td class="right"><input type="number" step="0.01" value="'+l.price+'" style="width:80px;text-align:right;background:#fffbea" data-p="'+i+'"></td>'+
     '<td class="right"><input type="number" min="1" value="'+l.qty+'" style="width:96px;min-width:96px;text-align:right" data-q="'+i+'"></td>'+
     '<td class="right sum">'+money(l.price*l.qty)+'</td><td class="right"><button class="btn danger sm" data-x="'+i+'">✕</button></td></tr>';}).join('');
   tb.querySelectorAll('input[data-ply]').forEach(inp=>inp.oninput=()=>{invDraft[+inp.dataset.ply].ply=inp.value;});
+  tb.querySelectorAll('select[data-brand]').forEach(s=>s.onchange=()=>{invDraft[+s.dataset.brand].brand=s.value;});
   tb.querySelectorAll('input[data-q]').forEach(inp=>inp.oninput=()=>{const i=+inp.dataset.q;invDraft[i].qty=parseInt(inp.value)||0;updInvRow(i,inp);});
   tb.querySelectorAll('input[data-q]').forEach(inp=>inp.onblur=()=>{const i=+inp.dataset.q;if(!(parseInt(inp.value)>0)){invDraft[i].qty=1;inp.value=1;updInvRow(i,inp);}});
   tb.querySelectorAll('input[data-p]').forEach(inp=>inp.oninput=()=>{const i=+inp.dataset.p;invDraft[i].price=parseFloat(inp.value)||0;updInvRow(i,inp);});
@@ -484,7 +486,7 @@ function renderInvLines(){
 function updInvTotals(){const t=invTotals();$('tSub').textContent=money(t.sub)+' ₾';$('tVat').textContent=money(t.vat)+' ₾';$('tGrand').textContent=money(t.grand)+' ₾';}
 function updInvRow(i,inp){const l=invDraft[i];const tr=inp.closest('tr');if(tr){const s=tr.querySelector('.sum');if(s)s.textContent=money(l.price*l.qty);}updInvTotals();}
 function currentInv(){const t=invTotals();return {no:$('iNo').value,date:$('iDate').value||todayStr(),cust:$('iCust').value,idc:$('iId').value,phone:($('iPhone')?$('iPhone').value:''),
-  lines:invDraft.map(l=>{const p=byCode(l.code)||{};return {code:l.code,name:l.name||p.name,size:l.size||p.size,ply:l.ply||'',color:p.color,price:l.price,qty:l.qty};}),
+  lines:invDraft.map(l=>{const p=byCode(l.code)||{};return {code:l.code,name:l.name||p.name,size:l.size||p.size,ply:l.ply||'',brand:l.brand||'',color:p.color,price:l.price,qty:l.qty};}),
   sub:t.sub,vat:t.vat,extra:{brandAmt:t.brandAmt,transAmt:t.transAmt},grand:t.grand};}
 async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}const inv=currentInv();
   const isEdit=!!editingInvId; inv.id=editingInvId||String(Date.now());
@@ -522,7 +524,7 @@ function printInvoice(inv){
   window.addEventListener('afterprint',restore);
   window.print();
 }
-function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map((l,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+esc(l.name||'')+(l.color?' · '+esc(l.color):'')+'</td><td>'+esc(l.size||'')+(l.ply?' · '+esc(l.ply)+' შრე':'')+'</td><td style="text-align:right">'+money(l.price)+'</td><td style="text-align:right">'+l.qty+'</td><td style="text-align:right">'+money(l.price*l.qty)+'</td></tr>').join('');
+function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map((l,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+esc(l.name||'')+(l.color?' · '+esc(l.color):'')+'</td><td>'+esc(l.size||'')+(l.ply?' · '+esc(l.ply)+' შრე':'')+(l.brand?' · '+(l.brand==='კი'?'ბრენდირებით':'ბრენდირების გარეშე'):'')+'</td><td style="text-align:right">'+money(l.price)+'</td><td style="text-align:right">'+l.qty+'</td><td style="text-align:right">'+money(l.price*l.qty)+'</td></tr>').join('');
   return '<div style="max-width:720px;margin:0 auto;color:#14261C;padding:20px;font-family:system-ui,\'Noto Sans Georgian\',sans-serif">'+
    '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #0F8A4D;padding-bottom:10px;margin-bottom:14px"><div><div style="font-size:26px;font-weight:800;color:#0B6B3C">RAM IMPEX</div><div style="font-size:12px;color:#5C6B62">შპს „რამ იმპექს" · <b style="color:#0B6B3C">ს/კ: 405565794</b><br>იმპორტი · დისტრიბუცია · 📞 595 533 500 · ✉ info@ramimpex.com.ge · 🌐 ramimpex.com.ge</div></div>'+
    '<div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#0B6B3C">ინვოისი</div><div>№ <b>'+esc(inv.no||"—")+'</b></div><div>თარიღი: '+esc(inv.date||"")+'</div></div></div>'+
