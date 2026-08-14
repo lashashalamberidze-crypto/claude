@@ -255,10 +255,11 @@ function printZapros(o){
    '<div style="background:#fff;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.3)">'+doc+'</div>'+
  '</div>';
  document.body.appendChild(ovl);
+ const docEl=ovl.querySelector('#zaprosDoc');
  const fname=('Заказ '+orderNo(o)).replace(/[\\/:*?"<>|]/g,'-').trim();
  $('zaprosClose').onclick=()=>ovl.remove();
  $('zaprosPrint').onclick=()=>{
-   $('printArea').innerHTML=document.getElementById('zaprosDoc').outerHTML;
+   $('printArea').innerHTML='<div style="font-family:Arial;padding:24px;color:#111;background:#fff">'+docEl.innerHTML+'</div>';
    const prev=document.title;document.title=fname;
    const restore=()=>{document.title=prev;window.removeEventListener('afterprint',restore);};
    window.addEventListener('afterprint',restore);window.print();
