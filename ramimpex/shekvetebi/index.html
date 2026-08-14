@@ -231,20 +231,38 @@ function printOrder(o){const items=(o.items||[]).map((it,i)=>{const name=it.name
 
 function printZapros(o){
  const td='border:1px solid #ccc;padding:6px 9px';
- const rows=(o.items||[]).map((it,i)=>{const name=it.name?(NAME_RU[it.name]||tr(it.name)):'';return '<tr><td style="'+td+'">'+(i+1)+'</td><td style="'+td+'"><b>'+esc(ruCode(it.code))+'</b></td><td style="'+td+'">'+esc(name)+'</td><td style="'+td+'">'+esc(tr(it.size||''))+(it.type?' '+esc(it.type):'')+(it.ply?' · слой '+esc(tr(it.ply)):'')+'</td><td style="'+td+';text-align:right">'+esc(it.qty?tr(it.qty):'')+'</td><td style="'+td+';min-width:90px">&nbsp;</td></tr>';}).join('');
+ const ce='contenteditable="true" style="outline:none"';
+ const rows=(o.items||[]).map((it,i)=>{const name=it.name?(NAME_RU[it.name]||tr(it.name)):'';const sz=esc(tr(it.size||''))+(it.type?' '+esc(it.type):'')+(it.ply?' · слой '+esc(tr(it.ply)):'');return '<tr><td style="'+td+'">'+(i+1)+'</td><td style="'+td+'"><b>'+esc(ruCode(it.code))+'</b></td><td style="'+td+'" '+ce+'>'+esc(name)+'</td><td style="'+td+'" '+ce+'>'+sz+'</td><td style="'+td+';text-align:right" '+ce+'>'+esc(it.qty?tr(it.qty):'')+'</td><td style="'+td+';min-width:90px">&nbsp;</td></tr>';}).join('');
  const th=s=>'<th style="'+td+';background:#eef7f1;text-align:left">'+s+'</th>';
- $('printArea').innerHTML='<div style="font-family:Arial;padding:24px;color:#111">'+
+ const imgs=(o.images||[]).map(u=>'<img src="'+u+'" style="width:170px;height:170px;object-fit:contain;border:1px solid #ccc;margin:4px;border-radius:6px">').join('');
+ const dop=((tr(o.req_title||'')+' '+tr(o.req_desc||'')).trim())||'—';
+ const doc='<div id="zaprosDoc" style="font-family:Arial;padding:24px;color:#111;background:#fff">'+
    '<div style="border-bottom:3px solid #0B6B3C;padding-bottom:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:flex-end"><span><span style="font-size:24px;font-weight:800;color:#0B6B3C">RAM IMPEX</span> &nbsp; <span style="font-size:18px">Запрос цен</span></span><span style="font-size:16px;font-weight:800;color:#0B6B3C">Заказ № '+esc(orderNo(o))+'</span></div>'+
    '<p style="font-size:13px;color:#555;margin-bottom:10px">Дата: '+esc((o.created_at||'').replace("T"," ").slice(0,16))+' · Прошу указать цену (₽) по позициям.</p>'+
    '<table style="border-collapse:collapse;width:100%;font-size:13px"><thead><tr>'+th('№')+th('Код')+th('Наименование')+th('Размер')+'<th style="'+td+';background:#eef7f1;text-align:right">Кол-во</th>'+th('Цена ₽')+'</tr></thead><tbody>'+rows+'</tbody></table>'+
-   (o.req_title||o.req_desc?'<p style="margin-top:10px;font-size:13px"><b>Доп.:</b> '+esc(tr(o.req_title||''))+' '+esc(tr(o.req_desc||''))+'</p>':'')+
+   '<p style="margin-top:10px;font-size:13px"><b>Доп.:</b> <span '+ce+'>'+esc(dop)+'</span></p>'+
+   (imgs?'<div style="margin-top:12px"><div style="font-size:13px;font-weight:700;margin-bottom:4px">Фото / образец:</div>'+imgs+'</div>':'')+
    '<p style="margin-top:18px;border-top:2px solid #0F8A4D;padding-top:8px;font-size:12px;color:#555">RAM IMPEX · 595 533 500 · info@ramimpex.com.ge · ramimpex.com.ge</p></div>';
+ const old=$('zaprosOvl');if(old)old.remove();
+ const ovl=document.createElement('div');ovl.id='zaprosOvl';
+ ovl.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);overflow:auto;padding:20px';
+ ovl.innerHTML='<div style="max-width:900px;margin:0 auto">'+
+   '<div style="background:#fff8e1;border:1px solid #f2d98a;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#5a4a00;display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+
+     '<span style="flex:1;min-width:200px">✏ ტექსტი <b>რედაქტირებადია</b> — ჩაასწორე რუსულად პირდაპირ დოკუმენტში, მერე დააჭირე ბეჭდვას.</span>'+
+     '<button id="zaprosPrint" style="background:#0B6B3C;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:800;cursor:pointer">🖨 ბეჭდვა / PDF</button>'+
+     '<button id="zaprosClose" style="background:#fff;color:#333;border:1.5px solid #ccc;border-radius:9px;padding:9px 14px;font-weight:700;cursor:pointer">დახურვა</button>'+
+   '</div>'+
+   '<div style="background:#fff;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.3)">'+doc+'</div>'+
+ '</div>';
+ document.body.appendChild(ovl);
  const fname=('Заказ '+orderNo(o)).replace(/[\\/:*?"<>|]/g,'-').trim();
- const prev=document.title;document.title=fname;
- const restore=()=>{document.title=prev;window.removeEventListener('afterprint',restore);};
- window.addEventListener('afterprint',restore);
- window.print();
- setTimeout(restore,4000);
+ $('zaprosClose').onclick=()=>ovl.remove();
+ $('zaprosPrint').onclick=()=>{
+   $('printArea').innerHTML=document.getElementById('zaprosDoc').outerHTML;
+   const prev=document.title;document.title=fname;
+   const restore=()=>{document.title=prev;window.removeEventListener('afterprint',restore);};
+   window.addEventListener('afterprint',restore);window.print();setTimeout(restore,4000);
+ };
 }
 /* ========================= FINANCE CATALOG + INVOICE (shared DIRS) ========================= */
 let DIRS=null, curGid=null, saveTimer=null;
