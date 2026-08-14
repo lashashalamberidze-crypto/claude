@@ -261,7 +261,7 @@ function printZapros(o){
    $('printArea').innerHTML=document.getElementById('zaprosDoc').outerHTML;
    const prev=document.title;document.title=fname;
    const restore=()=>{document.title=prev;window.removeEventListener('afterprint',restore);};
-   window.addEventListener('afterprint',restore);window.print();setTimeout(restore,4000);
+   window.addEventListener('afterprint',restore);window.print();
  };
 }
 /* ========================= FINANCE CATALOG + INVOICE (shared DIRS) ========================= */
@@ -518,7 +518,6 @@ function printInvoice(inv){
   const restore=()=>{document.title=prev;window.removeEventListener('afterprint',restore);};
   window.addEventListener('afterprint',restore);
   window.print();
-  setTimeout(restore,4000);
 }
 function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map((l,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+esc(l.name||'')+(l.color?' · '+esc(l.color):'')+'</td><td>'+esc(l.size||'')+(l.ply?' · '+esc(l.ply)+' შრე':'')+'</td><td style="text-align:right">'+money(l.price)+'</td><td style="text-align:right">'+l.qty+'</td><td style="text-align:right">'+money(l.price*l.qty)+'</td></tr>').join('');
   return '<div style="max-width:720px;margin:0 auto;color:#14261C;padding:20px;font-family:system-ui,\'Noto Sans Georgian\',sans-serif">'+
