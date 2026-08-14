@@ -185,7 +185,7 @@ function buildManualGal(){const g=$('mGal');if(!g)return;g.innerHTML='';
   manualImgs.forEach((src,i)=>{const d=document.createElement('div');d.style.cssText='position:relative;width:84px;height:84px;border-radius:10px;overflow:hidden;border:1px solid var(--line)';
     d.innerHTML='<img src="'+src+'" style="width:100%;height:100%;object-fit:cover"><button class="btn danger sm" data-ix="'+i+'" style="position:absolute;top:2px;right:2px;padding:2px 6px">✕</button>';g.appendChild(d);
     d.querySelector('[data-ix]').onclick=()=>{manualImgs.splice(i,1);buildManualGal();};});
-  if(manualImgs.length<4){const d=document.createElement('label');d.style.cssText='width:84px;height:84px;border:1.5px dashed var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--green);font-size:22px';d.textContent='📷+';
+  if(manualImgs.length<12){const d=document.createElement('label');d.style.cssText='width:84px;height:84px;border:1.5px dashed var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--green);font-size:22px';d.textContent='📷+';
     const fi=document.createElement('input');fi.type='file';fi.accept='image/*';fi.style.display='none';d.appendChild(fi);
     fi.onchange=()=>{const f=fi.files&&fi.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const mx=900,sc=Math.min(1,mx/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=im.width*sc;c.height=im.height*sc;c.getContext('2d').drawImage(im,0,0,c.width,c.height);manualImgs.push(c.toDataURL('image/jpeg',0.7));buildManualGal();};im.src=r.result;};r.readAsDataURL(f);};
     g.appendChild(d);}
