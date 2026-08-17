@@ -267,6 +267,8 @@ function printZapros(o){
 }
 /* ========================= FINANCE CATALOG + INVOICE (shared DIRS) ========================= */
 let DIRS=null, curGid=null, saveTimer=null;
+let PUB={}; // code -> {code,dir,category,name,size,mark,ply,images:[]} — საჯარო (მომხმარებელს უჩანს)
+async function loadPub(){try{const {data}=await sb.from('product_pub').select('*');PUB={};(data||[]).forEach(r=>{PUB[r.code]=r;});}catch(e){/* ცხრილი ჯერ არ არსებობს */}}
 const PLABEL={usdRub:'1 USD = ₽',usdGel:'USD → ₾',transpUsd:'ტრანსპ. სულ ($)',container:'კონტეინერი (ცალი)',setkaRub:'სეტკა (₽)',vat:'დღგ',profit:'მოგება',step:'დამრგვ. ბიჯი'};
 const PORDER=['usdRub','usdGel','transpUsd','container','setkaRub','vat','profit','step'];
 function calcRow(d,it){
@@ -326,6 +328,7 @@ async function loadCatalog(){
   catEl.innerHTML='<div class="empty">იტვირთება…</div>';
   try{await ensureDirs();}
   catch(e){catEl.innerHTML='<div class="card"><p style="color:#c62828">ვერ ჩაიტვირთა: '+esc(e.message||e)+'</p><p class="muted" style="font-size:12px;margin-top:6px">გაუშვი RamImpex_catalog_table.sql Supabase-ში.</p></div>';return;}
+  await loadPub();
   curGid=curGid||DIRS[0].id;
   renderCat();
 }
@@ -347,7 +350,7 @@ function renderCat(){
   h+='</div><div class="muted" style="margin-top:8px;font-size:12px">ტრანსპ. 1 ცალზე = ტრანსპ.სულ ÷ თითო ყუთის <b>„კონტ. ცალი"</b> (თუ ცარიელია — ნაგულისხმევი '+d.params.container+') · ლოგიკა: RUB÷'+d.params.usdRub+(d.hasSetka?' + სეტკა(₽÷'+d.params.usdRub+')':'')+' + ტრანსპ → +დღგ → +მოგება → ×'+d.params.usdGel+' → მრგვალდება '+d.params.step+'-ზე</div></div>';
   if(d.note)h+='<div class="card" style="background:#FFF7D6;border-color:#E6C200;font-size:12px;color:#5a4b00;padding:10px 14px">📋 <b>შენიშვნა:</b> '+esc(d.note)+'</div>';
   h+='<div class="card"><div class="row" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><button class="btn line sm" data-add>+ პროდუქტის დამატება</button><input id="cq" placeholder="🔍 ძებნა კოდით/ზომით (ამ ჯგუფში)" style="max-width:280px"><span class="muted" style="align-self:center;font-size:11.5px">🔵 დოლარი · 🟢 ფასი ₾ (ავტო) · 🟡 ხელით</span></div>';
-  h+='<div class="scroll"><table id="catTbl"><thead><tr><th>№</th><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>მარკა</th>'+plyTh+'<th>ფერი</th><th class="right">RUB</th><th class="right" title="რამდენი ეტევა კონტეინერში">კონტ. ცალი</th><th class="right usdcol">ყუთი $</th>'+(d.hasSetka?'<th class="right usdcol">სეტკა $</th>':'')+'<th class="right usdcol">ტრანსპ $</th><th class="right usdcol">დღგ $</th><th class="right costcol" title="თვითღირებულება მოგებამდე (ყუთი+ტრანსპ+დღგ)">ჯამი $ მოგებამდე</th><th class="right costcol" title="თვითღირებულება მოგებამდე, ლარში">ჯამი ₾ მოგებამდე</th><th class="right usdcol">მოგება $</th><th class="right usdcol">ჯამი $</th><th class="right">ჯამი ₾</th><th class="right finalcol">ფასი ₾ (ავტო)</th><th class="right finalcol">ფასი $ (ავტო)</th><th class="right">ფასი ₾ (ხელით)</th><th class="right">ფასი $ (ხელით)</th><th></th></tr></thead><tbody id="catRows"></tbody></table></div></div>';
+  h+='<div class="scroll"><table id="catTbl"><thead><tr><th>№</th><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>მარკა</th>'+plyTh+'<th>ფერი</th><th class="right">RUB</th><th class="right" title="რამდენი ეტევა კონტეინერში">კონტ. ცალი</th><th class="right usdcol">ყუთი $</th>'+(d.hasSetka?'<th class="right usdcol">სეტკა $</th>':'')+'<th class="right usdcol">ტრანსპ $</th><th class="right usdcol">დღგ $</th><th class="right costcol" title="თვითღირებულება მოგებამდე (ყუთი+ტრანსპ+დღგ)">ჯამი $ მოგებამდე</th><th class="right costcol" title="თვითღირებულება მოგებამდე, ლარში">ჯამი ₾ მოგებამდე</th><th class="right usdcol">მოგება $</th><th class="right usdcol">ჯამი $</th><th class="right">ჯამი ₾</th><th class="right finalcol">ფასი ₾ (ავტო)</th><th class="right finalcol">ფასი $ (ავტო)</th><th class="right">ფასი ₾ (ხელით)</th><th class="right">ფასი $ (ხელით)</th><th title="მომხმარებლის საიტზე გამოჩენა + ფოტოები">🌐 საიტზე</th><th></th></tr></thead><tbody id="catRows"></tbody></table></div></div>';
   body.innerHTML=h;
   const rowsHost=$('catRows');
   function paintRows(){
@@ -373,9 +376,10 @@ function renderCat(){
         '<td class="right finalcol" style="color:#0B6B3C;font-weight:800">$'+(d.params.usdGel?(c.price/d.params.usdGel):0).toFixed(2)+'</td>'+
         '<td class="right"><input type="number" step="0.01" placeholder="'+money(c.price)+'" value="'+(it.pfinal!=null&&it.pfinal!==''?it.pfinal:'')+'" style="width:64px" data-f="pfinal" data-i="'+idx+'"></td>'+
         '<td class="right" style="color:#0B6B3C;font-weight:800">'+((it.pfinal!=null&&it.pfinal!=='')?'$'+(d.params.usdGel?((+it.pfinal)/d.params.usdGel):0).toFixed(2):'<span class="muted">—</span>')+'</td>'+
+        '<td class="right" style="white-space:nowrap">'+(function(){const pr=PUB[it.code];const on=!!pr;const n=on&&pr.images?pr.images.length:0;return '<button class="btn '+(on?'':'line')+' sm" data-media="'+idx+'" title="ფოტოები / საიტზე გამოჩენა" style="'+(on?'background:#0B6B3C;color:#fff':'')+'">'+(on?'🌐':'⊕')+(n?' 🖼'+n:'')+'</button>';})()+'</td>'+
         '<td class="right"><button class="btn danger sm" data-del="'+idx+'">✕</button></td></tr>';
     });
-    rowsHost.innerHTML=rh||'<tr><td colspan="'+(showPly?23:22)+'" class="empty">ვერ მოიძებნა</td></tr>';
+    rowsHost.innerHTML=rh||'<tr><td colspan="'+(showPly?24:23)+'" class="empty">ვერ მოიძებნა</td></tr>';
     rowsHost.querySelectorAll('input[data-f]').forEach(inp=>inp.onchange=()=>{const it=d.items[+inp.dataset.i];const f=inp.dataset.f;
       if(f==='rub'){it[f]=inp.value===''?0:(parseFloat(inp.value)||0);}
       else if(f==='pfinal'||f==='cap'){it[f]=inp.value===''?'':(parseFloat(inp.value)||0);if(f==='cap')pushCapacity(it.code,it.cap);}
@@ -383,11 +387,49 @@ function renderCat(){
       else{it[f]=inp.value;}
       saveDirs();paintRows();});
     rowsHost.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(!confirm('წავშალო?'))return;d.items.splice(+b.dataset.del,1);saveDirs();paintRows();});
+    rowsHost.querySelectorAll('[data-media]').forEach(b=>b.onclick=()=>openProdMedia(d,d.items[+b.dataset.media],paintRows));
   }
   $('cq').oninput=paintRows;
   paintRows();
   body.querySelectorAll('input[data-pk]').forEach(inp=>inp.onchange=()=>{d.params[inp.dataset.pk]=parseFloat(inp.value)||0;saveDirs();renderCat();});
   const add=body.querySelector('[data-add]');if(add)add.onclick=()=>{const pre=(d.tag||'X').toUpperCase();let n=1;const has=c=>d.items.some(x=>x.code===c);while(has(pre+(n<10?'0':'')+n))n++;d.items.push({code:pre+(n<10?'0':'')+n,name:'ახალი პროდუქტი',size:'',rub:0});saveDirs();paintRows();};
+}
+/* ფოტოები + საიტზე გამოჩენა — წერს public product_pub ცხრილში (მომხმარებელი კითხულობს) */
+function openProdMedia(d,it,after){
+  if(!it)return;const code=it.code;
+  let imgs=(PUB[code]&&Array.isArray(PUB[code].images))?PUB[code].images.slice():[];
+  const published=!!PUB[code];
+  const old=$('pmOvl');if(old)old.remove();
+  const ovl=document.createElement('div');ovl.id='pmOvl';
+  ovl.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);overflow:auto;padding:20px';
+  function draw(){
+    ovl.innerHTML='<div style="max-width:580px;margin:30px auto;background:#fff;border-radius:14px;padding:20px">'+
+      '<h2 style="margin:0 0 4px">🖼 ფოტოები — '+esc(ruCode(code))+'</h2>'+
+      '<div class="muted" style="font-size:12.5px;margin-bottom:10px">'+esc(it.name||'')+' · '+esc(it.size||'')+'</div>'+
+      '<label style="display:flex;gap:8px;align-items:center;font-weight:700;margin-bottom:10px"><input type="checkbox" id="pmVis" '+(published?'checked':'')+' style="width:auto"> 🌐 გამოჩნდეს მომხმარებლის საიტზე (შესაკვეთ ფორმაში)</label>'+
+      '<div id="pmGal" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>'+
+      '<div class="row" style="display:flex;gap:8px;align-items:center"><button class="btn" id="pmSave">💾 შენახვა</button><button class="btn line" id="pmCancel">დახურვა</button>'+(published?'<button class="btn danger" id="pmUnpub" style="margin-left:auto">საიტიდან მოხსნა</button>':'')+'</div>'+
+    '</div>';
+    const gal=ovl.querySelector('#pmGal');
+    imgs.forEach((src,i)=>{const dv=document.createElement('div');dv.style.cssText='position:relative;width:92px;height:92px;border-radius:10px;overflow:hidden;border:1px solid var(--line)';
+      dv.innerHTML='<img src="'+src+'" style="width:100%;height:100%;object-fit:cover"><button class="btn danger sm" data-x="'+i+'" style="position:absolute;top:2px;right:2px;padding:2px 6px">✕</button>';gal.appendChild(dv);
+      dv.querySelector('[data-x]').onclick=()=>{imgs.splice(i,1);draw();};});
+    if(imgs.length<12){const lb=document.createElement('label');lb.style.cssText='width:92px;height:92px;border:1.5px dashed var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--green);font-size:24px';lb.textContent='📷+';
+      const fi=document.createElement('input');fi.type='file';fi.accept='image/*';fi.style.display='none';lb.appendChild(fi);
+      fi.onchange=()=>{const f=fi.files&&fi.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const mx=1000,sc=Math.min(1,mx/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=im.width*sc;c.height=im.height*sc;c.getContext('2d').drawImage(im,0,0,c.width,c.height);imgs.push(c.toDataURL('image/jpeg',0.72));draw();};im.src=r.result;};r.readAsDataURL(f);};
+      gal.appendChild(lb);}
+    ovl.querySelector('#pmCancel').onclick=()=>ovl.remove();
+    ovl.querySelector('#pmSave').onclick=async()=>{const vis=ovl.querySelector('#pmVis').checked;
+      try{
+        if(vis){const row={code:code,dir:d.dir,category:d.name,name:it.name||'',size:it.size||'',mark:it.mark||'',ply:it.ply||'',images:imgs,sort:0,updated_at:new Date().toISOString()};
+          const {error}=await sb.from('product_pub').upsert(row,{onConflict:'code'});if(error)throw error;PUB[code]=row;}
+        else{const {error}=await sb.from('product_pub').delete().eq('code',code);if(error)throw error;delete PUB[code];}
+        ovl.remove();if(after)after();
+      }catch(e){alert('ვერ შეინახა: '+(e.message||e)+'\n(გაუშვი RamImpex_product_pub.sql)');}
+    };
+    const up=ovl.querySelector('#pmUnpub');if(up)up.onclick=async()=>{if(!confirm('მოვხსნა საიტიდან?'))return;try{const {error}=await sb.from('product_pub').delete().eq('code',code);if(error)throw error;delete PUB[code];ovl.remove();if(after)after();}catch(e){alert('ვერ მოიხსნა: '+(e.message||e));}};
+  }
+  document.body.appendChild(ovl);draw();
 }
 /* public capacity projection (order form reads this; anon-readable table) */
 async function pushCapacity(code,cap){try{if(cap===''||cap==null){await sb.from('capacity').delete().eq('code',code);}else{await sb.from('capacity').upsert({code,cap:cap,updated_at:new Date().toISOString()},{onConflict:'code'});}}catch(e){/* table optional */}}
