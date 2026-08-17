@@ -425,7 +425,7 @@ function openProdMedia(d,it,after){
     ovl.querySelector('#pmCancel').onclick=()=>ovl.remove();
     ovl.querySelector('#pmSave').onclick=async()=>{const vis=ovl.querySelector('#pmVis').checked;
       try{
-        if(vis){const row={code:code,dir:d.dir,category:d.name,name:it.name||'',size:it.size||'',mark:it.mark||'',ply:it.ply||'',images:imgs,sort:0,updated_at:new Date().toISOString()};
+        if(vis){const row={code:code,dir:d.dir,category:d.name,name:it.name||'',size:it.size||'',mark:it.mark||'',ply:it.ply||'',color:it.color||'',cap:(it.cap!=null&&it.cap!==''?it.cap:null),images:imgs,sort:0,updated_at:new Date().toISOString()};
           const {error}=await sb.from('product_pub').upsert(row,{onConflict:'code'});if(error)throw error;PUB[code]=row;}
         else{const {error}=await sb.from('product_pub').delete().eq('code',code);if(error)throw error;delete PUB[code];}
         ovl.remove();if(after)after();

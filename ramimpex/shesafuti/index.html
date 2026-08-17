@@ -3308,8 +3308,9 @@
     var pub=window.PUB||[]; if(pub.length){
       var byTitle={};DATA.forEach(function(s){byTitle[s.title]=s;});var fallback=null;
       pub.forEach(function(r){
+        var dd=(r.size||'')+(r.ply?' · '+r.ply+' შრე':'')+(r.color?' · '+r.color:'')+(r.cap?' · 📦 '+r.cap+' ცალი/კონტ.':'');
         var page={title:r.name||r.code,img:(r.images&&r.images[0])?{r:r.images[0]}:null,__dyn:true,
-          groups:[{fefco:'',rows:[{s:r.code,d:r.size||'',t:r.mark||''}]}]};
+          groups:[{fefco:'',rows:[{s:r.code,d:dd,t:r.mark||''}]}]};
         var sec=byTitle[r.category];
         if(sec){sec.pages.push(page);}
         else{if(!fallback){fallback={id:900,title:'ხელით დამატებული პროდუქცია',__dynSec:true,pages:[]};DATA.push(fallback);byTitle[fallback.title]=fallback;}fallback.pages.push(page);}

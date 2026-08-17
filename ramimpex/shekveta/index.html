@@ -161,6 +161,7 @@ computeView();
 // —— საჯარო (ხელით დამატებული) პროდუქცია + ფოტოები ——
 function mediaUrl(p){return (p&&(p.indexOf('data:')===0||p.indexOf('http')===0))?p:'/'+p;}
 function pubImgs(code){var p=(window.PUB||[]).find(function(x){return x.code===code;});return (p&&p.images)||[];}
+function extraInfo(p){var out=esc(p.size||'');if(p.ply)out+=' · '+esc(p.ply)+' შრე';if(p.color)out+=' · '+esc(p.color);var cap=(p.cap!==''&&p.cap!=null)?p.cap:capOf(p.code);if(cap!=null&&cap!=='')out+=' · 📦 '+capFmt(cap)+' ცალი/კონტ.';return out;}
 function allCodes(){var s={};CATS.forEach(function(c){if(c.type==='box'){(c.pages||[]).forEach(function(pg){(pg.sizes||[]).forEach(function(sz){s[sz.code]=1;});});}else{(c.products||[]).forEach(function(p){s[p.code]=1;});}});return s;}
 function mergePub(){
  CATS.forEach(function(c){c.dynProducts=null;});
@@ -171,7 +172,7 @@ function mergePub(){
  pub.forEach(function(r){
    if(have[r.code])return; // არსებულ პროდუქტს მხოლოდ ფოტო ემატება
    var cat=r.category||r.dir||'ახალი პროდუქცია';
-   var prod={code:r.code,name:r.name||'',size:r.size||'',img:(r.images&&r.images[0])||''};
+   var prod={code:r.code,name:r.name||'',size:r.size||'',img:(r.images&&r.images[0])||'',ply:r.ply||'',color:r.color||'',cap:(r.cap!=null&&r.cap!==''?r.cap:'')};
    var ex=byName[cat];
    if(ex){ ex.dynProducts=(ex.dynProducts||[]); ex.dynProducts.push(prod); } // არსებულ კატეგორიაშივე
    else { if(!groups[cat])groups[cat]={name:cat,kind:dirKind(r.dir),type:'dyn',__dyn:true,products:[]}; groups[cat].products.push(prod); }
@@ -212,7 +213,7 @@ function list(){
      if(q && (p.code+' '+p.name+' '+p.size).toLowerCase().indexOf(q)<0) return;
      var sim=p.img||pubImgs(p.code)[0]||'';
      var simMedia=sim?'<img src="'+mediaUrl(sim)+'" onclick="zoom(this.src)" onerror="this.style.display=\'none\'" style="width:56px;height:56px;object-fit:cover;border-radius:9px;cursor:pointer" alt="">':'<div class="icon">📦</div>';
-     html+='<div class="ptype simple">'+simMedia+'<div class="info"><div class="tt">'+esc(p.name)+' <span class="muted" style="font-size:11px">'+esc(ruCode(p.code)||'')+'</span></div><div class="cc">'+esc(p.size||'')+(capOf(p.code)!=null?' · 📦 '+capFmt(capOf(p.code))+' ცალი/კონტ.':'')+'</div><div class="addrow"><input id="qty_s_'+pi+'" type="number" min="1" placeholder="რაოდ. *" style="width:90px;padding:8px 10px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><button class="addbtn" data-simple="'+pi+'">＋ დამატება</button></div></div></div>';
+     html+='<div class="ptype simple">'+simMedia+'<div class="info"><div class="tt">'+esc(p.name)+' <span class="muted" style="font-size:11px">'+esc(ruCode(p.code)||'')+'</span></div><div class="cc">'+extraInfo(p)+'</div><div class="addrow"><input id="qty_s_'+pi+'" type="number" min="1" placeholder="რაოდ. *" style="width:90px;padding:8px 10px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><button class="addbtn" data-simple="'+pi+'">＋ დამატება</button></div></div></div>';
    });
  }
  if(c.dynProducts&&c.dynProducts.length){
@@ -220,7 +221,7 @@ function list(){
      if(q && (p.code+' '+p.name+' '+p.size).toLowerCase().indexOf(q)<0) return;
      var im=p.img||pubImgs(p.code)[0]||'';
      var md=im?'<img src="'+mediaUrl(im)+'" onclick="zoom(this.src)" onerror="this.style.display=\'none\'" style="width:56px;height:56px;object-fit:cover;border-radius:9px;cursor:pointer" alt="">':'<div class="icon">📦</div>';
-     html+='<div class="ptype simple">'+md+'<div class="info"><div class="tt">'+esc(p.name)+' <span class="muted" style="font-size:11px">'+esc(ruCode(p.code)||'')+'</span></div><div class="cc">'+esc(p.size||'')+'</div><div class="addrow"><input id="qty_d_'+di+'" type="number" min="1" placeholder="რაოდ. *" style="width:90px;padding:8px 10px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><button class="addbtn" data-dyn="'+di+'">＋ დამატება</button></div></div></div>';
+     html+='<div class="ptype simple">'+md+'<div class="info"><div class="tt">'+esc(p.name)+' <span class="muted" style="font-size:11px">'+esc(ruCode(p.code)||'')+'</span></div><div class="cc">'+extraInfo(p)+'</div><div class="addrow"><input id="qty_d_'+di+'" type="number" min="1" placeholder="რაოდ. *" style="width:90px;padding:8px 10px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><button class="addbtn" data-dyn="'+di+'">＋ დამატება</button></div></div></div>';
    });
  }
  $('plist').innerHTML=html||'<div class="empty">ვერ მოიძებნა</div>';
