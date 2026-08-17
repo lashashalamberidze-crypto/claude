@@ -319,6 +319,9 @@ async function ensureDirs(){
       result.push(JSON.parse(JSON.stringify(sg)));
     }
   });
+  // შევინახოთ ხელით შექმნილი კატეგორიები (SEED-ში რომ არ არის) — მაგრამ დუბლების გარეშე
+  const haveName=new Set(result.map(g=>g.name));
+  stored.forEach(g=>{if(g&&!used.has(g)&&g.name&&!haveName.has(g.name)){used.add(g);haveName.add(g.name);result.push(g);}});
   DIRS=result;
   await sb.from('catalog').upsert({id:'main',dirs:DIRS,updated_at:new Date().toISOString()},{onConflict:'id'});
   return true;
@@ -349,7 +352,7 @@ function renderCat(){
     h+='<div class="f"><label>'+PLABEL[k]+'</label><input type="number" step="'+step+'" value="'+d.params[k]+'" data-pk="'+k+'"></div>';});
   h+='</div><div class="muted" style="margin-top:8px;font-size:12px">ტრანსპ. 1 ცალზე = ტრანსპ.სულ ÷ თითო ყუთის <b>„კონტ. ცალი"</b> (თუ ცარიელია — ნაგულისხმევი '+d.params.container+') · ლოგიკა: RUB÷'+d.params.usdRub+(d.hasSetka?' + სეტკა(₽÷'+d.params.usdRub+')':'')+' + ტრანსპ → +დღგ → +მოგება → ×'+d.params.usdGel+' → მრგვალდება '+d.params.step+'-ზე</div></div>';
   if(d.note)h+='<div class="card" style="background:#FFF7D6;border-color:#E6C200;font-size:12px;color:#5a4b00;padding:10px 14px">📋 <b>შენიშვნა:</b> '+esc(d.note)+'</div>';
-  h+='<div class="card"><div class="row" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><button class="btn line sm" data-add>+ პროდუქტის დამატება</button><input id="cq" placeholder="🔍 ძებნა კოდით/ზომით (ამ ჯგუფში)" style="max-width:280px"><span class="muted" style="align-self:center;font-size:11.5px">🔵 დოლარი · 🟢 ფასი ₾ (ავტო) · 🟡 ხელით</span></div>';
+  h+='<div class="card"><div class="row" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><button class="btn line sm" data-add>+ პროდუქტის დამატება</button><button class="btn sm" data-addcat style="background:#0B6B3C;color:#fff">📂 ახალი კატეგორია</button><input id="cq" placeholder="🔍 ძებნა კოდით/ზომით (ამ ჯგუფში)" style="max-width:280px"><span class="muted" style="align-self:center;font-size:11.5px">🔵 დოლარი · 🟢 ფასი ₾ (ავტო) · 🟡 ხელით</span></div>';
   h+='<div class="scroll"><table id="catTbl"><thead><tr><th>№</th><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>მარკა</th>'+plyTh+'<th>ფერი</th><th class="right">RUB</th><th class="right" title="რამდენი ეტევა კონტეინერში">კონტ. ცალი</th><th class="right usdcol">ყუთი $</th>'+(d.hasSetka?'<th class="right usdcol">სეტკა $</th>':'')+'<th class="right usdcol">ტრანსპ $</th><th class="right usdcol">დღგ $</th><th class="right costcol" title="თვითღირებულება მოგებამდე (ყუთი+ტრანსპ+დღგ)">ჯამი $ მოგებამდე</th><th class="right costcol" title="თვითღირებულება მოგებამდე, ლარში">ჯამი ₾ მოგებამდე</th><th class="right usdcol">მოგება $</th><th class="right usdcol">ჯამი $</th><th class="right">ჯამი ₾</th><th class="right finalcol">ფასი ₾ (ავტო)</th><th class="right finalcol">ფასი $ (ავტო)</th><th class="right">ფასი ₾ (ხელით)</th><th class="right">ფასი $ (ხელით)</th><th title="მომხმარებლის საიტზე გამოჩენა + ფოტოები">🌐 საიტზე</th><th></th></tr></thead><tbody id="catRows"></tbody></table></div></div>';
   body.innerHTML=h;
   const rowsHost=$('catRows');
@@ -393,6 +396,7 @@ function renderCat(){
   paintRows();
   body.querySelectorAll('input[data-pk]').forEach(inp=>inp.onchange=()=>{d.params[inp.dataset.pk]=parseFloat(inp.value)||0;saveDirs();renderCat();});
   const add=body.querySelector('[data-add]');if(add)add.onclick=()=>{const pre=(d.tag||'X').toUpperCase();let n=1;const has=c=>d.items.some(x=>x.code===c);while(has(pre+(n<10?'0':'')+n))n++;d.items.push({code:pre+(n<10?'0':'')+n,name:'ახალი პროდუქტი',size:'',rub:0});saveDirs();paintRows();};
+  const addcat=body.querySelector('[data-addcat]');if(addcat)addcat.onclick=()=>{const nm=(prompt('ახალი კატეგორიის სახელი\\n(მიმართულება: '+curdir+')','')||'').trim();if(!nm)return;if(DIRS.some(x=>x.dir===curdir&&x.name===nm)){alert('ასეთი კატეგორია უკვე არსებობს ამ მიმართულებაში.');return;}const g2={id:'grp'+Date.now(),dir:curdir,name:nm,tag:(nm.slice(0,2).toUpperCase()||'MK'),mode:'calc',hasSetka:false,params:JSON.parse(JSON.stringify(d.params)),items:[]};DIRS.push(g2);curGid=g2.id;saveDirs();renderCat();};
 }
 /* ფოტოები + საიტზე გამოჩენა — წერს public product_pub ცხრილში (მომხმარებელი კითხულობს) */
 function openProdMedia(d,it,after){
