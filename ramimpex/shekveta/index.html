@@ -163,14 +163,18 @@ function mediaUrl(p){return (p&&(p.indexOf('data:')===0||p.indexOf('http')===0))
 function pubImgs(code){var p=(window.PUB||[]).find(function(x){return x.code===code;});return (p&&p.images)||[];}
 function allCodes(){var s={};CATS.forEach(function(c){if(c.type==='box'){(c.pages||[]).forEach(function(pg){(pg.sizes||[]).forEach(function(sz){s[sz.code]=1;});});}else{(c.products||[]).forEach(function(p){s[p.code]=1;});}});return s;}
 function mergePub(){
+ CATS.forEach(function(c){c.dynProducts=null;});
  CATS=CATS.filter(function(c){return !c.__dyn;});
  var pub=window.PUB||[]; if(!pub.length)return;
- var have=allCodes(),groups={};
+ var have=allCodes(),groups={},byName={};
+ CATS.forEach(function(c){byName[c.name]=c;});
  pub.forEach(function(r){
    if(have[r.code])return; // არსებულ პროდუქტს მხოლოდ ფოტო ემატება
    var cat=r.category||r.dir||'ახალი პროდუქცია';
-   if(!groups[cat])groups[cat]={name:cat,kind:dirKind(r.dir),type:'dyn',__dyn:true,products:[]};
-   groups[cat].products.push({code:r.code,name:r.name||'',size:r.size||'',img:(r.images&&r.images[0])||''});
+   var prod={code:r.code,name:r.name||'',size:r.size||'',img:(r.images&&r.images[0])||''};
+   var ex=byName[cat];
+   if(ex){ ex.dynProducts=(ex.dynProducts||[]); ex.dynProducts.push(prod); } // არსებულ კატეგორიაშივე
+   else { if(!groups[cat])groups[cat]={name:cat,kind:dirKind(r.dir),type:'dyn',__dyn:true,products:[]}; groups[cat].products.push(prod); }
  });
  Object.keys(groups).forEach(function(k){CATS.push(groups[k]);});
 }
@@ -211,9 +215,18 @@ function list(){
      html+='<div class="ptype simple">'+simMedia+'<div class="info"><div class="tt">'+esc(p.name)+' <span class="muted" style="font-size:11px">'+esc(ruCode(p.code)||'')+'</span></div><div class="cc">'+esc(p.size||'')+(capOf(p.code)!=null?' · 📦 '+capFmt(capOf(p.code))+' ცალი/კონტ.':'')+'</div><div class="addrow"><input id="qty_s_'+pi+'" type="number" min="1" placeholder="რაოდ. *" style="width:90px;padding:8px 10px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><button class="addbtn" data-simple="'+pi+'">＋ დამატება</button></div></div></div>';
    });
  }
+ if(c.dynProducts&&c.dynProducts.length){
+   c.dynProducts.forEach(function(p,di){
+     if(q && (p.code+' '+p.name+' '+p.size).toLowerCase().indexOf(q)<0) return;
+     var im=p.img||pubImgs(p.code)[0]||'';
+     var md=im?'<img src="'+mediaUrl(im)+'" onclick="zoom(this.src)" onerror="this.style.display=\'none\'" style="width:56px;height:56px;object-fit:cover;border-radius:9px;cursor:pointer" alt="">':'<div class="icon">📦</div>';
+     html+='<div class="ptype simple">'+md+'<div class="info"><div class="tt">'+esc(p.name)+' <span class="muted" style="font-size:11px">'+esc(ruCode(p.code)||'')+'</span></div><div class="cc">'+esc(p.size||'')+'</div><div class="addrow"><input id="qty_d_'+di+'" type="number" min="1" placeholder="რაოდ. *" style="width:90px;padding:8px 10px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><button class="addbtn" data-dyn="'+di+'">＋ დამატება</button></div></div></div>';
+   });
+ }
  $('plist').innerHTML=html||'<div class="empty">ვერ მოიძებნა</div>';
  $('plist').querySelectorAll('[data-box]').forEach(function(b){b.onclick=function(){var pi=+b.dataset.box;var pg=VIEW[curCat].pages[pi];var si=+$('sel_'+pi).value;var s=pg.sizes[si];var qi=$('qty_'+pi),qv=qi?qi.value:'';var pli=$('ply_'+pi),plv=pli?pli.value:'';if(!(parseInt(qv)>0)){alert('შეიყვანეთ რაოდენობა — რამდენი ცალი გჭირდებათ.');if(qi)qi.focus();return;}addLine({code:s.code,size:s.size,type:s.type,img:(pg.img&&pg.img.r)?imgSrc(pg.img.r):'',cat:VIEW[curCat].name,kind:'box',qty:qv,ply:plv});if(qi)qi.value='';if(pli)pli.value='';};});
  $('plist').querySelectorAll('[data-simple]').forEach(function(b){b.onclick=function(){var pi=+b.dataset.simple;var p=VIEW[curCat].products[pi];var qi=$('qty_s_'+pi),qv=qi?qi.value:'';if(!(parseInt(qv)>0)){alert('შეიყვანეთ რაოდენობა — რამდენი გჭირდებათ.');if(qi)qi.focus();return;}addLine({code:p.code,size:p.size,type:'',img:(p.img?mediaUrl(p.img):''),cat:VIEW[curCat].name,name:p.name,kind:(VIEW[curCat].kind||catKind(VIEW[curCat].name)),qty:qv,ply:''});if(qi)qi.value='';};});
+ $('plist').querySelectorAll('[data-dyn]').forEach(function(b){b.onclick=function(){var di=+b.dataset.dyn;var p=VIEW[curCat].dynProducts[di];var qi=$('qty_d_'+di),qv=qi?qi.value:'';if(!(parseInt(qv)>0)){alert('შეიყვანეთ რაოდენობა — რამდენი ცალი გჭირდებათ.');if(qi)qi.focus();return;}addLine({code:p.code,size:p.size,type:'',img:(p.img?mediaUrl(p.img):''),cat:VIEW[curCat].name,name:p.name,kind:(VIEW[curCat].kind||catKind(VIEW[curCat].name)),qty:qv,ply:''});if(qi)qi.value='';};});
 }
 function zoom(src){$('imgovImg').src=src;$('imgov').classList.add('on');}
 $('imgov').onclick=function(){$('imgov').classList.remove('on');};
