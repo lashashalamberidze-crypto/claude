@@ -3206,7 +3206,7 @@
     if(!filtering){fefcos=[];p.groups.forEach(function(g){if(g.fefco&&fefcos.indexOf(g.fefco)<0)fefcos.push(g.fefco);});}
     var totalRows=0;p.groups.forEach(function(g){totalRows+=g.rows.length;});
     var media='<div class="rimg">';
-    if(p.img&&p.img.r){media+='<img class="render" loading="lazy" onerror="imgFail(this)" src="/'+p.img.r+'" alt="'+esc(p.title)+'" data-cap="'+esc(p.title)+'">';}
+    if(p.img&&p.img.r){media+='<img class="render" loading="lazy" onerror="imgFail(this)" src="'+mediaUrl(p.img.r)+'" alt="'+esc(p.title)+'" data-cap="'+esc(p.title)+'">';}
     else{media+='<div class="noimg"><svg width="40" height="40" fill="none" stroke="#a9b8ae" stroke-width="1.5"><rect x="4" y="7" width="32" height="26" rx="2"/><path d="M4 8l16 11L36 8"/></svg>ფოტო მალე</div>';}
     media+='</div>';
     if(p.img&&p.img.d){media+='<div class="dimg"><img class="diagram" loading="lazy" onerror="dimgFail(this)" src="/'+p.img.d+'" alt="FEFCO სქემა" data-cap="'+esc(p.title)+' — FEFCO სქემა"><span class="dlabel">FEFCO სქემა</span></div>';}
@@ -3300,8 +3300,32 @@
     window.location.href='mailto:'+EMAIL+'?subject='+encodeURIComponent('შეკვეთა — '+name+' ('+keys.length+' პოზ.)')+'&body='+encodeURIComponent(body);
   });
 
+  // —— საჯარო (ხელით დამატებული) პროდუქცია product_pub-იდან ——
+  function mediaUrl(u){return (u&&(u.indexOf('data:')===0||u.indexOf('http')===0))?u:'/'+u;}
+  function mergePub(){
+    DATA=DATA.filter(function(s){return !s.__dynSec;});
+    DATA.forEach(function(s){s.pages=s.pages.filter(function(p){return !p.__dyn;});});
+    var pub=window.PUB||[]; if(pub.length){
+      var byTitle={};DATA.forEach(function(s){byTitle[s.title]=s;});var fallback=null;
+      pub.forEach(function(r){
+        var page={title:r.name||r.code,img:(r.images&&r.images[0])?{r:r.images[0]}:null,__dyn:true,
+          groups:[{fefco:'',rows:[{s:r.code,d:r.size||'',t:r.mark||''}]}]};
+        var sec=byTitle[r.category];
+        if(sec){sec.pages.push(page);}
+        else{if(!fallback){fallback={id:900,title:'ხელით დამატებული პროდუქცია',__dynSec:true,pages:[]};DATA.push(fallback);byTitle[fallback.title]=fallback;}fallback.pages.push(page);}
+      });
+    }
+    totalProducts=0;DATA.forEach(function(s){s.pages.forEach(function(p){p.groups.forEach(function(g){totalProducts+=g.rows.length;});});});
+  }
+  window.__applyPub=function(){try{mergePub();buildSecSelect();render();}catch(e){}};
+  mergePub();
   buildSecSelect();buildTypeChips();render();updateCart();
 })();
+</script>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/+esm";
+try{const sb=createClient("https://mhyoqypzacvztwhntsvv.supabase.co","sb_publishable_FXhFmDRboFeOEqxyvwUePg_SgIwnmmM");const {data}=await sb.from('product_pub').select('*').order('sort',{ascending:true});window.PUB=data||[];}catch(e){window.PUB=[];}
+if(window.__applyPub)window.__applyPub();
 </script>
 <a href="/shekveta/?d=boxes" class="ram-order-fab" style="position:fixed;right:16px;bottom:16px;z-index:9999;background:#0B6B3C;color:#fff;padding:12px 18px;border-radius:30px;font-weight:800;text-decoration:none;box-shadow:0 8px 20px rgba(0,0,0,.25);font-family:system-ui,'Noto Sans Georgian',sans-serif;font-size:14px">📧 გააგზავნე მოთხოვნა</a>
 </body>
