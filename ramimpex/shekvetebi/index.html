@@ -43,10 +43,10 @@ td.right,th.right{text-align:right}
 .parambox .prow{display:flex;gap:12px;flex-wrap:wrap}
 .parambox .f{flex:1;min-width:110px}.parambox .f input{padding:8px 10px}
 .scroll{overflow-x:auto}
-#catTbl{min-width:760px;font-size:10.5px}
-#catTbl th{white-space:nowrap;font-size:9px;padding:4px 4px;letter-spacing:-.01em}
-#catTbl td{padding:2px 4px;border-bottom:1px solid #eef4f0}
-#catTbl input{padding:4px 5px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:10.5px}
+#catTbl{min-width:760px;font-size:9px}
+#catTbl th{white-space:nowrap;font-size:7.6px;padding:3px 3px;letter-spacing:-.02em}
+#catTbl td{padding:1px 3px;border-bottom:1px solid #eef4f0}
+#catTbl input{padding:3px 4px;border:1px solid var(--line);border-radius:5px;font:inherit;font-size:9px}
 #catTbl input[data-f=rub],#catTbl input[data-f=pfinal],#catTbl input[data-f=cap]{text-align:right}
 #catTbl input[data-f=cap]{background:#fff7df;border-color:#e6c98a}
 .capcol{background:#fffdf3}
@@ -279,7 +279,7 @@ function calcRow(d,it){
   else{box=(+it.rub||0)/p.usdRub;setka=d.hasSetka?(p.setkaRub/p.usdRub):0;transp=perCont?p.transpUsd/perCont:0;}
   const sub=box+setka+transp,vat=sub*p.vat,profit=(sub+vat)*p.profit,totUsd=sub+vat+profit,totGel=totUsd*p.usdGel;
   const price=Math.ceil(totGel/p.step-1e-9)*p.step;
-  return {box,setka,transp,vat,profit,totUsd,totGel,price:Math.round(price*100)/100};
+  return {box,setka,transp,sub,vat,profit,totUsd,totGel,price:Math.round(price*100)/100};
 }
 function effective(d,it){if(it.pfinal!=null&&it.pfinal!==''&&!isNaN(+it.pfinal))return Math.round((+it.pfinal)*100)/100;return calcRow(d,it).price;}
 function byCode(c){for(const d of DIRS){for(const it of d.items){if(it.code===c)return {code:c,name:it.name,size:it.size,color:it.color,mark:it.mark,ply:it.ply||'',dir:d.dir,group:d.name,price:effective(d,it)};}}return null;}
@@ -353,7 +353,7 @@ function renderCat(){
   h+='</div><div class="muted" style="margin-top:8px;font-size:12px">ტრანსპ. 1 ცალზე = ტრანსპ.სულ ÷ თითო ყუთის <b>„კონტ. ცალი"</b> (თუ ცარიელია — ნაგულისხმევი '+d.params.container+') · ლოგიკა: RUB÷'+d.params.usdRub+(d.hasSetka?' + სეტკა(₽÷'+d.params.usdRub+')':'')+' + ტრანსპ → +დღგ → +მოგება → ×'+d.params.usdGel+' → მრგვალდება '+d.params.step+'-ზე</div></div>';
   if(d.note)h+='<div class="card" style="background:#FFF7D6;border-color:#E6C200;font-size:12px;color:#5a4b00;padding:10px 14px">📋 <b>შენიშვნა:</b> '+esc(d.note)+'</div>';
   h+='<div class="card"><div class="row" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><button class="btn line sm" data-add>+ პროდუქტის დამატება</button><button class="btn sm" data-addcat style="background:#0B6B3C;color:#fff">📂 ახალი კატეგორია</button><input id="cq" placeholder="🔍 ძებნა კოდით/ზომით (ამ ჯგუფში)" style="max-width:280px"><span class="muted" style="align-self:center;font-size:11.5px">🔵 დოლარი · 🟢 ფასი ₾ (ავტო) · 🟡 ხელით</span></div>';
-  h+='<div class="scroll"><table id="catTbl"><thead><tr><th>№</th><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>მარკა</th>'+plyTh+'<th>ფერი</th><th class="right">RUB</th><th class="right" title="რამდენი ეტევა კონტეინერში">კონტ. ცალი</th><th class="right usdcol">ყუთი $</th>'+(d.hasSetka?'<th class="right usdcol">სეტკა $</th>':'')+'<th class="right usdcol">ტრანსპ $</th><th class="right usdcol">დღგ $</th><th class="right costcol" title="თვითღირებულება მოგებამდე (ყუთი+ტრანსპ+დღგ)">ჯამი $ მოგებამდე</th><th class="right costcol" title="თვითღირებულება მოგებამდე, ლარში">ჯამი ₾ მოგებამდე</th><th class="right usdcol">მოგება $</th><th class="right usdcol">ჯამი $</th><th class="right">ჯამი ₾</th><th class="right finalcol">ფასი ₾ (ავტო)</th><th class="right finalcol">ფასი $ (ავტო)</th><th class="right">ფასი ₾ (ხელით)</th><th class="right">ფასი $ (ხელით)</th><th title="მომხმარებლის საიტზე გამოჩენა + ფოტოები">🌐 საიტზე</th><th></th></tr></thead><tbody id="catRows"></tbody></table></div></div>';
+  h+='<div class="scroll"><table id="catTbl"><thead><tr><th>№</th><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>მარკა</th>'+plyTh+'<th>ფერი</th><th class="right">RUB</th><th class="right" title="რამდენი ეტევა კონტეინერში">კონტ. ცალი</th><th class="right usdcol">ყუთი $</th>'+(d.hasSetka?'<th class="right usdcol">სეტკა $</th>':'')+'<th class="right usdcol">ტრანსპ $</th><th class="right costcol" title="შესყიდვა+ტრანსპ, დღგ-ს გარეშე ($)">დღგ-მდე $</th><th class="right costcol" title="შესყიდვა+ტრანსპ, დღგ-ს გარეშე (₾)">დღგ-მდე ₾</th><th class="right usdcol">დღგ $</th><th class="right costcol" title="თვითღირებულება მოგებამდე (ყუთი+ტრანსპ+დღგ)">ჯამი $ მოგებამდე</th><th class="right costcol" title="თვითღირებულება მოგებამდე, ლარში">ჯამი ₾ მოგებამდე</th><th class="right usdcol">მოგება $</th><th class="right usdcol">ჯამი $</th><th class="right">ჯამი ₾</th><th class="right finalcol">ფასი ₾ (ავტო)</th><th class="right finalcol">ფასი $ (ავტო)</th><th class="right">ფასი ₾ (ხელით)</th><th class="right">ფასი $ (ხელით)</th><th title="მომხმარებლის საიტზე გამოჩენა + ფოტოები">🌐 საიტზე</th><th></th></tr></thead><tbody id="catRows"></tbody></table></div></div>';
   body.innerHTML=h;
   const rowsHost=$('catRows');
   function paintRows(){
@@ -372,7 +372,9 @@ function renderCat(){
         '<td class="right"><input type="number" step="0.01" value="'+(it.rub!=null?it.rub:'')+'" style="width:58px" data-f="rub" data-i="'+idx+'"></td>'+
         '<td class="right capcol"><input type="number" step="1" placeholder="ცალი" title="რამდენი ეტევა კონტეინერში (ინდივიდ.)" value="'+(it.cap!=null&&it.cap!==''?it.cap:'')+'" style="width:60px" data-f="cap" data-i="'+idx+'"></td>'+
         '<td class="right usdcol">'+c.box.toFixed(4)+'</td>'+(d.hasSetka?'<td class="right usdcol">'+c.setka.toFixed(4)+'</td>':'')+
-        '<td class="right usdcol">'+c.transp.toFixed(4)+'</td><td class="right usdcol">'+c.vat.toFixed(4)+'</td>'+
+        '<td class="right usdcol">'+c.transp.toFixed(4)+'</td>'+
+        '<td class="right costcol">'+c.sub.toFixed(4)+'</td><td class="right costcol">'+money(c.sub*(d.params.usdGel||0))+'</td>'+
+        '<td class="right usdcol">'+c.vat.toFixed(4)+'</td>'+
         '<td class="right costcol">'+pre.toFixed(4)+'</td><td class="right costcol">'+money(preGel)+'</td>'+
         '<td class="right usdcol">'+c.profit.toFixed(4)+'</td><td class="right usdcol">'+c.totUsd.toFixed(4)+'</td>'+
         '<td class="right">'+c.totGel.toFixed(4)+'</td><td class="right finalcol">'+money(c.price)+'</td>'+
@@ -382,7 +384,7 @@ function renderCat(){
         '<td class="right" style="white-space:nowrap">'+(function(){const pr=PUB[it.code];const on=!!pr;const n=on&&pr.images?pr.images.length:0;return '<button class="btn '+(on?'':'line')+' sm" data-media="'+idx+'" title="ფოტოები / საიტზე გამოჩენა" style="'+(on?'background:#0B6B3C;color:#fff':'')+'">'+(on?'🌐':'⊕')+(n?' 🖼'+n:'')+'</button>';})()+'</td>'+
         '<td class="right"><button class="btn danger sm" data-del="'+idx+'">✕</button></td></tr>';
     });
-    rowsHost.innerHTML=rh||'<tr><td colspan="'+(showPly?24:23)+'" class="empty">ვერ მოიძებნა</td></tr>';
+    rowsHost.innerHTML=rh||'<tr><td colspan="'+(showPly?26:25)+'" class="empty">ვერ მოიძებნა</td></tr>';
     rowsHost.querySelectorAll('input[data-f]').forEach(inp=>inp.onchange=()=>{const it=d.items[+inp.dataset.i];const f=inp.dataset.f;
       if(f==='rub'){it[f]=inp.value===''?0:(parseFloat(inp.value)||0);}
       else if(f==='pfinal'||f==='cap'){it[f]=inp.value===''?'':(parseFloat(inp.value)||0);if(f==='cap')pushCapacity(it.code,it.cap);}
