@@ -456,6 +456,8 @@ function editInvoice(inv){
   const ex=inv.extra||{};
   if($('brandAmt'))$('brandAmt').value=ex.brandAmt||'';
   if($('transAmt'))$('transAmt').value=ex.transAmt||'';
+  if($('iMinQty'))$('iMinQty').value=ex.minQty||'';
+  if($('iNote'))$('iNote').value=ex.note||'';
   renderInvLines();
   const b=$('editBanner');if(b){b.style.display='';b.textContent='✏ რედაქტირდება ინვოისი № '+(inv.no||inv.id);}
   window.scrollTo(0,0);
@@ -505,13 +507,15 @@ function renderInvoice(){
    '<div class="card"><div class="scroll"><table id="iTbl"><thead><tr><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>შრე</th><th>ბრენდ.</th><th class="right">ფასი ₾</th><th class="right">რაოდ.</th><th class="right">ჯამი ₾</th><th></th></tr></thead><tbody id="iRows"></tbody></table></div>'+
    '<div id="iEmpty" class="empty">ჯერ პროდუქტი არ არის დამატებული.</div>'+
    '<div class="row" style="margin-top:10px"><div><label>დამატ. ბრენდირება ₾ (არჩ.)</label><input id="brandAmt" type="number" step="0.01" placeholder="0.00"></div><div><label>ტრანსპ. თბილისამდე ₾ (არჩ.)</label><input id="transAmt" type="number" step="0.01" placeholder="0.00"></div></div>'+
+   '<div class="row" style="margin-top:10px"><div><label>მინიმალური რაოდენობა (არჩ.)</label><input id="iMinQty" placeholder="მაგ. 4500 ცალი"></div></div>'+
+   '<label style="margin-top:10px;display:block">შენიშვნა (არჩ.)</label><textarea id="iNote" rows="2" placeholder="მაგ. მინ. პარტია, ვადები, პირობები…" style="width:100%"></textarea>'+
    '<div class="ttl"><div class="tr"><span>ქვეჯამი (დღგ-ით)</span><b id="tSub">0.00 ₾</b></div><div class="tr" style="color:var(--muted);font-size:12px"><span>მ.შ. დღგ 18%</span><span id="tVat">0.00 ₾</span></div><div class="tr grand"><span>სულ</span><span id="tGrand">0.00 ₾</span></div></div>'+
    '<div class="row" style="margin-top:12px"><button class="btn" id="iPrint">🖨 ბეჭდვა / PDF</button><button class="btn line" id="iSave">💾 შენახვა</button><button class="btn danger" id="iClear">🗑 გასუფთავება</button></div></div>'+
    '<div class="card"><h2>📚 ბოლო ინვოისები</h2><div id="iList"></div></div>';
   $('iAdd').onclick=()=>{const code=$('iPick').value;if(!code)return;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ply=itmBox({code:code})?((($('iPlyAdd')&&$('iPlyAdd').value)||p.ply||'')):'';const ex=invDraft.find(l=>l.code===code);if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else invDraft.push({code,price:p.price,qty,ply});if($('iPlyAdd'))$('iPlyAdd').value='';renderInvLines();};
   $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}printInvoice(currentInv());};
   $('iSave').onclick=saveInvoice;
-  $('iClear').onclick=()=>{invDraft=[];editingInvId=null;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iPhone','iNo','brandAmt','transAmt'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();};
+  $('iClear').onclick=()=>{invDraft=[];editingInvId=null;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iPhone','iNo','brandAmt','transAmt','iMinQty','iNote'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();};
   ['brandAmt','transAmt'].forEach(id=>$(id).oninput=renderInvLines);
   if(!editingInvId&&$('iDate'))$('iDate').onchange=()=>{$('iNo').value=makeInvNo($('iDate').value,nextInvSeq());};
   renderInvLines();renderInvList();
@@ -536,7 +540,7 @@ function updInvTotals(){const t=invTotals();$('tSub').textContent=money(t.sub)+'
 function updInvRow(i,inp){const l=invDraft[i];const tr=inp.closest('tr');if(tr){const s=tr.querySelector('.sum');if(s)s.textContent=money(l.price*l.qty);}updInvTotals();}
 function currentInv(){const t=invTotals();return {no:$('iNo').value,date:$('iDate').value||todayStr(),cust:$('iCust').value,idc:$('iId').value,phone:($('iPhone')?$('iPhone').value:''),
   lines:invDraft.map(l=>{const p=byCode(l.code)||{};return {code:l.code,name:l.name||p.name,size:l.size||p.size,ply:l.ply||'',brand:l.brand||'',color:p.color,price:l.price,qty:l.qty};}),
-  sub:t.sub,vat:t.vat,extra:{brandAmt:t.brandAmt,transAmt:t.transAmt},grand:t.grand};}
+  sub:t.sub,vat:t.vat,extra:{brandAmt:t.brandAmt,transAmt:t.transAmt,note:($('iNote')?$('iNote').value:''),minQty:($('iMinQty')?$('iMinQty').value:'')},grand:t.grand};}
 async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}const inv=currentInv();
   const isEdit=!!editingInvId; inv.id=editingInvId||String(Date.now());
   try{const {error}=await sb.from('invoices').upsert(inv,{onConflict:'id'});if(error)throw error;
@@ -544,7 +548,7 @@ async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამ�
     INVOICES.unshift(Object.assign({created_at:new Date().toISOString()},inv));
     alert((isEdit?'განახლდა ✔':'შენახულია ✔')+'  სულ: '+money(inv.grand)+' ₾');
     invDraft=[];editingInvId=null;const eb=$('editBanner');if(eb)eb.style.display='none';
-    ['iCust','iId','iPhone','iNo','brandAmt','transAmt'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();renderInvList();}
+    ['iCust','iId','iPhone','iNo','brandAmt','transAmt','iMinQty','iNote'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();renderInvList();}
   catch(e){alert('ვერ შეინახა: '+(e.message||e)+'\n(გაუშვი RamImpex_invoices_table.sql)');}
 }
 function renderInvList(){const host=$('iList');if(!host)return;if(!INVOICES.length){host.innerHTML='<div class="empty" style="padding:16px">ჯერ ინვოისი არ არის.</div>';return;}
@@ -585,6 +589,8 @@ function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map(
    (ex.brandAmt?'<div style="display:flex;justify-content:space-between;padding:4px 0"><span>ბრენდირება</span><b>'+money(ex.brandAmt)+' ₾</b></div>':'')+
    (ex.transAmt?'<div style="display:flex;justify-content:space-between;padding:4px 0"><span>ტრანსპ. თბილისამდე</span><b>'+money(ex.transAmt)+' ₾</b></div>':'')+
    '<div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid #0F8A4D;margin-top:6px;font-size:18px;font-weight:800;color:#0B6B3C"><span>სულ</span><span>'+money(inv.grand)+' ₾</span></div></div>'+
+   (ex.minQty?'<div style="margin-top:12px;font-size:12.5px"><b style="color:#0B6B3C">მინიმალური რაოდენობა:</b> '+esc(ex.minQty)+'</div>':'')+
+   (ex.note?'<div style="margin-top:8px;font-size:12px;color:#222;white-space:pre-wrap"><b style="color:#0B6B3C">შენიშვნა:</b> '+esc(ex.note)+'</div>':'')+
    '<div style="margin-top:18px;border-top:1px solid #DCE7E0;padding-top:10px;font-size:11.5px"><b style="color:#0B6B3C">საბანკო რეკვიზიტები</b><br>მიმღები: შპს „რამ იმპექს" · ს/კ: 405565794<br>ბანკი: სს „საქართველოს ბანკი" · SWIFT: BAGAGE22<br>ანგარიში (IBAN): <b>GE47BG0000000611211417</b></div>'+
    '<div style="margin-top:12px;background:#E3F1E8;border-radius:8px;padding:9px 12px;font-size:11.5px;color:#0b6b3c;font-weight:600">✔ ნებისმიერ რაოდენობაზე მოლაპარაკება · ✔ ადგილზე მიწოდება საქართველოში · ✔ ნებისმიერი ზომის დამზადება</div>'+
    '<div style="margin-top:8px;font-size:11px;color:#5C6B62">ფასები დღგ-ის ჩათვლით. მადლობა თანამშრომლობისთვის!</div></div>';}
