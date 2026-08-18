@@ -270,6 +270,7 @@ function printZapros(o){
 let DIRS=null, curGid=null, saveTimer=null;
 let PUB={}; // code -> {code,dir,category,name,size,mark,ply,images:[]} — საჯარო (მომხმარებელს უჩანს)
 async function loadPub(){try{const {data}=await sb.from('product_pub').select('*');PUB={};(data||[]).forEach(r=>{PUB[r.code]=r;});}catch(e){/* ცხრილი ჯერ არ არსებობს */}}
+function pubImg(code){const r=PUB[code];return (r&&r.images&&r.images[0])||'';}
 const PLABEL={usdRub:'1 USD = ₽',usdGel:'USD → ₾',transpUsd:'ტრანსპ. სულ ($)',container:'კონტეინერი (ცალი)',setkaRub:'სეტკა (₽)',vat:'დღგ',profit:'მოგება',step:'დამრგვ. ბიჯი'};
 const PORDER=['usdRub','usdGel','transpUsd','container','setkaRub','vat','profit','step'];
 function calcRow(d,it){
@@ -481,6 +482,7 @@ async function invoiceFromOrder(o){
 async function openInvoice(){
   invEl.innerHTML='<div class="empty">იტვირთება…</div>';
   try{await ensureDirs();}catch(e){invEl.innerHTML='<div class="card"><p style="color:#c62828">ვერ ჩაიტვირთა: '+esc(e.message||e)+'</p></div>';return;}
+  if(!Object.keys(PUB).length)await loadPub();
   try{const {data}=await sb.from('invoices').select('*').order('created_at',{ascending:false}).limit(50);INVOICES=data||[];}catch(e){INVOICES=[];}
   renderInvoice();
 }
@@ -522,7 +524,7 @@ function renderInvoice(){
 }
 function renderInvLines(){
   const tb=$('iRows');$('iEmpty').style.display=invDraft.length?'none':'block';$('iTbl').style.display=invDraft.length?'':'none';
-  tb.innerHTML=invDraft.map((l,i)=>{const p=byCode(l.code)||{};return '<tr><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+esc(l.name||p.name||'')+(p.color?' <span class="muted">· '+esc(p.color)+'</span>':'')+'</td><td>'+esc(l.size||p.size||'')+'</td>'+
+  tb.innerHTML=invDraft.map((l,i)=>{const p=byCode(l.code)||{};const im=pubImg(l.code);return '<tr><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+(im?'<img src="'+im+'" style="width:34px;height:34px;object-fit:cover;border-radius:5px;vertical-align:middle;margin-right:6px">':'')+esc(l.name||p.name||'')+(p.color?' <span class="muted">· '+esc(p.color)+'</span>':'')+'</td><td>'+esc(l.size||p.size||'')+'</td>'+
     '<td>'+(itmBox(l)?'<input value="'+esc(l.ply||'')+'" placeholder="შრე" style="width:64px" data-ply="'+i+'">':'<span class="muted">—</span>')+'</td>'+
     '<td><select data-brand="'+i+'" style="padding:5px 6px"><option value=""'+(!l.brand?' selected':'')+'>—</option><option value="კი"'+(l.brand==='კი'?' selected':'')+'>კი</option><option value="არა"'+(l.brand==='არა'?' selected':'')+'>არა</option></select></td>'+
     '<td class="right"><input type="number" step="0.01" value="'+l.price+'" style="width:80px;text-align:right;background:#fffbea" data-p="'+i+'"></td>'+
@@ -539,7 +541,7 @@ function renderInvLines(){
 function updInvTotals(){const t=invTotals();$('tSub').textContent=money(t.sub)+' ₾';$('tVat').textContent=money(t.vat)+' ₾';$('tGrand').textContent=money(t.grand)+' ₾';}
 function updInvRow(i,inp){const l=invDraft[i];const tr=inp.closest('tr');if(tr){const s=tr.querySelector('.sum');if(s)s.textContent=money(l.price*l.qty);}updInvTotals();}
 function currentInv(){const t=invTotals();return {no:$('iNo').value,date:$('iDate').value||todayStr(),cust:$('iCust').value,idc:$('iId').value,phone:($('iPhone')?$('iPhone').value:''),
-  lines:invDraft.map(l=>{const p=byCode(l.code)||{};return {code:l.code,name:l.name||p.name,size:l.size||p.size,ply:l.ply||'',brand:l.brand||'',color:p.color,price:l.price,qty:l.qty};}),
+  lines:invDraft.map(l=>{const p=byCode(l.code)||{};return {code:l.code,name:l.name||p.name,size:l.size||p.size,ply:l.ply||'',brand:l.brand||'',color:p.color,price:l.price,qty:l.qty,img:pubImg(l.code)};}),
   sub:t.sub,vat:t.vat,extra:{brandAmt:t.brandAmt,transAmt:t.transAmt,note:($('iNote')?$('iNote').value:''),minQty:($('iMinQty')?$('iMinQty').value:'')},grand:t.grand};}
 async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}const inv=currentInv();
   const isEdit=!!editingInvId; inv.id=editingInvId||String(Date.now());
@@ -577,7 +579,7 @@ function printInvoice(inv){
   window.addEventListener('afterprint',restore);
   window.print();
 }
-function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map((l,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+esc(l.name||'')+(l.color?' · '+esc(l.color):'')+'</td><td>'+esc(l.size||'')+(l.ply?' · '+esc(l.ply)+' შრე':'')+(l.brand?' · '+(l.brand==='კი'?'ბრენდირებით':'ბრენდირების გარეშე'):'')+'</td><td style="text-align:right">'+money(l.price)+'</td><td style="text-align:right">'+l.qty+'</td><td style="text-align:right">'+money(l.price*l.qty)+'</td></tr>').join('');
+function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map((l,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+((l.img||pubImg(l.code))?'<img src="'+(l.img||pubImg(l.code))+'" style="width:40px;height:40px;object-fit:cover;border-radius:5px;vertical-align:middle;margin-right:7px">':'')+esc(l.name||'')+(l.color?' · '+esc(l.color):'')+'</td><td>'+esc(l.size||'')+(l.ply?' · '+esc(l.ply)+' შრე':'')+(l.brand?' · '+(l.brand==='კი'?'ბრენდირებით':'ბრენდირების გარეშე'):'')+'</td><td style="text-align:right">'+money(l.price)+'</td><td style="text-align:right">'+l.qty+'</td><td style="text-align:right">'+money(l.price*l.qty)+'</td></tr>').join('');
   return '<div style="max-width:720px;margin:0 auto;color:#14261C;padding:20px;font-family:system-ui,\'Noto Sans Georgian\',sans-serif">'+
    '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #0F8A4D;padding-bottom:10px;margin-bottom:14px"><div><div style="font-size:26px;font-weight:800;color:#0B6B3C">RAM IMPEX</div><div style="font-size:12px;color:#5C6B62">შპს „რამ იმპექს" · <b style="color:#0B6B3C">ს/კ: 405565794</b><br>იმპორტი · დისტრიბუცია · 📞 595 533 500 · ✉ info@ramimpex.com.ge · 🌐 ramimpex.com.ge</div></div>'+
    '<div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#0B6B3C">ინვოისი</div><div>№ <b>'+esc(inv.no||"—")+'</b></div><div>თარიღი: '+esc(inv.date||"")+'</div></div></div>'+
