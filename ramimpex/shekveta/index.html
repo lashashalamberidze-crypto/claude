@@ -212,7 +212,7 @@ function list(){
    c.products.forEach(function(p,pi){
      if(q && (p.code+' '+p.name+' '+p.size).toLowerCase().indexOf(q)<0) return;
      var sim=p.img||pubImgs(p.code)[0]||'';
-     var simMedia=sim?'<img src="'+mediaUrl(sim)+'" onclick="zoom(this.src)" onerror="this.style.display=\'none\'" style="width:56px;height:56px;object-fit:cover;border-radius:9px;cursor:pointer" alt="">':'<div class="icon">📦</div>';
+     var simMedia=sim?'<img src="'+mediaUrl(sim)+'" onclick="zoom(this.src)" onerror="this.style.display=\'none\'" style="width:104px;height:104px;object-fit:contain;background:#fff;border:1px solid #e4ebe6;border-radius:12px;cursor:pointer" alt="">':'<div class="icon">📦</div>';
      html+='<div class="ptype simple">'+simMedia+'<div class="info"><div class="tt">'+esc(p.name)+' <span class="muted" style="font-size:11px">'+esc(ruCode(p.code)||'')+'</span></div><div class="cc">'+extraInfo(p)+'</div><div class="addrow"><input id="qty_s_'+pi+'" type="number" min="1" placeholder="რაოდ. *" style="width:90px;padding:8px 10px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><button class="addbtn" data-simple="'+pi+'">＋ დამატება</button></div></div></div>';
    });
  }
@@ -220,7 +220,7 @@ function list(){
    c.dynProducts.forEach(function(p,di){
      if(q && (p.code+' '+p.name+' '+p.size).toLowerCase().indexOf(q)<0) return;
      var im=p.img||pubImgs(p.code)[0]||'';
-     var md=im?'<img src="'+mediaUrl(im)+'" onclick="zoom(this.src)" onerror="this.style.display=\'none\'" style="width:56px;height:56px;object-fit:cover;border-radius:9px;cursor:pointer" alt="">':'<div class="icon">📦</div>';
+     var md=im?'<img src="'+mediaUrl(im)+'" onclick="zoom(this.src)" onerror="this.style.display=\'none\'" style="width:104px;height:104px;object-fit:contain;background:#fff;border:1px solid #e4ebe6;border-radius:12px;cursor:pointer" alt="">':'<div class="icon">📦</div>';
      html+='<div class="ptype simple">'+md+'<div class="info"><div class="tt">'+esc(p.name)+' <span class="muted" style="font-size:11px">'+esc(ruCode(p.code)||'')+'</span></div><div class="cc">'+extraInfo(p)+'</div><div class="addrow"><input id="qty_d_'+di+'" type="number" min="1" placeholder="რაოდ. *" style="width:90px;padding:8px 10px;border:1.5px solid #cfe0d6;border-radius:10px;font:inherit"><button class="addbtn" data-dyn="'+di+'">＋ დამატება</button></div></div></div>';
    });
  }
