@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GAP — ინფორმაციის ბაზა</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f4f6fa; --panel:#fff; --ink:#0d1526; --muted:#6b7c9a;
+  --line:#d9e0ee; --blue:#3a6db5; --blue-soft:#eaf0fa;
+  --green:#1c8a5a; --amber:#b4791a; --red:#c0392b;
+  --shadow:0 6px 22px rgba(13,21,38,.08);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1420; --panel:#161e2d; --ink:#e8eef8; --muted:#8fa0bd;
+    --line:#26314a; --blue:#5a8fd0; --blue-soft:#1b2436;
+    --green:#3fbc85; --amber:#e0a94a; --red:#e8705f;
+    --shadow:0 8px 26px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1420; --panel:#161e2d; --ink:#e8eef8; --muted:#8fa0bd;
+  --line:#26314a; --blue:#5a8fd0; --blue-soft:#1b2436;
+  --green:#3fbc85; --amber:#e0a94a; --red:#e8705f;
+  --shadow:0 8px 26px rgba(0,0,0,.45);
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55}
+
+header{position:sticky;top:0;z-index:50;background:var(--panel);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+.hwrap{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.brand{font-weight:800;font-size:17px;letter-spacing:.02em;white-space:nowrap}
+.brand span{color:var(--blue)}
+.grow{flex:1;min-width:120px}
+input,select,textarea,button{font:inherit;color:inherit}
+.search{width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 12px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--blue);color:var(--blue)}
+.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn.primary:hover{opacity:.9;color:#fff}
+.btn.danger:hover{border-color:var(--red);color:var(--red)}
+
+.savebar{max-width:1100px;margin:0 auto;padding:6px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block}
+.dot.warn{background:var(--amber)}
+
+main{max-width:1100px;margin:0 auto;padding:14px 16px 60px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 14px;cursor:pointer;font-size:13px}
+.chip.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
+.card-head{padding:14px 16px;cursor:pointer;display:flex;gap:12px;align-items:flex-start}
+.card-head:hover{background:var(--blue-soft)}
+.card-ico{font-size:22px;line-height:1.2}
+.card-t{flex:1;min-width:0}
+.card-t h3{font-size:16px;margin-bottom:2px}
+.card-t p{font-size:13px;color:var(--muted)}
+.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
+.badge.green{color:var(--green);border-color:var(--green)}
+.badge.amber{color:var(--amber);border-color:var(--amber)}
+.badge.red{color:var(--red);border-color:var(--red)}
+.card-body{display:none;padding:0 16px 16px;border-top:1px solid var(--line)}
+.card.open .card-body{display:block}
+.card.open .card-head{background:var(--blue-soft)}
+
+table.kv{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px}
+table.kv td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+table.kv td:first-child{color:var(--muted);width:34%;white-space:pre-wrap}
+table.kv td:last-child{white-space:pre-wrap}
+.notes{margin-top:12px;padding:10px 12px;background:var(--bg);border-radius:8px;font-size:14px;white-space:pre-wrap}
+.links{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.links a{font-size:13px;text-decoration:none;color:var(--blue);border:1px solid var(--line);border-radius:8px;padding:6px 11px}
+.links a:hover{border-color:var(--blue)}
+.rowbtns{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+
+.modal{position:fixed;inset:0;background:rgba(6,10,20,.6);display:none;z-index:100;overflow:auto;padding:24px 12px}
+.modal.open{display:block}
+.sheet{max-width:760px;margin:0 auto;background:var(--panel);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+.sheet h2{font-size:18px;margin-bottom:14px}
+label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
+.inp{width:100%;padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+textarea.inp{min-height:90px;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.kvrow{display:grid;grid-template-columns:1fr 2fr auto;gap:8px;margin-top:8px}
+.kvrow .btn{padding:6px 10px}
+.sheet-foot{margin-top:18px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.empty{text-align:center;color:var(--muted);padding:50px 10px}
+@media(max-width:640px){.two,.kvrow{grid-template-columns:1fr}table.kv td:first-child{width:42%}}
+@media print{header,.chips,.rowbtns,.savebar{display:none}.card-body{display:block!important}.card{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hwrap">
+    <div class="brand">GAP <span>· ინფორმაციის ბაზა</span></div>
+    <div class="grow"><input id="q" class="search" placeholder="ძებნა — სათაური, ტექსტი, ნებისმიერი სიტყვა…"></div>
+    <button class="btn primary" onclick="openEdit(null)">+ დამატება</button>
+    <button class="btn" id="linkBtn" onclick="linkFile()" title="დააკავშირე ფაილს — შემდეგ ავტომატურად ინახება">📁 ფაილთან დაკავშირება</button>
+    <button class="btn" onclick="exportJson()" title="სარეზერვო ასლი">💾 ჩამოტვირთვა</button>
+    <button class="btn" onclick="document.getElementById('imp').click()">📂 ჩატვირთვა</button>
+    <button class="btn" onclick="window.print()">🖨</button>
+    <button class="btn" onclick="toggleTheme()">🌓</button>
+    <input type="file" id="imp" accept="application/json,.json" hidden onchange="importJson(this)">
+  </div>
+  <div class="savebar">
+    <span class="dot" id="sdot"></span><span id="sinfo">იტვირთება…</span>
+  </div>
+</header>
+
+<main>
+  <div class="chips" id="chips"></div>
+  <div id="list"></div>
+</main>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <h2 id="mtitle">ახალი ჩანაწერი</h2>
+    <div class="two">
+      <div><label>კატეგორია</label>
+        <select id="f_cat" class="inp">
+          <option value="ტენდერი">ტენდერი</option>
+          <option value="პროექტი">პროექტი</option>
+          <option value="კომპანია">კომპანია</option>
+          <option value="კონტაქტი">კონტაქტი</option>
+          <option value="აპლიკაცია">აპლიკაცია</option>
+          <option value="სხვა">სხვა</option>
+        </select></div>
+      <div><label>სტატუსი</label><input id="f_status" class="inp" placeholder="მაგ: მიმდინარე / დასრულებული"></div>
+    </div>
+    <label>სათაური</label><input id="f_title" class="inp">
+    <label>ქვესათაური (მოკლე აღწერა)</label><input id="f_sub" class="inp">
+    <div class="two">
+      <div><label>ვადა / თარიღი (თთთთ-თთ-დდ)</label><input id="f_due" class="inp" type="date"></div>
+      <div><label>ხატულა (emoji)</label><input id="f_icon" class="inp" placeholder="📄"></div>
+    </div>
+    <label>დეტალები (სახელი → მნიშვნელობა)</label>
+    <div id="f_fields"></div>
+    <button class="btn" style="margin-top:8px" onclick="addFieldRow()">+ ველის დამატება</button>
+    <label>ბმულები / ფაილები (სახელი → მისამართი)</label>
+    <div id="f_links"></div>
+    <button class="btn" style="margin-top:8px" onclick="addLinkRow()">+ ბმულის დამატება</button>
+    <label>შენიშვნები</label><textarea id="f_notes" class="inp"></textarea>
+    <div class="sheet-foot">
+      <button class="btn danger" id="delBtn" onclick="delItem()">წაშლა</button>
+      <button class="btn" onclick="closeEdit()">გაუქმება</button>
+      <button class="btn primary" onclick="saveEdit()">შენახვა</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   GAP — ინფორმაციის ბაზა. ერთი ფაილი, სერვერის გარეშე.
+   შენახვა: (1) ბრაუზერში ავტომატურად, (2) დესკტოპის JSON ფაილში.
+   ══════════════════════════════════════════════════════════════ */
+
+var LSKEY = 'gap_info_db_v1';
+var FILENAME = 'gap-info-data.json';
+
+/* ---------- საწყისი ინფორმაცია (seed) ---------- */
+var SEED = [
+{
+  id:'tender-zuzumbo-telavi', cat:'ტენდერი', icon:'🌳',
+  title:'ზუზუმბოს პარკი — ქ. თელავი (საპროექტო-სახარჯთაღრიცხვო დოკუმენტაცია)',
+  sub:'სსიპ საქართველოს მუნიციპალური განვითარების ფონდი · 9,9 ჰა · 850 000 ₾',
+  status:'შესასწავლი', due:'',
+  fields:[
+    ['შემსყიდველი','სსიპ საქართველოს მუნიციპალური განვითარების ფონდი (MDF)'],
+    ['შესყიდვის ობიექტი','ქ. თელავში, ზუზუმბოს პარკის საპროექტო-სახარჯთაღრიცხვო დოკუმენტაციის მომზადების მომსახურების სახელმწიფო შესყიდვა'],
+    ['პროცედურა','კონკურსი (CNT) — სახელმწიფო შესყიდვების ერთიანი ელექტრონული სისტემა'],
+    ['CPV','71200000'],
+    ['სავარაუდო ღირებულება','850 000,00 ₾ (დღგ-ს გარეშე)'],
+    ['დაფინანსების წყარო','სახელმწიფო ბიუჯეტიდან გამოყოფილი სახსრები'],
+    ['საკადასტრო კოდი','53.19.31.363-ის ნაწილი'],
+    ['საპროექტო არეალი','9,9 ჰა'],
+    ['მდებარეობა','ქ. თელავი, კახეთი — ქალაქის სამხრეთ ნაწილი. დასავლეთით/სამხრეთ-დასავლეთით ტყის მასივი, ჩრდილოეთით და აღმოსავლეთით მჭიდრო განაშენიანება, აღმოსავლეთით მდ. თელავის რიყე.'],
+    ['ვადა (I+II ეტაპი)','6 თვე ხელშეკრულების ხელმოწერიდან. ვადის შეცვლა მხოლოდ დამკვეთის წინასწარი წერილობითი თანხმობით.'],
+    ['I ეტაპი','1.1 წინასაპროექტო კვლევა (ტოპოგეოდეზია, გეოლოგია, კომუნიკაციები, შენობების ტექ. მდგომარეობა)\n1.2 ტერიტორიის განვითარების კონცეფცია/ესკიზი\n1.3 კონცეფციის შეთანხმება ადგილობრივ მუნიციპალიტეტთან\n1.4 დემონტაჟის ორგანიზების პროექტი (საჭიროების შემთხვევაში)'],
+    ['II ეტაპი','2.1 დეტალური საპროექტო დოკუმენტაცია — სარეკრეაციო ნაწილი\n2.2 დეტალური საპროექტო დოკუმენტაცია — არქიტექტურული ობიექტები\n2.3 დეტალური პროექტის შეთანხმება მუნიციპალიტეტთან\n2.4 დეტალური სახარჯთაღრიცხვო დოკუმენტაცია\n2.5 გარემოსდაცვითი და სოციალური კვლევები'],
+    ['III ეტაპი','საავტორო ზედამხედველობა — პერიოდული ანგარიშები; საბოლოო შემაჯამებელი ანგარიში მშენებლობის დასრულებიდან 10 კალენდარულ დღეში. დასრულებულად ითვლება მიღება-ჩაბარების აქტის გაფორმების შემდეგ.'],
+    ['შეფასების წონები','ხარისხი — 80% · ფასი — 20%'],
+    ['ხარისხის კრიტერიუმები','0,8 — არათვლადი: განმარტებითი ბარათი + არქიტექტურული კონცეფცია (კომისია აფასებს 0–10 ქულით, საშუალო არითმეტიკული)\n0,2 — თვლადი: ძირითადი პერსონალის განათლება და გამოცდილება (დანართი N6-ის მატრიცა)'],
+    ['სავალდებულო პერსონალი (დისკვალიფიკაცია)','1) პროექტის ხელმძღვანელი/მთავარი არქიტექტორი — მაგისტრი (ინჟინერია ან არქიტექტურა), 10+ წლის გამოცდილება, მინიმუმ 3 პროექტი (არანაკლებ III კლასის საზოგადოებრივი ან მრავალბინიანი) პროექტირების მართვაში\n2) არქიტექტურული ნაწილის ხელმძღვანელი — მაგისტრი არქიტექტურაში, 10+ წელი, მინიმუმ 1 პროექტი (არანაკლებ III კლასი)\n3) ლანდშაფტის არქიტექტორი/დიზაინერი — მაგისტრი ლანდშაფტის დიზაინში/არქიტექტურაში, 10+ წელი, მინიმუმ 1 პროექტი არანაკლებ 3000 მ² სარეკრეაციო/ლანდშაფტური სივრცე'],
+    ['წარმოსადგენი დოკუმენტები','• თითოეული ძირითადი პერსონალის CV (ორგანიზაცია, პოზიცია, წლები, პროექტები)\n• მაგისტრის დიპლომი\n• ინფორმაცია განხორციელებული პროექტების შესახებ — დანართი N4\n• წინარე შეთანხმება თითოეულთან ცალ-ცალკე — დანართი N5\n• კონცეფციის შემუშავებაში მონაწილეობის დოკუმენტი — დანართი N9\n• ტერიტორიის განვითარების კონცეფცია (განმარტებითი ბარათი + არქიტექტურული კონცეფცია)\n• პროექტის განხორციელების გეგმა-გრაფიკი — დანართი N3\n• მინდობილობა (საჭიროების შემთხვევაში)'],
+    ['კონცეფციის შემადგენლობა','განმარტებითი ბარათი: წინასაპროექტო შეფასება, კონცეფციის დასაბუთება, ძირითადი მასალები, უახლესი ფოტომასალა.\nარქიტექტურული კონცეფცია: გენ. გეგმა (ფუნქციური ზონირება, საფეხმავლო/სატრანსპორტო სქემა, ობიექტების განთავსება), ფოტომონტაჟები არანაკლებ 4 ხედით, 3D აქსონომეტრიული ხედები მასალებისა და გაბარიტების მითითებით.'],
+    ['ყურადღება — დისკვალიფიკაცია','ალტერნატიული საკონკურსო წინადადების (არქიტექტურული კონცეფციის) წარდგენა აკრძალულია.'],
+    ['საბანკო გარანტია (შესრულების)','სახელშეკრულებო ღირებულების 5% (თეთრი სია — კანონმდებლობით). თუ წინადადების ფასი სავარაუდო ღირებულებას 20%+-ით ჩამორჩება — 10%. მოქმედების ვადა: I+II ეტაპების ჯამური ვადა + 2 კალენდარული თვე.'],
+    ['ავანსი','მაქსიმუმ I+II ეტაპების ჯამური ღირებულების 10%, წინასწარი (საავანსო) ანგარიშსწორების უზრუნველყოფის საბანკო გარანტიის საფუძველზე. მოცულობასა და პერიოდულობას განსაზღვრავს შემსყიდველი.'],
+    ['დოკუმენტაციის ფორმატი','ქართულ და ინგლისურ ენებზე, .pdf + რედაქტირებადი ფაილები: .dwg/.dxf/.pln (პროექტი), .ai/.psd/.indd/.fig (ვიზუალი), .xls (მოცულობები/ხარჯთაღრიცხვა), .docx (ტექსტი) — მეხსიერების ბარათზე.'],
+    ['ჩაბარების მისამართი','ქ. თბილისი, დ. აღმაშენებლის გამზირი N150ა — სსიპ საქართველოს მუნიციპალური განვითარების ფონდი'],
+    ['საკონტაქტო პირი','მარიამ აბულაძე — +995 32 2437001/02/03/04 (შიდა 414) · +995 593 72 73 05'],
+    ['ენა','ყველა დოკუმენტი ქართულად. უცხოენოვანს უნდა დაერთოს კანონმდებლობით დადგენილი თარგმანი.']
+  ],
+  links:[['საკონკურსო დოკუმენტაცია (PDF)','docs/zuzumbo-park-telavi-tenderi.pdf']],
+  notes:'რატომ გვჭირდება: პროფილით ზუსტად ჩვენია — პარკები და საზოგადოებრივი სივრცეები (იხ. კასპის ტბის პარკი, რუსთავის პარკის კონცეფცია).\nსაკვანძო რისკი: სამივე ძირითადი პერსონალი სავალდებულოა — მათი ვერ დაკომპლექტება ავტომატური დისკვალიფიკაციაა.\nშემდეგი ნაბიჯები: ① პერსონალის CV/დიპლომები და დანართი N5-ის ხელმოწერა ② ტერიტორიის დათვალიერება და ფოტოფიქსაცია ③ კონცეფცია + გეგმა-გრაფიკი ④ ფასის გაანგარიშება ეტაპების მიხედვით.'
+},
+{
+  id:'company-gap-group', cat:'კომპანია', icon:'🏛',
+  title:'GAP Group — საინჟინრო-საპროექტო კომპანია',
+  sub:'სიზუსტე. ხარისხი. სანდოობა. · თბილისი, საქართველო',
+  status:'აქტიური', due:'',
+  fields:[
+    ['პროფილი','არქიტექტურული, ურბანული და ინფრასტრუქტურული პროექტირება. თანამშრომლობა სახელმწიფო და კერძო სექტორთან.'],
+    ['დირექტორი','თენგიზ მეტრეველი'],
+    ['მრჩეველი','მანუჩარ ქუთათელაძე'],
+    ['მისამართი','მარჯანიშვილის ქ. 44/48, თბილისი, საქართველო'],
+    ['ტელეფონი','+995 555 46 17 17 · +995 599 99 34 68'],
+    ['ელფოსტა','gapgltd@gmail.com'],
+    ['გამოცდილება','8+ წელი · 10+ პროექტი'],
+    ['საერთაშორისო პარტნიორები','GSarchitects (ავსტრია) · GORPROJECT (რუსეთი) · Novaya Zemlya'],
+    ['სერვისები','• არქიტექტურული პროექტირება\n• ინფრასტრუქტურული სისტემები\n• ტექნიკურ-ეკონომიკური კვლევა (ფიზიბილიტი)\n• პარკები და საზოგადოებრივი სივრცეები\n• საინჟინრო ზედამხედველობა\n• საკონსულტაციო მომსახურება']
+  ],
+  links:[['GAP Group ვებგვერდი (ლოკალური)','index.html']],
+  notes:'ვებგვერდის ფაილი ინახება ამავე საქაღალდეში: index.html (სამენოვანი — KA/EN/RU).'
+},
+{
+  id:'project-kaspi-lake-park', cat:'პროექტი', icon:'🌳',
+  title:'ბუნებრივი ტბის პარკი — ქ. კასპი',
+  sub:'7 ჰა · ვარჯიანის დასახლება · კონკურსი CNT250000051',
+  status:'შესრულებული კონცეფცია', due:'',
+  fields:[
+    ['ფართობი','7 ჰა'],
+    ['ძირითადი ელემენტები','ტბის სანაპირო პრომენადი 375 მ · ველო მარშრუტი 900 მ · ამფითეატრი 120–180 ადგილი · სპორტული ზონები · საბავშვო მოედნები · ცენტრალური მოედანი სცენით (∅50 მ)'],
+    ['პარტნიორი','Novaya Zemlya']
+  ],
+  links:[['პროექტის PDF','https://drive.google.com/file/d/1vldJu8VPqAQsybEME3si3UuDmutxYhUa/view?usp=drive_link']],
+  notes:''
+},
+{
+  id:'project-arsenal-hill', cat:'პროექტი', icon:'🏛️',
+  title:'სამთავრობო ქალაქი — „არსენალის მთა“',
+  sub:'თბილისი, ჩუღურეთი, გედევანიშვილის ქ. — გენერალური გეგმა',
+  status:'შესრულებული კონცეფცია', due:'',
+  fields:[
+    ['ობიექტი','ყოფილი „არსენალის მთის“ ტერიტორიაზე სამთავრობო კვარტლის გენერალური გეგმა'],
+    ['პარტნიორი','GORPROJECT (გორპროექტი)']
+  ],
+  links:[['ვიდეო კონცეფცია (YouTube)','https://www.youtube.com/watch?v=Ocd89exm4mw']],
+  notes:''
+},
+{
+  id:'project-surami-arena', cat:'პროექტი', icon:'🏟️',
+  title:'მწვანე არენა — სურამი',
+  sub:'სპორტული კომპლექსი · LED მედია-ფასადი',
+  status:'შესრულებული კონცეფცია', due:'',
+  fields:[
+    ['შემადგენლობა','1000-ადგილიანი ტრიბუნა · სპორტული დარბაზი 65×45 მ · საცურაო აუზი 30×25 მ · ფიტნესი/MMA/ჭიდაობა · 400 მ სარბენი ბილიკი სახურავზე · LED მედია-ფასადი ~30 მ · კაფე-ლაუნჯი სახურავზე'],
+    ['პარტნიორი','GSarchitects (ავსტრია)']
+  ],
+  links:[['პროექტის PDF','https://drive.google.com/file/d/1vZe9AsPVYIfadL8_n-BFffL8M_JyDbvV/view?usp=drive_link']],
+  notes:''
+},
+{
+  id:'project-rustavi-park', cat:'პროექტი', icon:'🌳',
+  title:'პარკის რეაბილიტაციის კონცეფცია — რუსთავი',
+  sub:'ლანდშაფტური გადაწყვეტები, ფუნქციური ზონირება, სარეკრეაციო სივრცეები',
+  status:'შესრულებული კონცეფცია', due:'',
+  fields:[['პარტნიორი','Novaya Zemlya']],
+  links:[['კონცეფციის PDF','gap_assets/rustavi_central_park_concept.pdf']],
+  notes:'PDF/სურათი ინახება საქაღალდეში gap_assets/ (თუ ის ფაილები გაქვს — ჩააგდე იმავე ადგილას).'
+},
+{
+  id:'app-gap-finance', cat:'აპლიკაცია', icon:'💼',
+  title:'GAP Finance — ლოკალური აპლიკაცია',
+  sub:'FastAPI + uvicorn, დესკტოპზე',
+  status:'გამოყენებაშია', due:'',
+  fields:[
+    ['გაშვება','ორმაგი დაწკაპუნება GAP_Finance.bat-ზე'],
+    ['საქაღალდე','%USERPROFILE%\\Desktop\\gap_finance'],
+    ['გარემო','.venv\\Scripts\\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000'],
+    ['მისამართი','http://localhost:8000 (იხსნება ავტომატურად 3 წამში)']
+  ],
+  links:[],
+  notes:'ეს აპლიკაცია Python-ს საჭიროებს. ინფორმაციის ბაზა (ეს ფაილი) — არა: უბრალოდ გახსენი ბრაუზერით.'
+}
+];
+
+/* ---------- მდგომარეობა ---------- */
+var DB = {v:1, updated:'', items:[]};
+var fileHandle = null;      // დესკტოპის JSON ფაილი (თუ დაკავშირებულია)
+var editingId = null;
+var filterCat = 'ყველა';
+var CATS = ['ყველა','ტენდერი','პროექტი','კომპანია','კონტაქტი','აპლიკაცია','სხვა'];
+
+/* ---------- ლოკალური შენახვა ---------- */
+function lsLoad(){
+  try{
+    var raw = localStorage.getItem(LSKEY);
+    if(raw){ var d = JSON.parse(raw); if(d && d.items) return d; }
+  }catch(e){}
+  return null;
+}
+function lsSave(){
+  try{ localStorage.setItem(LSKEY, JSON.stringify(DB)); return true; }
+  catch(e){ return false; }
+}
+
+/* ---------- ფაილში შენახვა (File System Access API) ---------- */
+var IDB_NAME='gap_info_fs', IDB_STORE='handles';
+function idb(){
+  return new Promise(function(res,rej){
+    var r = indexedDB.open(IDB_NAME,1);
+    r.onupgradeneeded=function(){ r.result.createObjectStore(IDB_STORE); };
+    r.onsuccess=function(){ res(r.result); };
+    r.onerror=function(){ rej(r.error); };
+  });
+}
+function idbPut(k,v){ return idb().then(function(db){ return new Promise(function(res,rej){
+  var tx=db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(v,k);
+  tx.oncomplete=function(){res();}; tx.onerror=function(){rej(tx.error);};
+});}); }
+function idbGet(k){ return idb().then(function(db){ return new Promise(function(res,rej){
+  var tx=db.transaction(IDB_STORE,'readonly'); var q=tx.objectStore(IDB_STORE).get(k);
+  q.onsuccess=function(){res(q.result);}; q.onerror=function(){rej(q.error);};
+});}); }
+
+function fsSupported(){ return typeof window.showSaveFilePicker === 'function'; }
+
+function linkFile(){
+  if(!fsSupported()){
+    alert('ამ ბრაუზერს ფაილთან პირდაპირი დაკავშირება არ შეუძლია.\n\nგამოიყენე Chrome ან Edge — ან იმუშავე ღილაკებით:\n💾 ჩამოტვირთვა (სარეზერვო ასლი) და 📂 ჩატვირთვა.');
+    return;
+  }
+  window.showSaveFilePicker({
+    suggestedName: FILENAME,
+    types:[{description:'GAP მონაცემები', accept:{'application/json':['.json']}}]
+  }).then(function(h){
+    fileHandle = h;
+    return idbPut('file', h).catch(function(){}).then(function(){ return writeFile(); });
+  }).then(function(){ status(); }).catch(function(e){ if(e && e.name!=='AbortError') alert('ვერ დაუკავშირდა: '+e); });
+}
+
+function writeFile(){
+  if(!fileHandle) return Promise.resolve(false);
+  return fileHandle.createWritable().then(function(w){
+    return w.write(JSON.stringify(DB,null,2)).then(function(){ return w.close(); });
+  }).then(function(){ return true; }).catch(function(){ return false; });
+}
+
+function restoreHandle(){
+  if(!fsSupported()) return Promise.resolve();
+  return idbGet('file').then(function(h){
+    if(!h) return;
+    return h.queryPermission({mode:'readwrite'}).then(function(p){
+      if(p==='granted'){ fileHandle=h; }
+      else if(p==='prompt'){ fileHandle=h; pendingPerm=true; }
+    });
+  }).catch(function(){});
+}
+var pendingPerm=false;
+function grantPerm(){
+  if(!fileHandle) return;
+  fileHandle.requestPermission({mode:'readwrite'}).then(function(p){
+    if(p==='granted'){ pendingPerm=false; writeFile().then(status); } else status();
+  });
+}
+
+/* ---------- ცენტრალური შენახვა ---------- */
+function save(){
+  DB.updated = new Date().toISOString();
+  lsSave();
+  status();
+  writeFile().then(status);
+}
+
+function status(){
+  var dot=document.getElementById('sdot'), info=document.getElementById('sinfo');
+  var t = DB.updated ? new Date(DB.updated).toLocaleString('ka-GE') : '—';
+  var parts=[];
+  parts.push('ჩანაწერი: '+DB.items.length);
+  parts.push('ბოლო ცვლილება: '+t);
+  if(fileHandle && !pendingPerm){ parts.push('✔ ინახება ფაილში: '+(fileHandle.name||FILENAME)); dot.className='dot'; }
+  else if(fileHandle && pendingPerm){ parts.push('⚠ ფაილი დაკავშირებულია, საჭიროა ნებართვა'); dot.className='dot warn'; }
+  else if(fsSupported()){ parts.push('ინახება ბრაუზერში — დააჭირე „📁 ფაილთან დაკავშირება“, რომ დესკტოპის ფაილშიც ინახებოდეს'); dot.className='dot warn'; }
+  else { parts.push('ინახება ბრაუზერში — სარეზერვოდ გამოიყენე „💾 ჩამოტვირთვა“'); dot.className='dot warn'; }
+  info.textContent = parts.join(' · ');
+  var lb=document.getElementById('linkBtn');
+  if(pendingPerm){ lb.textContent='🔓 ნების დართვა'; lb.onclick=grantPerm; }
+  else { lb.textContent = fileHandle ? '📁 ფაილის შეცვლა' : '📁 ფაილთან დაკავშირება'; lb.onclick=linkFile; }
+}
+
+/* ---------- იმპორტი / ექსპორტი ---------- */
+function exportJson(){
+  var b = new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = FILENAME;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+}
+function importJson(input){
+  var f = input.files && input.files[0]; if(!f) return;
+  var r = new FileReader();
+  r.onload = function(){
+    try{
+      var d = JSON.parse(r.result);
+      if(!d || !d.items) throw new Error('ფორმატი არ ემთხვევა');
+      if(!confirm('ჩაიტვირთოს '+d.items.length+' ჩანაწერი? მიმდინარე სია ჩანაცვლდება.')) return;
+      DB = {v:1, updated:d.updated||'', items:d.items};
+      save(); render();
+    }catch(e){ alert('ვერ წავიკითხე ფაილი: '+e.message); }
+  };
+  r.readAsText(f); input.value='';
+}
+
+/* ---------- დახატვა ---------- */
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+function dueBadge(it){
+  if(!it.due) return it.status ? '<span class="badge">'+esc(it.status)+'</span>' : '';
+  var d = new Date(it.due+'T23:59:59');
+  var days = Math.ceil((d - new Date())/86400000);
+  var cls = days<0 ? 'red' : (days<=7 ? 'amber' : 'green');
+  var txt = days<0 ? 'ვადა გავიდა' : (days===0 ? 'დღეს არის ვადა' : days+' დღე დარჩა');
+  return '<span class="badge '+cls+'">'+esc(it.due)+' · '+txt+'</span>';
+}
+
+function renderChips(){
+  var c = document.getElementById('chips');
+  c.innerHTML = CATS.map(function(k){
+    var n = k==='ყველა' ? DB.items.length : DB.items.filter(function(i){return i.cat===k;}).length;
+    if(k!=='ყველა' && n===0) return '';
+    return '<button class="chip'+(filterCat===k?' active':'')+'" onclick="setCat(\''+k+'\')">'+esc(k)+' ('+n+')</button>';
+  }).join('');
+}
+function setCat(k){ filterCat=k; render(); }
+
+function render(){
+  renderChips();
+  var q = document.getElementById('q').value.trim().toLowerCase();
+  var list = DB.items.filter(function(it){
+    if(filterCat!=='ყველა' && it.cat!==filterCat) return false;
+    if(!q) return true;
+    var hay = [it.title,it.sub,it.status,it.notes,it.cat].join(' ') + ' ' +
+      (it.fields||[]).map(function(f){return f[0]+' '+f[1];}).join(' ') + ' ' +
+      (it.links||[]).map(function(l){return l[0]+' '+l[1];}).join(' ');
+    return hay.toLowerCase().indexOf(q) > -1;
+  });
+
+  var el = document.getElementById('list');
+  if(!list.length){ el.innerHTML = '<div class="empty">ვერაფერი მოიძებნა.<br>დააჭირე „+ დამატება“ ახალი ინფორმაციისთვის.</div>'; return; }
+
+  el.innerHTML = list.map(function(it){
+    var kv = (it.fields||[]).filter(function(f){return f[0]||f[1];})
+      .map(function(f){ return '<tr><td>'+esc(f[0])+'</td><td>'+esc(f[1])+'</td></tr>'; }).join('');
+    var lk = (it.links||[]).filter(function(l){return l[1];})
+      .map(function(l){ return '<a href="'+esc(l[1])+'" target="_blank" rel="noopener">'+esc(l[0]||l[1])+'</a>'; }).join('');
+    return '<div class="card" id="c_'+esc(it.id)+'">'+
+      '<div class="card-head" onclick="toggle(\''+esc(it.id)+'\')">'+
+        '<div class="card-ico">'+esc(it.icon||'📄')+'</div>'+
+        '<div class="card-t"><h3>'+esc(it.title)+'</h3><p>'+esc(it.cat)+(it.sub?' · '+esc(it.sub):'')+'</p></div>'+
+        dueBadge(it)+
+      '</div>'+
+      '<div class="card-body">'+
+        (kv?'<table class="kv">'+kv+'</table>':'')+
+        (it.notes?'<div class="notes">'+esc(it.notes)+'</div>':'')+
+        (lk?'<div class="links">'+lk+'</div>':'')+
+        '<div class="rowbtns"><button class="btn" onclick="openEdit(\''+esc(it.id)+'\')">✏️ რედაქტირება</button>'+
+        '<button class="btn" onclick="copyItem(\''+esc(it.id)+'\')">📋 ტექსტად კოპირება</button></div>'+
+      '</div></div>';
+  }).join('');
+}
+function toggle(id){ var c=document.getElementById('c_'+id); if(c) c.classList.toggle('open'); }
+
+function copyItem(id){
+  var it = DB.items.filter(function(x){return x.id===id;})[0]; if(!it) return;
+  var t = it.title+'\n'+(it.sub||'')+'\n\n'+
+    (it.fields||[]).map(function(f){return f[0]+': '+f[1];}).join('\n')+
+    (it.notes?'\n\nშენიშვნები:\n'+it.notes:'')+
+    ((it.links||[]).length?'\n\nბმულები:\n'+it.links.map(function(l){return l[0]+' — '+l[1];}).join('\n'):'');
+  if(navigator.clipboard) navigator.clipboard.writeText(t).then(function(){ alert('დაკოპირდა'); });
+  else { prompt('დააკოპირე:', t); }
+}
+
+/* ---------- რედაქტორი ---------- */
+function rowHtml(cls,k,v,ph1,ph2){
+  return '<div class="kvrow '+cls+'"><input class="inp k" placeholder="'+ph1+'" value="'+esc(k)+'">'+
+    '<textarea class="inp v" rows="1" placeholder="'+ph2+'">'+esc(v)+'</textarea>'+
+    '<button class="btn danger" onclick="this.parentNode.remove()">✕</button></div>';
+}
+function addFieldRow(k,v){ document.getElementById('f_fields').insertAdjacentHTML('beforeend', rowHtml('fr',k||'',v||'','სახელი (მაგ. ვადა)','მნიშვნელობა')); }
+function addLinkRow(k,v){ document.getElementById('f_links').insertAdjacentHTML('beforeend', rowHtml('lr',k||'',v||'','ბმულის სახელი','https://… ან docs/file.pdf')); }
+
+function openEdit(id){
+  editingId = id;
+  var it = id ? DB.items.filter(function(x){return x.id===id;})[0] : null;
+  document.getElementById('mtitle').textContent = it ? 'რედაქტირება' : 'ახალი ჩანაწერი';
+  document.getElementById('f_cat').value = it ? it.cat : 'ტენდერი';
+  document.getElementById('f_status').value = it ? (it.status||'') : '';
+  document.getElementById('f_title').value = it ? it.title : '';
+  document.getElementById('f_sub').value = it ? (it.sub||'') : '';
+  document.getElementById('f_due').value = it ? (it.due||'') : '';
+  document.getElementById('f_icon').value = it ? (it.icon||'') : '📄';
+  document.getElementById('f_notes').value = it ? (it.notes||'') : '';
+  document.getElementById('f_fields').innerHTML = '';
+  document.getElementById('f_links').innerHTML = '';
+  if(it){
+    (it.fields||[]).forEach(function(f){ addFieldRow(f[0],f[1]); });
+    (it.links||[]).forEach(function(l){ addLinkRow(l[0],l[1]); });
+  }
+  if(!document.querySelectorAll('#f_fields .kvrow').length){ addFieldRow(); addFieldRow(); }
+  if(!document.querySelectorAll('#f_links .kvrow').length){ addLinkRow(); }
+  document.getElementById('delBtn').style.display = it ? '' : 'none';
+  document.getElementById('modal').classList.add('open');
+}
+function closeEdit(){ document.getElementById('modal').classList.remove('open'); editingId=null; }
+
+function collect(sel){
+  return Array.prototype.map.call(document.querySelectorAll(sel+' .kvrow'), function(r){
+    return [r.querySelector('.k').value.trim(), r.querySelector('.v').value.trim()];
+  }).filter(function(p){ return p[0]||p[1]; });
+}
+
+function saveEdit(){
+  var title = document.getElementById('f_title').value.trim();
+  if(!title){ alert('სათაური აუცილებელია'); return; }
+  var obj = {
+    id: editingId || ('it-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6)),
+    cat: document.getElementById('f_cat').value,
+    icon: document.getElementById('f_icon').value.trim() || '📄',
+    title: title,
+    sub: document.getElementById('f_sub').value.trim(),
+    status: document.getElementById('f_status').value.trim(),
+    due: document.getElementById('f_due').value,
+    fields: collect('#f_fields'),
+    links: collect('#f_links'),
+    notes: document.getElementById('f_notes').value.trim()
+  };
+  if(editingId){
+    DB.items = DB.items.map(function(x){ return x.id===editingId ? obj : x; });
+  } else {
+    DB.items.unshift(obj);
+  }
+  save(); closeEdit(); render();
+}
+
+function delItem(){
+  if(!editingId) return;
+  if(!confirm('წაიშალოს ეს ჩანაწერი? მოქმედება შეუქცევადია.')) return;
+  DB.items = DB.items.filter(function(x){ return x.id!==editingId; });
+  save(); closeEdit(); render();
+}
+
+/* ---------- სხვა ---------- */
+function toggleTheme(){
+  var cur = document.documentElement.getAttribute('data-theme');
+  var next = cur==='dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  try{ localStorage.setItem('gap_info_theme', next); }catch(e){}
+}
+
+document.getElementById('q').addEventListener('input', render);
+document.getElementById('modal').addEventListener('click', function(e){ if(e.target===this) closeEdit(); });
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeEdit(); });
+
+/* ---------- გაშვება ---------- */
+(function init(){
+  try{ var th=localStorage.getItem('gap_info_theme'); if(th) document.documentElement.setAttribute('data-theme',th); }catch(e){}
+  var d = lsLoad();
+  if(d){ DB = d; }
+  else { DB = {v:1, updated:new Date().toISOString(), items:SEED.map(function(s){
+      return {id:s.id,cat:s.cat,icon:s.icon,title:s.title,sub:s.sub,status:s.status,due:s.due,fields:s.fields,links:s.links,notes:s.notes};
+    })}; lsSave(); }
+  render();
+  restoreHandle().then(status);
+})();
+</script>
+</body>
+</html>
