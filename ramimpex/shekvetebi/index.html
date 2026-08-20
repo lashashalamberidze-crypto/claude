@@ -462,7 +462,7 @@ let invDraft=[], INVOICES=[], editingInvId=null;
 // შენახული ინვოისის ჩატვირთვა რედაქტირებისთვის
 function editInvoice(inv){
   editingInvId=inv.id;
-  invDraft=(inv.lines||[]).map(l=>({code:l.code,price:l.price,qty:l.qty,name:l.name,size:l.size,ply:l.ply||'',brand:l.brand||''}));
+  invDraft=(inv.lines||[]).map(l=>({code:l.code,price:l.price,qty:l.qty,name:l.name,size:l.size,ply:l.ply||'',brand:l.brand||'',min:(l.min!=null&&l.min!=='')?l.min:'3000'}));
   renderInvoice();
   if($('iNo'))$('iNo').value=inv.no||'';
   if($('iDate'))$('iDate').value=inv.date||todayStr();
@@ -481,7 +481,7 @@ function editInvoice(inv){
 // შეკვეთიდან ავტომატურად ინვოისის აწყობა
 async function invoiceFromOrder(o){
   try{await ensureDirs();}catch(e){alert('კატალოგი ვერ ჩაიტვირთა: '+(e.message||e));return;}
-  invDraft=(o.items||[]).filter(it=>it&&it.code).map(it=>{const p=byCode(it.code);return {code:it.code,price:(p&&p.price!=null)?p.price:0,qty:parseInt(it.qty)||1,name:it.name||(p&&p.name)||'',size:it.size||(p&&p.size)||'',ply:it.ply||(p&&p.ply)||''};});
+  invDraft=(o.items||[]).filter(it=>it&&it.code).map(it=>{const p=byCode(it.code);return {code:it.code,price:(p&&p.price!=null)?p.price:0,qty:parseInt(it.qty)||1,name:it.name||(p&&p.name)||'',size:it.size||(p&&p.size)||'',ply:it.ply||(p&&p.ply)||'',min:'3000'};});
   // ინვოისის ტაბზე გადასვლა
   $('tabbar').querySelectorAll('.tb').forEach(x=>x.classList.remove('on'));
   const ib=$('tabbar').querySelector('[data-t="invoice"]'); if(ib)ib.classList.add('on');
@@ -506,7 +506,7 @@ function addToCart(d,it,btn){
   if(!it)return;const pr=effective(d,it);
   const ex=invDraft.find(l=>l.code===it.code);
   if(ex){ex.qty=(parseInt(ex.qty)||0)+1;}
-  else invDraft.push({code:it.code,name:it.name||'',size:it.size||'',price:pr,qty:1,min:'',ply:(itmBox(it)?(it.ply||''):'')});
+  else invDraft.push({code:it.code,name:it.name||'',size:it.size||'',price:pr,qty:1,min:'3000',ply:(itmBox(it)?(it.ply||''):'')});
   updateCartBar();
   if(btn){const o=btn.textContent;btn.textContent='✓';btn.style.background='#0B6B3C';btn.style.color='#fff';setTimeout(()=>{btn.textContent=o;btn.style.background='';btn.style.color='';},700);}
 }
@@ -542,7 +542,7 @@ function renderInvoice(){
    '<div class="row" style="margin-top:6px;font-size:12px;color:var(--muted)">🖨 <b>ბეჭდვა/PDF</b> = შეკვეთა/ინვოისი (რაოდენობა + ჯამი) · 💰 <b>შეთავაზება JPG</b> = მხოლოდ ერთეული ფასები + მინ. რაოდ. + შენიშვნა (ჯამის გარეშე)</div>'+
    '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><button class="btn" id="iPrint">🖨 შეკვეთა — ბეჭდვა / PDF</button><button class="btn" id="iOffer" style="background:#6d3ad6">💰 ფასების შეთავაზება (JPG)</button><button class="btn" id="iToOrders" style="background:#0B6B3C">📥 შეკვეთებში დამატება</button><button class="btn line" id="iSave">💾 შენახვა</button><button class="btn danger" id="iClear">🗑 გასუფთავება</button></div></div>'+
    '<div class="card"><h2>📚 ბოლო ინვოისები</h2><div id="iList"></div></div>';
-  $('iAdd').onclick=()=>{const code=$('iPick').value;if(!code)return;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ply=itmBox({code:code})?((($('iPlyAdd')&&$('iPlyAdd').value)||p.ply||'')):'';const ex=invDraft.find(l=>l.code===code);if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else invDraft.push({code,price:p.price,qty,ply});if($('iPlyAdd'))$('iPlyAdd').value='';renderInvLines();};
+  $('iAdd').onclick=()=>{const code=$('iPick').value;if(!code)return;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ply=itmBox({code:code})?((($('iPlyAdd')&&$('iPlyAdd').value)||p.ply||'')):'';const ex=invDraft.find(l=>l.code===code);if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else invDraft.push({code,price:p.price,qty,ply,min:'3000'});if($('iPlyAdd'))$('iPlyAdd').value='';renderInvLines();};
   $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}printInvoice(currentInv());};
   $('iOffer').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}makeOfferJPG();};
   $('iToOrders').onclick=addDraftToOrders;
@@ -573,7 +573,7 @@ function renderInvLines(){
 function updInvTotals(){const t=invTotals();$('tSub').textContent=money(t.sub)+' ₾';$('tVat').textContent=money(t.vat)+' ₾';$('tGrand').textContent=money(t.grand)+' ₾';}
 function updInvRow(i,inp){const l=invDraft[i];const tr=inp.closest('tr');if(tr){const s=tr.querySelector('.sum');if(s)s.textContent=money(l.price*l.qty);}updInvTotals();}
 function currentInv(){const t=invTotals();return {no:$('iNo').value,date:$('iDate').value||todayStr(),cust:$('iCust').value,idc:$('iId').value,phone:($('iPhone')?$('iPhone').value:''),
-  lines:invDraft.map(l=>{const p=byCode(l.code)||{};return {code:l.code,name:l.name||p.name,size:l.size||p.size,ply:l.ply||'',brand:l.brand||'',color:p.color,price:l.price,qty:l.qty,img:pubImg(l.code)};}),
+  lines:invDraft.map(l=>{const p=byCode(l.code)||{};return {code:l.code,name:l.name||p.name,size:l.size||p.size,ply:l.ply||'',brand:l.brand||'',color:p.color,price:l.price,qty:l.qty,min:(l.min!=null?l.min:''),img:pubImg(l.code)};}),
   sub:t.sub,vat:t.vat,extra:{brandAmt:t.brandAmt,transAmt:t.transAmt,note:($('iNote')?$('iNote').value:''),minQty:($('iMinQty')?$('iMinQty').value:'')},grand:t.grand};}
 async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}const inv=currentInv();
   const isEdit=!!editingInvId; inv.id=editingInvId||String(Date.now());
