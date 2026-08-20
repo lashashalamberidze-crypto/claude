@@ -359,7 +359,7 @@ function renderCat(){
      '<span style="font-size:14px">🛒 არჩეული: <b id="cartN">0</b> პროდუქტი · <b id="cartQ">0</b> ცალი</span>'+
      '<button class="btn sm" id="cartGo" style="background:#0B6B3C;color:#fff;font-weight:800" title="გადადი შეკვეთის / შეთავაზების გვერდზე">🧾 შეკვეთა / 💰 შეთავაზება ▸</button>'+
      '<button class="btn danger sm" id="cartClr" style="display:none">გასუფთავება</button>'+
-     '<span class="muted" style="font-size:11px">დაამატე პროდუქტები „＋🛒"-ით, მერე გადადი გვერდზე და აირჩიე შეკვეთა ან ფასების შეთავაზება (JPG).</span></div>';
+     '<span class="muted" style="font-size:11px">სიაში დააჭირე „＋ დამატება" — პროდუქტი ჩაჯდება და გადახვალ გვერდზე, სადაც აირჩევ შეკვეთას ან ფასების შეთავაზებას (JPG).</span></div>';
   h+='<div class="row" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><button class="btn line sm" data-add>+ პროდუქტის დამატება</button><button class="btn sm" data-addcat style="background:#0B6B3C;color:#fff">📂 ახალი კატეგორია</button><input id="cq" placeholder="🔍 ძებნა კოდით/ზომით (ამ ჯგუფში)" style="max-width:280px"><span class="muted" style="align-self:center;font-size:11.5px">🔵 დოლარი · 🟢 ფასი ₾ (ავტო) · 🟡 ხელით</span></div>';
   h+='<div class="scroll"><table id="catTbl"><thead><tr><th>№</th><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>მარკა</th>'+plyTh+'<th>ფერი</th><th class="right">RUB</th><th class="right" title="რამდენი ეტევა კონტეინერში">კონტ. ცალი</th><th class="right usdcol">ყუთი $</th>'+(d.hasSetka?'<th class="right usdcol">სეტკა $</th>':'')+'<th class="right usdcol">ტრანსპ $</th><th class="right costcol" title="შესყიდვა+ტრანსპ, დღგ-ს გარეშე ($)">დღგ-მდე $</th><th class="right costcol" title="შესყიდვა+ტრანსპ, დღგ-ს გარეშე (₾)">დღგ-მდე ₾</th><th class="right usdcol">დღგ $</th><th class="right usdcol">დღგ ₾</th><th class="right costcol" title="თვითღირებულება მოგებამდე (ყუთი+ტრანსპ+დღგ)">ჯამი $ მოგებამდე</th><th class="right costcol" title="თვითღირებულება მოგებამდე, ლარში">ჯამი ₾ მოგებამდე</th><th class="right usdcol">მოგება $</th><th class="right usdcol">მოგება ₾</th><th class="right totcol">ჯამი $</th><th class="right totcol">ჯამი ₾</th><th class="right finalcol">ფასი ₾ (ავტო)</th><th class="right finalcol">ფასი $ (ავტო)</th><th class="right">ფასი ₾ (ხელით)</th><th class="right">ფასი $ (ხელით)</th><th title="მომხმარებლის საიტზე გამოჩენა + ფოტოები">🌐 საიტზე</th><th></th></tr></thead><tbody id="catRows"></tbody></table></div></div>';
   body.innerHTML=h;
@@ -390,7 +390,7 @@ function renderCat(){
         '<td class="right"><input type="number" step="0.01" placeholder="'+money(c.price)+'" value="'+(it.pfinal!=null&&it.pfinal!==''?it.pfinal:'')+'" style="width:64px" data-f="pfinal" data-i="'+idx+'"></td>'+
         '<td class="right" style="color:#0B6B3C;font-weight:800">'+((it.pfinal!=null&&it.pfinal!=='')?'$'+(d.params.usdGel?((+it.pfinal)/d.params.usdGel):0).toFixed(2):'<span class="muted">—</span>')+'</td>'+
         '<td class="right" style="white-space:nowrap">'+(function(){const pr=PUB[it.code];const on=!!pr;const n=on&&pr.images?pr.images.length:0;return '<button class="btn '+(on?'':'line')+' sm" data-media="'+idx+'" title="ფოტოები / საიტზე გამოჩენა" style="'+(on?'background:#0B6B3C;color:#fff':'')+'">'+(on?'🌐':'⊕')+(n?' 🖼'+n:'')+'</button>';})()+'</td>'+
-        '<td class="right" style="white-space:nowrap"><button class="btn line sm" data-inv="'+idx+'" title="შეკვეთა/შეთავაზებაში დამატება" style="font-weight:800">＋🛒</button> <button class="btn danger sm" data-del="'+idx+'">✕</button></td></tr>';
+        '<td class="right" style="white-space:nowrap"><button class="btn sm" data-inv="'+idx+'" title="დაამატე და გადადი შეკვეთა/ფასების გვერდზე" style="background:#0B6B3C;color:#fff;font-weight:800">＋ დამატება</button> <button class="btn danger sm" data-del="'+idx+'">✕</button></td></tr>';
     });
     rowsHost.innerHTML=rh||'<tr><td colspan="'+(showPly?28:27)+'" class="empty">ვერ მოიძებნა</td></tr>';
     rowsHost.querySelectorAll('input[data-f]').forEach(inp=>inp.onchange=()=>{const it=d.items[+inp.dataset.i];const f=inp.dataset.f;
@@ -401,7 +401,7 @@ function renderCat(){
       saveDirs();paintRows();});
     rowsHost.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(!confirm('წავშალო?'))return;d.items.splice(+b.dataset.del,1);saveDirs();paintRows();});
     rowsHost.querySelectorAll('[data-media]').forEach(b=>b.onclick=()=>openProdMedia(d,d.items[+b.dataset.media],paintRows));
-    rowsHost.querySelectorAll('[data-inv]').forEach(b=>b.onclick=()=>addToCart(d,d.items[+b.dataset.inv],b));
+    rowsHost.querySelectorAll('[data-inv]').forEach(b=>b.onclick=()=>{addToCart(d,d.items[+b.dataset.inv],b);const t=document.querySelector('#tabbar [data-t="invoice"]');if(t)t.click();});
   }
   $('cq').oninput=paintRows;
   paintRows();
@@ -651,19 +651,19 @@ async function makeOfferJPG(){
       ctx.textAlign='left';ctx.fillText('პროდუქტი',148,headH+32);
       ctx.textAlign='right';ctx.fillText('ერთ. ფასი ₾',priceR,headH+32);ctx.fillText('მინ. რაოდ.',minR,headH+32);
       // rows
+      const nameMax=priceR-148-130;              // სახელის მაქს. სიგანე ფასამდე
       lines.forEach((l,i)=>{const y=rowsY+i*rowH;const p=byCode(l.code)||{};
         if(i%2)ctx.fillStyle='#F5F7F6',ctx.fillRect(padX,y,innerW,rowH);
-        // thumb
-        ctx.strokeStyle='#E4EBE7';ctx.lineWidth=1;ctx.strokeRect(padX+8,y+(rowH-88)/2,88,88);
-        if(useImgs)_contain(ctx,imgs[i],padX+8,y+(rowH-88)/2,88,88);
+        // thumb (მხოლოდ თუ სურათი აქვს)
+        if(useImgs&&imgs[i]){ctx.strokeStyle='#E4EBE7';ctx.lineWidth=1;ctx.strokeRect(padX+8,y+(rowH-88)/2,88,88);_contain(ctx,imgs[i],padX+8,y+(rowH-88)/2,88,88);}
         // name + code + size
         const nm=l.name||p.name||'';const code=ruCode(l.code);
         const sub=[l.size||p.size||'',(l.ply?l.ply+' შრე':''),(p.color||''),(l.brand?(l.brand==='კი'?'ბრენდირებით':'ბრენდ. გარეშე'):'')].filter(Boolean).join(' · ');
         ctx.textAlign='left';ctx.fillStyle='#14261C';ctx.font='700 21px '+GEO;
-        let nmT=nm;while(ctx.measureText(nmT).width>priceR-152&&nmT.length>4)nmT=nmT.slice(0,-2);
+        let nmT=nm;while(ctx.measureText(nmT).width>nameMax&&nmT.length>4)nmT=nmT.slice(0,-2);
         ctx.fillText(nmT+(nmT!==nm?'…':''),148,y+48);
         ctx.fillStyle='#0B6B3C';ctx.font='700 15px '+GEO;ctx.fillText(code,148,y+74);const codeW=ctx.measureText(code).width;
-        if(sub){const sx=148+codeW+16;ctx.fillStyle='#5C6B62';ctx.font='400 15px '+GEO;let sT=sub;while(ctx.measureText(sT).width>priceR-sx&&sT.length>4)sT=sT.slice(0,-2);ctx.fillText(sT+(sT!==sub?'…':''),sx,y+74);}
+        if(sub){const sx=148+codeW+16;const sMax=(148+nameMax)-sx;ctx.fillStyle='#5C6B62';ctx.font='400 15px '+GEO;let sT=sub;while(ctx.measureText(sT).width>sMax&&sT.length>4)sT=sT.slice(0,-2);ctx.fillText(sT+(sT!==sub?'…':''),sx,y+74);}
         // price
         ctx.textAlign='right';ctx.fillStyle='#0B6B3C';ctx.font='800 26px '+GEO;ctx.fillText(money(l.price)+' ₾',priceR,y+62);
         // min
