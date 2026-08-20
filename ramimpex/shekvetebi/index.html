@@ -535,11 +535,12 @@ function renderInvoice(){
    '<label style="margin-top:10px;display:block">შენიშვნა (არჩ.)</label><textarea id="iNote" rows="2" placeholder="მაგ. მინ. პარტია, ვადები, პირობები…" style="width:100%"></textarea>'+
    '<div class="ttl"><div class="tr"><span>ქვეჯამი (დღგ-ით)</span><b id="tSub">0.00 ₾</b></div><div class="tr" style="color:var(--muted);font-size:12px"><span>მ.შ. დღგ 18%</span><span id="tVat">0.00 ₾</span></div><div class="tr grand"><span>სულ</span><span id="tGrand">0.00 ₾</span></div></div>'+
    '<div class="row" style="margin-top:6px;font-size:12px;color:var(--muted)">🖨 <b>ბეჭდვა/PDF</b> = შეკვეთა/ინვოისი (რაოდენობა + ჯამი) · 💰 <b>შეთავაზება JPG</b> = მხოლოდ ერთეული ფასები + მინ. რაოდ. + შენიშვნა (ჯამის გარეშე)</div>'+
-   '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><button class="btn" id="iPrint">🖨 შეკვეთა — ბეჭდვა / PDF</button><button class="btn" id="iOffer" style="background:#6d3ad6">💰 ფასების შეთავაზება (JPG)</button><button class="btn line" id="iSave">💾 შენახვა</button><button class="btn danger" id="iClear">🗑 გასუფთავება</button></div></div>'+
+   '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><button class="btn" id="iPrint">🖨 შეკვეთა — ბეჭდვა / PDF</button><button class="btn" id="iOffer" style="background:#6d3ad6">💰 ფასების შეთავაზება (JPG)</button><button class="btn" id="iToOrders" style="background:#0B6B3C">📥 შეკვეთებში დამატება</button><button class="btn line" id="iSave">💾 შენახვა</button><button class="btn danger" id="iClear">🗑 გასუფთავება</button></div></div>'+
    '<div class="card"><h2>📚 ბოლო ინვოისები</h2><div id="iList"></div></div>';
   $('iAdd').onclick=()=>{const code=$('iPick').value;if(!code)return;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ply=itmBox({code:code})?((($('iPlyAdd')&&$('iPlyAdd').value)||p.ply||'')):'';const ex=invDraft.find(l=>l.code===code);if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else invDraft.push({code,price:p.price,qty,ply});if($('iPlyAdd'))$('iPlyAdd').value='';renderInvLines();};
   $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}printInvoice(currentInv());};
   $('iOffer').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}makeOfferJPG();};
+  $('iToOrders').onclick=addDraftToOrders;
   $('iSave').onclick=saveInvoice;
   $('iClear').onclick=()=>{invDraft=[];editingInvId=null;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iPhone','iNo','brandAmt','transAmt','iMinQty','iNote'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();};
   ['brandAmt','transAmt'].forEach(id=>$(id).oninput=renderInvLines);
@@ -687,6 +688,26 @@ async function makeOfferJPG(){
     const a=document.createElement('a');a.href=url;a.download='RAM_IMPEX_shetavazeba_'+dateStr+'.jpg';document.body.appendChild(a);a.click();a.remove();
   }catch(e){alert('ვერ შეიქმნა JPG: '+(e.message||e));}
   finally{if(btn){btn.textContent=ob;btn.disabled=false;}}
+}
+/* არჩეული პროდუქტები → შეკვეთების ცხრილში (orders), რომ იქ გამოჩნდეს/დაითვალოს */
+async function addDraftToOrders(){
+  if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}
+  const name=($('iCust')&&$('iCust').value.trim())||'';
+  const phone=($('iPhone')&&$('iPhone').value.trim())||'';
+  if(!name){alert('შეავსე მყიდველი (სახელი), მერე დაამატე შეკვეთებში.');return;}
+  const note=($('iNote')&&$('iNote').value.trim())||'';
+  const dirMap={'მუყაოს ყუთები':'boxes','კუთხოვანი დამცავები':'edge','ანთრაციტის ბრიკეტი':'anth'};
+  const first=byCode(invDraft[0].code);const direction=(first&&dirMap[first.dir])||'boxes';
+  const items=invDraft.map(l=>{const p=byCode(l.code)||{};return {code:l.code,name:l.name||p.name||'',size:l.size||p.size||'',type:p.mark||'',cat:(p&&p.group)||'',qty:parseInt(l.qty)||1,ply:l.ply||'',brand:l.brand||''};});
+  const payload={direction,cust_name:name,cust_phone:phone||null,cust_email:null,items,images:[],req_desc:note||null,status:'manual'};
+  const btn=$('iToOrders');const ob=btn?btn.textContent:'';if(btn){btn.disabled=true;btn.textContent='⏳ ემატება…';}
+  try{const {data,error}=await sb.from('orders').insert(payload).select();if(error)throw error;
+    if(!data||!data.length){alert('❌ ვერ დაემატა — ბაზას არ აქვს ჩაწერის უფლება (RLS policy).');return;}
+    try{await loadOrders();}catch(e){}
+    const total=(window.__orders||[]).length;
+    alert('✅ დაემატა შეკვეთებში!\nსულ შეკვეთა: '+total+'\n(იხ. ტაბი „შეკვეთები")');
+  }catch(e){alert('ვერ დაემატა: '+(e.message||e));}
+  finally{if(btn){btn.disabled=false;btn.textContent=ob;}}
 }
 function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map((l,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+((l.img||pubImg(l.code))?'<img src="'+(l.img||pubImg(l.code))+'" style="width:60px;height:60px;object-fit:contain;background:#fff;border:1px solid #eee;border-radius:6px;vertical-align:middle;margin-right:7px">':'')+esc(l.name||'')+(l.color?' · '+esc(l.color):'')+'</td><td>'+esc(l.size||'')+(l.ply?' · '+esc(l.ply)+' შრე':'')+(l.brand?' · '+(l.brand==='კი'?'ბრენდირებით':'ბრენდირების გარეშე'):'')+'</td><td style="text-align:right">'+money(l.price)+'</td><td style="text-align:right">'+l.qty+'</td><td style="text-align:right">'+money(l.price*l.qty)+'</td></tr>').join('');
   return '<div style="max-width:720px;margin:0 auto;color:#14261C;padding:20px;font-family:system-ui,\'Noto Sans Georgian\',sans-serif">'+
