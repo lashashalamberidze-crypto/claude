@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ეტიკეტების ბეჭდვა — Kores L7042 (70×42,3 მმ)</title>
+<style>
+  :root{
+    --bg:#eef1f5; --panel:#ffffff; --line:#d7dce3; --ink:#1c2530; --muted:#6b7683;
+    --accent:#c0392b; --accent2:#2b6cb0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"BPG Nino Mtavruli","Noto Sans Georgian","Segoe UI",system-ui,sans-serif;
+    font-size:14px;
+  }
+  /* ============ ინტერფეისი ============ */
+  .app{display:flex;height:100vh;overflow:hidden}
+  .panel{
+    width:340px;min-width:340px;background:var(--panel);border-right:1px solid var(--line);
+    overflow-y:auto;padding:14px 14px 60px;
+  }
+  .stage{flex:1;overflow:auto;padding:24px;display:flex;justify-content:center;align-items:flex-start}
+  h1{font-size:16px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:12px;margin-bottom:12px}
+  fieldset{border:1px solid var(--line);border-radius:8px;padding:10px;margin:0 0 12px}
+  legend{font-size:12px;color:var(--muted);padding:0 6px}
+  label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
+  input[type=text],input[type=number],select,textarea{
+    width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;
+    font-family:inherit;font-size:13px;background:#fff;color:var(--ink)
+  }
+  textarea{min-height:78px;resize:vertical;line-height:1.35}
+  .row{display:flex;gap:8px}
+  .row>*{flex:1;min-width:0}
+  button{
+    font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);
+    background:#f6f8fa;border-radius:6px;cursor:pointer;color:var(--ink)
+  }
+  button:hover{background:#eef2f6}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  button.primary:hover{filter:brightness(1.08)}
+  button.blue{background:var(--accent2);border-color:var(--accent2);color:#fff}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .chk{display:flex;align-items:center;gap:6px;margin:6px 0;font-size:12px;color:var(--ink)}
+  .chk input{width:auto;margin:0}
+  .seg{display:flex;gap:4px}
+  .seg button{flex:1;padding:6px 0;font-size:13px}
+  .seg button.on{background:var(--accent2);border-color:var(--accent2);color:#fff}
+  .hint{font-size:11px;color:var(--muted);line-height:1.45;margin-top:6px}
+  .selinfo{font-size:12px;background:#f2f6fb;border:1px solid #d6e4f5;border-radius:6px;padding:6px 8px;margin-bottom:8px}
+  /* ============ ფურცელი ============ */
+  .paper{
+    background:#fff;box-shadow:0 6px 26px rgba(0,0,0,.16);position:relative;
+    width:210mm;height:297mm;transform-origin:top center;
+  }
+  .cell{
+    position:absolute;overflow:hidden;display:flex;background:#fff;
+    background-repeat:no-repeat;background-position:center;
+  }
+  .cell .content{display:flex;align-items:center;gap:1.5mm;max-width:100%;max-height:100%;overflow:hidden}
+  .cell .txt{white-space:pre-wrap;word-break:break-word;line-height:1.2}
+  .cell img.pic{display:block;object-fit:contain;max-width:100%;max-height:100%}
+  .guide{outline:.2mm dashed #b9c2cd;outline-offset:-.1mm}
+  .cell.sel{box-shadow:inset 0 0 0 .6mm #2b6cb0;background-color:#f5f9ff}
+  .cell.drop{box-shadow:inset 0 0 0 .8mm #27ae60}
+  .cellno{position:absolute;top:0;left:1px;font-size:8px;color:#c3ccd6;font-family:monospace}
+  .cell[contenteditable]{outline:none}
+  .zoombar{position:fixed;right:18px;bottom:14px;background:#fff;border:1px solid var(--line);
+    border-radius:8px;padding:6px 8px;display:flex;gap:6px;align-items:center;box-shadow:0 4px 14px rgba(0,0,0,.1)}
+  /* ============ ბეჭდვა ============ */
+  @page{size:A4 portrait;margin:0}
+  @media print{
+    body{background:#fff}
+    .panel,.zoombar{display:none !important}
+    .app{display:block;height:auto;overflow:visible}
+    .stage{padding:0;display:block;overflow:visible}
+    .paper{box-shadow:none;transform:none !important;margin:0;width:210mm;height:297mm}
+    .cell.sel{box-shadow:none;background-color:#fff}
+    .cellno{display:none}
+    html,body{width:210mm;height:297mm}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ================= მარცხენა პანელი ================= -->
+  <aside class="panel">
+    <h1>წებოვანი ეტიკეტების ბეჭდვა</h1>
+    <div class="sub">Kores L7042 — 70 × 42,3 მმ · 21 ცალი A4-ზე</div>
+
+    <div class="selinfo" id="selInfo">მონიშნულია: 1 ეტიკეტი (№1)</div>
+
+    <fieldset>
+      <legend>ტექსტი</legend>
+      <textarea id="txt" placeholder="ჩაწერე ტექსტი აქ…&#10;(Enter — ახალი ხაზი)"></textarea>
+      <div class="btns">
+        <button id="btnApplyAll">ყველა ეტიკეტზე დაწერა</button>
+        <button id="btnClearText">ტექსტის წაშლა</button>
+      </div>
+      <div class="row">
+        <div><label>შრიფტი</label>
+          <select id="font">
+            <option value='"BPG Nino Mtavruli","Noto Sans Georgian",sans-serif'>Sans (ქართული)</option>
+            <option value='"Sylfaen","Noto Serif Georgian",serif'>Serif (Sylfaen)</option>
+            <option value='"Courier New",monospace'>Monospace</option>
+            <option value='Arial,Helvetica,sans-serif'>Arial</option>
+          </select>
+        </div>
+        <div style="max-width:96px"><label>ზომა (pt)</label><input type="number" id="size" min="4" max="72" step="0.5" value="11"></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div><label>სტილი</label>
+          <div class="seg">
+            <button id="bBold" title="მუქი"><b>B</b></button>
+            <button id="bItal" title="დახრილი"><i>I</i></button>
+            <button id="bUpper" title="მაღლა ასოებით">AA</button>
+          </div>
+        </div>
+        <div style="max-width:96px"><label>ფერი</label><input type="color" id="color" value="#000000" style="width:100%;height:32px;padding:2px;border:1px solid var(--line);border-radius:6px"></div>
+      </div>
+      <div class="chk"><input type="checkbox" id="autofit" checked><label for="autofit" style="margin:0">ავტომატურად შეამციროს, თუ ტექსტი არ ეტევა</label></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>გასწორება</legend>
+      <label>ჰორიზონტალურად</label>
+      <div class="seg" id="alignH">
+        <button data-v="flex-start">მარცხნივ</button>
+        <button data-v="center">ცენტრში</button>
+        <button data-v="flex-end">მარჯვნივ</button>
+      </div>
+      <label>ვერტიკალურად</label>
+      <div class="seg" id="alignV">
+        <button data-v="flex-start">ზემოთ</button>
+        <button data-v="center">შუაში</button>
+        <button data-v="flex-end">ქვემოთ</button>
+      </div>
+      <label>შიდა არშია (მმ)</label>
+      <input type="number" id="pad" min="0" max="15" step="0.5" value="2">
+    </fieldset>
+
+    <fieldset>
+      <legend>სურათი</legend>
+      <input type="file" id="imgFile" accept="image/*" style="font-size:12px">
+      <div class="hint">სურათი შეგიძლია პირდაპირ გადმოათრიო ეტიკეტზე ან დააკოპირო და ჩასვა (Ctrl+V).</div>
+      <label>განლაგება</label>
+      <select id="imgMode">
+        <option value="top">სურათი ზემოთ, ტექსტი ქვემოთ</option>
+        <option value="left">სურათი მარცხნივ</option>
+        <option value="right">სურათი მარჯვნივ</option>
+        <option value="only">მხოლოდ სურათი</option>
+        <option value="bg">ფონი (ტექსტი ზემოდან)</option>
+      </select>
+      <label>სურათის ზომა: <span id="imgSizeVal">45%</span></label>
+      <input type="range" id="imgSize" min="10" max="100" step="1" value="45" style="width:100%">
+      <div class="btns">
+        <button id="btnImgAll">სურათი ყველა ეტიკეტს</button>
+        <button id="btnImgDel">სურათის წაშლა</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>ეტიკეტები</legend>
+      <div class="btns">
+        <button id="btnSelAll">ყველას მონიშვნა</button>
+        <button id="btnCopyAll">არჩეულის კოპირება ყველაზე</button>
+        <button id="btnClearCell">მონიშნულის გასუფთავება</button>
+        <button id="btnClearSheet">მთელი ფურცლის გასუფთავება</button>
+      </div>
+      <div class="hint">დაჭერა — მონიშვნა; Ctrl/Shift + დაჭერა — რამდენიმეს მონიშვნა. ტექსტს პირდაპირ ეტიკეტშიც ჩაწერ (ორჯერ დაჭერა).</div>
+    </fieldset>
+
+    <fieldset>
+      <legend>ფორმატი და კალიბრაცია</legend>
+      <label>ფურცლის ტიპი</label>
+      <select id="preset">
+        <option value="70,42.3,3,7,0,0,0,0">Kores L7042 — 70×42,3 (21 ცალი)</option>
+        <option value="105,148.5,2,2,0,0,0,0">105×148,5 — 4 ცალი</option>
+        <option value="105,74.25,2,4,0,0,0,0">105×74,25 — 8 ცალი</option>
+        <option value="70,37.125,3,8,0,0,0,0">70×37,1 — 24 ცალი</option>
+        <option value="custom">სხვა (ხელით)</option>
+      </select>
+      <div class="row"><div><label>სიგანე (მმ)</label><input type="number" id="lw" step="0.1" value="70"></div>
+        <div><label>სიმაღლე (მმ)</label><input type="number" id="lh" step="0.1" value="42.3"></div></div>
+      <div class="row"><div><label>სვეტი</label><input type="number" id="cols" min="1" value="3"></div>
+        <div><label>მწკრივი</label><input type="number" id="rows" min="1" value="7"></div></div>
+      <div class="row"><div><label>დაშორება X (მმ)</label><input type="number" id="gx" step="0.1" value="0"></div>
+        <div><label>დაშორება Y (მმ)</label><input type="number" id="gy" step="0.1" value="0"></div></div>
+      <label>კალიბრაცია — გადაწევა (მმ)</label>
+      <div class="row"><div><input type="number" id="ox" step="0.1" value="0" title="მარჯვნივ +"></div>
+        <div><input type="number" id="oy" step="0.1" value="0.45" title="ქვემოთ +"></div></div>
+      <div class="hint">თუ ბეჭდვა ცოტათი აცდენილია — შეცვალე ეს ორი რიცხვი (მარცხნივ/ზემოთ = უარყოფითი).</div>
+      <div class="chk"><input type="checkbox" id="guides" checked><label for="guides" style="margin:0">ბადის ხაზები ეკრანზე</label></div>
+      <div class="chk"><input type="checkbox" id="guidesPrint"><label for="guidesPrint" style="margin:0">ხაზები ბეჭდვისასაც</label></div>
+    </fieldset>
+
+    <div class="btns">
+      <button class="primary" id="btnPrint" style="flex:1 1 100%">🖨 ბეჭდვა</button>
+      <button id="btnSave">შენახვა</button>
+      <button id="btnExport">ფაილში ჩაწერა</button>
+      <button id="btnImport">ფაილიდან ატვირთვა</button>
+      <input type="file" id="impFile" accept="application/json" style="display:none">
+    </div>
+    <div class="hint" id="status" style="margin-top:10px"></div>
+  </aside>
+
+  <!-- ================= ფურცელი ================= -->
+  <main class="stage">
+    <div class="paper" id="paper"></div>
+  </main>
+</div>
+
+<div class="zoombar">
+  <button id="zOut">−</button><span id="zVal">80%</span><button id="zIn">+</button>
+  <button id="zFit">მორგება</button>
+</div>
+
+<script>
+(function(){
+"use strict";
+var KEY = "etiketebi_v1";
+
+var defCell = function(){ return {
+  text:"", img:null, imgMode:"top", imgSize:45,
+  font:'"BPG Nino Mtavruli","Noto Sans Georgian",sans-serif',
+  size:11, bold:false, italic:false, upper:false, color:"#000000",
+  alignH:"center", alignV:"center", pad:2, autofit:true
+};};
+
+var S = {
+  fmt:{lw:70, lh:42.3, cols:3, rows:7, gx:0, gy:0, ox:0, oy:0.45},
+  guides:true, guidesPrint:false, zoom:0.8,
+  cells:[]
+};
+var sel = [0];
+var $ = function(id){ return document.getElementById(id); };
+var paper = $("paper");
+
+/* ---------- მონაცემები ---------- */
+function nCells(){ return S.fmt.cols * S.fmt.rows; }
+function syncCells(){
+  var n = nCells();
+  while(S.cells.length < n) S.cells.push(defCell());
+  if(S.cells.length > n) S.cells.length = n;
+  sel = sel.filter(function(i){ return i < n; });
+  if(!sel.length) sel = [0];
+}
+function cur(){ return S.cells[sel[0]] || S.cells[0]; }
+
+/* ---------- ფურცლის აწყობა ---------- */
+function build(){
+  syncCells();
+  var f = S.fmt;
+  paper.innerHTML = "";
+  for(var r=0; r<f.rows; r++){
+    for(var c=0; c<f.cols; c++){
+      var i = r*f.cols + c;
+      var d = document.createElement("div");
+      d.className = "cell";
+      d.dataset.i = i;
+      d.style.left   = (f.ox + c*(f.lw + f.gx)) + "mm";
+      d.style.top    = (f.oy + r*(f.lh + f.gy)) + "mm";
+      d.style.width  = f.lw + "mm";
+      d.style.height = f.lh + "mm";
+      paper.appendChild(d);
+    }
+  }
+  renderAll();
+  bindCells();
+}
+
+function renderAll(){
+  for(var i=0;i<S.cells.length;i++) renderCell(i);
+}
+
+function renderCell(i){
+  var el = paper.querySelector('.cell[data-i="'+i+'"]');
+  if(!el) return;
+  var c = S.cells[i];
+  el.className = "cell" + (S.guides ? " guide" : "") + (sel.indexOf(i)>=0 ? " sel" : "");
+  el.style.padding = c.pad + "mm";
+  el.style.justifyContent = c.alignH;
+  el.style.alignItems = c.alignV;
+  el.style.backgroundImage = "";
+  el.style.backgroundSize = "";
+  el.innerHTML = "";
+
+  if(c.img && c.imgMode === "bg"){
+    el.style.backgroundImage = 'url("' + c.img + '")';
+    el.style.backgroundSize = c.imgSize + "%";
+  }
+
+  var wrap = document.createElement("div");
+  wrap.className = "content";
+  var isRow = (c.imgMode === "left" || c.imgMode === "right");
+  wrap.style.flexDirection = (c.imgMode === "left") ? "row"
+                           : (c.imgMode === "right") ? "row-reverse" : "column";
+  /* მთავარი ღერძი: სვეტში — ვერტიკალი, მწკრივში — ჰორიზონტალი */
+  wrap.style.justifyContent = isRow ? c.alignH : c.alignV;
+  wrap.style.alignItems     = isRow ? c.alignV : c.alignH;
+  wrap.style.width = "100%";
+
+  if(c.img && c.imgMode !== "bg"){
+    var im = document.createElement("img");
+    im.className = "pic";
+    im.src = c.img;
+    if(c.imgMode === "left" || c.imgMode === "right"){
+      im.style.width = c.imgSize + "%";
+      im.style.flex = "0 0 auto";
+    }else{
+      im.style.maxHeight = c.imgSize + "%";
+      im.style.width = "auto";
+    }
+    wrap.appendChild(im);
+  }
+
+  if(c.imgMode !== "only"){
+    var t = document.createElement("div");
+    t.className = "txt";
+    t.contentEditable = "true";
+    t.spellcheck = false;
+    t.style.fontFamily = c.font;
+    t.style.fontSize = c.size + "pt";
+    t.style.fontWeight = c.bold ? "700" : "400";
+    t.style.fontStyle = c.italic ? "italic" : "normal";
+    t.style.textTransform = c.upper ? "uppercase" : "none";
+    t.style.color = c.color;
+    t.style.textAlign = (c.alignH === "flex-start") ? "left" : (c.alignH === "flex-end") ? "right" : "center";
+    t.style.width = "100%";
+    t.textContent = c.text;
+    t.addEventListener("input", function(ev){
+      S.cells[i].text = ev.target.textContent;
+      if(sel[0] === i) $("txt").value = S.cells[i].text;
+      fit(el, S.cells[i]);
+      save(true);
+    });
+    t.addEventListener("focus", function(){ select(i, null); });
+    wrap.appendChild(t);
+  }
+
+  el.appendChild(wrap);
+
+  var no = document.createElement("span");
+  no.className = "cellno";
+  no.textContent = (i+1);
+  el.appendChild(no);
+
+  fit(el, c);
+}
+
+/* ტექსტის ავტომატური შემცირება, თუ არ ეტევა */
+function fit(el, c){
+  var t = el.querySelector(".txt");
+  if(!t) return;
+  t.style.fontSize = c.size + "pt";
+  if(!c.autofit) return;
+  var wrap = el.querySelector(".content");
+  var fs = c.size;
+  var guard = 0;
+  while(guard++ < 60 && fs > 4 &&
+        (wrap.scrollHeight > el.clientHeight - 1 || wrap.scrollWidth > el.clientWidth - 1)){
+    fs -= 0.5;
+    t.style.fontSize = fs + "pt";
+  }
+}
+
+/* ---------- მონიშვნა ---------- */
+function select(i, ev){
+  if(ev && (ev.ctrlKey || ev.metaKey)){
+    var p = sel.indexOf(i);
+    if(p >= 0){ if(sel.length > 1) sel.splice(p,1); }
+    else sel.unshift(i);
+  }else if(ev && ev.shiftKey && sel.length){
+    var a = sel[0], b = i, lo = Math.min(a,b), hi = Math.max(a,b), arr = [];
+    for(var k=lo;k<=hi;k++) arr.push(k);
+    sel = arr;
+  }else{
+    sel = [i];
+  }
+  paper.querySelectorAll(".cell").forEach(function(el){
+    el.classList.toggle("sel", sel.indexOf(+el.dataset.i) >= 0);
+  });
+  syncPanel();
+}
+
+function bindCells(){
+  paper.querySelectorAll(".cell").forEach(function(el){
+    var i = +el.dataset.i;
+    el.addEventListener("mousedown", function(ev){
+      if(ev.target.classList.contains("txt") && sel.indexOf(i) >= 0) return;
+      select(i, ev);
+    });
+    el.addEventListener("dragover", function(ev){ ev.preventDefault(); el.classList.add("drop"); });
+    el.addEventListener("dragleave", function(){ el.classList.remove("drop"); });
+    el.addEventListener("drop", function(ev){
+      ev.preventDefault(); el.classList.remove("drop");
+      var f = ev.dataTransfer.files && ev.dataTransfer.files[0];
+      if(f && /^image\//.test(f.type)){ select(i, null); readImg(f, [i]); }
+    });
+  });
+}
+
+/* ---------- პანელის სინქრონიზაცია ---------- */
+function syncPanel(){
+  var c = cur();
+  $("selInfo").textContent = sel.length > 1
+    ? ("მონიშნულია: " + sel.length + " ეტიკეტი")
+    : ("მონიშნულია: 1 ეტიკეტი (№" + (sel[0]+1) + ")");
+  $("txt").value = c.text;
+  $("font").value = c.font;
+  $("size").value = c.size;
+  $("color").value = c.color;
+  $("pad").value = c.pad;
+  $("imgMode").value = c.imgMode;
+  $("imgSize").value = c.imgSize;
+  $("imgSizeVal").textContent = c.imgSize + "%";
+  $("autofit").checked = c.autofit;
+  $("bBold").classList.toggle("on", c.bold);
+  $("bItal").classList.toggle("on", c.italic);
+  $("bUpper").classList.toggle("on", c.upper);
+  segOn("alignH", c.alignH);
+  segOn("alignV", c.alignV);
+}
+function segOn(id, v){
+  $(id).querySelectorAll("button").forEach(function(b){ b.classList.toggle("on", b.dataset.v === v); });
+}
+
+/* მონიშნულ ეტიკეტებზე ცვლილების გავრცელება */
+function apply(fn, targets){
+  var list = targets || sel;
+  list.forEach(function(i){ fn(S.cells[i], i); renderCell(i); });
+  syncPanel(); save(true);
+}
+function allIdx(){ return S.cells.map(function(_,i){ return i; }); }
+
+/* ---------- სურათი ---------- */
+function readImg(file, targets){
+  var fr = new FileReader();
+  fr.onload = function(e){
+    apply(function(c){ c.img = e.target.result; }, targets);
+    status("სურათი ჩაისვა.");
+  };
+  fr.readAsDataURL(file);
+}
+
+/* ---------- შენახვა ---------- */
+var saveTimer = null;
+function save(delayed){
+  if(delayed){ clearTimeout(saveTimer); saveTimer = setTimeout(function(){ save(false); }, 600); return; }
+  try{
+    localStorage.setItem(KEY, JSON.stringify(S));
+    status("შენახულია ამ ბრაუზერში.");
+  }catch(err){
+    status("⚠ ვერ შევინახე (სურათები ბევრია). ბეჭდვა მაინც იმუშავებს.");
+  }
+}
+function load(){
+  try{
+    var raw = localStorage.getItem(KEY);
+    if(!raw) return false;
+    var o = JSON.parse(raw);
+    if(o && o.fmt && o.cells){ S = o; if(typeof S.zoom !== "number") S.zoom = 0.8; return true; }
+  }catch(e){}
+  return false;
+}
+function status(m){ $("status").textContent = m; }
+
+/* ---------- ფორმატი ---------- */
+function readFmt(){
+  S.fmt.lw = +$("lw").value || 70;
+  S.fmt.lh = +$("lh").value || 42.3;
+  S.fmt.cols = Math.max(1, +$("cols").value || 1);
+  S.fmt.rows = Math.max(1, +$("rows").value || 1);
+  S.fmt.gx = +$("gx").value || 0;
+  S.fmt.gy = +$("gy").value || 0;
+  S.fmt.ox = +$("ox").value || 0;
+  S.fmt.oy = +$("oy").value || 0;
+  build(); syncPanel(); save(true);
+}
+function writeFmt(){
+  $("lw").value = S.fmt.lw; $("lh").value = S.fmt.lh;
+  $("cols").value = S.fmt.cols; $("rows").value = S.fmt.rows;
+  $("gx").value = S.fmt.gx; $("gy").value = S.fmt.gy;
+  $("ox").value = S.fmt.ox; $("oy").value = S.fmt.oy;
+  $("guides").checked = S.guides; $("guidesPrint").checked = !!S.guidesPrint;
+}
+
+/* ---------- ზუმი ---------- */
+function zoom(z){
+  S.zoom = Math.min(2, Math.max(0.2, z));
+  paper.style.transform = "scale(" + S.zoom + ")";
+  paper.style.marginBottom = (297 * (S.zoom - 1)) + "mm";
+  $("zVal").textContent = Math.round(S.zoom*100) + "%";
+  save(true);
+}
+function fitZoom(){
+  var st = document.querySelector(".stage");
+  var pxPerMm = 96/25.4;
+  zoom(Math.min(1.3, (st.clientHeight - 48) / (297*pxPerMm)));
+}
+
+/* ================= მოვლენები ================= */
+$("txt").addEventListener("input", function(){
+  var v = $("txt").value;
+  apply(function(c){ c.text = v; });
+});
+$("btnApplyAll").addEventListener("click", function(){
+  var v = $("txt").value;
+  apply(function(c){ c.text = v; }, allIdx());
+  status("ტექსტი ჩაიწერა ყველა ეტიკეტზე.");
+});
+$("btnClearText").addEventListener("click", function(){ apply(function(c){ c.text = ""; }); });
+
+$("font").addEventListener("change", function(){ var v=this.value; apply(function(c){ c.font=v; }); });
+$("size").addEventListener("input", function(){ var v=+this.value||11; apply(function(c){ c.size=v; }); });
+$("color").addEventListener("input", function(){ var v=this.value; apply(function(c){ c.color=v; }); });
+$("pad").addEventListener("input", function(){ var v=+this.value||0; apply(function(c){ c.pad=v; }); });
+$("autofit").addEventListener("change", function(){ var v=this.checked; apply(function(c){ c.autofit=v; }); });
+$("bBold").addEventListener("click", function(){ var v=!cur().bold; apply(function(c){ c.bold=v; }); });
+$("bItal").addEventListener("click", function(){ var v=!cur().italic; apply(function(c){ c.italic=v; }); });
+$("bUpper").addEventListener("click", function(){ var v=!cur().upper; apply(function(c){ c.upper=v; }); });
+
+["alignH","alignV"].forEach(function(id){
+  $(id).addEventListener("click", function(ev){
+    var b = ev.target.closest("button"); if(!b) return;
+    var v = b.dataset.v;
+    apply(function(c){ c[id === "alignH" ? "alignH" : "alignV"] = v; });
+  });
+});
+
+$("imgFile").addEventListener("change", function(){ if(this.files[0]) readImg(this.files[0], sel); });
+$("btnImgAll").addEventListener("click", function(){
+  var f = $("imgFile").files[0];
+  if(f) readImg(f, allIdx());
+  else { var im = cur().img; if(im){ apply(function(c){ c.img = im; }, allIdx()); status("სურათი გავრცელდა ყველა ეტიკეტზე."); } }
+});
+$("btnImgDel").addEventListener("click", function(){ apply(function(c){ c.img = null; }); });
+$("imgMode").addEventListener("change", function(){ var v=this.value; apply(function(c){ c.imgMode=v; }); });
+$("imgSize").addEventListener("input", function(){
+  var v=+this.value; $("imgSizeVal").textContent = v + "%";
+  apply(function(c){ c.imgSize=v; });
+});
+
+$("btnSelAll").addEventListener("click", function(){ sel = allIdx(); renderAll(); syncPanel(); });
+$("btnCopyAll").addEventListener("click", function(){
+  var src = JSON.parse(JSON.stringify(cur()));
+  apply(function(c, i){ if(i !== sel[0]) Object.keys(src).forEach(function(k){ c[k] = src[k]; }); }, allIdx());
+  status("არჩეული ეტიკეტი დაკოპირდა ყველაზე.");
+});
+$("btnClearCell").addEventListener("click", function(){ apply(function(c, i){ S.cells[i] = defCell(); }); renderAll(); });
+$("btnClearSheet").addEventListener("click", function(){
+  if(!confirm("წავშალო მთელი ფურცლის შიგთავსი?")) return;
+  S.cells = allIdx().map(defCell); renderAll(); syncPanel(); save(true);
+});
+
+$("preset").addEventListener("change", function(){
+  if(this.value === "custom") return;
+  var p = this.value.split(",").map(Number);
+  S.fmt.lw=p[0]; S.fmt.lh=p[1]; S.fmt.cols=p[2]; S.fmt.rows=p[3]; S.fmt.gx=p[4]; S.fmt.gy=p[5];
+  writeFmt(); build(); syncPanel(); save(true);
+});
+["lw","lh","cols","rows","gx","gy","ox","oy"].forEach(function(id){
+  $(id).addEventListener("change", readFmt);
+});
+$("guides").addEventListener("change", function(){ S.guides = this.checked; renderAll(); save(true); });
+$("guidesPrint").addEventListener("change", function(){ S.guidesPrint = this.checked; save(true); });
+
+$("btnPrint").addEventListener("click", function(){
+  var keep = sel.slice(); sel = [];
+  paper.querySelectorAll(".cell").forEach(function(el){ el.classList.remove("sel"); });
+  if(!S.guidesPrint) paper.querySelectorAll(".cell").forEach(function(el){ el.classList.remove("guide"); });
+  else paper.querySelectorAll(".cell").forEach(function(el){ el.classList.add("guide"); });
+  window.print();
+  setTimeout(function(){ sel = keep; renderAll(); }, 400);
+});
+$("btnSave").addEventListener("click", function(){ save(false); });
+
+$("btnExport").addEventListener("click", function(){
+  var blob = new Blob([JSON.stringify(S)], {type:"application/json"});
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "etiketebi.json";
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+});
+$("btnImport").addEventListener("click", function(){ $("impFile").click(); });
+$("impFile").addEventListener("change", function(){
+  var f = this.files[0]; if(!f) return;
+  var fr = new FileReader();
+  fr.onload = function(e){
+    try{
+      var o = JSON.parse(e.target.result);
+      if(o && o.fmt && o.cells){ S = o; sel=[0]; writeFmt(); build(); syncPanel(); zoom(S.zoom||0.8); status("ატვირთულია."); }
+    }catch(err){ alert("ფაილი არ იკითხება."); }
+  };
+  fr.readAsText(f);
+});
+
+/* სურათის ჩასმა Ctrl+V-ით */
+document.addEventListener("paste", function(ev){
+  var items = (ev.clipboardData || {}).items || [];
+  for(var i=0;i<items.length;i++){
+    if(items[i].type.indexOf("image") === 0){
+      ev.preventDefault();
+      readImg(items[i].getAsFile(), sel);
+      return;
+    }
+  }
+});
+
+$("zIn").addEventListener("click", function(){ zoom(S.zoom + 0.1); });
+$("zOut").addEventListener("click", function(){ zoom(S.zoom - 0.1); });
+$("zFit").addEventListener("click", fitZoom);
+window.addEventListener("keydown", function(ev){
+  if((ev.ctrlKey||ev.metaKey) && ev.key === "p"){ /* ბრაუზერის ბეჭდვა — CSS უკვე მზადაა */ }
+});
+
+/* ================= გაშვება ================= */
+load();
+writeFmt();
+build();
+syncPanel();
+zoom(S.zoom || 0.8);
+status("მზადაა. ბეჭდვისას აირჩიე A4 და მასშტაბი — 100% (არა „fit to page“).");
+})();
+</script>
+</body>
+</html>
