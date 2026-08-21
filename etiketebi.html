@@ -397,26 +397,42 @@ function placeImage(c, im, avoid){
   if(im.w == null || !isFinite(im.w))
     im.w = +(im.ar ? Math.min(S.fmt.lw*0.5, S.fmt.lh*0.8*im.ar) : S.fmt.lw*0.4).toFixed(2);
   var LW = S.fmt.lw, LH = S.fmt.lh;
-  if(im.w > LW){ im.w = LW; }
-  if(im.ar && im.w/im.ar > LH){ im.w = +(LH*im.ar).toFixed(2); }
-  var h = imgH(im), others = [];
+  if(im.w > LW) im.w = LW;
+  if(im.ar && im.w/im.ar > LH) im.w = +(LH*im.ar).toFixed(2);
+
+  var others = [];
   c.imgs.forEach(function(o){
     if(o !== im && o.x != null && o.w != null) others.push({x:o.x, y:o.y, w:o.w, h:imgH(o)});
   });
   if(avoid) others.push(avoid);             /* место текста защищено */
+
   if(!others.length){                       /* первое изображение — по центру */
     im.x = +Math.max(0, (LW - im.w)/2).toFixed(2);
-    im.y = +Math.max(0, (LH - h)/2).toFixed(2);
-    return im;
+    im.y = +Math.max(0, (LH - imgH(im))/2).toFixed(2);
+    return true;
   }
-  for(var y=0; y <= LH - h + 0.01; y += 1.5){
-    for(var x=0; x <= LW - im.w + 0.01; x += 1.5){
-      var r = {x:x, y:y, w:im.w, h:h}, free = true;
-      for(var n=0; n<others.length; n++) if(overlap(r, others[n])){ free = false; break; }
-      if(free){ im.x = +x.toFixed(2); im.y = +y.toFixed(2); return im; }
+
+  /* свободное место ищем для нового изображения, при необходимости уменьшая ЕГО —
+     уже расставленные изображения остаются на своих местах */
+  var w0 = im.w, scales = [1, 0.8, 0.62, 0.5, 0.38, 0.28, 0.2];
+  for(var t = 0; t < scales.length; t++){
+    im.w = +(w0 * scales[t]).toFixed(2);
+    if(im.w < 3) break;
+    var h = imgH(im);
+    for(var y = 0; y <= LH - h + 0.01; y += 1.5){
+      for(var x = 0; x <= LW - im.w + 0.01; x += 1.5){
+        var r = {x:x, y:y, w:im.w, h:h}, free = true;
+        for(var n = 0; n < others.length; n++) if(overlap(r, others[n])){ free = false; break; }
+        if(free){ im.x = +x.toFixed(2); im.y = +y.toFixed(2); return true; }
+      }
     }
   }
-  return false;                              /* свободного места не осталось */
+  /* совсем нет места — кладём со смещением, но чужие изображения не двигаем */
+  im.w = +Math.min(w0, LW*0.35).toFixed(2);
+  var off = (c.imgs.length - 1) * 2;
+  im.x = +clamp(off, 0, Math.max(0, LW - im.w)).toFixed(2);
+  im.y = +clamp(off, 0, Math.max(0, LH - imgH(im))).toFixed(2);
+  return false;
 }
 
 /* разложить все изображения по сетке внутри ячейки (без перекрытий) */
@@ -775,19 +791,17 @@ function addImages(files, targets){
         out[n] = {src:src, ar:ar, x:null, y:null, w:null};
         if(++done === list.length){
           apply(function(c, i){
-            var avoid = textRectMM(i), tight = false;
+            var avoid = textRectMM(i), had = c.imgs.length, tight = false;
             out.forEach(function(o){
               var copy = JSON.parse(JSON.stringify(o));
               c.imgs.push(copy);
               if(!placeImage(c, copy, avoid)) tight = true;
             });
-            if(tight){
-              if(c.text && c.text.trim() && c.imgMode === "free"){
-                /* места тексту не остаётся — переходим на авторасположение,
-                   чтобы изображение не перекрыло текст */
-                c.imgMode = "top";
-                c.imgSize = 40;
-              }else arrangeCell(c);
+            /* режим меняем только для ПЕРВОГО изображения в пустой ячейке —
+               иначе уже расставленные изображения сдвинулись бы */
+            if(tight && !had && c.text && c.text.trim() && c.imgMode === "free"){
+              c.imgMode = "top";
+              c.imgSize = 40;
             }
           }, targets);
           if(S.mirror) mirrorFrom(sel[0]);
@@ -1030,9 +1044,15 @@ document.querySelector(".stage").addEventListener("wheel", function(ev){
   }
   var pw = ev.target.closest(".picwrap");
   var c = S.cells[i];
-  if(c.imgMode === "free" && pw){
-    var im = c.imgs[+pw.dataset.k];
-    if(im){ im.w = clamp(im.w * (up ? 1.08 : 0.926), 3, S.fmt.lw); clampGeo(im); renderCell(i); save(true); }
+  if(c.imgMode === "free" && (pw || (pick && pick.cell === i && picks.length))){
+    var list = pw ? [c.imgs[+pw.dataset.k]]
+                  : picks.map(function(n){ return c.imgs[n]; });
+    list.filter(Boolean).forEach(function(im){
+      im.w = clamp(im.w * (up ? 1.08 : 0.926), 3, S.fmt.lw); clampGeo(im);
+    });
+    renderCell(i); if(S.mirror) mirrorFrom(i); syncPanel(); save(true);
+  }else if(c.imgMode === "free"){
+    /* в свободном режиме без выбранного изображения ничего не трогаем */
   }else{
     apply(function(cc){ cc.imgSize = Math.round(clamp(cc.imgSize + (up ? 3 : -3), 5, 100)); });
   }
@@ -1103,11 +1123,15 @@ function setImgPercent(v){
     c.imgSize = v;
     if(c.imgMode === "free" && c.imgs.length){
       /* в свободном режиме процент = ширина относительно ширины этикетки */
-      var one = c.imgs;
+      /* меняем размер ТОЛЬКО у выбранных изображений; если ничего не выбрано —
+         у последнего добавленного, а не у всех сразу */
+      var one;
       if(pick && pick.cell === i && picks.length){
         one = picks.map(function(n){ return c.imgs[n]; }).filter(Boolean);
-        if(!one.length) one = c.imgs;
+      }else{
+        one = [c.imgs[c.imgs.length - 1]];
       }
+      one = one.filter(Boolean);
       one.forEach(function(im){
         var cx = im.x + im.w/2, cy = im.y + imgH(im)/2;   /* центр сохраняется */
         im.w = S.fmt.lw * v / 100;
