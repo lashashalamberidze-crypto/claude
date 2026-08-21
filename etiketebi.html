@@ -54,6 +54,7 @@
   .cell .content{display:flex;max-width:100%;max-height:100%;overflow:hidden;position:relative;z-index:1}
   .cell .strip{display:flex;align-items:center;justify-content:center;gap:1mm;max-width:100%;max-height:100%}
   .cell .txt{white-space:pre-wrap;word-break:break-word;line-height:1.2;width:100%}
+  .cell .txt.rot{position:absolute;z-index:1;padding:0 !important}
   .cell img.pic{display:block;object-fit:contain;-webkit-user-drag:none;user-select:none}
   .picwrap{position:relative;display:inline-flex;align-items:center;justify-content:center}
   .picwrap img.pic{width:100%;height:100%}
@@ -177,6 +178,18 @@
         <button id="tDown" title="ქვემოთ">▼</button>
       </div>
       <div class="btns"><button id="tReset">გაწევის გაუქმება</button></div>
+      <label>ტექსტის შემობრუნება: <span id="rotVal">0°</span></label>
+      <div class="seg" id="rotQuick">
+        <button data-v="0">0°</button>
+        <button data-v="90">90°</button>
+        <button data-v="180">180°</button>
+        <button data-v="270">270°</button>
+      </div>
+      <div class="row" style="align-items:center;margin-top:6px">
+        <button id="rotM" title="−5°">↺</button>
+        <input type="range" id="rot" min="-180" max="360" step="1" value="0" style="width:100%">
+        <button id="rotP" title="+5°">↻</button>
+      </div>
       <div class="hint">ან: მწვანე კვადრატი უჯრის ზედა მარცხენა კუთხეში — მაუსით გაათრიე და ტექსტი გაიწევა.</div>
     </fieldset>
 
@@ -280,7 +293,8 @@ function defCell(){ return {
   font:'"BPG Nino Mtavruli","Noto Sans Georgian",sans-serif',
   size:11, bold:false, italic:false, upper:false, color:"#000000",
   alignH:"center", alignV:"center", pad:2, autofit:true,
-  tdx:0, tdy:0                              /* ტექსტის გაწევა მმ-ში: + მარჯვნივ / + ქვემოთ */
+  tdx:0, tdy:0,                             /* ტექსტის გაწევა მმ-ში: + მარჯვნივ / + ქვემოთ */
+  rot:0                                     /* ტექსტის შემობრუნება გრადუსებში */
 };}
 
 var S = {
@@ -358,6 +372,11 @@ function clampGeo(im){
   return im;
 }
 function imgH(im){ return im.ar ? im.w / im.ar : im.w; }
+/* 90°-თან ახლოს მყოფი კუთხე = ვერტიკალური ჩარჩო */
+function isVertical(rot){
+  var a = ((rot % 180) + 180) % 180;
+  return Math.abs(a - 90) < 45;
+}
 
 /* ახალი სურათი თავისუფალ ადგილას ჩაჯდეს — ერთმანეთს არ დააფაროს */
 function overlap(a, b){
@@ -490,12 +509,22 @@ function renderCell(i){
     t.style.textTransform = c.upper ? "uppercase" : "none";
     t.style.color = c.color;
     t.style.textAlign = (c.alignH === "flex-start") ? "left" : (c.alignH === "flex-end") ? "right" : "center";
-    /* გაწევა შიდა არშიით — ტექსტი უჯრიდან არ გადის, უბრალოდ იწევა და თავიდან ეწყობა */
-    var tdx = +c.tdx || 0, tdy = +c.tdy || 0;
-    t.style.paddingLeft   = (tdx > 0 ? tdx : 0) + "mm";
-    t.style.paddingRight  = (tdx < 0 ? -tdx : 0) + "mm";
-    t.style.paddingTop    = (tdy > 0 ? tdy : 0) + "mm";
-    t.style.paddingBottom = (tdy < 0 ? -tdy : 0) + "mm";
+    var tdx = +c.tdx || 0, tdy = +c.tdy || 0, rot = +c.rot || 0;
+    if(rot){
+      /* შემობრუნებული ტექსტი: უჯრის ცენტრში ვსვამთ და ვატრიალებთ;
+         90°/270°-ზე ჩარჩოს სიგანე ეტიკეტის სიმაღლეს უტოლდება */
+      t.className = "txt rot";
+      var innerW = S.fmt.lw - 2*c.pad, innerH = S.fmt.lh - 2*c.pad;
+      t.style.width = (isVertical(rot) ? innerH : innerW) + "mm";
+      t.style.left = "50%"; t.style.top = "50%";
+      t.style.transform = "translate(calc(-50% + " + tdx + "mm), calc(-50% + " + tdy + "mm)) rotate(" + rot + "deg)";
+    }else{
+      /* გაწევა შიდა არშიით — ტექსტი უჯრიდან არ გადის, უბრალოდ იწევა და თავიდან ეწყობა */
+      t.style.paddingLeft   = (tdx > 0 ? tdx : 0) + "mm";
+      t.style.paddingRight  = (tdx < 0 ? -tdx : 0) + "mm";
+      t.style.paddingTop    = (tdy > 0 ? tdy : 0) + "mm";
+      t.style.paddingBottom = (tdy < 0 ? -tdy : 0) + "mm";
+    }
     t.textContent = c.text;
     t.addEventListener("input", function(ev){
       var v = ev.target.textContent;
@@ -509,7 +538,8 @@ function renderCell(i){
       save(true);
     });
     t.addEventListener("focus", function(){ if(sel.indexOf(i) < 0) select(i, null); });
-    wrap.appendChild(t);
+    /* შემობრუნებული ტექსტი პირდაპირ უჯრაზე უნდა დაეკიდოს — თორემ შიდა ბლოკი კვეცავს */
+    if(+c.rot) el.appendChild(t); else wrap.appendChild(t);
   }
   el.appendChild(wrap);
 
@@ -570,10 +600,13 @@ function fit(el, c){
   var t = el.querySelector(".txt");
   if(!t){ el.classList.remove("over"); return; }
   var padPx = c.pad * PXMM;
-  var availH = el.clientHeight - 2*padPx;
-  var availW = el.clientWidth  - 2*padPx;
+  var innerH = el.clientHeight - 2*padPx;
+  var innerW = el.clientWidth  - 2*padPx;
+  var rot = +c.rot || 0;
+  var availH = rot && isVertical(rot) ? innerW : innerH;
+  var availW = rot && isVertical(rot) ? innerH : innerW;
   /* ავტომატურ განლაგებაში სურათების ზოლი ადგილს იკავებს */
-  var strip = el.querySelector(".strip");
+  var strip = rot ? null : el.querySelector(".strip");
   if(strip){
     if(c.imgMode === "left" || c.imgMode === "right") availW -= strip.offsetWidth + PXMM;
     else availH -= strip.offsetHeight + PXMM;
@@ -652,6 +685,9 @@ function syncPanel(){
   $("pad").value = c.pad;
   $("tdx").value = +c.tdx || 0;
   $("tdy").value = +c.tdy || 0;
+  var rv = +c.rot || 0;
+  $("rot").value = rv; $("rotVal").textContent = rv + "°";
+  segOn("rotQuick", String(rv));
   $("imgMode").value = c.imgMode;
   var pctImg = c.imgSize, mmTxt = "";
   if(c.imgMode === "free" && c.imgs.length){
@@ -689,7 +725,7 @@ function mirrorFrom(i){
     c.font = src.font; c.size = src.size; c.bold = src.bold; c.italic = src.italic;
     c.upper = src.upper; c.color = src.color; c.alignH = src.alignH; c.alignV = src.alignV;
     c.pad = src.pad; c.autofit = src.autofit;
-    c.tdx = src.tdx; c.tdy = src.tdy;
+    c.tdx = src.tdx; c.tdy = src.tdy; c.rot = src.rot;
     c.imgs = cloneImgs(src.imgs);
     renderCell(n);
   });
@@ -783,6 +819,7 @@ function load(){
       if(!c.imgs) c.imgs = c.img ? [{src:c.img, x:c.imgX, y:c.imgY, w:c.imgW}] : [];
       if(c.tdx == null) c.tdx = 0;
       if(c.tdy == null) c.tdy = 0;
+      if(c.rot == null) c.rot = 0;
       delete c.img;
     });
     S = o;
@@ -1008,7 +1045,7 @@ $("btnApplyAll").addEventListener("click", function(){
     c.text = v; c.font = src.font; c.size = src.size; c.autofit = src.autofit;
     c.bold = src.bold; c.italic = src.italic; c.upper = src.upper; c.color = src.color;
     c.alignH = src.alignH; c.alignV = src.alignV; c.pad = src.pad;
-    c.tdx = src.tdx; c.tdy = src.tdy;
+    c.tdx = src.tdx; c.tdy = src.tdy; c.rot = src.rot;
   }, allIdx());
   status("ტექსტი და მისი ფორმატი ჩაიწერა ყველა ეტიკეტზე.");
 });
@@ -1039,6 +1076,18 @@ $("tRight").addEventListener("click", function(){ setTd(function(c){ c.tdx = +((
 $("tUp").addEventListener("click",    function(){ setTd(function(c){ c.tdy = +((+c.tdy||0) - 1).toFixed(2); }); });
 $("tDown").addEventListener("click",  function(){ setTd(function(c){ c.tdy = +((+c.tdy||0) + 1).toFixed(2); }); });
 $("tReset").addEventListener("click", function(){ setTd(function(c){ c.tdx = 0; c.tdy = 0; }); });
+function setRot(v){
+  v = Math.round(clamp(v, -180, 360));
+  $("rot").value = v; $("rotVal").textContent = v + "°";
+  setTd(function(c){ c.rot = v; });
+}
+$("rot").addEventListener("input", function(){ setRot(+this.value); });
+$("rotM").addEventListener("click", function(){ setRot((+cur().rot || 0) - 5); });
+$("rotP").addEventListener("click", function(){ setRot((+cur().rot || 0) + 5); });
+$("rotQuick").addEventListener("click", function(ev){
+  var b = ev.target.closest("button"); if(!b) return;
+  setRot(+b.dataset.v);
+});
 
 $("imgFile").addEventListener("change", function(){ if(this.files.length) addImages(this.files, sel); this.value=""; });
 $("btnImgAll").addEventListener("click", function(){
