@@ -65,7 +65,7 @@
   .cell.sel{box-shadow:inset 0 0 0 .6mm #2b6cb0;background-color:#f7fbff}
   .cell.drop{box-shadow:inset 0 0 0 .8mm #27ae60}
   .cell.over{outline:.5mm solid #e74c3c;outline-offset:-.25mm}
-  .cellno{position:absolute;top:0;left:1px;font-size:8px;color:#c3ccd6;font-family:monospace;z-index:4}
+  .cellno{position:absolute;top:0;right:2px;font-size:8px;color:#c3ccd6;font-family:monospace;z-index:4}
   .cell .txt:focus{outline:none}
   /* მაუსის სახელურები */
   .handle{position:absolute;display:none;z-index:7;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)}
@@ -74,6 +74,7 @@
   .h-del{width:15px;height:15px;border-radius:50%;right:1px;top:1px;background:#c0392b;color:#fff;
          font:bold 11px/11px Arial;text-align:center;cursor:pointer}
   .h-txt{width:13px;height:13px;border-radius:50%;left:1px;bottom:1px;background:#c0392b;cursor:ns-resize}
+  .h-move{width:13px;height:13px;border-radius:3px;left:1px;top:1px;background:#27ae60;cursor:move}
   .picwrap img.pic{cursor:move}
   /* ================= ბეჭდვა ================= */
   @page{size:A4 portrait;margin:0}
@@ -164,6 +165,19 @@
       </div>
       <label>შიდა არშია (მმ)</label>
       <input type="number" id="pad" min="0" max="15" step="0.5" value="2">
+      <label>ტექსტის გაწევა (მმ)</label>
+      <div class="row" style="align-items:center">
+        <button id="tLeft" title="მარცხნივ">◀</button>
+        <input type="number" id="tdx" step="0.5" value="0" title="მარჯვნივ +, მარცხნივ −">
+        <button id="tRight" title="მარჯვნივ">▶</button>
+      </div>
+      <div class="row" style="align-items:center;margin-top:6px">
+        <button id="tUp" title="ზემოთ">▲</button>
+        <input type="number" id="tdy" step="0.5" value="0" title="ქვემოთ +, ზემოთ −">
+        <button id="tDown" title="ქვემოთ">▼</button>
+      </div>
+      <div class="btns"><button id="tReset">გაწევის გაუქმება</button></div>
+      <div class="hint">ან: მწვანე კვადრატი უჯრის ზედა მარცხენა კუთხეში — მაუსით გაათრიე და ტექსტი გაიწევა.</div>
     </fieldset>
 
     <fieldset>
@@ -192,7 +206,7 @@
         <button id="btnImgDelOne">არჩეული სურათის წაშლა</button>
         <button id="btnImgDel">ყველა სურათის წაშლა</button>
       </div>
-      <div class="hint"><b>მაუსით:</b> სურათს დააჭირე და გადაათრიე — გადაადგილდება; <b>ლურჯი წერტილი</b> კუთხეში — გაწევა/შემცირება; <b>წითელი ✕</b> — წაშლა; <b>წითელი წერტილი</b> უჯრის ქვედა მარცხენა კუთხეში — ტექსტის ზომა.<br>
+      <div class="hint"><b>მაუსით:</b> სურათს დააჭირე და გადაათრიე — გადაადგილდება; <b>ლურჯი წერტილი</b> კუთხეში — გაწევა/შემცირება; <b>წითელი ✕</b> — წაშლა; <b>წითელი წერტილი</b> უჯრის ქვედა მარცხენა კუთხეში — ტექსტის ზომა; <b>მწვანე კვადრატი</b> ზედა მარცხნივ — ტექსტის გაწევა.<br>
       ბორბალი: <b>Alt</b> — სურათი, <b>Shift</b> — ტექსტი, <b>Ctrl</b> — მთელი ფურცლის მასშტაბი.<br>
       <b>რამდენიმე სურათი ერთად:</b> Ctrl + დაჭერით მონიშნე რამდენიც გინდა — ერთად გადაადგილდება, ერთად შეიცვლება ზომაში და ერთად წაიშლება.</div>
     </fieldset>
@@ -265,7 +279,8 @@ function defCell(){ return {
   text:"", imgs:[], imgMode:"free", imgSize:45,
   font:'"BPG Nino Mtavruli","Noto Sans Georgian",sans-serif',
   size:11, bold:false, italic:false, upper:false, color:"#000000",
-  alignH:"center", alignV:"center", pad:2, autofit:true
+  alignH:"center", alignV:"center", pad:2, autofit:true,
+  tdx:0, tdy:0                              /* ტექსტის გაწევა მმ-ში: + მარჯვნივ / + ქვემოთ */
 };}
 
 var S = {
@@ -475,6 +490,12 @@ function renderCell(i){
     t.style.textTransform = c.upper ? "uppercase" : "none";
     t.style.color = c.color;
     t.style.textAlign = (c.alignH === "flex-start") ? "left" : (c.alignH === "flex-end") ? "right" : "center";
+    /* გაწევა შიდა არშიით — ტექსტი უჯრიდან არ გადის, უბრალოდ იწევა და თავიდან ეწყობა */
+    var tdx = +c.tdx || 0, tdy = +c.tdy || 0;
+    t.style.paddingLeft   = (tdx > 0 ? tdx : 0) + "mm";
+    t.style.paddingRight  = (tdx < 0 ? -tdx : 0) + "mm";
+    t.style.paddingTop    = (tdy > 0 ? tdy : 0) + "mm";
+    t.style.paddingBottom = (tdy < 0 ? -tdy : 0) + "mm";
     t.textContent = c.text;
     t.addEventListener("input", function(ev){
       var v = ev.target.textContent;
@@ -523,7 +544,10 @@ function renderCell(i){
     });
   }
 
-  if(c.imgMode !== "only") el.appendChild(mkHandle("h-txt", "ზემოთ/ქვემოთ თრევა — ტექსტის ზომა"));
+  if(c.imgMode !== "only"){
+    el.appendChild(mkHandle("h-txt", "ზემოთ/ქვემოთ თრევა — ტექსტის ზომა"));
+    el.appendChild(mkHandle("h-move", "გაათრიე — ტექსტის გაწევა მარჯვნივ/მარცხნივ, ზემოთ/ქვემოთ"));
+  }
 
   var no = document.createElement("span");
   no.className = "cellno";
@@ -626,6 +650,8 @@ function syncPanel(){
   $("size").value = c.size;
   $("color").value = c.color;
   $("pad").value = c.pad;
+  $("tdx").value = +c.tdx || 0;
+  $("tdy").value = +c.tdy || 0;
   $("imgMode").value = c.imgMode;
   var pctImg = c.imgSize, mmTxt = "";
   if(c.imgMode === "free" && c.imgs.length){
@@ -663,6 +689,7 @@ function mirrorFrom(i){
     c.font = src.font; c.size = src.size; c.bold = src.bold; c.italic = src.italic;
     c.upper = src.upper; c.color = src.color; c.alignH = src.alignH; c.alignV = src.alignV;
     c.pad = src.pad; c.autofit = src.autofit;
+    c.tdx = src.tdx; c.tdy = src.tdy;
     c.imgs = cloneImgs(src.imgs);
     renderCell(n);
   });
@@ -754,6 +781,8 @@ function load(){
     if(!o || !o.fmt || !o.cells) return false;
     o.cells.forEach(function(c){                       /* ძველი ფორმატის გადმოტანა */
       if(!c.imgs) c.imgs = c.img ? [{src:c.img, x:c.imgX, y:c.imgY, w:c.imgW}] : [];
+      if(c.tdx == null) c.tdx = 0;
+      if(c.tdy == null) c.tdy = 0;
       delete c.img;
     });
     S = o;
@@ -862,7 +891,8 @@ paper.addEventListener("mousedown", function(ev){
   }
 
   var kind;
-  if(h && h.classList.contains("h-txt")) kind = "txt";
+  if(h && h.classList.contains("h-move")) kind = "tmove";
+  else if(h && h.classList.contains("h-txt")) kind = "txt";
   else if(h) kind = "size";
   else { toFree(i); kind = "move"; }
 
@@ -873,7 +903,8 @@ paper.addEventListener("mousedown", function(ev){
     bases: (k >= 0 ? picks : []).filter(function(n){ return c.imgs[n]; })
              .map(function(n){ return {k:n, x:c.imgs[n].x, y:c.imgs[n].y, w:c.imgs[n].w}; }),
     baseSize: sel.map(function(n){ return S.cells[n].imgSize; }),
-    baseFont: sel.map(function(n){ return S.cells[n].size; })
+    baseFont: sel.map(function(n){ return S.cells[n].size; }),
+    baseTd: sel.map(function(n){ return {x:+S.cells[n].tdx||0, y:+S.cells[n].tdy||0}; })
   };
   document.body.style.userSelect = "none";
 });
@@ -914,6 +945,15 @@ document.addEventListener("mousemove", function(ev){
         cc.imgSize = Math.round(clamp(drag.baseSize[n] + ((dx+dy)/2)/basePx*100, 5, 100));
       });
     }
+    return;
+  }
+  if(drag.kind === "tmove"){
+    apply(function(cc, i){
+      var n = sel.indexOf(i); if(n < 0) return;
+      var LW = S.fmt.lw - 2*cc.pad, LH = S.fmt.lh - 2*cc.pad;
+      cc.tdx = +clamp(drag.baseTd[n].x + dx/k, -LW*0.9, LW*0.9).toFixed(2);
+      cc.tdy = +clamp(drag.baseTd[n].y + dy/k, -LH*0.9, LH*0.9).toFixed(2);
+    });
     return;
   }
   if(drag.kind === "txt"){
@@ -968,6 +1008,7 @@ $("btnApplyAll").addEventListener("click", function(){
     c.text = v; c.font = src.font; c.size = src.size; c.autofit = src.autofit;
     c.bold = src.bold; c.italic = src.italic; c.upper = src.upper; c.color = src.color;
     c.alignH = src.alignH; c.alignV = src.alignV; c.pad = src.pad;
+    c.tdx = src.tdx; c.tdy = src.tdy;
   }, allIdx());
   status("ტექსტი და მისი ფორმატი ჩაიწერა ყველა ეტიკეტზე.");
 });
@@ -989,6 +1030,15 @@ $("bUpper").addEventListener("click", function(){ var v=!cur().upper; apply(func
     var v = b.dataset.v; apply(function(c){ c[id] = v; });
   });
 });
+
+function setTd(fn){ apply(function(c){ fn(c); }); if(S.mirror) mirrorFrom(sel[0]); syncPanel(); }
+$("tdx").addEventListener("input", function(){ var v=+this.value||0; setTd(function(c){ c.tdx=v; }); });
+$("tdy").addEventListener("input", function(){ var v=+this.value||0; setTd(function(c){ c.tdy=v; }); });
+$("tLeft").addEventListener("click",  function(){ setTd(function(c){ c.tdx = +((+c.tdx||0) - 1).toFixed(2); }); });
+$("tRight").addEventListener("click", function(){ setTd(function(c){ c.tdx = +((+c.tdx||0) + 1).toFixed(2); }); });
+$("tUp").addEventListener("click",    function(){ setTd(function(c){ c.tdy = +((+c.tdy||0) - 1).toFixed(2); }); });
+$("tDown").addEventListener("click",  function(){ setTd(function(c){ c.tdy = +((+c.tdy||0) + 1).toFixed(2); }); });
+$("tReset").addEventListener("click", function(){ setTd(function(c){ c.tdx = 0; c.tdy = 0; }); });
 
 $("imgFile").addEventListener("change", function(){ if(this.files.length) addImages(this.files, sel); this.value=""; });
 $("btnImgAll").addEventListener("click", function(){
