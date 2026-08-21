@@ -20,7 +20,8 @@
   .app{display:flex;height:100vh;overflow:hidden}
   .panel{width:344px;min-width:344px;background:var(--panel);border-right:1px solid var(--line);
          overflow-y:auto;padding:14px 14px 60px}
-  .stage{flex:1;overflow:auto;padding:24px;display:flex;justify-content:center;align-items:flex-start}
+  .stage{flex:1;overflow:auto;padding:24px;display:block}
+  .sizer{margin:0 auto;position:relative}
   h1{font-size:16px;margin:0 0 4px}
   .sub{color:var(--muted);font-size:12px;margin-bottom:12px}
   fieldset{border:1px solid var(--line);border-radius:8px;padding:10px;margin:0 0 12px}
@@ -46,8 +47,8 @@
   .hint{font-size:11px;color:var(--muted);line-height:1.5;margin-top:6px}
   .selinfo{font-size:12px;background:#f2f6fb;border:1px solid #d6e4f5;border-radius:6px;padding:6px 8px;margin-bottom:8px}
   /* ================= ფურცელი ================= */
-  .paper{background:#fff;box-shadow:0 6px 26px rgba(0,0,0,.16);position:relative;
-         width:210mm;height:297mm;transform-origin:top center}
+  .paper{background:#fff;box-shadow:0 6px 26px rgba(0,0,0,.16);position:absolute;top:0;left:0;
+         width:210mm;height:297mm;transform-origin:top left}
   .cell{position:absolute;overflow:hidden;display:flex;background:#fff;
         background-repeat:no-repeat;background-position:center}
   .cell .content{display:flex;max-width:100%;max-height:100%;overflow:hidden;position:relative;z-index:1}
@@ -80,7 +81,8 @@
     .panel,.zoombar{display:none !important}
     .app{display:block;height:auto;overflow:visible}
     .stage{padding:0;display:block;overflow:visible}
-    .paper{box-shadow:none;transform:none !important;margin:0;width:210mm;height:297mm}
+    .sizer{width:auto !important;height:auto !important;margin:0}
+    .paper{box-shadow:none;transform:none !important;position:relative;margin:0;width:210mm;height:297mm}
     .cell.sel{box-shadow:none;background-color:#fff}
     .cellno,.handle{display:none !important}
     html,body{width:210mm;height:297mm}
@@ -151,7 +153,8 @@
 
     <fieldset>
       <legend>სურათები</legend>
-      <input type="file" id="imgFile" accept="image/*" multiple style="font-size:12px">
+      <button id="btnAddImg" class="primary" style="width:100%;background:#2b6cb0;border-color:#2b6cb0">➕ სურათის დამატება</button>
+      <input type="file" id="imgFile" accept="image/*" multiple style="display:none">
       <div class="hint">ერთდროულად რამდენიმე ფაილის მონიშვნა შეიძლება. ასევე: გადმოათრიე სურათები პირდაპირ ეტიკეტზე, ან დააკოპირე და ჩასვი (Ctrl+V) — ყოველი ახალი სურათი ემატება, არ ცვლის ძველს.</div>
       <label>განლაგება</label>
       <select id="imgMode">
@@ -162,8 +165,12 @@
         <option value="only">მხოლოდ სურათები</option>
         <option value="bg">ფონი (ტექსტი ზემოდან)</option>
       </select>
-      <label>ზომა (ავტომატურ განლაგებაში): <span id="imgSizeVal">45%</span></label>
-      <input type="range" id="imgSize" min="10" max="100" step="1" value="45" style="width:100%">
+      <label>სურათის ზომა: <span id="imgSizeVal">45%</span> <span id="imgSizeMm" style="color:#9aa4b0"></span></label>
+      <div class="row" style="align-items:center">
+        <button id="imgMinus" style="max-width:34px">−</button>
+        <input type="range" id="imgSize" min="3" max="100" step="1" value="45" style="width:100%">
+        <button id="imgPlus" style="max-width:34px">+</button>
+      </div>
       <div class="btns">
         <button id="btnImgAll">სურათები ყველა ეტიკეტს</button>
         <button id="btnImgArrange">ცენტრში/გასწორება</button>
@@ -176,6 +183,10 @@
 
     <fieldset>
       <legend>ეტიკეტები</legend>
+      <div class="chk" style="background:#fff7e6;border:1px solid #ffd88a;border-radius:6px;padding:7px 8px">
+        <input type="checkbox" id="mirror">
+        <label for="mirror" style="margin:0;color:#8a5a00"><b>ყველა ეტიკეტი ერთნაირი</b> — ნებისმიერი ცვლილება (ტექსტი, სურათი, ზომა, ადგილი) მაშინვე გადადის 21-ვე ცალზე</label>
+      </div>
       <div class="btns">
         <button id="btnSelAll">ყველას მონიშვნა</button>
         <button id="btnCopyAll">არჩეულის კოპირება ყველაზე</button>
@@ -220,7 +231,7 @@
   </aside>
 
   <main class="stage">
-    <div class="paper" id="paper"></div>
+    <div class="sizer" id="sizer"><div class="paper" id="paper"></div></div>
   </main>
 </div>
 
@@ -246,7 +257,7 @@ function defCell(){ return {
 
 var S = {
   fmt:{lw:70, lh:42.3, cols:3, rows:7, gx:0, gy:0, ox:0, oy:0.45},
-  guides:true, guidesPrint:false, zoom:0.8, cells:[]
+  guides:true, guidesPrint:false, zoom:0.8, mirror:false, cells:[]
 };
 var sel = [0];              /* მონიშნული ეტიკეტები */
 var pick = null;            /* არჩეული სურათი: {cell:i, idx:k} */
@@ -290,9 +301,13 @@ function renderAll(){ for(var i=0;i<S.cells.length;i++) renderCell(i); }
 
 /* ერთი სურათის საწყისი გეომეტრია თავისუფალ რეჟიმში (მმ) */
 function initGeo(c, im, k){
-  if(im.w == null || !isFinite(im.w)) im.w = +(S.fmt.lw * 0.4).toFixed(2);
+  if(im.w == null || !isFinite(im.w))
+    im.w = +(im.ar ? Math.min(S.fmt.lw*0.5, S.fmt.lh*0.8*im.ar) : S.fmt.lw*0.4).toFixed(2);
   if(im.x == null || !isFinite(im.x)) im.x = +clamp((S.fmt.lw - im.w)/2 + k*3, 0, S.fmt.lw - 5).toFixed(2);
-  if(im.y == null || !isFinite(im.y)){ im.y = +(S.fmt.lh * 0.15 + k*3).toFixed(2); im.auto = true; }
+  if(im.y == null || !isFinite(im.y)){
+    if(im.ar) im.y = +Math.max(0, (S.fmt.lh - im.w/im.ar)/2).toFixed(2);
+    else { im.y = +(S.fmt.lh * 0.15 + k*3).toFixed(2); im.auto = true; }
+  }
   clampGeo(im);
 }
 
@@ -313,6 +328,67 @@ function clampGeo(im){
   return im;
 }
 function imgH(im){ return im.ar ? im.w / im.ar : im.w; }
+
+/* ახალი სურათი თავისუფალ ადგილას ჩაჯდეს — ერთმანეთს არ დააფაროს */
+function overlap(a, b){
+  return !(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y);
+}
+function textRectMM(i){
+  var el = paper.querySelector('.cell[data-i="'+i+'"]');
+  if(!el) return null;
+  var c = S.cells[i], t = el.querySelector(".txt");
+  if(!t || !c.text || !c.text.trim()) return null;
+  var r = t.getBoundingClientRect(), cr = el.getBoundingClientRect(), k = PXMM * S.zoom;
+  if(!r.height) return null;
+  return {x:(r.left-cr.left)/k, y:(r.top-cr.top)/k, w:r.width/k, h:r.height/k};
+}
+
+function placeImage(c, im, avoid){
+  if(im.w == null || !isFinite(im.w))
+    im.w = +(im.ar ? Math.min(S.fmt.lw*0.5, S.fmt.lh*0.8*im.ar) : S.fmt.lw*0.4).toFixed(2);
+  var LW = S.fmt.lw, LH = S.fmt.lh;
+  if(im.w > LW){ im.w = LW; }
+  if(im.ar && im.w/im.ar > LH){ im.w = +(LH*im.ar).toFixed(2); }
+  var h = imgH(im), others = [];
+  c.imgs.forEach(function(o){
+    if(o !== im && o.x != null && o.w != null) others.push({x:o.x, y:o.y, w:o.w, h:imgH(o)});
+  });
+  if(avoid) others.push(avoid);             /* ტექსტის ადგილი დაცულია */
+  if(!others.length){                       /* პირველი სურათი — ცენტრში */
+    im.x = +Math.max(0, (LW - im.w)/2).toFixed(2);
+    im.y = +Math.max(0, (LH - h)/2).toFixed(2);
+    return im;
+  }
+  for(var y=0; y <= LH - h + 0.01; y += 1.5){
+    for(var x=0; x <= LW - im.w + 0.01; x += 1.5){
+      var r = {x:x, y:y, w:im.w, h:h}, free = true;
+      for(var n=0; n<others.length; n++) if(overlap(r, others[n])){ free = false; break; }
+      if(free){ im.x = +x.toFixed(2); im.y = +y.toFixed(2); return im; }
+    }
+  }
+  return false;                              /* თავისუფალი ადგილი არ დარჩა */
+}
+
+/* ყველა სურათი ლამაზ ბადედ დაეწყოს უჯრაში (არც ერთი არ დაიფაროს) */
+function arrangeCell(c){
+  var n = c.imgs.length; if(!n) return;
+  var hasText = !!(c.text && c.text.trim());
+  var band = hasText ? S.fmt.lh * 0.62 : S.fmt.lh;   /* ტექსტი ქვემოთ დარჩეს */
+  if(hasText) c.alignV = "flex-end";
+  var cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n/cols);
+  var sw = S.fmt.lw/cols, sh = band/rows, m = 0.6;
+  c.imgs.forEach(function(im, k){
+    var gx = k % cols, gy = Math.floor(k/cols);
+    var maxW = Math.max(2, sw - 2*m), maxH = Math.max(2, sh - 2*m);
+    var w = maxW, h = im.ar ? w/im.ar : w;
+    if(h > maxH){ h = maxH; w = im.ar ? h*im.ar : h; }
+    im.w = +w.toFixed(2);
+    im.x = +(gx*sw + (sw - w)/2).toFixed(2);
+    im.y = +(gy*sh + (sh - h)/2).toFixed(2);
+    im.auto = false;
+    clampGeo(im);
+  });
+}
 
 function renderCell(i){
   var el = paper.querySelector('.cell[data-i="'+i+'"]');
@@ -386,9 +462,14 @@ function renderCell(i){
     t.style.textAlign = (c.alignH === "flex-start") ? "left" : (c.alignH === "flex-end") ? "right" : "center";
     t.textContent = c.text;
     t.addEventListener("input", function(ev){
-      S.cells[i].text = ev.target.textContent;
-      if(sel[0] === i) $("txt").value = S.cells[i].text;
+      var v = ev.target.textContent;
+      S.cells[i].text = v;
+      $("txt").value = v;
       fit(el, S.cells[i]);
+      if(S.mirror){ mirrorFrom(i); }
+      else if(sel.length > 1){                      /* რამდენიმე მონიშნულია — ყველას ეწეროს */
+        sel.forEach(function(n){ if(n !== i){ S.cells[n].text = v; renderCell(n); } });
+      }
       save(true);
     });
     t.addEventListener("focus", function(){ if(sel.indexOf(i) < 0) select(i, null); });
@@ -505,8 +586,15 @@ function syncPanel(){
   $("color").value = c.color;
   $("pad").value = c.pad;
   $("imgMode").value = c.imgMode;
-  $("imgSize").value = c.imgSize;
-  $("imgSizeVal").textContent = c.imgSize + "%";
+  var pctImg = c.imgSize, mmTxt = "";
+  if(c.imgMode === "free" && c.imgs.length){
+    var im0 = (pick && pick.cell === sel[0] && c.imgs[pick.idx]) ? c.imgs[pick.idx] : c.imgs[0];
+    pctImg = Math.round(clamp(im0.w / S.fmt.lw * 100, 3, 100));
+    mmTxt = "≈ " + im0.w.toFixed(1) + " მმ";
+  }
+  $("imgSize").value = pctImg;
+  $("imgSizeVal").textContent = pctImg + "%";
+  $("imgSizeMm").textContent = mmTxt;
   $("autofit").checked = c.autofit;
   $("bBold").classList.toggle("on", c.bold);
   $("bItal").classList.toggle("on", c.italic);
@@ -518,26 +606,83 @@ function segOn(id, v){
   $(id).querySelectorAll("button").forEach(function(b){ b.classList.toggle("on", b.dataset.v === v); });
 }
 function apply(fn, targets){
-  (targets || sel).forEach(function(i){ fn(S.cells[i], i); renderCell(i); });
+  var list = targets || (S.mirror ? allIdx() : sel);
+  list.forEach(function(i){ fn(S.cells[i], i); renderCell(i); });
   syncPanel(); save(true);
 }
 
+/* „ყველა ეტიკეტი ერთნაირი“: i-ე ეტიკეტის შიგთავსი გადააქვს დანარჩენებზე */
+function mirrorFrom(i){
+  if(!S.mirror) return;
+  var src = S.cells[i];
+  S.cells.forEach(function(c, n){
+    if(n === i) return;
+    c.text = src.text; c.imgMode = src.imgMode; c.imgSize = src.imgSize;
+    c.font = src.font; c.size = src.size; c.bold = src.bold; c.italic = src.italic;
+    c.upper = src.upper; c.color = src.color; c.alignH = src.alignH; c.alignV = src.alignV;
+    c.pad = src.pad; c.autofit = src.autofit;
+    c.imgs = cloneImgs(src.imgs);
+    renderCell(n);
+  });
+  save(true);
+}
+
 /* ================= სურათები ================= */
+/* დიდი ფოტოს შემცირება — რომ ბრაუზერის მეხსიერებაში დაეტიოს და აპი არ დამძიმდეს.
+   ბეჭდვისთვის 900px სავსებით საკმარისია (70 მმ სიგანეზე ≈ 320 dpi). */
+function prepImage(src, cb){
+  var img = new Image();
+  img.onload = function(){
+    var MAX = 900, w = img.naturalWidth, h = img.naturalHeight;
+    if(!w || !h){ cb(src, null); return; }
+    var ar = w/h, sc = Math.min(1, MAX/Math.max(w,h));
+    if(sc >= 1 && src.length < 200000){ cb(src, ar); return; }
+    var cw = Math.max(1, Math.round(w*sc)), ch = Math.max(1, Math.round(h*sc));
+    var cv = document.createElement("canvas"); cv.width = cw; cv.height = ch;
+    var cx = cv.getContext("2d");
+    cx.drawImage(img, 0, 0, cw, ch);
+    var out;
+    try{ out = hasAlpha(cx, cw, ch) ? cv.toDataURL("image/png") : cv.toDataURL("image/jpeg", 0.88); }
+    catch(e){ out = src; }
+    cb(out.length < src.length ? out : src, ar);
+  };
+  img.onerror = function(){ cb(src, null); };
+  img.src = src;
+}
+function hasAlpha(cx, w, h){
+  try{
+    var d = cx.getImageData(0, 0, w, h).data;
+    for(var i=3; i<d.length; i+=28) if(d[i] < 250) return true;
+  }catch(e){ return true; }
+  return false;
+}
+
 function addImages(files, targets){
   var list = [].slice.call(files).filter(function(f){ return /^image\//.test(f.type); });
-  if(!list.length) return;
-  var done = 0, srcs = [];
+  if(!list.length){ status("ეს ფაილი სურათი არ არის."); return; }
+  status("სურათი მუშავდება…");
+  var done = 0, out = [];
   list.forEach(function(f, n){
     var fr = new FileReader();
     fr.onload = function(e){
-      srcs[n] = e.target.result;
-      if(++done === list.length){
-        apply(function(c){
-          srcs.forEach(function(src){ c.imgs.push({src:src, x:null, y:null, w:null}); });
-        }, targets);
-        status(list.length + " სურათი დაემატა.");
-      }
+      prepImage(e.target.result, function(src, ar){
+        out[n] = {src:src, ar:ar, x:null, y:null, w:null};
+        if(++done === list.length){
+          apply(function(c, i){
+            var avoid = textRectMM(i), tight = false;
+            out.forEach(function(o){
+              var copy = JSON.parse(JSON.stringify(o));
+              c.imgs.push(copy);
+              if(!placeImage(c, copy, avoid)) tight = true;
+            });
+            if(tight) arrangeCell(c);          /* ადგილი აღარ იყო — ყველა თავიდან დავაწყოთ */
+          }, targets);
+          if(S.mirror) mirrorFrom(sel[0]);
+          status(list.length + " სურათი დაემატა.");
+        }
+      });
     };
+    fr.onerror = function(){ status("⚠ ფაილი ვერ წაიკითხა."); };
     fr.readAsDataURL(f);
   });
 }
@@ -585,19 +730,23 @@ function writeFmt(){
   $("gx").value = S.fmt.gx; $("gy").value = S.fmt.gy;
   $("ox").value = S.fmt.ox; $("oy").value = S.fmt.oy;
   $("guides").checked = S.guides; $("guidesPrint").checked = !!S.guidesPrint;
+  $("mirror").checked = !!S.mirror;
 }
 
 /* ================= ზუმი ================= */
 function zoom(z){
-  S.zoom = clamp(z, 0.2, 2);
+  S.zoom = clamp(z, 0.2, 3);
   paper.style.transform = "scale(" + S.zoom + ")";
-  paper.style.marginBottom = (297 * (S.zoom - 1)) + "mm";
+  /* კონტეინერს ვაძლევთ ნამდვილ ზომას, რომ გადიდებისას სქროლი მუშაობდეს */
+  var sz = $("sizer");
+  sz.style.width  = (210 * S.zoom) + "mm";
+  sz.style.height = (297 * S.zoom) + "mm";
   $("zVal").textContent = Math.round(S.zoom*100) + "%";
   save(true);
 }
 function fitZoom(){
   var st = document.querySelector(".stage");
-  zoom(Math.min(1.3, (st.clientHeight - 48) / (297*PXMM)));
+  zoom(Math.min(1.5, Math.max(0.2, (st.clientHeight - 56) / (297*PXMM))));
 }
 
 /* ================= მაუსი: გადათრევა და ზომა ================= */
@@ -629,7 +778,7 @@ paper.addEventListener("mousedown", function(ev){
     var ce = del.closest(".cell"), pw0 = del.closest(".picwrap");
     var ci = +ce.dataset.i, k = +pw0.dataset.k;
     S.cells[ci].imgs.splice(k, 1);
-    pick = null; renderCell(ci); syncPanel(); save(false);
+    pick = null; renderCell(ci); mirrorFrom(ci); syncPanel(); save(false);
     return;
   }
   var h = ev.target.closest(".handle");
@@ -647,6 +796,7 @@ paper.addEventListener("mousedown", function(ev){
     pick = {cell:i, idx:k};
     cellEl.querySelectorAll(".picwrap").forEach(function(o){ o.classList.remove("picked"); });
     pw.classList.add("picked");                     /* არჩეული სურათი ყველაზე წინ */
+    syncPanel();
   }
 
   var kind;
@@ -712,6 +862,7 @@ document.addEventListener("mousemove", function(ev){
 
 document.addEventListener("mouseup", function(){
   if(!drag) return;
+  if(S.mirror) mirrorFrom(drag.cell);
   drag = null;
   document.body.style.userSelect = "";
   syncPanel(); save(false);
@@ -776,23 +927,40 @@ $("btnImgDelOne").addEventListener("click", function(){
   renderCell(pick.cell); pick = null; syncPanel(); save(false);
 });
 $("btnImgArrange").addEventListener("click", function(){
-  apply(function(c){
-    var n = c.imgs.length; if(!n) return;
-    var w = +(S.fmt.lw*0.8/n).toFixed(2);
-    c.imgs.forEach(function(im, k){
-      im.w = w; im.x = +(S.fmt.lw*0.1 + k*w).toFixed(2);
-      im.y = im.ar ? +Math.max(0,(S.fmt.lh - w/im.ar)/2).toFixed(2) : +(S.fmt.lh*0.2).toFixed(2);
-      im.auto = !im.ar; clampGeo(im);
-    });
-  });
-  status("სურათები გასწორდა.");
+  apply(function(c){ c.imgMode = "free"; arrangeCell(c); });
+  if(S.mirror) mirrorFrom(sel[0]);
+  status("სურათები თანაბრად დაეწყო.");
 });
 $("imgMode").addEventListener("change", function(){ var v=this.value; apply(function(c){ c.imgMode=v; }); });
-$("imgSize").addEventListener("input", function(){
-  var v=+this.value; $("imgSizeVal").textContent = v+"%";
-  apply(function(c){ c.imgSize=v; });
-});
+function setImgPercent(v){
+  $("imgSizeVal").textContent = v + "%";
+  apply(function(c, i){
+    c.imgSize = v;
+    if(c.imgMode === "free" && c.imgs.length){
+      /* თავისუფალ რეჟიმში პროცენტი = სიგანე ეტიკეტის სიგანესთან */
+      var one = (pick && pick.cell === i && c.imgs[pick.idx]) ? [c.imgs[pick.idx]] : c.imgs;
+      one.forEach(function(im){
+        var cx = im.x + im.w/2, cy = im.y + imgH(im)/2;   /* ცენტრი შენარჩუნდეს */
+        im.w = S.fmt.lw * v / 100;
+        im.x = cx - im.w/2; im.y = cy - imgH(im)/2;
+        clampGeo(im);
+      });
+    }
+  });
+  if(S.mirror) mirrorFrom(sel[0]);
+  syncPanel();
+}
+$("imgSize").addEventListener("input", function(){ setImgPercent(+this.value); });
+$("imgMinus").addEventListener("click", function(){ setImgPercent(clamp(+$("imgSize").value - 5, 3, 100)); });
+$("imgPlus").addEventListener("click", function(){ setImgPercent(clamp(+$("imgSize").value + 5, 3, 100)); });
 
+$("btnAddImg").addEventListener("click", function(){ $("imgFile").click(); });
+$("mirror").addEventListener("change", function(){
+  S.mirror = this.checked;
+  if(S.mirror){ mirrorFrom(sel[0]); status("ჩართულია: ყველა ეტიკეტი ერთნაირი."); }
+  else status("გამორთულია — ცვლილება მხოლოდ მონიშნულზე.");
+  save(false);
+});
 $("btnSelAll").addEventListener("click", function(){ sel = allIdx(); renderAll(); syncPanel(); });
 $("btnCopyAll").addEventListener("click", function(){
   var src = JSON.parse(JSON.stringify(cur()));
