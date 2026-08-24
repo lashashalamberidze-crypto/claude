@@ -290,6 +290,9 @@ function calcRow(d,it){
 }
 function effective(d,it){if(it.pfinal!=null&&it.pfinal!==''&&!isNaN(+it.pfinal))return Math.round((+it.pfinal)*100)/100;return calcRow(d,it).price;}
 function byCode(c){for(const d of DIRS){for(const it of d.items){if(it.code===c)return {code:c,name:it.name,size:it.size,color:it.color,mark:it.mark,ply:it.ply||'',dir:d.dir,group:d.name,price:effective(d,it)};}}return null;}
+/* ანთრაციტის ბრიკეტი — კგ-ის საფეხურებრივი ფასი ინვოისში/შეკვეთაში */
+function isBriket(code){const p=byCode(code);return !!(p&&p.dir==='ანთრაციტის ბრიკეტი');}
+function briketPrice(kg){kg=parseFloat(kg)||0;if(kg>=21000)return 1.6;if(kg>=1000)return 1.8;return 2.0;}
 // შრე მხოლოდ მუყაოს ყუთებზეა — კუთხოვანებსა და ანთრაციტს არ ჭირდება
 function itmBox(l){if(!l)return true;const c=l.cat||'';if(c==='კუთხოვანი დამცავები'||c==='ანთრაციტის ბრიკეტი')return false;if(l.code){const p=byCode(l.code);if(p&&p.dir&&p.dir!=='მუყაოს ყუთები')return false;}return true;}
 function directions(){const o=[];DIRS.forEach(g=>{if(o.indexOf(g.dir)<0)o.push(g.dir);});return o;}
@@ -503,7 +506,7 @@ async function openInvoice(){
 }
 /* კატალოგის რიგიდან „კალათაში" დამატება — ტაბს არ ცვლის, ითვლის */
 function addToCart(d,it,btn){
-  if(!it)return;const pr=effective(d,it);
+  if(!it)return;const pr=(d.dir==='ანთრაციტის ბრიკეტი')?briketPrice(1):effective(d,it);
   const ex=invDraft.find(l=>l.code===it.code);
   if(ex){ex.qty=(parseInt(ex.qty)||0)+1;}
   else invDraft.push({code:it.code,name:it.name||'',size:it.size||'',price:pr,qty:1,min:'3000',ply:(itmBox(it)?(it.ply||''):'')});
@@ -542,7 +545,7 @@ function renderInvoice(){
    '<div class="row" style="margin-top:6px;font-size:12px;color:var(--muted)">🖨 <b>ბეჭდვა/PDF</b> = შეკვეთა/ინვოისი (რაოდენობა + ჯამი) · 💰 <b>შეთავაზება JPG</b> = მხოლოდ ერთეული ფასები + მინ. რაოდ. + შენიშვნა (ჯამის გარეშე)</div>'+
    '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><button class="btn" id="iPrint">🖨 შეკვეთა — ბეჭდვა / PDF</button><button class="btn" id="iOffer" style="background:#6d3ad6">💰 ფასების შეთავაზება (JPG)</button><button class="btn" id="iToOrders" style="background:#0B6B3C">📥 შეკვეთებში დამატება</button><button class="btn line" id="iSave">💾 შენახვა</button><button class="btn danger" id="iClear">🗑 გასუფთავება</button></div></div>'+
    '<div class="card"><h2>📚 ბოლო ინვოისები</h2><div id="iList"></div></div>';
-  $('iAdd').onclick=()=>{const code=$('iPick').value;if(!code)return;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ply=itmBox({code:code})?((($('iPlyAdd')&&$('iPlyAdd').value)||p.ply||'')):'';const ex=invDraft.find(l=>l.code===code);if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else invDraft.push({code,price:p.price,qty,ply,min:'3000'});if($('iPlyAdd'))$('iPlyAdd').value='';renderInvLines();};
+  $('iAdd').onclick=()=>{const code=$('iPick').value;if(!code)return;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ply=itmBox({code:code})?((($('iPlyAdd')&&$('iPlyAdd').value)||p.ply||'')):'';const ex=invDraft.find(l=>l.code===code);if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else invDraft.push({code,price:isBriket(code)?briketPrice(qty):p.price,qty,ply,min:'3000'});if($('iPlyAdd'))$('iPlyAdd').value='';renderInvLines();};
   $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}printInvoice(currentInv());};
   $('iOffer').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}makeOfferJPG();};
   $('iToOrders').onclick=addDraftToOrders;
@@ -554,7 +557,7 @@ function renderInvoice(){
 }
 function renderInvLines(){
   const tb=$('iRows');$('iEmpty').style.display=invDraft.length?'none':'block';$('iTbl').style.display=invDraft.length?'':'none';
-  tb.innerHTML=invDraft.map((l,i)=>{const p=byCode(l.code)||{};const im=pubImg(l.code);return '<tr><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+(im?'<img src="'+im+'" style="width:48px;height:48px;object-fit:contain;background:#fff;border:1px solid #eee;border-radius:6px;vertical-align:middle;margin-right:6px">':'')+esc(l.name||p.name||'')+((pizzaShapeWord(l.code,l.name||p.name))?' <span class="muted">· '+esc(pizzaShapeWord(l.code,l.name||p.name))+'</span>':'')+(p.color?' <span class="muted">· '+esc(p.color)+'</span>':'')+'</td><td>'+esc(l.size||p.size||'')+'</td>'+
+  tb.innerHTML=invDraft.map((l,i)=>{const p=byCode(l.code)||{};if(isBriket(l.code))l.price=briketPrice(l.qty);const im=pubImg(l.code);return '<tr><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+(im?'<img src="'+im+'" style="width:48px;height:48px;object-fit:contain;background:#fff;border:1px solid #eee;border-radius:6px;vertical-align:middle;margin-right:6px">':'')+esc(l.name||p.name||'')+((pizzaShapeWord(l.code,l.name||p.name))?' <span class="muted">· '+esc(pizzaShapeWord(l.code,l.name||p.name))+'</span>':'')+(p.color?' <span class="muted">· '+esc(p.color)+'</span>':'')+'</td><td>'+esc(l.size||p.size||'')+'</td>'+
     '<td>'+(itmBox(l)?'<input value="'+esc(l.ply||'')+'" placeholder="შრე" style="width:64px" data-ply="'+i+'">':'<span class="muted">—</span>')+'</td>'+
     '<td><select data-brand="'+i+'" style="padding:5px 6px"><option value=""'+(!l.brand?' selected':'')+'>—</option><option value="კი"'+(l.brand==='კი'?' selected':'')+'>კი</option><option value="არა"'+(l.brand==='არა'?' selected':'')+'>არა</option></select></td>'+
     '<td class="right"><input type="number" step="0.01" value="'+l.price+'" style="width:80px;text-align:right;background:#fffbea" data-p="'+i+'"></td>'+
@@ -564,7 +567,7 @@ function renderInvLines(){
   tb.querySelectorAll('input[data-ply]').forEach(inp=>inp.oninput=()=>{invDraft[+inp.dataset.ply].ply=inp.value;});
   tb.querySelectorAll('select[data-brand]').forEach(s=>s.onchange=()=>{invDraft[+s.dataset.brand].brand=s.value;});
   tb.querySelectorAll('input[data-min]').forEach(inp=>inp.oninput=()=>{invDraft[+inp.dataset.min].min=inp.value;});
-  tb.querySelectorAll('input[data-q]').forEach(inp=>inp.oninput=()=>{const i=+inp.dataset.q;invDraft[i].qty=parseInt(inp.value)||0;updInvRow(i,inp);});
+  tb.querySelectorAll('input[data-q]').forEach(inp=>inp.oninput=()=>{const i=+inp.dataset.q;const q=parseInt(inp.value)||0;invDraft[i].qty=q;if(isBriket(invDraft[i].code)){invDraft[i].price=briketPrice(q);const pin=tb.querySelector('input[data-p="'+i+'"]');if(pin)pin.value=invDraft[i].price;}updInvRow(i,inp);});
   tb.querySelectorAll('input[data-q]').forEach(inp=>inp.onblur=()=>{const i=+inp.dataset.q;if(!(parseInt(inp.value)>0)){invDraft[i].qty=1;inp.value=1;updInvRow(i,inp);}});
   tb.querySelectorAll('input[data-p]').forEach(inp=>inp.oninput=()=>{const i=+inp.dataset.p;invDraft[i].price=parseFloat(inp.value)||0;updInvRow(i,inp);});
   tb.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{invDraft.splice(+b.dataset.x,1);renderInvLines();});
