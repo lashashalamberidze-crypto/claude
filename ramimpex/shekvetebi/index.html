@@ -292,7 +292,10 @@ function effective(d,it){if(it.pfinal!=null&&it.pfinal!==''&&!isNaN(+it.pfinal))
 function byCode(c){for(const d of DIRS){for(const it of d.items){if(it.code===c)return {code:c,name:it.name,size:it.size,color:it.color,mark:it.mark,ply:it.ply||'',dir:d.dir,group:d.name,price:effective(d,it)};}}return null;}
 /* ანთრაციტის ბრიკეტი — კგ-ის საფეხურებრივი ფასი ინვოისში/შეკვეთაში */
 function isBriket(code){const p=byCode(code);return !!(p&&p.dir==='ანთრაციტის ბრიკეტი');}
-function briketPrice(kg){kg=parseFloat(kg)||0;if(kg>=21000)return 1.6;if(kg>=1000)return 1.8;return 2.0;}
+function briketDefaults(){return {t1:1000,t2:21000,p1:2.0,p2:1.8,p3:1.3};}
+function brikGroup(){return DIRS?DIRS.find(d=>d&&d.dir==='ანთრაციტის ბრიკეტი'):null;}
+function brikTiers(){const g=brikGroup();return (g&&g.brik)||briketDefaults();}
+function briketPrice(kg){kg=parseFloat(kg)||0;const b=brikTiers();const t1=+b.t1||1000,t2=+b.t2||21000;if(kg>=t2)return +b.p3;if(kg>=t1)return +b.p2;return +b.p1;}
 // შრე მხოლოდ მუყაოს ყუთებზეა — კუთხოვანებსა და ანთრაციტს არ ჭირდება
 function itmBox(l){if(!l)return true;const c=l.cat||'';if(c==='კუთხოვანი დამცავები'||c==='ანთრაციტის ბრიკეტი')return false;if(l.code){const p=byCode(l.code);if(p&&p.dir&&p.dir!=='მუყაოს ყუთები')return false;}return true;}
 function directions(){const o=[];DIRS.forEach(g=>{if(o.indexOf(g.dir)<0)o.push(g.dir);});return o;}
@@ -361,7 +364,15 @@ function renderCat(){
   h+='<div class="card parambox"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2>⚙️ პარამეტრები — '+esc(d.name)+'</h2><span class="saveflag" id="saveflag"></span></div><div class="prow" style="margin-top:8px">';
   PORDER.forEach(k=>{if(d.params[k]==null)return;const step=(k==='vat'||k==='profit'||k==='step'||k==='usdGel')?'0.01':'1';
     h+='<div class="f"><label>'+PLABEL[k]+'</label><input type="number" step="'+step+'" value="'+d.params[k]+'" data-pk="'+k+'"></div>';});
-  h+='</div><div class="muted" style="margin-top:8px;font-size:12px">ტრანსპ. 1 ცალზე = ტრანსპ.სულ ÷ თითო ყუთის <b>„კონტ. ცალი"</b> (თუ ცარიელია — ნაგულისხმევი '+d.params.container+') · ლოგიკა: RUB÷'+d.params.usdRub+(d.hasSetka?' + სეტკა(₽÷'+d.params.usdRub+')':'')+' + ტრანსპ → +დღგ → +მოგება → ×'+d.params.usdGel+' → მრგვალდება '+d.params.step+'-ზე</div></div>';
+  h+='</div><div class="muted" style="margin-top:8px;font-size:12px">ტრანსპ. 1 ცალზე = ტრანსპ.სულ ÷ თითო ყუთის <b>„კონტ. ცალი"</b> (თუ ცარიელია — ნაგულისხმევი '+d.params.container+') · ლოგიკა: RUB÷'+d.params.usdRub+(d.hasSetka?' + სეტკა(₽÷'+d.params.usdRub+')':'')+' + ტრანსპ → +დღგ → +მოგება → ×'+d.params.usdGel+' → მრგვალდება '+d.params.step+'-ზე</div>'+
+    ((d.dir==='ანთრაციტის ბრიკეტი')?(function(){const b=d.brik||briketDefaults();return '<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)"><b>💰 ფასის საფეხურები — ₾/კგ (ავტომატურად ინვოისში)</b><div class="prow" style="margin-top:8px">'+
+      '<div class="f"><label>საზღვარი 1 (კგ)</label><input type="number" step="1" data-brik="t1" value="'+b.t1+'"></div>'+
+      '<div class="f"><label>ფასი ≤ საზღვარი 1</label><input type="number" step="0.01" data-brik="p1" value="'+b.p1+'"></div>'+
+      '<div class="f"><label>საზღვარი 2 (კგ)</label><input type="number" step="1" data-brik="t2" value="'+b.t2+'"></div>'+
+      '<div class="f"><label>ფასი საზღვ.1–2</label><input type="number" step="0.01" data-brik="p2" value="'+b.p2+'"></div>'+
+      '<div class="f"><label>ფასი საზღვ.2+</label><input type="number" step="0.01" data-brik="p3" value="'+b.p3+'"></div>'+
+      '</div><div class="muted" style="margin-top:6px;font-size:12px">≤ '+b.t1+' კგ → '+b.p1+' ₾ · '+b.t1+'–'+b.t2+' კგ → '+b.p2+' ₾ · '+b.t2+'+ კგ → '+b.p3+' ₾</div></div>';})():'')+
+    '</div>';
   if(d.note)h+='<div class="card" style="background:#FFF7D6;border-color:#E6C200;font-size:12px;color:#5a4b00;padding:10px 14px">📋 <b>შენიშვნა:</b> '+esc(d.note)+'</div>';
   h+='<div class="card"><div id="cartBar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#EAF6EF;border:1px solid #BFE3CE;border-radius:10px;padding:8px 12px;margin-bottom:10px">'+
      '<span style="font-size:14px">🛒 არჩეული: <b id="cartN">0</b> პროდუქტი · <b id="cartQ">0</b> ცალი</span>'+
@@ -414,6 +425,7 @@ function renderCat(){
   $('cq').oninput=paintRows;
   paintRows();
   body.querySelectorAll('input[data-pk]').forEach(inp=>inp.onchange=()=>{d.params[inp.dataset.pk]=parseFloat(inp.value)||0;saveDirs();renderCat();});
+  body.querySelectorAll('input[data-brik]').forEach(inp=>inp.onchange=()=>{if(!d.brik)d.brik=briketDefaults();d.brik[inp.dataset.brik]=parseFloat(inp.value)||0;saveDirs();renderCat();});
   const add=body.querySelector('[data-add]');if(add)add.onclick=()=>{const pre=(d.tag||'X').toUpperCase();let n=1;const has=c=>d.items.some(x=>x.code===c);while(has(pre+(n<10?'0':'')+n))n++;d.items.push({code:pre+(n<10?'0':'')+n,name:'ახალი პროდუქტი',size:'',rub:0});saveDirs();paintRows();};
   updateCartBar();
   const cartGo=body.querySelector('#cartGo');if(cartGo)cartGo.onclick=()=>{const b=document.querySelector('#tabbar [data-t="invoice"]');if(b)b.click();};
