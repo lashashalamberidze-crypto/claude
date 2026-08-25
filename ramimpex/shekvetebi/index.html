@@ -165,7 +165,11 @@ function salFiltered(){const q=(($('salQ')||{}).value||'').toLowerCase().trim();
   return SALES.filter(s=>{if(SAL_DIR!=='all'&&saleDirOf(s.code,s.direction)!==SAL_DIR)return false;if(q){const hay=((s.cust_name||'')+' '+(s.cust_id||'')+' '+(s.name||'')+' '+(s.code||'')).toLowerCase();if(hay.indexOf(q)<0)return false;}if(df&&(s.date||'')<df)return false;if(dt&&(s.date||'')>dt)return false;if(st&&(s.status||'')!==st)return false;return true;});}
 function salStatusTag(st){const m={paid:['✔ გადახდილი','paid'],part:['◐ ნაწილობრივ','part'],due:['● გადასახდელი','due']};const x=m[st]||m.due;return '<span class="stag '+x[1]+'">'+x[0]+'</span>';}
 function salDirList(){const seen=[];(DIRS||[]).forEach(d=>{if(d&&d.dir&&seen.indexOf(d.dir)<0)seen.push(d.dir);});return seen;}
-function invProdOptions(dirFilter){let h='<option value="">— აირჩიე პროდუქტი —</option>';(DIRS||[]).forEach(d=>{if(dirFilter&&d.dir!==dirFilter)return;let inner='';d.items.forEach(it=>{const pr=effective(d,it);inner+='<option value="'+esc(it.code)+'">'+esc(ruCode(it.code))+' · '+esc(it.name||'')+(it.size?' · '+esc(it.size):'')+' — '+money(pr)+' ₾</option>';});if(inner)h+='<optgroup label="'+esc(d.name)+'">'+inner+'</optgroup>';});return h;}
+function splitTier(v){const s=''+(v||'');const i=s.indexOf('|');if(i<0)return {code:s,tier:0};return {code:s.slice(0,i),tier:+s.slice(i+1)||0};}
+function invProdOptions(dirFilter){let h='<option value="">— აირჩიე პროდუქტი —</option>';(DIRS||[]).forEach(d=>{if(dirFilter&&d.dir!==dirFilter)return;let inner='';d.items.forEach(it=>{
+  if(d.dir==='ანთრაციტის ბრიკეტი'){[1,2,3].forEach(t=>{inner+='<option value="'+esc(it.code)+'|'+t+'">'+esc(ruCode(it.code))+' · '+esc(it.name||'')+' · '+esc(briketTierLabel(t))+' — '+(+briketTierPrice(t))+' ₾/კგ</option>';});}
+  else{const pr=effective(d,it);inner+='<option value="'+esc(it.code)+'">'+esc(ruCode(it.code))+' · '+esc(it.name||'')+(it.size?' · '+esc(it.size):'')+' — '+money(pr)+' ₾</option>';}
+  });if(inner)h+='<optgroup label="'+esc(d.name)+'">'+inner+'</optgroup>';});return h;}
 async function openSales(){
   if(!document.getElementById('salCss')){const st=document.createElement('style');st.id='salCss';st.textContent=SAL_CSS;document.head.appendChild(st);}
   salEl.innerHTML='<div class="empty">იტვირთება…</div>';editingSaleId=null;
@@ -216,11 +220,12 @@ function refreshSal(){
       '<td class="right">'+(due>0.001?'<b style="color:#b00020">'+money(due)+'</b>':'0.00')+'</td>'+
       '<td>'+salStatusTag(s.status)+'</td>'+
       '<td><div class="docrow">'+dochtml+'</div></td>'+
-      '<td class="right" style="white-space:nowrap"><button class="smini" data-sedit="'+esc(s.id)+'">✏️</button> <button class="smini danger" data-sdel="'+esc(s.id)+'">✕</button></td></tr>';
+      '<td class="right" style="white-space:nowrap"><button class="smini" data-spay="'+esc(s.id)+'" title="გადახდის განახლება">💵</button> <button class="smini" data-sedit="'+esc(s.id)+'" title="რედაქტირება">✏️</button> <button class="smini danger" data-sdel="'+esc(s.id)+'" title="წაშლა">✕</button></td></tr>';
   }).join('');
   $('salEmpty').style.display=list.length?'none':'';
   tb.querySelectorAll('[data-sedit]').forEach(b=>b.onclick=()=>openSaleForm(SALES.find(s=>String(s.id)===b.dataset.sedit)));
   tb.querySelectorAll('[data-sdel]').forEach(b=>b.onclick=()=>delSale(b.dataset.sdel));
+  tb.querySelectorAll('[data-spay]').forEach(b=>b.onclick=()=>quickPay(b.dataset.spay));
 }
 function openSaleForm(sale){
   const s=sale||{};editingSaleId=s.id||null;const docs=s.docs||{};const preDir=s.direction||((byCode(s.code)||{}).dir)||'';
@@ -249,14 +254,15 @@ function openSaleForm(sale){
   if(s.unit){$('sfUnit').value=s.unit;}
   $('sfDir').onchange=()=>{$('sfProd').innerHTML=invProdOptions($('sfDir').value);recalc();};
   function recalc(){const q=+$('sfQty').value||0,p=+$('sfPrice').value||0,tot=q*p;$('sfTotal').value=money(tot);$('sfBal').value=money(tot-(+$('sfPaid').value||0));}
-  $('sfProd').onchange=()=>{const c=$('sfProd').value,pr=byCode(c);if(pr){if(pr.price!=null&&!$('sfPrice').value)$('sfPrice').value=pr.price;$('sfUnit').value=(pr.dir==='ანთრაციტის ბრიკეტი')?'კგ':'ცალი';}recalc();};
+  $('sfProd').onchange=()=>{const sp=splitTier($('sfProd').value),pr=byCode(sp.code);if(pr){if(sp.tier){$('sfPrice').value=briketTierPrice(sp.tier);}else if(pr.price!=null&&!$('sfPrice').value){$('sfPrice').value=pr.price;}$('sfUnit').value=(pr.dir==='ანთრაციტის ბრიკეტი')?'კგ':'ცალი';}recalc();};
   ['sfQty','sfPrice','sfPaid'].forEach(id=>$(id).oninput=recalc);
   $('sfCancel').onclick=()=>openSales();
   $('sfSave').onclick=saveSale;
 }
 async function saveSale(){
   const cust=$('sfCust').value.trim();if(!cust){alert('შეავსე მყიდველი');return;}
-  const code=$('sfProd').value,pr=byCode(code)||{};
+  const sp=splitTier($('sfProd').value),code=sp.code,pr=byCode(code)||{};
+  const pname=(pr.name||'')+(sp.tier?' — '+briketTierLabel(sp.tier):'');
   const qty=+$('sfQty').value||0,price=+$('sfPrice').value||0,total=qty*price,paid=+$('sfPaid').value||0;
   const status=(total>0&&paid>=total)?'paid':(paid>0?'part':'due');
   const id=editingSaleId||String(Date.now());
@@ -268,12 +274,13 @@ async function saveSale(){
     for(const inp of inps){const f=inp.files&&inp.files[0];if(!f)continue;const t=inp.dataset.doc;const path=id+'/'+t+'-'+Date.now()+'-'+f.name.replace(/[^\\w.\\-]/g,'_');
       const up=await sb.storage.from('sale-docs').upload(path,f,{upsert:true});if(up.error)throw up.error;
       const pu=sb.storage.from('sale-docs').getPublicUrl(path);docs[t]=pu.data.publicUrl;}
-    const row={id:id,date:$('sfDate').value||todayStr(),cust_name:cust,cust_id:$('sfId').value.trim(),cust_phone:$('sfPhone').value.trim(),direction:pr.dir||'',code:code,name:pr.name||'',qty:qty,unit:$('sfUnit').value,price:price,total:total,paid:paid,status:status,note:$('sfNote').value.trim(),docs:docs};
+    const row={id:id,date:$('sfDate').value||todayStr(),cust_name:cust,cust_id:$('sfId').value.trim(),cust_phone:$('sfPhone').value.trim(),direction:pr.dir||'',code:code,name:pname||pr.name||'',qty:qty,unit:$('sfUnit').value,price:price,total:total,paid:paid,status:status,note:$('sfNote').value.trim(),docs:docs};
     const {error}=await sb.from('sales').upsert(row,{onConflict:'id'});if(error)throw error;
     editingSaleId=null;openSales();
   }catch(e){msg.innerHTML='<span style="color:#c62828">ვერ შეინახა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='💾 შენახვა';}
 }
 async function delSale(id){if(!confirm('წავშალო ეს გაყიდვა?'))return;try{const {error}=await sb.from('sales').delete().eq('id',id);if(error)throw error;SALES=SALES.filter(s=>String(s.id)!==String(id));refreshSal();}catch(e){alert('ვერ წაიშალა: '+(e.message||e));}}
+async function quickPay(id){const s=SALES.find(x=>String(x.id)===String(id));if(!s)return;const cur=(s.paid!=null?s.paid:0);const v=prompt('გადახდილი თანხა ₾ (სულ ჯამი: '+money(s.total)+' ₾).\\nსრულად გადახდისთვის ჩაწერე '+money(s.total)+':',cur);if(v===null)return;const paid=+v||0;const status=(+s.total>0&&paid>=+s.total)?'paid':(paid>0?'part':'due');try{const {error}=await sb.from('sales').update({paid:paid,status:status}).eq('id',id);if(error)throw error;s.paid=paid;s.status=status;refreshSal();}catch(e){alert('ვერ განახლდა: '+(e.message||e));}}
 function exportSalesXls(list){
   const rows=list.map((s,i)=>{const st=s.status||'due',bg=st==='paid'?'#e3f5e9':st==='part'?'#fff2cf':'#fde3e3',due=(+s.total||0)-(+s.paid||0),stl={paid:'გადახდილი',part:'ნაწილობრივ',due:'გადასახდელი'}[st];
     return '<tr><td>'+(i+1)+'</td><td>'+esc(s.date||'')+'</td><td>'+esc(s.cust_name||'')+'</td><td>'+esc(s.cust_id||'')+'</td><td>'+esc(saleDirOf(s.code,s.direction))+'</td><td>'+esc(s.name||s.code||'')+'</td><td>'+esc(fmtQty(s.qty,s.unit))+'</td><td>'+money(s.total)+'</td><td>'+money(s.paid)+'</td><td>'+money(due)+'</td><td style="background:'+bg+'">'+stl+'</td></tr>';}).join('');
@@ -719,7 +726,7 @@ function invTotals(){let sub=0;invDraft.forEach(l=>sub+=l.price*l.qty);const vat
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
 function invSeqOf(no){const s=(''+(no||''));const last=s.split('-').pop().replace(/\D/g,'');const n=parseInt(last,10);return isNaN(n)?0:n;}
 function nextInvSeq(){let mx=0;(INVOICES||[]).forEach(v=>{const n=invSeqOf(v.no);if(n>mx)mx=n;});return mx+1;}
-function makeInvNo(dateStr,seq){return 'RAMIMPEX-'+(dateStr||todayStr())+'-'+('000'+seq).slice(-4);}
+function makeInvNo(dateStr,seq){return 'RI-'+('000'+seq).slice(-4);}
 function nextInvNo(){return makeInvNo(todayStr(),nextInvSeq());}
 function renderInvoice(){
   invEl.innerHTML=
@@ -727,7 +734,7 @@ function renderInvoice(){
    '<div id="editBanner" style="display:'+(editingInvId?'':'none')+';background:#FFF0CC;color:#8a6a00;font-weight:700;border-radius:8px;padding:7px 12px;margin-bottom:8px;font-size:13px">✏ რედაქტირდება</div>'+
    '<div class="row"><div><label>ინვოისის № (ავტომატური)</label><input id="iNo" value="'+(editingInvId?'':nextInvNo())+'" placeholder="ავტომ."></div><div><label>თარიღი</label><input id="iDate" type="date" value="'+todayStr()+'"></div></div>'+
    '<div class="row"><div><label>მყიდველი</label><input id="iCust" placeholder="შპს ..."></div><div><label>ს/კ (არჩ.)</label><input id="iId" placeholder="საიდ. კოდი"></div><div><label>ტელეფონი (არჩ.)</label><input id="iPhone" placeholder="5xx xx xx xx"></div></div>'+
-   '<label style="margin-top:10px">პროდუქტის დამატება</label><div class="row"><div style="flex:0 0 150px"><select id="iPickDir"><option value="">ყველა მიმართ.</option>'+salDirList().map(dn=>'<option>'+esc(dn)+'</option>').join('')+'</select></div><div style="flex:3"><select id="iPick">'+invPickerOptions()+'</select></div><div style="flex:0 0 74px"><input id="iPlyAdd" placeholder="შრე"></div><div style="flex:0 0 80px"><input id="iQty" type="number" min="1" value="1"></div><div style="flex:0 0 auto"><button class="btn" id="iAdd" style="margin-top:0">＋ დამატება</button></div></div>'+
+   '<label style="margin-top:10px">პროდუქტის დამატება</label><div class="row"><div style="flex:0 0 150px"><select id="iPickDir"><option value="">ყველა მიმართ.</option>'+salDirList().map(dn=>'<option>'+esc(dn)+'</option>').join('')+'</select></div><div style="flex:3"><select id="iPick">'+invProdOptions('')+'</select></div><div style="flex:0 0 74px"><input id="iPlyAdd" placeholder="შრე"></div><div style="flex:0 0 80px"><input id="iQty" type="number" min="1" value="1"></div><div style="flex:0 0 auto"><button class="btn" id="iAdd" style="margin-top:0">＋ დამატება</button></div></div>'+
    '</div>'+
    '<div class="card"><div class="scroll"><table id="iTbl"><thead><tr><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>შეფუთვა</th><th>შრე</th><th>ბრენდ.</th><th class="right">ფასი ₾</th><th class="right">რაოდ.</th><th class="right" title="მინ. პარტია — მხოლოდ ფასების შეთავაზებაში ჩანს">მინ. რაოდ.</th><th class="right">ჯამი ₾</th><th></th></tr></thead><tbody id="iRows"></tbody></table></div>'+
    '<div id="iEmpty" class="empty">ჯერ პროდუქტი არ არის დამატებული.</div>'+
@@ -738,7 +745,7 @@ function renderInvoice(){
    '<div class="row" style="margin-top:6px;font-size:12px;color:var(--muted)">🖨 <b>ბეჭდვა/PDF</b> = შეკვეთა/ინვოისი (რაოდენობა + ჯამი) · 💰 <b>შეთავაზება JPG</b> = მხოლოდ ერთეული ფასები + მინ. რაოდ. + შენიშვნა (ჯამის გარეშე)</div>'+
    '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><button class="btn" id="iPrint">🖨 შეკვეთა — ბეჭდვა / PDF</button><button class="btn" id="iOffer" style="background:#6d3ad6">💰 ფასების შეთავაზება (JPG)</button><button class="btn" id="iToOrders" style="background:#0B6B3C">📥 შეკვეთებში დამატება</button><button class="btn line" id="iSave">💾 შენახვა</button><button class="btn danger" id="iClear">🗑 გასუფთავება</button></div></div>'+
    '<div class="card"><h2>📚 ბოლო ინვოისები</h2><div id="iList"></div></div>';
-  $('iAdd').onclick=()=>{const code=$('iPick').value;if(!code)return;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ply=itmBox({code:code})?((($('iPlyAdd')&&$('iPlyAdd').value)||p.ply||'')):'';const ex=invDraft.find(l=>l.code===code);if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else invDraft.push({code,price:isBriket(code)?briketPrice(qty):p.price,qty,ply,min:'3000'});if($('iPlyAdd'))$('iPlyAdd').value='';renderInvLines();};
+  $('iAdd').onclick=()=>{const raw=$('iPick').value;if(!raw)return;const sp=splitTier(raw);const code=sp.code;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ply=itmBox({code:code})?((($('iPlyAdd')&&$('iPlyAdd').value)||p.ply||'')):'';const ex=invDraft.find(l=>l.code===code&&(l.tier||0)===(sp.tier||0));if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else{const line={code:code,price:sp.tier?briketTierPrice(sp.tier):(isBriket(code)?briketPrice(qty):p.price),qty:qty,ply:ply,min:'3000'};if(sp.tier){line.tier=sp.tier;line.pack=briketTierPack(sp.tier);line.packSet=true;}invDraft.push(line);}if($('iPlyAdd'))$('iPlyAdd').value='';renderInvLines();};
   if($('iPickDir'))$('iPickDir').onchange=()=>{$('iPick').innerHTML=invProdOptions($('iPickDir').value);};
   $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}printInvoice(currentInv());};
   $('iOffer').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}makeOfferJPG();};
