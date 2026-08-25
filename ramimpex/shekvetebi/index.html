@@ -62,7 +62,7 @@ td.right,th.right{text-align:right}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:60;padding:20px}
 .ov.on{display:flex}.ov img{max-width:92vw;max-height:90vh;border-radius:10px}
 #printArea{display:none}
-@media print{body>*{display:none!important}#printArea{display:block!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+@media print{@page{margin:0}body>*{display:none!important}#printArea{display:block!important;padding:14mm 6mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head>
 <body>
 <div class="top"><div><div class="lg">RAM IMPEX</div><div class="su">ადმინ პანელი</div></div>
@@ -726,8 +726,10 @@ function invTotals(){let sub=0;invDraft.forEach(l=>sub+=l.price*l.qty);const vat
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
 function invSeqOf(no){const s=(''+(no||''));const last=s.split('-').pop().replace(/\D/g,'');const n=parseInt(last,10);return isNaN(n)?0:n;}
 function nextInvSeq(){let mx=0;(INVOICES||[]).forEach(v=>{const n=invSeqOf(v.no);if(n>mx)mx=n;});return mx+1;}
-function makeInvNo(dateStr,seq){return 'RI-'+('000'+seq).slice(-4);}
-function nextInvNo(){return makeInvNo(todayStr(),nextInvSeq());}
+function dirPrefix(dir){if(dir==='ანთრაციტის ბრიკეტი')return 'ANT';if(dir==='კუთხოვანი დამცავები')return 'EDG';if(/პიცის/.test(dir))return 'PIZ';if(/სამედიცინო|Safety/.test(dir))return 'MED';if(dir)return 'BOX';return 'RI';}
+function invPrefix(){if(!invDraft.length)return 'RI';const uniq=[];invDraft.forEach(l=>{const p=dirPrefix((byCode(l.code)||{}).dir||'');if(uniq.indexOf(p)<0)uniq.push(p);});return uniq.length===1?uniq[0]:'RI';}
+function makeInvNo(prefix,seq){return (prefix||'RI')+'-'+('000'+seq).slice(-4);}
+function nextInvNo(){return makeInvNo(invPrefix(),nextInvSeq());}
 function renderInvoice(){
   invEl.innerHTML=
    '<div class="card"><h2>🧾 ინვოისი / 💰 ფასების შეთავაზება</h2>'+
@@ -753,7 +755,7 @@ function renderInvoice(){
   $('iSave').onclick=saveInvoice;
   $('iClear').onclick=()=>{invDraft=[];editingInvId=null;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iPhone','iNo','brandAmt','transAmt','iMinQty','iNote'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();};
   ['brandAmt','transAmt'].forEach(id=>$(id).oninput=renderInvLines);
-  if(!editingInvId&&$('iDate'))$('iDate').onchange=()=>{$('iNo').value=makeInvNo($('iDate').value,nextInvSeq());};
+  if(!editingInvId&&$('iDate'))$('iDate').onchange=()=>{const no=$('iNo');if(no){const seq=invSeqOf(no.value)||nextInvSeq();no.value=makeInvNo(invPrefix(),seq);}};
   renderInvLines();renderInvList();
 }
 function renderInvLines(){
@@ -775,6 +777,7 @@ function renderInvLines(){
   tb.querySelectorAll('input[data-p]').forEach(inp=>inp.oninput=()=>{const i=+inp.dataset.p;invDraft[i].price=parseFloat(inp.value)||0;updInvRow(i,inp);});
   tb.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{invDraft.splice(+b.dataset.x,1);renderInvLines();});
   updInvTotals();
+  if(!editingInvId){const no=$('iNo');if(no){const seq=invSeqOf(no.value)||nextInvSeq();no.value=makeInvNo(invPrefix(),seq);}}
 }
 function updInvTotals(){const t=invTotals();$('tSub').textContent=money(t.sub)+' ₾';$('tVat').textContent=money(t.vat)+' ₾';$('tGrand').textContent=money(t.grand)+' ₾';}
 function updInvRow(i,inp){const l=invDraft[i];const tr=inp.closest('tr');if(tr){const s=tr.querySelector('.sum');if(s)s.textContent=money(l.price*l.qty);}updInvTotals();}
