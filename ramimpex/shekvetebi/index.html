@@ -164,6 +164,8 @@ function salTotals(list){let t=0,p=0;list.forEach(s=>{t+=(+s.total||0);p+=(+s.pa
 function salFiltered(){const q=(($('salQ')||{}).value||'').toLowerCase().trim();const df=($('salFrom')||{}).value,dt=($('salTo')||{}).value,st=($('salStatus')||{}).value||'';
   return SALES.filter(s=>{if(SAL_DIR!=='all'&&saleDirOf(s.code,s.direction)!==SAL_DIR)return false;if(q){const hay=((s.cust_name||'')+' '+(s.cust_id||'')+' '+(s.name||'')+' '+(s.code||'')).toLowerCase();if(hay.indexOf(q)<0)return false;}if(df&&(s.date||'')<df)return false;if(dt&&(s.date||'')>dt)return false;if(st&&(s.status||'')!==st)return false;return true;});}
 function salStatusTag(st){const m={paid:['✔ გადახდილი','paid'],part:['◐ ნაწილობრივ','part'],due:['● გადასახდელი','due']};const x=m[st]||m.due;return '<span class="stag '+x[1]+'">'+x[0]+'</span>';}
+function salDirList(){const seen=[];(DIRS||[]).forEach(d=>{if(d&&d.dir&&seen.indexOf(d.dir)<0)seen.push(d.dir);});return seen;}
+function invProdOptions(dirFilter){let h='<option value="">— აირჩიე პროდუქტი —</option>';(DIRS||[]).forEach(d=>{if(dirFilter&&d.dir!==dirFilter)return;let inner='';d.items.forEach(it=>{const pr=effective(d,it);inner+='<option value="'+esc(it.code)+'">'+esc(ruCode(it.code))+' · '+esc(it.name||'')+(it.size?' · '+esc(it.size):'')+' — '+money(pr)+' ₾</option>';});if(inner)h+='<optgroup label="'+esc(d.name)+'">'+inner+'</optgroup>';});return h;}
 async function openSales(){
   if(!document.getElementById('salCss')){const st=document.createElement('style');st.id='salCss';st.textContent=SAL_CSS;document.head.appendChild(st);}
   salEl.innerHTML='<div class="empty">იტვირთება…</div>';editingSaleId=null;
@@ -221,14 +223,15 @@ function refreshSal(){
   tb.querySelectorAll('[data-sdel]').forEach(b=>b.onclick=()=>delSale(b.dataset.sdel));
 }
 function openSaleForm(sale){
-  const s=sale||{};editingSaleId=s.id||null;const docs=s.docs||{};
+  const s=sale||{};editingSaleId=s.id||null;const docs=s.docs||{};const preDir=s.direction||((byCode(s.code)||{}).dir)||'';
   salEl.innerHTML='<div class="card salform"><h2>'+(editingSaleId?'✏️ გაყიდვის რედაქტირება':'➕ ახალი გაყიდვა')+'</h2>'+
    '<p class="muted" style="font-size:12px;margin-bottom:12px">შეავსე მონაცემები და ატვირთე დოკუმენტები (თითოს თავისი ადგილი აქვს).</p>'+
    '<div class="fg">'+
     '<div><label>მყიდველი *</label><input id="sfCust" value="'+esc(s.cust_name||'')+'"></div>'+
     '<div><label>ს/კ (არჩ.)</label><input id="sfId" value="'+esc(s.cust_id||'')+'"></div>'+
     '<div><label>ტელეფონი (არჩ.)</label><input id="sfPhone" value="'+esc(s.cust_phone||'')+'"></div>'+
-    '<div style="grid-column:span 2"><label>პროდუქტი *</label><select id="sfProd">'+invPickerOptions()+'</select></div>'+
+    '<div><label>მიმართულება</label><select id="sfDir"><option value="">ყველა მიმართულება</option>'+salDirList().map(dn=>'<option'+(preDir===dn?' selected':'')+'>'+esc(dn)+'</option>').join('')+'</select></div>'+
+    '<div style="grid-column:span 2"><label>პროდუქტი *</label><select id="sfProd">'+invProdOptions(preDir)+'</select></div>'+
     '<div><label>რაოდენობა *</label><input id="sfQty" type="number" step="any" value="'+esc(s.qty!=null?s.qty:'')+'"></div>'+
     '<div><label>ერთეული</label><select id="sfUnit"><option>კგ</option><option>ცალი</option><option>ტონა</option><option>მ</option></select></div>'+
     '<div><label>ერთ. ფასი ₾</label><input id="sfPrice" type="number" step="any" value="'+esc(s.price!=null?s.price:'')+'"></div>'+
@@ -244,6 +247,7 @@ function openSaleForm(sale){
    '<div id="sfMsg" style="margin-top:8px;font-size:12px"></div></div>';
   if(s.code){const sel=$('sfProd');if(sel)sel.value=s.code;}
   if(s.unit){$('sfUnit').value=s.unit;}
+  $('sfDir').onchange=()=>{$('sfProd').innerHTML=invProdOptions($('sfDir').value);recalc();};
   function recalc(){const q=+$('sfQty').value||0,p=+$('sfPrice').value||0,tot=q*p;$('sfTotal').value=money(tot);$('sfBal').value=money(tot-(+$('sfPaid').value||0));}
   $('sfProd').onchange=()=>{const c=$('sfProd').value,pr=byCode(c);if(pr){if(pr.price!=null&&!$('sfPrice').value)$('sfPrice').value=pr.price;$('sfUnit').value=(pr.dir==='ანთრაციტის ბრიკეტი')?'კგ':'ცალი';}recalc();};
   ['sfQty','sfPrice','sfPaid'].forEach(id=>$(id).oninput=recalc);
