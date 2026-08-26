@@ -2,5 +2,11 @@ _stk.html
 _*.html
 RAM_IMPEX_*.png
 RAM_IMPEX_*.pdf
+RAM_IMPEX_*.jpg
+RAM_IMPEX_*.docx
 *.jpg
 _*.js
+_*.png
+node_modules/
+package-lock.json
+pkgicons/
