@@ -10,11 +10,11 @@ html,body{width:${W}px;height:${H}px;background:#fff}
 .hd{background:#000;color:#fff;padding:12px 18px;display:flex;justify-content:space-between;align-items:center}
 .hd .b{font-weight:900;font-size:26px;letter-spacing:1px}
 .hd .r{font-size:12px;text-align:right;line-height:1.4;font-weight:600}
-.ti{text-align:center;padding:14px 16px 6px}
-.ti h1{font-size:40px;font-weight:900;line-height:1.05;text-transform:uppercase}
-.ti .s{font-size:16px;font-weight:700;margin-top:6px}
-.ti .en{font-size:12px;font-weight:600;letter-spacing:2px;margin-top:2px}
-.wt{margin:10px 16px;border:2.5px solid #000;display:flex;align-items:center;gap:14px;padding:12px 16px}
+.ti{text-align:center;padding:10px 16px 4px}
+.ti h1{font-size:38px;font-weight:900;line-height:1.03;text-transform:uppercase}
+.ti .s{font-size:15px;font-weight:700;margin-top:5px}
+.ti .en{font-size:11px;font-weight:600;letter-spacing:2px;margin-top:2px}
+.wt{margin:8px 16px;border:2.5px solid #000;display:flex;align-items:center;gap:14px;padding:10px 16px}
 .wt .lb{font-size:22px;font-weight:900}
 .wt .ln{flex:1;border-bottom:2.5px solid #000;height:30px}
 .wt .u{font-size:22px;font-weight:900}
@@ -22,20 +22,20 @@ html,body{width:${W}px;height:${H}px;background:#fff}
 .body{flex:1;display:flex;gap:0;border-top:2px solid #000}
 .col{flex:1;padding:10px 16px}
 .col.l{border-right:2px solid #000}
-.h2{font-size:17px;font-weight:900;text-transform:uppercase;border-bottom:1.5px solid #000;padding-bottom:4px;margin:14px 0 9px;letter-spacing:.5px}
+.h2{font-size:15.5px;font-weight:900;text-transform:uppercase;border-bottom:1.5px solid #000;padding-bottom:3px;margin:9px 0 6px;letter-spacing:.5px}
 .h2:first-child{margin-top:0}
-.spec{width:100%;border-collapse:collapse;font-size:14.5px}
-.spec td{padding:6px 0;border-bottom:1px dotted #999}
+.spec{width:100%;border-collapse:collapse;font-size:13.5px}
+.spec td{padding:4px 0;border-bottom:1px dotted #999}
 .spec td.v{text-align:right;font-weight:800;white-space:nowrap}
-.li{font-size:14.5px;line-height:1.42;margin-bottom:8px;padding-left:18px;position:relative;font-weight:600}
-.li:before{content:"■";position:absolute;left:0;font-size:10px;top:3px}
-.warn{border:2px solid #000;padding:10px 12px;margin-top:2px}
-.warn .wh{font-weight:900;font-size:15px;text-transform:uppercase;margin-bottom:6px}
-.warn .wl{font-size:13px;line-height:1.4;margin-bottom:6px;padding-left:16px;position:relative;font-weight:600}
-.warn .wl:before{content:"⚠";position:absolute;left:0;font-size:11px}
-.info td{font-size:14px;padding:6px 0;border-bottom:1px dotted #999}
+.li{font-size:13.5px;line-height:1.35;margin-bottom:5px;padding-left:17px;position:relative;font-weight:600}
+.li:before{content:"■";position:absolute;left:0;font-size:9px;top:3px}
+.warn{border:2px solid #000;padding:8px 11px;margin-top:2px}
+.warn .wh{font-weight:900;font-size:14px;text-transform:uppercase;margin-bottom:5px}
+.warn .wl{font-size:12px;line-height:1.34;margin-bottom:5px;padding-left:15px;position:relative;font-weight:600}
+.warn .wl:before{content:"⚠";position:absolute;left:0;font-size:10px}
+.info td{font-size:13px;padding:4px 0;border-bottom:1px dotted #999}
 .info td.v{font-weight:800;text-align:right}
-.nlines .nl{border-bottom:1.5px solid #000;height:34px;margin-top:10px}
+.nlines .nl{border-bottom:1.5px solid #000;height:27px;margin-top:8px}
 </style>
 <div class="page"><div class="frame">
  <div class="hd"><div class="b">RAM IMPEX</div><div class="r">იმპორტიორი · დისტრიბუტორი<br>595 533 500 · ramimpex.com.ge</div></div>
