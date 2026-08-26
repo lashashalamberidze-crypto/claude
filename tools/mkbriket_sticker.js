@@ -31,8 +31,8 @@ html,body{width:${W}px;height:${H}px;background:#fff}
 .li:before{content:"■";position:absolute;left:0;font-size:9px;top:3px}
 .warn{border:2px solid #000;padding:8px 11px;margin-top:2px}
 .warn .wh{font-weight:900;font-size:14px;text-transform:uppercase;margin-bottom:5px}
-.warn .wl{font-size:12px;line-height:1.34;margin-bottom:5px;padding-left:15px;position:relative;font-weight:600}
-.warn .wl:before{content:"⚠";position:absolute;left:0;font-size:10px}
+.warn .wl{font-size:12.5px;line-height:1.4;margin-bottom:8px;font-weight:600}
+.warn .wl:last-child{margin-bottom:0}
 .info td{font-size:13px;padding:4px 0;border-bottom:1px dotted #999}
 .info td.v{font-weight:800;text-align:right}
 .nlines .nl{border-bottom:1.5px solid #000;height:27px;margin-top:8px}
@@ -69,10 +69,8 @@ html,body{width:${W}px;height:${H}px;background:#fff}
   <div class="col">
    <div class="warn">
     <div class="wh">გაფრთხილება</div>
-    <div class="wl">მხოლოდ გათბობისთვის (ბუხარი, ღუმელი, ფეჩი, სათბური). არ არის რეკომენდებული ღია ცეცხლზე საკვების მოსამზადებლად.</div>
-    <div class="wl">ძლიერი სიმხურვალის გამო სასურველია ღუმელი/ფეჩი იყოს თუჯის (ნახშირზე გათვლილი) ან აღჭურვილი თუჯის ცხაურით (ბადე/სეტკა).</div>
-    <div class="wl">უზრუნველყავით ზედა და ქვედა აერაცია — ჰაერის (ჟანგბადის) მიწოდებისა და სრული წვისთვის.</div>
-    <div class="wl">შეინახეთ ბავშვებისგან მოშორებით. მშრალ ადგილას.</div>
+    <div class="wl">⚠️ განკუთვნილია მხოლოდ გათბობისთვის — ბუხარი, ღუმელი, ფეჩი, სათბური. არ არის რეკომენდებული ღია ცეცხლზე საკვების მოსამზადებლად.</div>
+    <div class="wl">🔩 ძლიერი სიმხურვალის გამო სასურველია ღუმელი/ფეჩი იყოს თუჯის (ნახშირზე გათვლილი), ან აღჭურვილი თუჯის ცხაურით (ბადე/სეტკა). ასევე უზრუნველყავით ზედა და ქვედა აერაცია — ჰაერის (ჟანგბადის) მიწოდებისა და სრული წვისთვის.</div>
    </div>
    <div class="h2">მწარმოებელი / იმპორტიორი</div>
    <table class="info" style="width:100%;border-collapse:collapse">
@@ -82,7 +80,7 @@ html,body{width:${W}px;height:${H}px;background:#fff}
     <tr><td>სერტიფიკატები</td><td class="v">ISO · ГОСТ Р · MSDS</td></tr>
    </table>
    <div class="h2">შენახვის პირობები</div>
-   <div class="li">მშრალ, ვენტილირებად ადგილას; ტენისა და ღია ცეცხლისგან მოშორებით.</div>
+   <div class="li">მშრალ, ვენტილირებად ადგილას; ტენის, ცეცხლისა და ბავშვებისგან მოშორებით.</div>
    <div class="li">შენახვის ვადა შეუზღუდავი — ხანგრძლივი შენახვა არაფერს უშლის ხელს.</div>
    <div class="li">საწყობი: ნატახტარი (თვითგატანა შესაძლებელია).</div>
    <div class="h2">შენიშვნა / პარტია</div>
