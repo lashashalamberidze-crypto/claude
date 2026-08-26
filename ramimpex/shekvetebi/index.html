@@ -118,12 +118,18 @@ const BOOKLETS=[
 ];
 function renderBooklets(){
   bukEl.innerHTML='<div class="card"><h2>📄 ბუკლეტები</h2><p class="muted" style="font-size:12px;margin-bottom:12px">ყველა საინფორმაციო ბუკლეტი — ჩამოსატვირთად და გასაზიარებლად.</p>'+
+   '<div style="display:flex;align-items:center;gap:14px;border:2px solid #0B6B3C;border-radius:12px;padding:12px 14px;margin-bottom:14px;background:#eef7f1">'+
+     '<div style="font-size:30px;flex:0 0 auto">🌐</div>'+
+     '<div style="flex:1;min-width:0"><div style="font-weight:800;color:#0B6B3C;font-size:14px">ანთრაციტის ბრიკეტი — ონლაინ გვერდი</div><div class="muted" style="font-size:12px;margin-top:2px">ყველა ინფო ერთ ბმულზე — მახასიათებლები, ფასები, საწყობის რუკა. გააზიარე WhatsApp/Facebook-ში.</div><div style="font-size:11px;color:#0B6B3C;font-weight:700;margin-top:3px;word-break:break-all">ramimpex.com.ge/info</div></div>'+
+     '<div style="display:flex;gap:8px;flex:0 0 auto;flex-wrap:wrap"><a class="btn sm" href="../info/" target="_blank" rel="noopener">👁 გახსნა</a><button class="btn line sm" id="copyInfoLink">🔗 ბმულის კოპირება</button></div>'+
+   '</div>'+
    BOOKLETS.map(b=>'<div style="display:flex;align-items:center;gap:14px;border:1px solid #e3ece7;border-radius:12px;padding:12px 14px;margin-bottom:10px;background:#f8fdfa">'+
      '<div style="font-size:30px;flex:0 0 auto">'+b.icon+'</div>'+
      '<div style="flex:1;min-width:0"><div style="font-weight:800;color:#0B6B3C;font-size:14px">'+esc(b.name)+'</div><div class="muted" style="font-size:12px;margin-top:2px">'+esc(b.desc)+'</div></div>'+
      '<div style="display:flex;gap:8px;flex:0 0 auto;flex-wrap:wrap"><a class="btn sm" href="../files/'+b.file+'" download>⬇ ჩამოტვირთვა</a><a class="btn line sm" href="../files/'+b.file+'" target="_blank" rel="noopener">👁 ნახვა</a></div>'+
    '</div>').join('')+
    '</div>';
+  const cp=$('copyInfoLink');if(cp)cp.onclick=()=>{const url='https://ramimpex.com.ge/info';(navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(url):Promise.reject()).then(()=>{const o=cp.textContent;cp.textContent='✔ დაკოპირდა';setTimeout(()=>cp.textContent=o,1500);}).catch(()=>{prompt('დააკოპირე ბმული (Ctrl+C):',url);});};
 }
 /* ========================= SALES (გაყიდვები) ========================= */
 let SALES=[], SAL_DIR='all', editingSaleId=null;
