@@ -169,7 +169,7 @@ const html=`<!doctype html><meta charset="utf-8"><style>${CSS}</style>
  <div class="sec"><div class="sh">✓ სერტიფიცირებული ხარისხი</div>
   <div class="pills"><span class="pill">ISO 9001</span><span class="pill">ISO 14001</span><span class="pill">ISO 45001</span><span class="pill g">ГОСТ Р 57016-2016</span><span class="pill">MSDS</span><span class="pill">COTECNA</span></div></div>
 
- <div class="warn"><div class="e">⚠️</div><div class="t">განკუთვნილია <b>მხოლოდ გათბობისთვის</b> — ბუხარი, ღუმელი, ფეჩი, სათბური. <b>არ არის რეკომენდებული ღია ცეცხლზე საკვების მოსამზადებლად.</b><br><br>🔩 ძლიერი სიმხურვალის გამო სასურველია ღუმელი/ფეჩი იყოს <b>თუჯის</b> (ნახშირზე გათვლილი), ან აღჭურვილი <b>თუჯის ცხაურით (ბადე/სეტკა)</b>. ასევე უზრუნველყავით <b>ზედა და ქვედა აერაცია</b> — ჰაერის (ჟანგბადის) მიწოდებისა და სრული წვისთვის.</div></div>
+ <div class="warn"><div class="e">⚠️</div><div class="t">განკუთვნილია <b>მხოლოდ გათბობისთვის</b> — ბუხარი, ღუმელი, ფეჩი, სათბური. <b>არ არის რეკომენდებული ღია ცეცხლზე საკვების მოსამზადებლად.</b><br><br>🔩 ძლიერი სიმხურვალის გამო სასურველია ღუმელი/ფეჩი იყოს <b>თუჯის</b> (ნახშირზე გათვლილი), ან აღჭურვილი <b>თუჯის ცხაურით (ბადე/სეტკა)</b>.</div></div>
 
  <div class="sec"><div class="sh">💰 ფასები — ₾ / კგ</div>
   <div class="cards">${TIERS.map(pc).join('')}</div>
