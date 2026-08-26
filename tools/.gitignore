@@ -10,3 +10,5 @@ _*.png
 node_modules/
 package-lock.json
 pkgicons/
+_*/
+_*.docx
