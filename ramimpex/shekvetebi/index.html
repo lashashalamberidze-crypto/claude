@@ -851,7 +851,20 @@ function wireLedgerControls(){
   if($('ilXls'))$('ilXls').onclick=()=>exportInvXls(invLedgerList());
   if($('ilPrint'))$('ilPrint').onclick=()=>printInvLedger(invLedgerList());
 }
-async function invQuickPay(id){const inv=INVOICES.find(x=>String(x.id)===String(id));if(!inv)return;const cur=(inv.paid!=null?inv.paid:0);const v=prompt('გადახდილი თანხა ₾ (სულ ჯამი: '+money(inv.grand)+' ₾).\\nსრულად გადახდისთვის ჩაწერე '+money(inv.grand)+':',cur);if(v===null)return;const paid=+v||0;const status=(+inv.grand>0&&paid>=+inv.grand)?'paid':(paid>0?'part':'due');try{const {error}=await sb.from('invoices').update({paid:paid,status:status}).eq('id',inv.id);if(error)throw error;inv.paid=paid;inv.status=status;renderInvList();}catch(e){alert('ვერ განახლდა: '+(e.message||e));}}
+async function invQuickPay(id){const inv=INVOICES.find(x=>String(x.id)===String(id));if(!inv)return;const wasPaid=((inv.status||invStatus(inv))==='paid');const cur=(inv.paid!=null?inv.paid:0);const v=prompt('გადახდილი თანხა ₾ (სულ ჯამი: '+money(inv.grand)+' ₾).\\nსრულად გადახდისთვის ჩაწერე '+money(inv.grand)+':',cur);if(v===null)return;const paid=+v||0;const status=(+inv.grand>0&&paid>=+inv.grand)?'paid':(paid>0?'part':'due');try{const {error}=await sb.from('invoices').update({paid:paid,status:status}).eq('id',inv.id);if(error)throw error;inv.paid=paid;inv.status=status;renderInvList();if(status==='paid'&&!wasPaid)notifyTelegramPaid(inv);}catch(e){alert('ვერ განახლდა: '+(e.message||e));}}
+function fmtNum(n){return String(Math.round(+n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
+function tgLineText(l){const p=byCode(l.code)||{};const nm=(l.name||p.name||l.code);const tier=l.tier?(' '+briketTierLabel(l.tier)):'';return '• '+esc(nm+tier)+' — '+fmtNum(l.qty)+' × '+money(l.price)+' = '+money(l.price*l.qty)+' ₾';}
+async function notifyTelegramPaid(inv){
+  try{
+    const agg={};let grand=0;
+    (INVOICES||[]).forEach(v=>{if((v.status||invStatus(v))!=='paid')return;(v.lines||[]).forEach(l=>{const b=saleDirOf(l.code,(byCode(l.code)||{}).dir);if(!agg[b])agg[b]={qty:0,amt:0};const amt=(+l.price||0)*(+l.qty||0);agg[b].qty+=(+l.qty||0);agg[b].amt+=amt;grand+=amt;});});
+    let analytics='';SAL_DIRS.forEach(d=>{if(d[0]==='all')return;const a=agg[d[0]];if(!a||a.amt<=0)return;const unit=(d[0]==='ანთრაციტის ბრიკეტი')?'კგ':'ცალი';analytics+='\n'+d[2]+' '+esc(d[1])+': '+fmtNum(a.qty)+' '+unit+' · <b>'+money(a.amt)+' ₾</b>';});
+    const lines=(inv.lines||[]).map(tgLineText).join('\n');
+    const msg='✅ <b>გადახდილი — ინვოისი '+esc(inv.no||inv.id)+'</b>\n👤 '+esc(inv.cust||'—')+(inv.idc?' · ს/კ '+esc(inv.idc):'')+'\n📅 '+esc(inv.date||todayStr())+'\n\n<b>ამ ინვოისით:</b>\n'+lines+'\n💵 ინვოისის ჯამი: <b>'+money(inv.grand)+' ₾</b>\n\n📊 <b>საერთო გაყიდვები (გადახდილი):</b>'+(analytics||'\n—')+'\n━━━━━━━━━━\n🏆 სულ: <b>'+money(grand)+' ₾</b>';
+    const {error}=await sb.functions.invoke('telegram-notify',{body:{text:msg}});
+    if(error)console.error('telegram notify error',error);
+  }catch(e){console.error('telegram notify failed',e);}
+}
 function invDocsPanel(id){const inv=INVOICES.find(x=>String(x.id)===String(id));if(!inv)return;const docs=inv.docs||{};
   const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
   ov.innerHTML='<div class="card" style="max-width:640px;width:100%;max-height:90vh;overflow:auto"><h2>📎 დოკუმენტები — ინვოისი '+esc(inv.no||inv.id)+'</h2><p class="muted" style="font-size:12px;margin-bottom:10px">'+esc(inv.cust||'')+'</p><div class="saldocs">'+SAL_DOCS.map(dc=>{const u=docs[dc[0]];return '<div class="saldz'+(u?' has':'')+'"><div class="e">'+dc[2]+'</div><div class="t">'+dc[1]+'</div>'+(u?'<a href="'+esc(u)+'" target="_blank" style="font-size:11px;color:#0B6B3C;font-weight:800;display:block;margin-top:4px">✔ ატვირთულია</a>':'')+'<input type="file" data-doc="'+dc[0]+'"></div>';}).join('')+'</div><div id="idocMsg" style="margin-top:8px;font-size:12px"></div><div style="display:flex;gap:8px;margin-top:14px"><button class="btn" id="idocSave">💾 ატვირთვა</button><button class="btn line" id="idocClose">დახურვა</button></div></div>';
