@@ -758,7 +758,7 @@ function renderInvoice(){
    '<div class="card"><h2>📊 ინვოისები / გაყიდვები</h2><p class="muted" style="font-size:12px">ყოველი შენახული ინვოისი აქ ჩნდება როგორც გაყიდვა — გადახდისა და დოკუმენტების სტატუსით.</p>'+
    '<div class="salkpi" style="margin-top:12px"><div class="skpi blue"><div class="l">სულ</div><div class="v" id="ilK1">—</div></div><div class="skpi green"><div class="l">გადახდილი</div><div class="v" id="ilK2">—</div></div><div class="skpi red"><div class="l">დარჩენილი (ვალი)</div><div class="v" id="ilK3">—</div></div><div class="skpi amber"><div class="l">რაოდ.</div><div class="v" id="ilK4">—</div></div></div>'+
    '<div class="saldir" id="ilDir">'+SAL_DIRS.map(d=>'<button class="chip'+(IL_DIR===d[0]?' on':'')+'" data-ild="'+esc(d[0])+'">'+d[2]+' '+esc(d[1])+'</button>').join('')+'</div>'+
-   '<div class="salflt"><div><label>ძებნა</label><input id="ilQ" placeholder="🔍 მყიდველი / №"></div><div><label>დან</label><input id="ilFrom" type="date"></div><div><label>მდე</label><input id="ilTo" type="date"></div><div><label>სტატუსი</label><select id="ilStatus"><option value="">ყველა</option><option value="paid">გადახდილი</option><option value="part">ნაწილობრივ</option><option value="due">გადასახდელი</option></select></div><div style="align-self:flex-end;display:flex;gap:8px"><button class="btn a" id="ilXls">📊 Excel</button><button class="btn line" id="ilPrint">🖨 ბეჭდვა</button></div></div>'+
+   '<div class="salflt"><div><label>ძებნა</label><input id="ilQ" placeholder="🔍 მყიდველი / №"></div><div><label>დან</label><input id="ilFrom" type="date"></div><div><label>მდე</label><input id="ilTo" type="date"></div><div><label>სტატუსი</label><select id="ilStatus"><option value="">ყველა</option><option value="paid">გადახდილი</option><option value="part">ნაწილობრივ</option><option value="due">გადასახდელი</option></select></div><div style="align-self:flex-end;display:flex;gap:8px"><button class="btn a" id="ilXls">📊 Excel</button><button class="btn line" id="ilPrint">🖨 ბეჭდვა</button><button class="btn line" id="ilTgTest" title="სატესტო შეტყობინება ტელეგრამზე">🔔 ტესტი</button></div></div>'+
    '<div class="scroll"><table><thead><tr><th>თარიღი</th><th>№</th><th>მყიდველი</th><th>პროდუქცია</th><th class="right">სულ ₾</th><th class="right">გადახდ.</th><th class="right">ნაშთი</th><th>სტატუსი</th><th>დოკ.</th><th></th></tr></thead><tbody id="ilRows"></tbody></table></div>'+
    '<div id="ilEmpty" class="empty" style="display:none">ჯერ ინვოისი არ არის.</div>'+
    '<div style="margin-top:10px;font-size:11.5px;color:#5c6b62">📄 ინვოისი · 🧾 ანგ-ფაქტურა · 💳 გადახდა · 📋 სერტიფიკატი — <b style="color:#0B6B3C">მწვანე=ატვირთულია</b> · 💵 გადახდის განახლება · 📎 დოკ. ატვირთვა · ✏ რედაქტ. · 🖨 ბეჭდვა · 🗑 წაშლა</div></div>';
@@ -850,6 +850,14 @@ function wireLedgerControls(){
   ['ilQ','ilFrom','ilTo','ilStatus'].forEach(id=>{const el=$(id);if(el)el.oninput=el.onchange=renderInvList;});
   if($('ilXls'))$('ilXls').onclick=()=>exportInvXls(invLedgerList());
   if($('ilPrint'))$('ilPrint').onclick=()=>printInvLedger(invLedgerList());
+  if($('ilTgTest'))$('ilTgTest').onclick=testTelegram;
+}
+async function testTelegram(){
+  const b=$('ilTgTest');let ob='🔔 ტესტი';if(b){ob=b.textContent;b.disabled=true;b.textContent='⏳…';}
+  try{const {error}=await sb.functions.invoke('telegram-notify',{body:{text:'🔔 <b>ტესტი — RAM IMPEX</b>\nტელეგრამის შეტყობინება მუშაობს ✅\n📅 '+todayStr()}});if(error)throw error;
+    alert('✅ გაიგზავნა — შეამოწმე ტელეგრამი.');}
+  catch(e){alert('❌ ვერ გაიგზავნა: '+(e.message||e)+'\n\nშეამოწმე:\n1) ფუნქცია telegram-notify დაყენებულია?\n2) TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID secrets ჩაწერილია?\n3) ბოტს Start დააჭირე?');}
+  finally{if(b){b.disabled=false;b.textContent=ob;}}
 }
 async function invQuickPay(id){const inv=INVOICES.find(x=>String(x.id)===String(id));if(!inv)return;const wasPaid=((inv.status||invStatus(inv))==='paid');const cur=(inv.paid!=null?inv.paid:0);const v=prompt('გადახდილი თანხა ₾ (სულ ჯამი: '+money(inv.grand)+' ₾).\\nსრულად გადახდისთვის ჩაწერე '+money(inv.grand)+':',cur);if(v===null)return;const paid=+v||0;const status=(+inv.grand>0&&paid>=+inv.grand)?'paid':(paid>0?'part':'due');try{const {error}=await sb.from('invoices').update({paid:paid,status:status}).eq('id',inv.id);if(error)throw error;inv.paid=paid;inv.status=status;renderInvList();if(status==='paid'&&!wasPaid)notifyTelegramPaid(inv);}catch(e){alert('ვერ განახლდა: '+(e.message||e));}}
 function fmtNum(n){return String(Math.round(+n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
