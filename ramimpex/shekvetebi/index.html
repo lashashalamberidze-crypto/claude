@@ -135,7 +135,7 @@ function renderBooklets(){
 /* ========================= SALES (გაყიდვები) ========================= */
 let SALES=[], SAL_DIR='all', editingSaleId=null;
 const SAL_DIRS=[['all','ყველა','🗂'],['ანთრაციტის ბრიკეტი','ბრიკეტი','🔥'],['მუყაოს ყუთები','ყუთები','📦'],['კუთხოვანი დამცავები','კუთხოვანი','📐'],['პიცის','პიცის','🍕'],['სამედიცინო','სამედიცინო','☣️']];
-const SAL_DOCS=[['invoice','ინვოისი','📄'],['factura','ანგარიშ-ფაქტურა','🧾'],['payment','გადახდის დოკ.','💳'],['cert','სერტიფიკატი','📋']];
+const SAL_DOCS=[['invoice','ინვოისი','📄'],['factura','ანგარიშ-ფაქტურა','🧾'],['waybill','ზედნადები','🚚'],['payment','გადახდის დოკ.','💳'],['cert','სერტიფიკატი','📋']];
 const SAL_CSS='.salkpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}'+
 '.skpi{background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 3px 10px rgba(16,60,40,.06);border-left:5px solid #0B6B3C}'+
 '.skpi.blue{border-color:#2b6cb0}.skpi.green{border-color:#0B6B3C}.skpi.amber{border-color:#e6a700}.skpi.red{border-color:#b00020}'+
@@ -161,7 +161,7 @@ const SAL_CSS='.salkpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px
 '.salform label{font-size:11px;font-weight:800;color:#5c6b62;display:block;margin-bottom:3px}'+
 '.salform input,.salform select{width:100%;border:1.5px solid #d6e2da;border-radius:8px;padding:8px 10px;font-size:13px;background:#fafcfb}'+
 '.salform .ro{background:#eef7f1;font-weight:800;color:#0B6B3C}'+
-'.saldocs{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-top:8px}'+
+'.saldocs{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:8px}'+
 '@media(max-width:640px){.salkpi{grid-template-columns:1fr 1fr}.salform .fg{grid-template-columns:1fr 1fr}.salocs,.saldocs{grid-template-columns:1fr 1fr}}';
 function saleDirOf(code,dir){const d=dir||((byCode(code)||{}).dir)||'';if(d==='ანთრაციტის ბრიკეტი')return 'ანთრაციტის ბრიკეტი';if(d==='კუთხოვანი დამცავები')return 'კუთხოვანი დამცავები';if(/პიცის/.test(d))return 'პიცის';if(/სამედიცინო|Safety/.test(d))return 'სამედიცინო';return 'მუყაოს ყუთები';}
 function fmtQty(q,u){if(q==null||q==='')return '';const n=+q;const s=isNaN(n)?q:n.toLocaleString('ka-GE');return s+(u?' '+u:'');}
@@ -682,6 +682,8 @@ function editInvoice(inv){
   if($('transAmt'))$('transAmt').value=ex.transAmt||'';
   if($('iMinQty'))$('iMinQty').value=ex.minQty||'';
   if($('iNote'))$('iNote').value=ex.note||'';
+  if($('iTransp'))$('iTransp').checked=!!ex.transp;
+  if($('iTranspNo'))$('iTranspNo').value=ex.transpNo||'';
   renderInvLines();
   const b=$('editBanner');if(b){b.style.display='';b.textContent='✏ რედაქტირდება ინვოისი № '+(inv.no||inv.id);}
   window.scrollTo(0,0);
@@ -749,6 +751,7 @@ function renderInvoice(){
    '<div class="card"><div class="scroll"><table id="iTbl"><thead><tr><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>შეფუთვა</th><th>შრე</th><th>ბრენდ.</th><th class="right">ფასი ₾</th><th class="right">რაოდ.</th><th class="right" title="მინ. პარტია — მხოლოდ ფასების შეთავაზებაში ჩანს">მინ. რაოდ.</th><th class="right">ჯამი ₾</th><th></th></tr></thead><tbody id="iRows"></tbody></table></div>'+
    '<div id="iEmpty" class="empty">ჯერ პროდუქტი არ არის დამატებული.</div>'+
    '<div class="row" style="margin-top:10px"><div><label>დამატ. ბრენდირება ₾ (არჩ.)</label><input id="brandAmt" type="number" step="0.01" placeholder="0.00"></div><div><label>ტრანსპ. თბილისამდე ₾ (არჩ.)</label><input id="transAmt" type="number" step="0.01" placeholder="0.00"></div></div>'+
+   '<div class="row" style="margin-top:10px;align-items:flex-end"><div style="flex:0 0 auto"><label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-weight:600;margin-bottom:0">🚚 <input type="checkbox" id="iTransp" style="width:16px;height:16px"> ტრანსპორტით</label></div><div><label>ტრანსპ. ნომერი (მანქანა / ზედნადები)</label><input id="iTranspNo" placeholder="მაგ. AA-001-BB"></div></div>'+
    '<div class="row" style="margin-top:10px"><div><label>მინიმალური რაოდენობა (არჩ.)</label><input id="iMinQty" placeholder="მაგ. 4500 ცალი"></div></div>'+
    '<label style="margin-top:10px;display:block">შენიშვნა (არჩ.)</label><textarea id="iNote" rows="2" placeholder="მაგ. მინ. პარტია, ვადები, პირობები…" style="width:100%"></textarea>'+
    '<label style="display:flex;align-items:center;gap:7px;margin-top:12px;font-size:13px;cursor:pointer;font-weight:600"><input type="checkbox" id="iVat"'+(invVatIncl?' checked':'')+' style="width:16px;height:16px"> დღგ 18% შედის თანხაში <span class="muted" style="font-weight:400">(მოუნიშნავი = დღგ-ს გარეშე)</span></label>'+
@@ -768,7 +771,7 @@ function renderInvoice(){
   $('iOffer').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}makeOfferJPG();};
   $('iToOrders').onclick=addDraftToOrders;
   $('iSave').onclick=saveInvoice;
-  $('iClear').onclick=()=>{invDraft=[];editingInvId=null;invVatIncl=false;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iPhone','iNo','brandAmt','transAmt','iMinQty','iNote'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();};
+  $('iClear').onclick=()=>{invDraft=[];editingInvId=null;invVatIncl=false;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iPhone','iNo','brandAmt','transAmt','iMinQty','iNote','iTranspNo'].forEach(id=>{if($(id))$(id).value='';});if($('iTransp'))$('iTransp').checked=false;renderInvLines();};
   ['brandAmt','transAmt'].forEach(id=>$(id).oninput=renderInvLines);
   if($('iVat'))$('iVat').onchange=()=>{invVatIncl=$('iVat').checked;updInvTotals();};
   if(!editingInvId&&$('iDate'))$('iDate').onchange=()=>{const no=$('iNo');if(no){const seq=invSeqOf(no.value)||nextInvSeq();no.value=makeInvNo(invPrefix(),seq);}};
@@ -802,7 +805,7 @@ function updInvTotals(){const t=invTotals();$('tSub').textContent=money(t.sub)+'
 function updInvRow(i,inp){const l=invDraft[i];const tr=inp.closest('tr');if(tr){const s=tr.querySelector('.sum');if(s)s.textContent=money(l.price*l.qty);}updInvTotals();}
 function currentInv(){const t=invTotals();return {no:$('iNo').value,date:$('iDate').value||todayStr(),cust:$('iCust').value,idc:$('iId').value,phone:($('iPhone')?$('iPhone').value:''),
   lines:invDraft.map(l=>{const p=byCode(l.code)||{};return {code:l.code,name:l.name||p.name,size:l.size||p.size,ply:l.ply||'',brand:l.brand||'',pack:l.pack||'',tier:l.tier||null,color:p.color,price:l.price,priceEdited:!!l.priceEdited,qty:l.qty,min:(l.min!=null?l.min:''),img:pubImg(l.code)};}),
-  sub:t.sub,vat:t.vat,extra:{brandAmt:t.brandAmt,transAmt:t.transAmt,note:($('iNote')?$('iNote').value:''),minQty:($('iMinQty')?$('iMinQty').value:''),vatIncl:invVatIncl},grand:t.grand};}
+  sub:t.sub,vat:t.vat,extra:{brandAmt:t.brandAmt,transAmt:t.transAmt,note:($('iNote')?$('iNote').value:''),minQty:($('iMinQty')?$('iMinQty').value:''),vatIncl:invVatIncl,transp:($('iTransp')?$('iTransp').checked:false),transpNo:($('iTranspNo')?$('iTranspNo').value:'')},grand:t.grand};}
 async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}const inv=currentInv();
   const isEdit=!!editingInvId; inv.id=editingInvId||String(Date.now());
   const prev=isEdit?(INVOICES.find(x=>String(x.id)===String(inv.id))||{}):{};
@@ -813,7 +816,7 @@ async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამ�
     INVOICES.unshift(Object.assign({created_at:new Date().toISOString()},inv));
     alert((isEdit?'განახლდა ✔':'შენახულია ✔ — დაემატა გაყიდვებში')+'  სულ: '+money(inv.grand)+' ₾');
     invDraft=[];editingInvId=null;invVatIncl=false;const eb=$('editBanner');if(eb)eb.style.display='none';
-    ['iCust','iId','iPhone','iNo','brandAmt','transAmt','iMinQty','iNote'].forEach(id=>{if($(id))$(id).value='';});renderInvLines();renderInvList();}
+    ['iCust','iId','iPhone','iNo','brandAmt','transAmt','iMinQty','iNote','iTranspNo'].forEach(id=>{if($(id))$(id).value='';});if($('iTransp'))$('iTransp').checked=false;renderInvLines();renderInvList();}
   catch(e){alert('ვერ შეინახა: '+(e.message||e)+'\n(თუ paid/status/docs სვეტების შეცდომაა — გაუშვი sql/invoices_upgrade.sql)');}
 }
 function invStatus(inv){const g=+inv.grand||0,p=+inv.paid||0;return (g>0&&p>=g)?'paid':(p>0?'part':'due');}
@@ -1020,7 +1023,8 @@ function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map(
    '<div style="display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid #0F8A4D;margin-top:6px;font-size:18px;font-weight:800;color:#0B6B3C"><span>სულ</span><span>'+money(inv.grand)+' ₾</span></div></div>'+
    (ex.minQty?'<div style="margin-top:12px;font-size:12.5px"><b style="color:#0B6B3C">მინიმალური რაოდენობა:</b> '+esc(ex.minQty)+'</div>':'')+
    (ex.note?'<div style="margin-top:8px;font-size:12px;color:#222;white-space:pre-wrap"><b style="color:#0B6B3C">შენიშვნა:</b> '+esc(ex.note)+'</div>':'')+
-   '<div style="margin-top:18px;border-top:1px solid #DCE7E0;padding-top:10px;font-size:11.5px"><b style="color:#0B6B3C">საბანკო რეკვიზიტები</b><br>მიმღები: შპს „რამ იმპექს" · ს/კ: 405565794<br>ბანკი: სს „საქართველოს ბანკი" · SWIFT: BAGAGE22<br>ანგარიში (IBAN): <b>GE47BG0000000611211417</b></div>'+
+   (ex.transp?'<div style="margin-top:12px;font-size:13px"><b style="color:#0B6B3C">🚚 მიწოდება ტრანსპორტით</b>'+(ex.transpNo?' · ნომერი: <b>'+esc(ex.transpNo)+'</b>':'')+'</div>':'')+
+   '<div style="margin-top:16px;border:1.5px solid #0F8A4D;border-radius:8px;padding:13px 15px;font-size:14px;background:#F3FAF5"><b style="color:#0B6B3C;font-size:16px">საბანკო რეკვიზიტები</b><br>მიმღები: <b>შპს „რამ იმპექს"</b> · ს/კ: <b>405565794</b><br>ბანკი: სს „საქართველოს ბანკი" · SWIFT: <b>BAGAGE22</b><br>ანგარიში (IBAN): <b style="font-size:16px">GE47BG0000000611211417</b><div style="margin-top:9px;font-size:13px;color:#8a4b00;font-weight:800;background:#FFF4D6;border-radius:6px;padding:7px 10px">⚠ გადარიცხვის შემთხვევაში დანიშნულებაში აუცილებლად მიუთითეთ ინვოისის ნომერი: '+esc(inv.no||'—')+'</div></div>'+
    '<div style="margin-top:12px;background:#E3F1E8;border-radius:8px;padding:9px 12px;font-size:11.5px;color:#0b6b3c;font-weight:600">✔ ნებისმიერ რაოდენობაზე მოლაპარაკება · ✔ ადგილზე მიწოდება საქართველოში · ✔ ნებისმიერი ზომის დამზადება</div>'+
    '<div style="margin-top:8px;font-size:11px;color:#5C6B62">'+(ex.vatIncl?'ფასები დღგ-ის ჩათვლით.':'ფასები დღგ-ს გარეშე.')+' მადლობა თანამშრომლობისთვის!</div></div>';}
 
