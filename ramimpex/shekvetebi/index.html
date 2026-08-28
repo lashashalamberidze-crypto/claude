@@ -135,7 +135,7 @@ function renderBooklets(){
 /* ========================= SALES (გაყიდვები) ========================= */
 let SALES=[], SAL_DIR='all', editingSaleId=null;
 const SAL_DIRS=[['all','ყველა','🗂'],['ანთრაციტის ბრიკეტი','ბრიკეტი','🔥'],['მუყაოს ყუთები','ყუთები','📦'],['კუთხოვანი დამცავები','კუთხოვანი','📐'],['პიცის','პიცის','🍕'],['სამედიცინო','სამედიცინო','☣️']];
-const SAL_DOCS=[['invoice','ინვოისი','📄'],['factura','ანგარიშ-ფაქტურა','🧾'],['waybill','ზედნადები','🚚'],['payment','გადახდის დოკ.','💳'],['cert','სერტიფიკატი','📋']];
+const SAL_DOCS=[['waybill','ზედნადები','🚚'],['payment','გადარიცხვის დოკ.','💳']];
 const SAL_CSS='.salkpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}'+
 '.skpi{background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 3px 10px rgba(16,60,40,.06);border-left:5px solid #0B6B3C}'+
 '.skpi.blue{border-color:#2b6cb0}.skpi.green{border-color:#0B6B3C}.skpi.amber{border-color:#e6a700}.skpi.red{border-color:#b00020}'+
@@ -161,7 +161,7 @@ const SAL_CSS='.salkpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px
 '.salform label{font-size:11px;font-weight:800;color:#5c6b62;display:block;margin-bottom:3px}'+
 '.salform input,.salform select{width:100%;border:1.5px solid #d6e2da;border-radius:8px;padding:8px 10px;font-size:13px;background:#fafcfb}'+
 '.salform .ro{background:#eef7f1;font-weight:800;color:#0B6B3C}'+
-'.saldocs{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:8px}'+
+'.saldocs{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:8px}'+
 '@media(max-width:640px){.salkpi{grid-template-columns:1fr 1fr}.salform .fg{grid-template-columns:1fr 1fr}.salocs,.saldocs{grid-template-columns:1fr 1fr}}';
 function saleDirOf(code,dir){const d=dir||((byCode(code)||{}).dir)||'';if(d==='ანთრაციტის ბრიკეტი')return 'ანთრაციტის ბრიკეტი';if(d==='კუთხოვანი დამცავები')return 'კუთხოვანი დამცავები';if(/პიცის/.test(d))return 'პიცის';if(/სამედიცინო|Safety/.test(d))return 'სამედიცინო';return 'მუყაოს ყუთები';}
 function fmtQty(q,u){if(q==null||q==='')return '';const n=+q;const s=isNaN(n)?q:n.toLocaleString('ka-GE');return s+(u?' '+u:'');}
@@ -199,7 +199,7 @@ function renderSales(){
       '<div style="align-self:flex-end;display:flex;gap:8px"><button class="btn a" id="salXls">📊 Excel</button><button class="btn line" id="salPrint">🖨 ბეჭდვა</button></div></div>'+
     '<div class="scroll"><table><thead><tr><th>თარიღი</th><th>მყიდველი</th><th>მიმართ.</th><th>პროდუქცია</th><th class="right">რაოდ.</th><th class="right">თანხა ₾</th><th class="right">გადახდ.</th><th class="right">ნაშთი</th><th>სტატუსი</th><th>დოკუმენტები</th><th></th></tr></thead><tbody id="salRows"></tbody></table></div>'+
     '<div id="salEmpty" class="empty" style="display:none">ჯერ გაყიდვა არ არის (ან ფილტრი ცარიელია).</div>'+
-    '<div style="margin-top:10px;font-size:11.5px;color:#5c6b62">📄 ინვოისი · 🧾 ანგ-ფაქტურა · 💳 გადახდა · 📋 სერტიფიკატი — <b style="color:#0B6B3C">მწვანე = ატვირთულია</b></div>'+
+    '<div style="margin-top:10px;font-size:11.5px;color:#5c6b62">🚚 ზედნადები · 💳 გადარიცხვის დოკ. — <b style="color:#0B6B3C">მწვანე = ატვირთულია</b></div>'+
    '</div>';
   $('salDir').querySelectorAll('[data-sd]').forEach(b=>b.onclick=()=>{SAL_DIR=b.dataset.sd;$('salDir').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x.dataset.sd===SAL_DIR));refreshSal();});
   ['salQ','salFrom','salTo','salStatus'].forEach(id=>{const el=$(id);if(el)el.oninput=el.onchange=refreshSal;});
@@ -764,7 +764,7 @@ function renderInvoice(){
    '<div class="salflt"><div><label>ძებნა</label><input id="ilQ" placeholder="🔍 მყიდველი / №"></div><div><label>დან</label><input id="ilFrom" type="date"></div><div><label>მდე</label><input id="ilTo" type="date"></div><div><label>სტატუსი</label><select id="ilStatus"><option value="">ყველა</option><option value="paid">გადახდილი</option><option value="part">ნაწილობრივ</option><option value="due">გადასახდელი</option></select></div><div style="align-self:flex-end;display:flex;gap:8px"><button class="btn a" id="ilXls">📊 Excel</button><button class="btn line" id="ilPrint">🖨 ბეჭდვა</button></div></div>'+
    '<div class="scroll"><table><thead><tr><th>თარიღი</th><th>№</th><th>მყიდველი</th><th>პროდუქცია</th><th class="right">სულ ₾</th><th class="right">გადახდ.</th><th class="right">ნაშთი</th><th>სტატუსი</th><th>დოკ.</th><th></th></tr></thead><tbody id="ilRows"></tbody></table></div>'+
    '<div id="ilEmpty" class="empty" style="display:none">ჯერ ინვოისი არ არის.</div>'+
-   '<div style="margin-top:10px;font-size:11.5px;color:#5c6b62">📄 ინვოისი · 🧾 ანგ-ფაქტურა · 💳 გადახდა · 📋 სერტიფიკატი — <b style="color:#0B6B3C">მწვანე=ატვირთულია</b> · 💵 გადახდის განახლება · 📎 დოკ. ატვირთვა · ✏ რედაქტ. · 🖨 ბეჭდვა · 🗑 წაშლა</div></div>';
+   '<div style="margin-top:10px;font-size:11.5px;color:#5c6b62">🚚 ზედნადები · 💳 გადარიცხვის დოკ. — <b style="color:#0B6B3C">მწვანე=ატვირთულია</b> · 💵 გადახდის განახლება · 📎 დოკ. ატვირთვა · ✏ რედაქტ. · 🖨 ბეჭდვა · 🗑 წაშლა</div></div>';
   $('iAdd').onclick=()=>{const raw=$('iPick').value;if(!raw)return;const sp=splitTier(raw);const code=sp.code;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ply=itmBox({code:code})?((($('iPlyAdd')&&$('iPlyAdd').value)||p.ply||'')):'';const ex=invDraft.find(l=>l.code===code&&(l.tier||0)===(sp.tier||0));if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else{const line={code:code,price:sp.tier?briketTierPrice(sp.tier):(isBriket(code)?briketPrice(qty):p.price),qty:qty,ply:ply,min:'3000'};if(sp.tier){line.tier=sp.tier;line.pack=briketTierPack(sp.tier);line.packSet=true;}invDraft.push(line);}if($('iPlyAdd'))$('iPlyAdd').value='';renderInvLines();};
   if($('iPickDir'))$('iPickDir').onchange=()=>{$('iPick').innerHTML=invProdOptions($('iPickDir').value);};
   $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}printInvoice(currentInv());};
