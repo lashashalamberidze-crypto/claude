@@ -63,7 +63,10 @@ tr:nth-child(even) td{background:#faf5ec}
 .vi{background:#fff;border:1.5px solid #ead9c2;border-radius:13px;padding:14px 18px;display:flex;align-items:center;gap:15px}
 .vi .e{font-size:30px;flex:0 0 auto}.vi .t{font-weight:700;font-size:19px;color:#3a2410;line-height:1.3}.vi .t b{color:#0B6B3C}
 .foot{margin-top:28px;background:#0F8A4D;color:#fff;padding:20px 54px;display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:21px;flex-wrap:wrap;gap:8px}
-.foot .r{font-weight:700;font-size:16px}`;
+.foot .r{font-weight:700;font-size:16px}
+/* A4 გვერდებად დაყოფა — ბლოკები არ გაიჭრას შუაზე */
+.sec,.recbox,.ri,.two,.bx,.steps,.st,.chips,.ch,.why,.uses,.ui,.loc,.vals,.vi,.tb,.hero,.foot,.note2,.pills,table,tr{break-inside:avoid;page-break-inside:avoid}
+.sh{break-after:avoid;page-break-after:avoid}`;
 const html=`<!doctype html><meta charset="utf-8"><style>${CSS}</style>
 <div class="p">
  <div class="hd"><img src="${logo}"><div class="bn">RAM IMPEX<small>იმპორტი · დისტრიბუცია საქართველოში</small></div></div>
@@ -148,9 +151,9 @@ const html=`<!doctype html><meta charset="utf-8"><style>${CSS}</style>
 </div>`;
 (async()=>{
  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--force-color-profile=srgb']});
- const p=await b.newPage({viewport:{width:W,height:1400},deviceScaleFactor:2});
+ const p=await b.newPage({viewport:{width:W,height:1400}});
  fs.writeFileSync(__dirname+'/_noprice.html',html);await p.goto('file://'+__dirname+'/_noprice.html');await p.waitForTimeout(400);
  await p.evaluate(()=>Promise.all([...document.images].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r;}))));
- await p.screenshot({path:__dirname+'/RAM_IMPEX_briketi_info.jpg',quality:93,type:'jpeg',fullPage:true});
- await b.close();console.log('no-price booklet rendered');
+ await p.pdf({path:__dirname+'/RAM_IMPEX_briketi_info.pdf',format:'A4',printBackground:true,scale:0.73,margin:{top:'8mm',bottom:'8mm',left:'0mm',right:'0mm'}});
+ await b.close();console.log('no-price booklet PDF rendered (A4 pages)');
 })();
