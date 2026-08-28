@@ -72,6 +72,7 @@ td.right,th.right{text-align:right}
 <div class="ov" id="ov"><img id="ovImg" src=""></div>
 <div id="printArea"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/+esm";
@@ -881,7 +882,29 @@ function invDocsPanel(id){const inv=INVOICES.find(x=>String(x.id)===String(id));
       const {error}=await sb.from('invoices').update({docs:nd}).eq('id',inv.id);if(error)throw error;inv.docs=nd;ov.remove();renderInvList();
     }catch(e){msg.innerHTML='<span style="color:#c62828">ვერ აიტვირთა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='💾 ატვირთვა';}};
 }
-function exportInvXls(list){const rows=list.map((inv,i)=>{const st=inv.status||invStatus(inv),bg=st==='paid'?'#e3f5e9':st==='part'?'#fff2cf':'#fde3e3',g=+inv.grand||0,pd=+inv.paid||0,stl={paid:'გადახდილი',part:'ნაწილობრივ',due:'გადასახდელი'}[st];const ls=(inv.lines||[]).map(l=>l.name||l.code).join(', ');
+/* ნამდვილი .xlsx ფერებით — იხსნება ტელეფონზეც (xlsx-js-style) */
+function exportInvXls(list){
+  let T=0,P=0;list.forEach(inv=>{T+=(+inv.grand||0);P+=(+inv.paid||0);});
+  if(!window.XLSX||!window.XLSX.utils){exportInvXlsHtml(list);return;}
+  const XLSX=window.XLSX;
+  const header=['#','თარიღი','№','მყიდველი','ს.კ.','პროდუქცია','სულ ₾','გადახდილი ₾','ნაშთი ₾','სტატუსი','ზედნადები'];
+  const aoa=[['RAM IMPEX — გაყიდვები/ინვოისები'],['დაბეჭდილია: '+todayStr()+' · ჩანაწერი: '+list.length],header];
+  list.forEach((inv,i)=>{const st=inv.status||invStatus(inv);const stl={paid:'გადახდილი',part:'ნაწილობრივ',due:'გადასახდელი'}[st]||'';const wb=(inv.docs||{}).waybill;const g=+inv.grand||0,pd=+inv.paid||0;aoa.push([i+1,inv.date||'',inv.no||'',inv.cust||'',inv.idc||'',(inv.lines||[]).map(l=>l.name||l.code).join(', '),g,pd,g-pd,stl,wb?'ატვირთულია':'—']);});
+  aoa.push(['ჯამი','','','','','',T,P,T-P,'','']);
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:10}},{s:{r:1,c:0},e:{r:1,c:10}}];
+  ws['!cols']=[{wch:4},{wch:12},{wch:15},{wch:24},{wch:12},{wch:32},{wch:11},{wch:12},{wch:11},{wch:13},{wch:12}];
+  const S=(r,c,st)=>{const ref=XLSX.utils.encode_cell({r,c});if(ws[ref])ws[ref].s=st;};
+  const num=(r,c)=>{const ref=XLSX.utils.encode_cell({r,c});if(ws[ref]){ws[ref].t='n';ws[ref].z='#,##0.00';}};
+  const grn={fill:{patternType:'solid',fgColor:{rgb:'0B6B3C'}},font:{color:{rgb:'FFFFFF'},bold:true},alignment:{horizontal:'center'}};
+  S(0,0,{font:{bold:true,sz:14,color:{rgb:'0B6B3C'}}});
+  for(let c=0;c<header.length;c++)S(2,c,grn);
+  list.forEach((inv,i)=>{const r=3+i;const st=inv.status||invStatus(inv);const bg=st==='paid'?'E3F5E9':st==='part'?'FFF2CF':'FDE3E3';S(r,9,{fill:{patternType:'solid',fgColor:{rgb:bg}},alignment:{horizontal:'center'}});const wb=(inv.docs||{}).waybill;if(wb)S(r,10,{fill:{patternType:'solid',fgColor:{rgb:'E3F5E9'}},font:{bold:true,color:{rgb:'0B6B3C'}},alignment:{horizontal:'center'}});[6,7,8].forEach(c=>num(r,c));});
+  const tr=3+list.length;for(let c=0;c<11;c++)S(tr,c,{fill:{patternType:'solid',fgColor:{rgb:'0B6B3C'}},font:{color:{rgb:'FFFFFF'},bold:true}});[6,7,8].forEach(c=>num(tr,c));
+  const wbk=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wbk,ws,'გაყიდვები');
+  try{XLSX.writeFile(wbk,'RAM_IMPEX_gayidvebi_'+todayStr()+'.xlsx');}catch(e){exportInvXlsHtml(list);}
+}
+function exportInvXlsHtml(list){const rows=list.map((inv,i)=>{const st=inv.status||invStatus(inv),bg=st==='paid'?'#e3f5e9':st==='part'?'#fff2cf':'#fde3e3',g=+inv.grand||0,pd=+inv.paid||0,stl={paid:'გადახდილი',part:'ნაწილობრივ',due:'გადასახდელი'}[st];const ls=(inv.lines||[]).map(l=>l.name||l.code).join(', ');
     const wb=(inv.docs||{}).waybill;
     return '<tr><td>'+(i+1)+'</td><td>'+esc(inv.date||'')+'</td><td>'+esc(inv.no||'')+'</td><td>'+esc(inv.cust||'')+'</td><td>'+esc(inv.idc||'')+'</td><td>'+esc(ls)+'</td><td>'+money(g)+'</td><td>'+money(pd)+'</td><td>'+money(g-pd)+'</td><td style="background:'+bg+'">'+stl+'</td><td'+(wb?' style="background:#e3f5e9;font-weight:bold;color:#0B6B3C"':'')+'>'+(wb?'ატვირთულია':'—')+'</td></tr>';}).join('');
   let T=0,P=0;list.forEach(inv=>{T+=(+inv.grand||0);P+=(+inv.paid||0);});
