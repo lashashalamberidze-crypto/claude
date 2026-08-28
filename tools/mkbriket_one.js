@@ -10,6 +10,7 @@ const TIERS=[
 function pc(t){return `<div class="pc${t.best?' best':''}">${t.best?'<div class="tag">⭐ პოპულარული</div>':''}<div class="rng">${t.rng}</div><div class="prc"><span class="n">${t.price}</span><span class="u">₾/კგ</span></div><div class="pk">📦 ${t.pack}</div></div>`;}
 function chip(v,l){return `<div class="ch"><div class="cv">${v}</div><div class="cl">${l}</div></div>`;}
 function why(ic,t){return `<div class="wi">${ic} ${t}</div>`;}
+function ri(ic,t){return `<div class="ri"><span class="e">${ic}</span><div>${t}</div></div>`;}
 function use(ic,t){return `<div class="ui"><span class="e">${ic}</span>${t}</div>`;}
 function val(ic,t){return `<div class="vi"><span class="e">${ic}</span><span class="t">${t}</span></div>`;}
 const CSS=`*{margin:0;box-sizing:border-box}html,body{width:${W}px;font-family:${F};background:#fff}
@@ -107,7 +108,15 @@ tr:nth-child(even) td{background:#faf5ec}
 .vi{background:#fff;border:1.5px solid #ead9c2;border-radius:13px;padding:14px 18px;display:flex;align-items:center;gap:15px}
 .vi .e{font-size:30px;flex:0 0 auto}.vi .t{font-weight:700;font-size:19px;color:#3a2410;line-height:1.3}.vi .t b{color:#0B6B3C}
 .foot{margin-top:28px;background:#0F8A4D;color:#fff;padding:20px 54px;display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:21px;flex-wrap:wrap;gap:8px}
-.foot .r{font-weight:700;font-size:16px}`;
+.foot .r{font-weight:700;font-size:16px}
+.recbox{background:#FFF7E4;border:2px solid #E6A700;border-radius:16px;padding:6px 24px}
+.ri{display:flex;gap:16px;align-items:flex-start;padding:16px 0;border-bottom:1px dashed #edcf94}
+.ri:last-child{border-bottom:none}
+.ri .e{font-size:34px;flex:0 0 auto;line-height:1.1}
+.ri div{font-weight:600;font-size:19px;color:#5a4415;line-height:1.42}
+.ri div b{color:#8a2b00}.ri div .g{color:#0B6B3C;font-weight:900}
+.sec,.recbox,.ri,.two,.bx,.steps,.st,.chips,.ch,.why,.uses,.ui,.loc,.vals,.vi,.tb,.hero,.foot,.note2,.pills,.cards,.pc,.cmp,.seas,.econ,table,tr{break-inside:avoid;page-break-inside:avoid}
+.sh{break-after:avoid;page-break-after:avoid}`;
 const html=`<!doctype html><meta charset="utf-8"><style>${CSS}</style>
 <div class="p">
  <div class="hd"><img src="${logo}"><div class="bn">RAM IMPEX<small>იმპორტი · დისტრიბუცია საქართველოში</small></div></div>
@@ -169,7 +178,12 @@ const html=`<!doctype html><meta charset="utf-8"><style>${CSS}</style>
  <div class="sec"><div class="sh">✓ სერტიფიცირებული ხარისხი</div>
   <div class="pills"><span class="pill">ISO 9001</span><span class="pill">ISO 14001</span><span class="pill">ISO 45001</span><span class="pill g">ГОСТ Р 57016-2016</span><span class="pill">MSDS</span><span class="pill">COTECNA</span></div></div>
 
- <div class="warn"><div class="e">⚠️</div><div class="t">განკუთვნილია <b>მხოლოდ გათბობისთვის</b> — ღუმელი, ფეჩი, სათბური. <b>არ არის რეკომენდებული ღია ცეცხლზე საკვების მოსამზადებლად.</b><br><br>🔩 ძლიერი სიმხურვალის გამო სასურველია ღუმელი/ფეჩი იყოს <b>თუჯის</b> (ნახშირზე გათვლილი), ან აღჭურვილი <b>თუჯის ცხაურით (ბადე/სეტკა)</b>.</div></div>
+ <div class="sec"><div class="sh">⚠️ უსაფრთხოება და რეკომენდაცია</div>
+  <div class="recbox">
+   ${ri('🔥','<b>მხოლოდ გათბობისთვის.</b> განკუთვნილია <span class="g">დახურული ფეჩების, ღუმელებისა და სათბურებისთვის.</span> არ არის რეკომენდებული ღია ცეცხლზე საკვების მოსამზადებლად.')}
+   ${ri('🌫️','წვისას <b>გამოყოფს ნახშირორჟანგს (CO₂) და ნახშირჟანგს (CO).</b> ამიტომ გამოიყენეთ <span class="g">მხოლოდ დახურულ ფეჩებსა და ღუმელებში</span> — აუცილებელი საკვამურითა და კარგი ვენტილაციით.')}
+   ${ri('🔩','<b>მაღალი წვის ტემპერატურის გამო</b> სასურველია <span class="g">ძლიერი (მძიმე) რკინის ან თუჯის ფეჩი/ღუმელი</span> — თხელი ლითონი შესაძლოა გადახუროს/დეფორმირდეს. იდეალურია <b>თუჯის</b> ან ნახშირზე გათვლილი ღუმელი (თუჯის ცხაურით — ბადე/სეტკა).')}
+  </div></div>
 
  <div class="sec"><div class="sh">💰 ფასები — ₾ / კგ</div>
   <div class="cards">${TIERS.map(pc).join('')}</div>
@@ -225,5 +239,6 @@ const html=`<!doctype html><meta charset="utf-8"><style>${CSS}</style>
  fs.writeFileSync(__dirname+'/_one.html',html);await p.goto('file://'+__dirname+'/_one.html');await p.waitForTimeout(400);
  await p.evaluate(()=>Promise.all([...document.images].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r;}))));
  await p.screenshot({path:__dirname+'/RAM_IMPEX_briketi_bukleti.jpg',quality:93,type:'jpeg',fullPage:true});
- await b.close();console.log('combined booklet rendered');
+ await p.pdf({path:__dirname+'/RAM_IMPEX_briketi_bukleti.pdf',format:'A4',printBackground:true,scale:0.73,margin:{top:'8mm',bottom:'8mm',left:'0mm',right:'0mm'}});
+ await b.close();console.log('combined booklet rendered (jpg + A4 pdf)');
 })();
