@@ -71,6 +71,8 @@ td.right,th.right{text-align:right}
 <div class="wrap"><div id="app"><div class="empty">იტვირთება…</div></div><div id="cat" style="display:none"></div><div id="inv" style="display:none"></div><div id="sal" style="display:none"></div><div id="buk" style="display:none"></div></div>
 <div class="ov" id="ov"><img id="ovImg" src=""></div>
 <div id="printArea"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/+esm";
 const sb=createClient("https://mhyoqypzacvztwhntsvv.supabase.co","sb_publishable_FXhFmDRboFeOEqxyvwUePg_SgIwnmmM",{auth:{persistSession:true,autoRefreshToken:true}});
@@ -757,7 +759,7 @@ function renderInvoice(){
    '<label style="display:flex;align-items:center;gap:7px;margin-top:12px;font-size:13px;cursor:pointer;font-weight:600"><input type="checkbox" id="iVat"'+(invVatIncl?' checked':'')+' style="width:16px;height:16px"> დღგ 18% შედის თანხაში <span class="muted" style="font-weight:400">(მოუნიშნავი = დღგ-ს გარეშე)</span></label>'+
    '<div class="ttl"><div class="tr"><span id="tSubL">ქვეჯამი</span><b id="tSub">0.00 ₾</b></div><div class="tr" id="tVatRow" style="color:var(--muted);font-size:12px"><span id="tVatL">დღგ</span><span id="tVat">—</span></div><div class="tr grand"><span>სულ</span><span id="tGrand">0.00 ₾</span></div></div>'+
    '<div class="row" style="margin-top:6px;font-size:12px;color:var(--muted)">🖨 <b>ბეჭდვა/PDF</b> = შეკვეთა/ინვოისი (რაოდენობა + ჯამი) · 💰 <b>შეთავაზება JPG</b> = მხოლოდ ერთეული ფასები + მინ. რაოდ. + შენიშვნა (ჯამის გარეშე)</div>'+
-   '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><button class="btn" id="iPrint">🖨 შეკვეთა — ბეჭდვა / PDF</button><button class="btn" id="iOffer" style="background:#6d3ad6">💰 ფასების შეთავაზება (JPG)</button><button class="btn" id="iToOrders" style="background:#0B6B3C">📥 შეკვეთებში დამატება</button><button class="btn line" id="iSave">💾 შენახვა</button><button class="btn danger" id="iClear">🗑 გასუფთავება</button></div></div>'+
+   '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><button class="btn" id="iPrint">📄 ინვოისი — PDF ჩამოტვირთვა</button><button class="btn" id="iOffer" style="background:#6d3ad6">💰 ფასების შეთავაზება (JPG)</button><button class="btn" id="iToOrders" style="background:#0B6B3C">📥 შეკვეთებში დამატება</button><button class="btn line" id="iSave">💾 შენახვა</button><button class="btn danger" id="iClear">🗑 გასუფთავება</button></div></div>'+
    '<div class="card"><h2>📊 ინვოისები / გაყიდვები</h2><p class="muted" style="font-size:12px">ყოველი შენახული ინვოისი აქ ჩნდება როგორც გაყიდვა — გადახდისა და დოკუმენტების სტატუსით.</p>'+
    '<div class="salkpi" style="margin-top:12px"><div class="skpi blue"><div class="l">სულ</div><div class="v" id="ilK1">—</div></div><div class="skpi green"><div class="l">გადახდილი</div><div class="v" id="ilK2">—</div></div><div class="skpi red"><div class="l">დარჩენილი (ვალი)</div><div class="v" id="ilK3">—</div></div><div class="skpi amber"><div class="l">რაოდ.</div><div class="v" id="ilK4">—</div></div></div>'+
    '<div class="saldir" id="ilDir">'+SAL_DIRS.map(d=>'<button class="chip'+(IL_DIR===d[0]?' on':'')+'" data-ild="'+esc(d[0])+'">'+d[2]+' '+esc(d[1])+'</button>').join('')+'</div>'+
@@ -767,7 +769,7 @@ function renderInvoice(){
    '<div style="margin-top:10px;font-size:11.5px;color:#5c6b62">🚚 ზედნადები · 💳 გადარიცხვის დოკ. — <b style="color:#0B6B3C">მწვანე=ატვირთულია</b> · 💵 გადახდის განახლება · 📎 დოკ. ატვირთვა · ✏ რედაქტ. · 🖨 ბეჭდვა · 🗑 წაშლა</div></div>';
   $('iAdd').onclick=()=>{const raw=$('iPick').value;if(!raw)return;const sp=splitTier(raw);const code=sp.code;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ply=itmBox({code:code})?((($('iPlyAdd')&&$('iPlyAdd').value)||p.ply||'')):'';const ex=invDraft.find(l=>l.code===code&&(l.tier||0)===(sp.tier||0));if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else{const line={code:code,price:sp.tier?briketTierPrice(sp.tier):(isBriket(code)?briketPrice(qty):p.price),qty:qty,ply:ply,min:'3000'};if(sp.tier){line.tier=sp.tier;line.pack=briketTierPack(sp.tier);line.packSet=true;}invDraft.push(line);}if($('iPlyAdd'))$('iPlyAdd').value='';renderInvLines();};
   if($('iPickDir'))$('iPickDir').onchange=()=>{$('iPick').innerHTML=invProdOptions($('iPickDir').value);};
-  $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}printInvoice(currentInv());};
+  $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}downloadInvoicePDF(currentInv());};
   $('iOffer').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}makeOfferJPG();};
   $('iToOrders').onclick=addDraftToOrders;
   $('iSave').onclick=saveInvoice;
@@ -839,10 +841,10 @@ function renderInvList(){ // ledger refresh (KPIs + rows)
       '<td class="right">'+(due>0.001?'<b style="color:#b00020">'+money(due)+'</b>':'0.00')+'</td>'+
       '<td>'+salStatusTag(stv)+'</td>'+
       '<td><div class="docrow">'+dochtml+'</div></td>'+
-      '<td class="right" style="white-space:nowrap"><button class="smini" data-ipay="'+esc(inv.id)+'" title="გადახდის განახლება">💵</button> <button class="smini" data-idoc="'+esc(inv.id)+'" title="დოკუმენტების ატვირთვა">📎</button> <button class="smini" data-ed="'+esc(inv.id)+'" title="რედაქტ.">✏</button> <button class="smini" data-rp="'+esc(inv.id)+'" title="ბეჭდვა">🖨</button> <button class="smini danger" data-del="'+esc(inv.id)+'" title="წაშლა">🗑</button></td></tr>';
+      '<td class="right" style="white-space:nowrap"><button class="smini" data-ipay="'+esc(inv.id)+'" title="გადახდის განახლება">💵</button> <button class="smini" data-idoc="'+esc(inv.id)+'" title="დოკუმენტების ატვირთვა">📎</button> <button class="smini" data-ed="'+esc(inv.id)+'" title="რედაქტ.">✏</button> <button class="smini" data-rp="'+esc(inv.id)+'" title="PDF ჩამოტვირთვა">📄</button> <button class="smini danger" data-del="'+esc(inv.id)+'" title="წაშლა">🗑</button></td></tr>';
   }).join('');
   if($('ilEmpty'))$('ilEmpty').style.display=list.length?'none':'';
-  tb.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{const inv=INVOICES.find(x=>String(x.id)===b.dataset.rp);if(inv)printInvoice(inv);});
+  tb.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{const inv=INVOICES.find(x=>String(x.id)===b.dataset.rp);if(inv)downloadInvoicePDF(inv);});
   tb.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>{const inv=INVOICES.find(x=>String(x.id)===b.dataset.ed);if(inv)editInvoice(inv);});
   tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteInvoice(b.dataset.del));
   tb.querySelectorAll('[data-ipay]').forEach(b=>b.onclick=()=>invQuickPay(b.dataset.ipay));
@@ -906,6 +908,27 @@ function printInvoice(inv){
   const restore=()=>{document.title=prev;window.removeEventListener('afterprint',restore);};
   window.addEventListener('afterprint',restore);
   window.print();
+}
+/* ინვოისის PDF — ჩამოტვირთვა (მუშაობს ტელეფონზეც; force-dark არ ამრუდებს) */
+async function downloadInvoicePDF(inv){
+  const fname=((inv&&inv.no)?(''+inv.no):'ინვოისი').replace(/[\\/:*?"<>|]/g,'-').trim();
+  if(!window.html2canvas||!(window.jspdf&&window.jspdf.jsPDF)){printInvoice(inv);return;}
+  const holder=document.createElement('div');
+  holder.style.cssText='position:fixed;left:-99999px;top:0;width:760px;background:#fff;color-scheme:light;z-index:-1';
+  holder.innerHTML=invoiceHTML(inv);
+  document.body.appendChild(holder);
+  const node=holder.firstElementChild||holder;
+  try{
+    await new Promise(r=>setTimeout(r,60));
+    const canvas=await window.html2canvas(node,{scale:2,backgroundColor:'#ffffff',useCORS:true,windowWidth:760,logging:false});
+    const {jsPDF}=window.jspdf;const pdf=new jsPDF('p','mm','a4');
+    const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
+    const perPagePx=Math.floor(canvas.width*ph/pw);
+    if(canvas.height<=perPagePx){pdf.addImage(canvas,'JPEG',0,0,pw,canvas.height*pw/canvas.width);}
+    else{let y=0;while(y<canvas.height){const hh=Math.min(perPagePx,canvas.height-y);const slice=document.createElement('canvas');slice.width=canvas.width;slice.height=hh;const cx=slice.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,slice.width,slice.height);cx.drawImage(canvas,0,y,canvas.width,hh,0,0,canvas.width,hh);if(y>0)pdf.addPage();pdf.addImage(slice,'JPEG',0,0,pw,hh*pw/canvas.width);y+=hh;}}
+    pdf.save(fname+'.pdf');
+  }catch(e){alert('PDF ვერ შეიქმნა: '+(e.message||e)+'\\nვცდი ბეჭდვას…');printInvoice(inv);}
+  finally{holder.remove();}
 }
 /* ===== ფასების შეთავაზება → JPG (ჯამის გარეშე, ერთეული ფასები + მინ. რაოდ.) ===== */
 function _loadImg(src){return new Promise(res=>{if(!src){res(null);return;}const im=new Image();im.onload=()=>res(im);im.onerror=()=>res(null);im.src=src;});}
