@@ -7,13 +7,13 @@ const F="'Noto Sans Georgian','Noto Sans Armenian','Segoe UI',system-ui,sans-ser
 const POSTS={
  ka:{kicker:'🔥 გათბობის სეზონი',title:'ანთრაციტის ბრიკეტი',hook:'2× მეტი სითბო, ვიდრე შეშა',
   b:['🌡  მაღალკალორიული — 7 951 კკალ/კგ','⏱  8–12 საათი ერთ ჩაყრაზე','💨  უკვამლო და ცოტა ნაცარი','💰  ეკონომიური გათბობა'],
-  cta:'სრული ინფორმაცია:',wh:'📍 საწყობი — ნატახტარი · თვითგატანა'},
+  cta:'სრული ინფორმაცია:',wh:'📍 საწყობი — ნატახტარი'},
  az:{kicker:'🔥 İstiləşmə mövsümü',title:'Antrasit briket',hook:'Odundan 2× çox istilik',
   b:['🌡  Yüksək kalorili — 7 951 kkal/kq','⏱  Bir yükləmə ilə 8–12 saat','💨  Tüstüsüz və az kül','💰  Qənaətli istilik'],
-  cta:'Ətraflı məlumat:',wh:'📍 Anbar — Nataxtari · özün apar'},
+  cta:'Ətraflı məlumat:',wh:'📍 Anbar — Nataxtari'},
  hy:{kicker:'🔥 Ջեռուցման սեզոն',title:'Անտրացիտային բրիկետ',hook:'Փայտից 2× ավելի ջերմություն',
   b:['🌡  Բարձր կալորիականություն — 7 951 կկալ/կգ','⏱  Մեկ լիցքով 8–12 ժամ','💨  Առանց ծխի, քիչ մոխիր','💰  Խնայող ջեռուցում'],
-  cta:'Մանրամասն տեղեկություն՝',wh:'📍 Պահեստ — Նատախտարի · ինքնավերցնում'}
+  cta:'Մանրամասն տեղեկություն՝',wh:'📍 Պահեստ — Նատախտարի'}
 };
 function page(t){return `<!doctype html><meta charset="utf-8"><style>
 *{margin:0;box-sizing:border-box;font-family:${F}}

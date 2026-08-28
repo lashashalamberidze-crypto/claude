@@ -43,7 +43,7 @@ html,body{margin:0;background:#0d0703}
  <div class="foto"><img src="${foto}"></div>
  <div class="cols">${COLS.map(col).join('')}</div>
  <div class="cta"><div class="u">ramimpex.com.ge/info</div>
-  <div class="r"><div class="ph">📞 595 533 500</div><div class="wh">📍 საწყობი — ნატახტარი<br>Anbar · Պահեստ · თვითგატანა</div></div></div>
+  <div class="r"><div class="ph">📞 595 533 500</div><div class="wh">📍 საწყობი — ნატახტარი<br>Anbar · Պահեստ — Nataxtari</div></div></div>
 </div>`;
 (async()=>{
  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--force-color-profile=srgb']});
