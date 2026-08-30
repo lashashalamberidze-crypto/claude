@@ -67,6 +67,12 @@ tr:last-child td{border-bottom:none}
 .ri .e{font-size:28px;flex:0 0 auto;line-height:1.1}
 .ri div{font-weight:600;font-size:15px;color:#5a4415;line-height:1.42}
 .ri div b{color:#8a2b00}.ri div .g{color:var(--g);font-weight:900}
+.rules{background:#eef6fb;border:2px solid #7fb8e0;border-radius:16px;padding:4px 20px}
+.rule{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px dashed #b8d6ea}
+.rule:last-child{border-bottom:none}
+.rule .n{flex:0 0 auto;background:#1e6fa8;color:#fff;font-weight:900;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px}
+.rule div{font-weight:600;font-size:15px;color:#234b63;line-height:1.42}
+.rule div b{color:#0b4a72}
 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
 .pc{background:#fff;border:2px solid var(--line);border-radius:16px;padding:20px 8px 14px;text-align:center;position:relative}
 .pc.best{border-color:#e6a700;background:linear-gradient(180deg,#fffdf5,#fff8e6)}
@@ -162,6 +168,7 @@ const T={
   price_h:'💰 ფასები',price_pop:'პოპულარული',price_unit:'₾/კგ',
   tiers:[['≤ 1000 კგ','2.00','10 კგ ტომარა',false],['1000 – 21000 კგ','1.80','10 კგ ტომარა',true],['21000 კგ +','1.30','ბიგ-ბეგი',false]],
   price_notes:['✅ ფასი დღგ-ის ჩათვლით','🏭 საწყობი — ნატახტარი','📦 10 კგ ტომარა ან ბიგ-ბეგი'],
+  rules_h:'📘 მოხმარების წესები',rules:['🌬️ <b>აუცილებელია აერაცია</b> — რათა ბრიკეტმა სტაბილურად შეძლოს გაღვივება.','🔥 <b>დასანთებად</b> გამოიყენეთ ნახშირი ან შეშის ნახშირი — ბრიკეტი სწორედ ამისგანაა დაპრესილი, გახურდება და აინთება.','♨️ <b>აერაცია</b> ხელს უწყობს სიმხურვალის (სითბოს) შენარჩუნებას.'],
   safe_h:'⚠️ უსაფრთხოება და რეკომენდაცია',
   safe:[['🔥','<b>მხოლოდ გათბობისთვის.</b> განკუთვნილია <span class="g">დახურული ფეჩების, ღუმელებისა და სათბურებისთვის.</span> არ არის რეკომენდებული ღია ცეცხლზე საკვების მოსამზადებლად.'],['🌫️','წვისას <b>გამოყოფს ნახშირორჟანგს (CO₂) და ნახშირჟანგს (CO).</b> გამოიყენეთ <span class="g">მხოლოდ დახურულ ფეჩებსა და ღუმელებში</span> — საკვამურითა და კარგი ვენტილაციით.'],['🔩','<b>მაღალი წვის ტემპერატურის გამო</b> სასურველია <span class="g">ძლიერი რკინის ან თუჯის ფეჩი/ღუმელი</span>. იდეალურია თუჯის ღუმელი (თუჯის ცხაურით).']],
   wh_h:'📍 საწყობი — ნატახტარი',
@@ -189,6 +196,7 @@ const T={
   price_h:'💰 Цены',price_pop:'Популярный',price_unit:'₾/кг',
   tiers:[['≤ 1000 кг','2.00','мешок 10 кг',false],['1000 – 21000 кг','1.80','мешок 10 кг',true],['21000 кг +','1.30','биг-бэг',false]],
   price_notes:['✅ Цена с НДС','🏭 Склад — Натахтари','📦 Мешок 10 кг или биг-бэг'],
+  rules_h:'📘 Правила использования',rules:['🌬️ <b>Необходима аэрация</b> — чтобы брикет мог стабильно разгораться.','🔥 <b>Для розжига</b> используйте уголь или древесный уголь — брикет спрессован именно из этого, разогреется и загорится.','♨️ <b>Аэрация</b> помогает сохранять жар (тепло).'],
   safe_h:'⚠️ Безопасность и рекомендации',
   safe:[['🔥','<b>Только для отопления.</b> Предназначен для <span class="g">закрытых каминов, печей и теплиц.</span> Не рекомендуется готовить пищу на открытом огне.'],['🌫️','При горении <b>выделяет углекислый газ (CO₂) и угарный газ (CO).</b> Используйте <span class="g">только в закрытых печах и каминах</span> — с дымоходом и хорошей вентиляцией.'],['🔩','<b>Из-за высокой температуры горения</b> желательна <span class="g">прочная чугунная или стальная печь/камин</span>. Идеальна чугунная печь (с чугунной решёткой).']],
   wh_h:'📍 Склад — Натахтари',
@@ -216,6 +224,7 @@ const T={
   price_h:'💰 Qiymətlər',price_pop:'Populyar',price_unit:'₾/kq',
   tiers:[['≤ 1000 kq','2.00','10 kq kisə',false],['1000 – 21000 kq','1.80','10 kq kisə',true],['21000 kq +','1.30','big-bag',false]],
   price_notes:['✅ Qiymət ƏDV daxil','🏭 Anbar — Nataxtari','📦 10 kq kisə və ya big-bag'],
+  rules_h:'📘 İstifadə qaydaları',rules:['🌬️ <b>Aerasiya vacibdir</b> — briket sabit şəkildə alışa bilsin deyə.','🔥 <b>Alışdırmaq üçün</b> kömür və ya odun kömürü istifadə edin — briket məhz bundan preslənib, qızacaq və alışacaq.','♨️ <b>Aerasiya</b> istiliyin (hərarətin) saxlanmasına kömək edir.'],
   safe_h:'⚠️ Təhlükəsizlik və tövsiyə',
   safe:[['🔥','<b>Yalnız istilik üçün.</b> <span class="g">Qapalı buxarı, soba və istixanalar üçün</span> nəzərdə tutulub. Açıq odda yemək bişirmək tövsiyə olunmur.'],['🌫️','Yanarkən <b>karbon qazı (CO₂) və dəm qazı (CO) buraxır.</b> <span class="g">Yalnız qapalı soba və buxarılarda</span> — baca və yaxşı ventilyasiya ilə istifadə edin.'],['🔩','<b>Yüksək yanma temperaturuna görə</b> <span class="g">möhkəm çuqun və ya polad soba/buxarı</span> tövsiyə olunur. İdeal olan çuqun sobadır (çuqun barmaqlıqla).']],
   wh_h:'📍 Anbar — Nataxtari',
@@ -243,6 +252,7 @@ const T={
   price_h:'💰 Գներ',price_pop:'Հանրաճանաչ',price_unit:'₾/կգ',
   tiers:[['≤ 1000 կգ','2.00','10 կգ պարկ',false],['1000 – 21000 կգ','1.80','10 կգ պարկ',true],['21000 կգ +','1.30','big-bag',false]],
   price_notes:['✅ Գինը՝ ԱԱՀ-ով','🏭 Պահեստ — Նատախտարի','📦 10 կգ պարկ կամ big-bag'],
+  rules_h:'📘 Օգտագործման կանոններ',rules:['🌬️ <b>Անհրաժեշտ է օդափոխություն</b> — որպեսզի բրիկետը կարողանա կայուն բռնկվել։','🔥 <b>Վառելու համար</b> օգտագործեք ածուխ կամ փայտածուխ — բրիկետը հենց դրանից է սեղմված, կտաքանա և կբռնկվի։','♨️ <b>Օդափոխությունը</b> օգնում է պահպանել շոգը (ջերմությունը)։'],
   safe_h:'⚠️ Անվտանգություն և խորհուրդ',
   safe:[['🔥','<b>Միայն ջեռուցման համար։</b> Նախատեսված է <span class="g">փակ բուխարիների, վառարանների և ջերմոցների համար։</span> Բաց կրակի վրա սնունդ պատրաստել խորհուրդ չի տրվում։'],['🌫️','Այրվելիս <b>արտազատում է ածխաթթու գազ (CO₂) և շմոլ գազ (CO)։</b> Օգտագործեք <span class="g">միայն փակ վառարաններում և բուխարիներում</span>՝ ծխնելույզով և լավ օդափոխությամբ։'],['🔩','<b>Այրման բարձր ջերմաստիճանի պատճառով</b> ցանկալի է <span class="g">ամուր չուգունե կամ պողպատե վառարան/բուխարի</span>։ Իդեալական է չուգունե վառարանը (չուգունե վանդակով)։']],
   wh_h:'📍 Պահեստ — Նատախտարի',
@@ -261,6 +271,7 @@ function render(lang){
  const uses=t.uses.map(u=>'<div class="ui"><span class="e">'+u[0]+'</span>'+u[1]+'</div>').join('');
  const spec=t.spec.map(r=>'<tr><td>'+r[0]+'</td><td class="v">'+r[1]+'</td></tr>').join('');
  const safe=t.safe.map(s=>'<div class="ri"><span class="e">'+s[0]+'</span><div>'+s[1]+'</div></div>').join('');
+ const rules=t.rules.map((r,i)=>'<div class="rule"><div class="n">'+(i+1)+'</div><div>'+r+'</div></div>').join('');
  const cards=t.tiers.map(x=>'<div class="pc'+(x[3]?' best':'')+'">'+(x[3]?'<div class="tag">⭐ '+t.price_pop+'</div>':'')+'<div class="rng">'+x[0]+'</div><div class="prc">'+x[1]+' <small>'+t.price_unit+'</small></div><div class="pk">📦 '+x[2]+'</div></div>').join('');
  const pinfo=t.price_notes.map(n=>'<div class="pib">'+n+'</div>').join('');
  document.getElementById('app').innerHTML=
@@ -279,6 +290,7 @@ function render(lang){
    '<section><h2>'+t.spec_h+'</h2><table><tr><th>'+t.spec_th[0]+'</th><th style="text-align:right">'+t.spec_th[1]+'</th></tr>'+spec+'</table></section>'+
    '<section><h2>'+t.cert_h+'</h2><div class="pills"><span class="pill">ISO 9001</span><span class="pill">ISO 14001</span><span class="pill">ISO 45001</span><span class="pill o">ГОСТ Р 57016-2016</span><span class="pill">MSDS</span><span class="pill">COTECNA</span></div></section>'+
    '<section><h2>'+t.price_h+'</h2><div class="cards">'+cards+'</div><div class="pinfo">'+pinfo+'</div></section>'+
+   '<section><h2>'+t.rules_h+'</h2><div class="rules">'+rules+'</div></section>'+
    '<section><h2>'+t.safe_h+'</h2><div class="recbox">'+safe+'</div></section>'+
    '<section><h2>'+t.wh_h+'</h2><div class="loc"><a class="qr" href="'+MAPS+'" target="_blank" rel="noopener"><img src="qr.png" alt="QR"></a><div class="lt"><div class="h">'+t.wh_h+'</div><div class="d">'+t.wh_t+'</div><a class="mapbtn" href="'+MAPS+'" target="_blank" rel="noopener">'+t.wh_btn+'</a></div></div></section>'+
   '</div>'+
