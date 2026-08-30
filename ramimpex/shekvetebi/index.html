@@ -63,6 +63,27 @@ td.right,th.right{text-align:right}
 .ov.on{display:flex}.ov img{max-width:92vw;max-height:90vh;border-radius:10px}
 #printArea{display:none}
 @media print{@page{margin:0}body>*{display:none!important}#printArea{display:block!important;padding:14mm 6mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+/* ===== მობილური ადაპტაცია ===== */
+@media(max-width:680px){
+ body{font-size:14px}
+ .card{padding:11px;border-radius:11px}
+ h2{font-size:17px}
+ .row{gap:8px}
+ .row>div{flex:1 1 100%!important;min-width:0!important}
+ input,select,textarea{font-size:16px}
+ .scroll{-webkit-overflow-scrolling:touch}
+ .tb{padding:7px 12px;font-size:13px}
+ .btn{padding:11px 14px}
+ /* ინვოისის ხაზები → ბარათებად */
+ #iTbl thead{display:none}
+ #iTbl,#iTbl tbody,#iTbl tr,#iTbl td{display:block;width:100%}
+ #iTbl tr{border:1.5px solid var(--line);border-radius:12px;margin-bottom:10px;padding:6px 10px;background:#fff}
+ #iTbl td{display:flex;justify-content:space-between;align-items:center;gap:10px;border:none!important;padding:7px 2px;text-align:right}
+ #iTbl td:before{content:attr(data-l);font-weight:700;color:#5c6b62;font-size:12.5px;flex:0 0 auto;text-align:left}
+ #iTbl td[data-l=""]:before{content:none}
+ #iTbl td input,#iTbl td select{width:auto!important;min-width:0!important;max-width:64%;flex:1 1 auto;text-align:right}
+ #iTbl td.sum{font-weight:800;font-size:16px;color:var(--green)}
+}
 </style></head>
 <body>
 <div class="top"><div><div class="lg">RAM IMPEX</div><div class="su">ადმინ პანელი</div></div>
@@ -783,14 +804,14 @@ function renderInvoice(){
 }
 function renderInvLines(){
   const tb=$('iRows');$('iEmpty').style.display=invDraft.length?'none':'block';$('iTbl').style.display=invDraft.length?'':'none';
-  tb.innerHTML=invDraft.map((l,i)=>{const p=byCode(l.code)||{};if(isBriket(l.code)){if(l.tier){if(!l.priceEdited)l.price=briketTierPrice(l.tier);}else{if(!l.priceEdited)l.price=briketPrice(l.qty);if(!l.packSet)l.pack=briketDefPack(l.qty);}}const im=pubImg(l.code);return '<tr><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+(im?'<img src="'+im+'" style="width:48px;height:48px;object-fit:contain;background:#fff;border:1px solid #eee;border-radius:6px;vertical-align:middle;margin-right:6px">':'')+esc(l.name||p.name||'')+((pizzaShapeWord(l.code,l.name||p.name))?' <span class="muted">· '+esc(pizzaShapeWord(l.code,l.name||p.name))+'</span>':'')+(isBriket(l.code)&&l.tier?' <span class="muted" style="color:#0B6B3C;font-weight:700">· '+esc(briketTierLabel(l.tier))+' ფიქს.</span>':'')+(p.color?' <span class="muted">· '+esc(p.color)+'</span>':'')+'</td><td>'+(isBriket(l.code)?'<span class="muted">—</span>':esc(l.size||p.size||''))+'</td>'+
-    '<td>'+(isBriket(l.code)?('<select data-pack="'+i+'" style="padding:5px 6px">'+briketPacks().map(o=>'<option'+((l.pack||briketDefPack(l.qty))===o?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>'):'<span class="muted">—</span>')+'</td>'+
-    '<td>'+(itmBox(l)?'<input value="'+esc(l.ply||'')+'" placeholder="შრე" style="width:64px" data-ply="'+i+'">':'<span class="muted">—</span>')+'</td>'+
-    '<td>'+(isBriket(l.code)?'<span class="muted">—</span>':('<select data-brand="'+i+'" style="padding:5px 6px"><option value=""'+(!l.brand?' selected':'')+'>—</option><option value="კი"'+(l.brand==='კი'?' selected':'')+'>კი</option><option value="არა"'+(l.brand==='არა'?' selected':'')+'>არა</option></select>'))+'</td>'+
-    '<td class="right"><input type="number" min="1" value="'+l.qty+'" style="width:90px;min-width:90px;text-align:right" data-q="'+i+'"></td>'+
-    '<td class="right"><input type="number" step="0.01" value="'+l.price+'"'+((isBriket(l.code)&&l.tier)?' title="კატეგორიის ფასი — შეგიძლია ხელით შეცვალო" style="width:80px;text-align:right;background:'+(l.priceEdited?'#fffbea':'#eef7f1')+';color:#0B6B3C;font-weight:700"':' style="width:80px;text-align:right;background:#fffbea"')+' data-p="'+i+'"></td>'+
-    '<td class="right"><input value="'+esc(l.min||'')+'" placeholder="მაგ. 4500" title="მინ. პარტია — ჩანს მხოლოდ ფასების შეთავაზებაში" style="width:88px;text-align:right;background:#f3f0fb" data-min="'+i+'"></td>'+
-    '<td class="right sum">'+money(l.price*l.qty)+'</td><td class="right"><button class="btn danger sm" data-x="'+i+'">✕</button></td></tr>';}).join('');
+  tb.innerHTML=invDraft.map((l,i)=>{const p=byCode(l.code)||{};if(isBriket(l.code)){if(l.tier){if(!l.priceEdited)l.price=briketTierPrice(l.tier);}else{if(!l.priceEdited)l.price=briketPrice(l.qty);if(!l.packSet)l.pack=briketDefPack(l.qty);}}const im=pubImg(l.code);return '<tr><td data-l="კოდი"><b>'+esc(ruCode(l.code))+'</b></td><td data-l="დასახელება">'+(im?'<img src="'+im+'" style="width:48px;height:48px;object-fit:contain;background:#fff;border:1px solid #eee;border-radius:6px;vertical-align:middle;margin-right:6px">':'')+esc(l.name||p.name||'')+((pizzaShapeWord(l.code,l.name||p.name))?' <span class="muted">· '+esc(pizzaShapeWord(l.code,l.name||p.name))+'</span>':'')+(isBriket(l.code)&&l.tier?' <span class="muted" style="color:#0B6B3C;font-weight:700">· '+esc(briketTierLabel(l.tier))+' ფიქს.</span>':'')+(p.color?' <span class="muted">· '+esc(p.color)+'</span>':'')+'</td><td data-l="ზომა">'+(isBriket(l.code)?'<span class="muted">—</span>':esc(l.size||p.size||''))+'</td>'+
+    '<td data-l="შეფუთვა">'+(isBriket(l.code)?('<select data-pack="'+i+'" style="padding:5px 6px">'+briketPacks().map(o=>'<option'+((l.pack||briketDefPack(l.qty))===o?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>'):'<span class="muted">—</span>')+'</td>'+
+    '<td data-l="შრე">'+(itmBox(l)?'<input value="'+esc(l.ply||'')+'" placeholder="შრე" style="width:64px" data-ply="'+i+'">':'<span class="muted">—</span>')+'</td>'+
+    '<td data-l="ბრენდ.">'+(isBriket(l.code)?'<span class="muted">—</span>':('<select data-brand="'+i+'" style="padding:5px 6px"><option value=""'+(!l.brand?' selected':'')+'>—</option><option value="კი"'+(l.brand==='კი'?' selected':'')+'>კი</option><option value="არა"'+(l.brand==='არა'?' selected':'')+'>არა</option></select>'))+'</td>'+
+    '<td class="right" data-l="რაოდ."><input type="number" min="1" value="'+l.qty+'" style="width:90px;min-width:90px;text-align:right" data-q="'+i+'"></td>'+
+    '<td class="right" data-l="ფასი ₾"><input type="number" step="0.01" value="'+l.price+'"'+((isBriket(l.code)&&l.tier)?' title="კატეგორიის ფასი — შეგიძლია ხელით შეცვალო" style="width:80px;text-align:right;background:'+(l.priceEdited?'#fffbea':'#eef7f1')+';color:#0B6B3C;font-weight:700"':' style="width:80px;text-align:right;background:#fffbea"')+' data-p="'+i+'"></td>'+
+    '<td class="right" data-l="მინ."><input value="'+esc(l.min||'')+'" placeholder="მაგ. 4500" title="მინ. პარტია — ჩანს მხოლოდ ფასების შეთავაზებაში" style="width:88px;text-align:right;background:#f3f0fb" data-min="'+i+'"></td>'+
+    '<td class="right sum" data-l="ჯამი">'+money(l.price*l.qty)+'</td><td class="right" data-l=""><button class="btn danger sm" data-x="'+i+'">✕</button></td></tr>';}).join('');
   tb.querySelectorAll('input[data-ply]').forEach(inp=>inp.oninput=()=>{invDraft[+inp.dataset.ply].ply=inp.value;});
   tb.querySelectorAll('select[data-brand]').forEach(s=>s.onchange=()=>{invDraft[+s.dataset.brand].brand=s.value;});
   tb.querySelectorAll('select[data-pack]').forEach(s=>s.onchange=()=>{const i=+s.dataset.pack;invDraft[i].pack=s.value;invDraft[i].packSet=true;});
@@ -824,7 +845,7 @@ async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამ�
   catch(e){alert('ვერ შეინახა: '+(e.message||e)+'\n(თუ paid/status/docs სვეტების შეცდომაა — გაუშვი sql/invoices_upgrade.sql)');}
 }
 function invStatus(inv){const g=+inv.grand||0,p=+inv.paid||0;return (g>0&&p>=g)?'paid':(p>0?'part':'due');}
-function invProdSummary(inv){const ls=inv.lines||[];if(!ls.length)return '—';const n0=ls[0].name||ls[0].code||'';return ls.length>1?(esc(n0)+' <span class="muted">+'+(ls.length-1)+'</span>'):esc(n0);}
+function invProdSummary(inv){const ls=inv.lines||[];if(!ls.length)return '—';const l0=ls[0];const n0=l0.name||l0.code||'';const up=(l0.price!=null&&l0.price!=='')?(' <span class="muted">· '+money(l0.price)+' ₾/ერთ.</span>'):'';return ls.length>1?(esc(n0)+up+' <span class="muted">+'+(ls.length-1)+'</span>'):(esc(n0)+up);}
 function invDirBucket(inv){const c=(inv.lines&&inv.lines[0]&&inv.lines[0].code)||'';return saleDirOf(c,(byCode(c)||{}).dir||'');}
 function invLedgerList(){const q=(($('ilQ')||{}).value||'').toLowerCase().trim(),df=($('ilFrom')||{}).value,dt=($('ilTo')||{}).value,st=($('ilStatus')||{}).value||'';
   return INVOICES.filter(inv=>{if(IL_DIR!=='all'&&invDirBucket(inv)!==IL_DIR)return false;if(q){const hay=((inv.cust||'')+' '+(inv.idc||'')+' '+(inv.no||'')).toLowerCase();if(hay.indexOf(q)<0)return false;}if(df&&(inv.date||'')<df)return false;if(dt&&(inv.date||'')>dt)return false;if(st&&(inv.status||invStatus(inv))!==st)return false;return true;});}
@@ -858,7 +879,24 @@ function wireLedgerControls(){
   if($('ilXls'))$('ilXls').onclick=()=>exportInvXls(invLedgerList());
   if($('ilPrint'))$('ilPrint').onclick=()=>printInvLedger(invLedgerList());
 }
-async function invQuickPay(id){const inv=INVOICES.find(x=>String(x.id)===String(id));if(!inv)return;const wasPaid=((inv.status||invStatus(inv))==='paid');const cur=(inv.paid!=null?inv.paid:0);const v=prompt('გადახდილი თანხა ₾ (სულ ჯამი: '+money(inv.grand)+' ₾).\\nსრულად გადახდისთვის ჩაწერე '+money(inv.grand)+':',cur);if(v===null)return;const paid=+v||0;const status=(+inv.grand>0&&paid>=+inv.grand)?'paid':(paid>0?'part':'due');try{const {error}=await sb.from('invoices').update({paid:paid,status:status}).eq('id',inv.id);if(error)throw error;inv.paid=paid;inv.status=status;renderInvList();if(status==='paid'&&!wasPaid)notifyTelegramPaid(inv);}catch(e){alert('ვერ განახლდა: '+(e.message||e));}}
+function invQuickPay(id){const inv=INVOICES.find(x=>String(x.id)===String(id));if(!inv)return;
+  const wasPaid=((inv.status||invStatus(inv))==='paid');const grand=+inv.grand||0;const cur=(inv.paid!=null?inv.paid:0);
+  const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:18px';
+  ov.innerHTML='<div class="card" style="max-width:420px;width:100%"><h2 style="margin-bottom:4px">💵 გადახდა — '+esc(inv.no||inv.id)+'</h2><p class="muted" style="font-size:12px;margin-bottom:12px">'+esc(inv.cust||'')+'</p>'+
+    '<div style="display:flex;justify-content:space-between;font-size:15px;margin-bottom:10px;padding:8px 12px;background:#eef7f1;border-radius:8px"><span>სულ ჯამი:</span><b style="color:#0B6B3C">'+money(grand)+' ₾</b></div>'+
+    '<label>გადახდილი თანხა ₾</label><input id="qpAmt" type="number" step="0.01" value="'+cur+'" style="font-size:19px;font-weight:800;text-align:right">'+
+    '<button class="btn" id="qpFull" style="width:100%;margin-top:10px;background:#0B6B3C;color:#fff;font-weight:800">✅ სრულად გადახდილია ('+money(grand)+' ₾)</button>'+
+    '<div style="display:flex;gap:8px;margin-top:14px"><button class="btn" id="qpSave" style="flex:1">💾 შენახვა</button><button class="btn line" id="qpClose" style="flex:0 0 auto">დახურვა</button></div>'+
+    '<div id="qpMsg" style="margin-top:8px;font-size:12px"></div></div>';
+  document.body.appendChild(ov);
+  const q=s=>ov.querySelector(s);
+  q('#qpFull').onclick=()=>{q('#qpAmt').value=money(grand);q('#qpAmt').focus();};
+  q('#qpClose').onclick=()=>ov.remove();
+  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  q('#qpSave').onclick=async()=>{const paid=+q('#qpAmt').value||0;const status=(grand>0&&paid>=grand)?'paid':(paid>0?'part':'due');const btn=q('#qpSave');btn.disabled=true;btn.textContent='⏳…';
+    try{const {error}=await sb.from('invoices').update({paid:paid,status:status}).eq('id',inv.id);if(error)throw error;
+      inv.paid=paid;inv.status=status;ov.remove();renderInvList();if(status==='paid'&&!wasPaid)notifyTelegramPaid(inv);}
+    catch(e){q('#qpMsg').innerHTML='<span style="color:#c62828">ვერ განახლდა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='💾 შენახვა';}};}
 function fmtNum(n){return String(Math.round(+n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
 function tgLineText(l){const p=byCode(l.code)||{};const nm=(l.name||p.name||l.code);const tier=l.tier?(' '+briketTierLabel(l.tier)):'';return '• '+esc(nm+tier)+' — '+fmtNum(l.qty)+' × '+money(l.price)+' = '+money(l.price*l.qty)+' ₾';}
 async function notifyTelegramPaid(inv){
