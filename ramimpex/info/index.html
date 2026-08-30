@@ -77,6 +77,20 @@ tr:last-child td{border-bottom:none}
 .pc .pk{font-weight:800;font-size:12.5px;color:var(--g);margin-top:4px}
 .pinfo{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
 .pib{background:#eaf6ef;border:1.5px solid #bfe3ce;border-radius:12px;padding:11px 12px;font-weight:800;font-size:13.5px;color:var(--g);text-align:center}
+.cmp{display:flex;align-items:stretch;gap:10px}
+.cmp .side{flex:1;border-radius:14px;padding:16px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.cmp .brik{background:linear-gradient(180deg,#1c1206,#3a2410);color:#fff;border:2px solid var(--o)}
+.cmp .wood{background:#f4efe6;border:2px solid var(--line)}
+.cmp .em{font-size:34px;line-height:1}
+.cmp .q{font-weight:900;font-size:20px;margin-top:6px;line-height:1.1}
+.cmp .brik .q{color:#ffb347}.cmp .wood .q{color:#3a2410}
+.cmp .s{font-size:12.5px;font-weight:700;margin-top:6px;line-height:1.3}
+.cmp .brik .s{color:#e9d6bd}.cmp .wood .s{color:#7a6a52}
+.cmp .eq{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 2px}
+.cmp .eq b{font-size:34px;color:var(--o);font-weight:900;line-height:1}
+.cmp .eq span{font-size:10.5px;color:var(--g);font-weight:800;margin-top:3px;text-align:center;line-height:1.1}
+.cmpbig{background:linear-gradient(90deg,#0B6B3C,#0F8A4D);color:#fff;border-radius:14px;padding:15px;text-align:center;font-weight:900;font-size:20px;margin-top:11px}
+.cmpnote{text-align:center;font-weight:700;font-size:14px;color:var(--mut);margin-top:9px}
 .loc{background:#fff;border:2px solid #bfe3ce;border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:18px}
 .loc .qr{width:120px;height:120px;flex:0 0 auto;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
 .loc .lt .h{font-weight:900;font-size:18px;color:var(--g);margin-bottom:5px}
@@ -127,6 +141,7 @@ const T={
   how:[['წვრილი ფრაქცია','მოპოვებისას რჩება წვრილი ნატეხი/მტვერი — ცალკე <b>კარგად ვერ იწვის</b>.'],['მაღალი წნევა','ეს ფრაქცია <b>დიდი წნევით იწნეხება</b> ერთგვაროვან ბრიკეტებად.'],['მზა ბრიკეტი','შედეგი — <b>მყარი, მშრალი, სტაბილური</b> ბრიკეტი, რომელიც დიდხანს და თანაბრად იწვის.']],
   how_note:'➜ ამიტომ ბრიკეტი გაცილებით ეფექტურია, ვიდრე ნახშირის მტვერი ან ცალკეული ნატეხები.',
   why_h:'🔥 რატომ ჯობია შეშას?',
+  cmp_h:'🪵 ბრიკეტი vs შეშა — ციფრებში',cmp_brik:'1 კგ ბრიკეტი',cmp_brik_s:'~10 საათი წვა · 7 951 კკალ/კგ',cmp_wood:'~10 კგ შეშა',cmp_wood_s:'6–8× დამატება · ~2 100 კკალ/კგ',cmp_eq:'იგივე სითბო',cmp_big:'1 კგ ბრიკეტი = ~10 კგ შეშა',cmp_note:'1 კუბი შეშა ≈ 500 კგ → იმავე სითბოს ~50 კგ ბრიკეტი იძლევა.',
   why:['🌡 <b>2× მეტი სითბო</b> — მაღალი კალორიულობა (7 951 კკალ/კგ).','⏱ <b>8–12 საათი</b> ერთ ჩაყრაზე (შეშა მხოლოდ 1–2 სთ).','💨 <b>ცოტა კვამლი და ნაცარი</b> — უფრო სუფთა წვა.','💰 <b>ეკონომიური</b> — ნაკლები ხარჯი გათბობაზე.','📦 <b>კომპაქტური და მშრალი</b> — მარტივი შენახვა.','🎯 <b>სტაბილური ხარისხი</b> — ერთგვაროვანი ყოველ პარტიაში.'],
   use_h:'📍 სად გამოიყენება',
   uses:[['🔥','დახურული ფეჩი და ღუმელი'],['🏠','საოჯახო გათბობა'],['🌱','სათბურების გათბობა'],['🏭','სამრეწველო ქვაბები'],['♨️','წყლის გამათბობელი'],['🏢','კომერციული ობიექტები']],
@@ -153,6 +168,7 @@ const T={
   how:[['Мелкая фракция','При добыче остаётся мелочь/пыль — сама по себе <b>горит плохо</b>.'],['Высокое давление','Эта фракция <b>прессуется под большим давлением</b> в однородные брикеты.'],['Готовый брикет','Результат — <b>твёрдый, сухой, стабильный</b> брикет, горящий долго и равномерно.']],
   how_note:'➜ Поэтому брикет намного эффективнее угольной пыли или отдельных кусков.',
   why_h:'🔥 Чем лучше дров?',
+  cmp_h:'🪵 Брикет vs дрова — в цифрах',cmp_brik:'1 кг брикета',cmp_brik_s:'~10 часов горения · 7 951 ккал/кг',cmp_wood:'~10 кг дров',cmp_wood_s:'6–8× подкладка · ~2 100 ккал/кг',cmp_eq:'то же тепло',cmp_big:'1 кг брикета = ~10 кг дров',cmp_note:'1 куб дров ≈ 500 кг → столько же тепла даёт ~50 кг брикета.',
   why:['🌡 <b>В 2× больше тепла</b> — высокая калорийность (7 951 ккал/кг).','⏱ <b>8–12 часов</b> за одну загрузку (дрова — лишь 1–2 ч).','💨 <b>Мало дыма и золы</b> — более чистое горение.','💰 <b>Экономично</b> — меньше затрат на отопление.','📦 <b>Компактный и сухой</b> — удобно хранить.','🎯 <b>Стабильное качество</b> — одинаковое в каждой партии.'],
   use_h:'📍 Где применяется',
   uses:[['🔥','Закрытый камин и печь'],['🏠','Домашнее отопление'],['🌱','Отопление теплиц'],['🏭','Промышленные котлы'],['♨️','Водонагреватели'],['🏢','Коммерческие объекты']],
@@ -179,6 +195,7 @@ const T={
   how:[['Narın fraksiya','Hasilat zamanı narın hissə/toz qalır — ayrıca <b>yaxşı yanmır</b>.'],['Yüksək təzyiq','Bu fraksiya <b>böyük təzyiqlə sıxılır</b> və eynicinsli briketlərə çevrilir.'],['Hazır briket','Nəticə — <b>bərk, quru, stabil</b> briket, uzun və bərabər yanır.']],
   how_note:'➜ Buna görə briket kömür tozundan və ya ayrı parçalardan qat-qat effektivdir.',
   why_h:'🔥 Nə üçün odundan yaxşıdır?',
+  cmp_h:'🪵 Briket vs odun — rəqəmlərlə',cmp_brik:'1 kq briket',cmp_brik_s:'~10 saat yanma · 7 951 kkal/kq',cmp_wood:'~10 kq odun',cmp_wood_s:'6–8× əlavə · ~2 100 kkal/kq',cmp_eq:'eyni istilik',cmp_big:'1 kq briket = ~10 kq odun',cmp_note:'1 kub odun ≈ 500 kq → eyni istiliyi ~50 kq briket verir.',
   why:['🌡 <b>2× çox istilik</b> — yüksək kalorilik (7 951 kkal/kq).','⏱ <b>8–12 saat</b> bir yükləmə ilə (odun cəmi 1–2 saat).','💨 <b>Az tüstü və kül</b> — daha təmiz yanma.','💰 <b>Qənaətli</b> — istiləşməyə az xərc.','📦 <b>Yığcam və quru</b> — saxlamaq asandır.','🎯 <b>Stabil keyfiyyət</b> — hər partiyada eyni.'],
   use_h:'📍 Harada istifadə olunur',
   uses:[['🔥','Qapalı buxarı və soba'],['🏠','Ev istiliyi'],['🌱','İstixanaların istiliyi'],['🏭','Sənaye qazanları'],['♨️','Su qızdırıcıları'],['🏢','Kommersiya obyektləri']],
@@ -205,6 +222,7 @@ const T={
   how:[['Մանր ֆրակցիա','Արդյունահանման ժամանակ մնում է մանր կտոր/փոշի, որն առանձին <b>վատ է այրվում</b>։'],['Բարձր ճնշում','Այս ֆրակցիան <b>մեծ ճնշմամբ սեղմվում է</b>՝ միատարր բրիկետների։'],['Պատրաստի բրիկետ','Արդյունքը՝ <b>ամուր, չոր, կայուն</b> բրիկետ, որ այրվում է երկար և հավասար։']],
   how_note:'➜ Դրա համար բրիկետը շատ ավելի արդյունավետ է, քան ածխի փոշին կամ առանձին կտորները։',
   why_h:'🔥 Ինչո՞ւ է լավ փայտից',
+  cmp_h:'🪵 Բրիկետ vs փայտ — թվերով',cmp_brik:'1 կգ բրիկետ',cmp_brik_s:'~10 ժամ այրում · 7 951 կկալ/կգ',cmp_wood:'~10 կգ փայտ',cmp_wood_s:'6–8× ավելացում · ~2 100 կկալ/կգ',cmp_eq:'նույն ջերմությունը',cmp_big:'1 կգ բրիկետ = ~10 կգ փայտ',cmp_note:'1 խմ փայտ ≈ 500 կգ → նույն ջերմությունը տալիս է ~50 կգ բրիկետ։',
   why:['🌡 <b>2× ավելի ջերմություն</b> — բարձր կալորիականություն (7 951 կկալ/կգ)։','⏱ <b>8–12 ժամ</b> մեկ լիցքով (փայտը՝ ընդամենը 1–2 ժ)։','💨 <b>Քիչ ծուխ և մոխիր</b> — ավելի մաքուր այրում։','💰 <b>Խնայող</b> — ջեռուցման քիչ ծախս։','📦 <b>Կոմպակտ և չոր</b> — հեշտ պահվող։','🎯 <b>Կայուն որակ</b> — նույնը յուրաքանչյուր խմբաքանակում։'],
   use_h:'📍 Որտեղ է կիրառվում',
   uses:[['🔥','Փակ բուխարի և վառարան'],['🏠','Տան ջեռուցում'],['🌱','Ջերմոցների ջեռուցում'],['🏭','Արդյունաբերական կաթսաներ'],['♨️','Ջրատաքացուցիչներ'],['🏢','Առևտրային օբյեկտներ']],
@@ -246,6 +264,7 @@ function render(lang){
    '<section><h2>'+t.made_h+'</h2><div class="two">'+made+'</div></section>'+
    '<section><h2>'+t.how_h+'</h2><div class="steps">'+how+'</div><div class="note">'+t.how_note+'</div></section>'+
    '<section><h2>'+t.why_h+'</h2><div class="why">'+why+'</div></section>'+
+   '<section><h2>'+t.cmp_h+'</h2><div class="cmp"><div class="side brik"><div class="em">🔥</div><div class="q">'+t.cmp_brik+'</div><div class="s">'+t.cmp_brik_s+'</div></div><div class="eq"><b>=</b><span>'+t.cmp_eq+'</span></div><div class="side wood"><div class="em">🪵</div><div class="q">'+t.cmp_wood+'</div><div class="s">'+t.cmp_wood_s+'</div></div></div><div class="cmpbig">🔥 '+t.cmp_big+'</div><div class="cmpnote">'+t.cmp_note+'</div></section>'+
    '<section><h2>'+t.use_h+'</h2><div class="uses">'+uses+'</div></section>'+
    '<section><h2>'+t.spec_h+'</h2><table><tr><th>'+t.spec_th[0]+'</th><th style="text-align:right">'+t.spec_th[1]+'</th></tr>'+spec+'</table></section>'+
    '<section><h2>'+t.cert_h+'</h2><div class="pills"><span class="pill">ISO 9001</span><span class="pill">ISO 14001</span><span class="pill">ISO 45001</span><span class="pill o">ГОСТ Р 57016-2016</span><span class="pill">MSDS</span><span class="pill">COTECNA</span></div></section>'+
