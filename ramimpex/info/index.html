@@ -91,6 +91,14 @@ tr:last-child td{border-bottom:none}
 .cmp .eq span{font-size:10.5px;color:var(--g);font-weight:800;margin-top:3px;text-align:center;line-height:1.1}
 .cmpbig{background:linear-gradient(90deg,#0B6B3C,#0F8A4D);color:#fff;border-radius:14px;padding:15px;text-align:center;font-weight:900;font-size:20px;margin-top:11px}
 .cmpnote{text-align:center;font-weight:700;font-size:14px;color:var(--mut);margin-top:9px}
+.econ{background:linear-gradient(90deg,#0B6B3C,#0F8A4D);border-radius:16px;padding:16px 18px;color:#fff;margin-top:14px}
+.econ .eh{font-weight:900;font-size:18px;margin-bottom:12px;text-align:center}
+.econ .er{display:flex;gap:10px}
+.econ .ec{flex:1;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.28);border-radius:12px;padding:12px 8px;text-align:center}
+.econ .ec span{display:block;font-size:13px;font-weight:800;color:#dff5e8}
+.econ .ec b{display:block;font-size:16px;font-weight:900;margin-top:6px}
+.econ .ec.save{background:#F2B807;border-color:#F2B807}.econ .ec.save span{color:#5a4600}.econ .ec.save b{color:#1c1500;font-size:22px}
+.econ .en{margin-top:11px;font-size:13px;font-weight:700;color:#dff5e8;text-align:center}
 .loc{background:#fff;border:2px solid #bfe3ce;border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:18px}
 .loc .qr{width:120px;height:120px;flex:0 0 auto;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
 .loc .lt .h{font-weight:900;font-size:18px;color:var(--g);margin-bottom:5px}
@@ -103,6 +111,7 @@ tr:last-child td{border-bottom:none}
 .foot .r{font-size:13px;color:#dff5e8;font-weight:600}
 .dl2{display:inline-flex;align-items:center;gap:9px;background:#fff;color:var(--g);font-weight:800;font-size:15px;text-decoration:none;border-radius:12px;padding:11px 20px;margin-top:8px}
 @media(max-width:560px){
+ .econ .er{flex-direction:column}
  .two,.why,.uses,.cards,.pinfo{grid-template-columns:1fr}
  .chips{grid-template-columns:repeat(2,1fr)}
  .hero h1{font-size:27px}
@@ -141,7 +150,7 @@ const T={
   how:[['წვრილი ფრაქცია','მოპოვებისას რჩება წვრილი ნატეხი/მტვერი — ცალკე <b>კარგად ვერ იწვის</b>.'],['მაღალი წნევა','ეს ფრაქცია <b>დიდი წნევით იწნეხება</b> ერთგვაროვან ბრიკეტებად.'],['მზა ბრიკეტი','შედეგი — <b>მყარი, მშრალი, სტაბილური</b> ბრიკეტი, რომელიც დიდხანს და თანაბრად იწვის.']],
   how_note:'➜ ამიტომ ბრიკეტი გაცილებით ეფექტურია, ვიდრე ნახშირის მტვერი ან ცალკეული ნატეხები.',
   why_h:'🔥 რატომ ჯობია შეშას?',
-  cmp_h:'🪵 ბრიკეტი vs შეშა — ციფრებში',cmp_brik:'1 კგ ბრიკეტი',cmp_brik_s:'~10 საათი წვა · 7 951 კკალ/კგ',cmp_wood:'~10 კგ შეშა',cmp_wood_s:'6–8× დამატება · ~2 100 კკალ/კგ',cmp_eq:'იგივე სითბო',cmp_big:'1 კგ ბრიკეტი = ~10 კგ შეშა',cmp_note:'1 კუბი შეშა ≈ 500 კგ → იმავე სითბოს ~50 კგ ბრიკეტი იძლევა.',
+  cmp_h:'🪵 ბრიკეტი vs შეშა — ციფრებში',cmp_brik:'1 კგ ბრიკეტი',cmp_brik_s:'~10 საათი წვა · 7 951 კკალ/კგ',cmp_wood:'~10 კგ შეშა',cmp_wood_s:'6–8× დამატება · ~2 100 კკალ/კგ',cmp_eq:'იგივე სითბო',cmp_big:'1 კგ ბრიკეტი = ~10 კგ შეშა',cmp_note:'1 კუბი შეშა ≈ 500 კგ → იმავე სითბოს ~50 კგ ბრიკეტი იძლევა.',econ_h:'💚 ზამთრის ეკონომია — 4 თვე',econ_wl:'🪵 შეშა (8 კუბი)',econ_wv:'8 × 200 = 1600 ₾',econ_bl:'🔥 ბრიკეტი (400 კგ)',econ_bv:'400 × 2 = 800 ₾',econ_sl:'✅ ეკონომია',econ_sv:'≈ 800 ₾',econ_note:'მაგალითი: ~2 კუბი/თვე × 4 თვე = 8 კუბი. ბრიკეტით ~2× ნაკლები ხარჯი.',
   why:['🌡 <b>2× მეტი სითბო</b> — მაღალი კალორიულობა (7 951 კკალ/კგ).','⏱ <b>8–12 საათი</b> ერთ ჩაყრაზე (შეშა მხოლოდ 1–2 სთ).','💨 <b>ცოტა კვამლი და ნაცარი</b> — უფრო სუფთა წვა.','💰 <b>ეკონომიური</b> — ნაკლები ხარჯი გათბობაზე.','📦 <b>კომპაქტური და მშრალი</b> — მარტივი შენახვა.','🎯 <b>სტაბილური ხარისხი</b> — ერთგვაროვანი ყოველ პარტიაში.'],
   use_h:'📍 სად გამოიყენება',
   uses:[['🔥','დახურული ფეჩი და ღუმელი'],['🏠','საოჯახო გათბობა'],['🌱','სათბურების გათბობა'],['🏭','სამრეწველო ქვაბები'],['♨️','წყლის გამათბობელი'],['🏢','კომერციული ობიექტები']],
@@ -168,7 +177,7 @@ const T={
   how:[['Мелкая фракция','При добыче остаётся мелочь/пыль — сама по себе <b>горит плохо</b>.'],['Высокое давление','Эта фракция <b>прессуется под большим давлением</b> в однородные брикеты.'],['Готовый брикет','Результат — <b>твёрдый, сухой, стабильный</b> брикет, горящий долго и равномерно.']],
   how_note:'➜ Поэтому брикет намного эффективнее угольной пыли или отдельных кусков.',
   why_h:'🔥 Чем лучше дров?',
-  cmp_h:'🪵 Брикет vs дрова — в цифрах',cmp_brik:'1 кг брикета',cmp_brik_s:'~10 часов горения · 7 951 ккал/кг',cmp_wood:'~10 кг дров',cmp_wood_s:'6–8× подкладка · ~2 100 ккал/кг',cmp_eq:'то же тепло',cmp_big:'1 кг брикета = ~10 кг дров',cmp_note:'1 куб дров ≈ 500 кг → столько же тепла даёт ~50 кг брикета.',
+  cmp_h:'🪵 Брикет vs дрова — в цифрах',cmp_brik:'1 кг брикета',cmp_brik_s:'~10 часов горения · 7 951 ккал/кг',cmp_wood:'~10 кг дров',cmp_wood_s:'6–8× подкладка · ~2 100 ккал/кг',cmp_eq:'то же тепло',cmp_big:'1 кг брикета = ~10 кг дров',cmp_note:'1 куб дров ≈ 500 кг → столько же тепла даёт ~50 кг брикета.',econ_h:'💚 Экономия за зиму — 4 месяца',econ_wl:'🪵 Дрова (8 кубов)',econ_wv:'8 × 200 = 1600 ₾',econ_bl:'🔥 Брикет (400 кг)',econ_bv:'400 × 2 = 800 ₾',econ_sl:'✅ Экономия',econ_sv:'≈ 800 ₾',econ_note:'Пример: ~2 куба/мес × 4 месяца = 8 кубов. С брикетом ~2× меньше затрат.',
   why:['🌡 <b>В 2× больше тепла</b> — высокая калорийность (7 951 ккал/кг).','⏱ <b>8–12 часов</b> за одну загрузку (дрова — лишь 1–2 ч).','💨 <b>Мало дыма и золы</b> — более чистое горение.','💰 <b>Экономично</b> — меньше затрат на отопление.','📦 <b>Компактный и сухой</b> — удобно хранить.','🎯 <b>Стабильное качество</b> — одинаковое в каждой партии.'],
   use_h:'📍 Где применяется',
   uses:[['🔥','Закрытый камин и печь'],['🏠','Домашнее отопление'],['🌱','Отопление теплиц'],['🏭','Промышленные котлы'],['♨️','Водонагреватели'],['🏢','Коммерческие объекты']],
@@ -195,7 +204,7 @@ const T={
   how:[['Narın fraksiya','Hasilat zamanı narın hissə/toz qalır — ayrıca <b>yaxşı yanmır</b>.'],['Yüksək təzyiq','Bu fraksiya <b>böyük təzyiqlə sıxılır</b> və eynicinsli briketlərə çevrilir.'],['Hazır briket','Nəticə — <b>bərk, quru, stabil</b> briket, uzun və bərabər yanır.']],
   how_note:'➜ Buna görə briket kömür tozundan və ya ayrı parçalardan qat-qat effektivdir.',
   why_h:'🔥 Nə üçün odundan yaxşıdır?',
-  cmp_h:'🪵 Briket vs odun — rəqəmlərlə',cmp_brik:'1 kq briket',cmp_brik_s:'~10 saat yanma · 7 951 kkal/kq',cmp_wood:'~10 kq odun',cmp_wood_s:'6–8× əlavə · ~2 100 kkal/kq',cmp_eq:'eyni istilik',cmp_big:'1 kq briket = ~10 kq odun',cmp_note:'1 kub odun ≈ 500 kq → eyni istiliyi ~50 kq briket verir.',
+  cmp_h:'🪵 Briket vs odun — rəqəmlərlə',cmp_brik:'1 kq briket',cmp_brik_s:'~10 saat yanma · 7 951 kkal/kq',cmp_wood:'~10 kq odun',cmp_wood_s:'6–8× əlavə · ~2 100 kkal/kq',cmp_eq:'eyni istilik',cmp_big:'1 kq briket = ~10 kq odun',cmp_note:'1 kub odun ≈ 500 kq → eyni istiliyi ~50 kq briket verir.',econ_h:'💚 Qış qənaəti — 4 ay',econ_wl:'🪵 Odun (8 kub)',econ_wv:'8 × 200 = 1600 ₾',econ_bl:'🔥 Briket (400 kq)',econ_bv:'400 × 2 = 800 ₾',econ_sl:'✅ Qənaət',econ_sv:'≈ 800 ₾',econ_note:'Nümunə: ~2 kub/ay × 4 ay = 8 kub. Briketlə ~2× az xərc.',
   why:['🌡 <b>2× çox istilik</b> — yüksək kalorilik (7 951 kkal/kq).','⏱ <b>8–12 saat</b> bir yükləmə ilə (odun cəmi 1–2 saat).','💨 <b>Az tüstü və kül</b> — daha təmiz yanma.','💰 <b>Qənaətli</b> — istiləşməyə az xərc.','📦 <b>Yığcam və quru</b> — saxlamaq asandır.','🎯 <b>Stabil keyfiyyət</b> — hər partiyada eyni.'],
   use_h:'📍 Harada istifadə olunur',
   uses:[['🔥','Qapalı buxarı və soba'],['🏠','Ev istiliyi'],['🌱','İstixanaların istiliyi'],['🏭','Sənaye qazanları'],['♨️','Su qızdırıcıları'],['🏢','Kommersiya obyektləri']],
@@ -222,7 +231,7 @@ const T={
   how:[['Մանր ֆրակցիա','Արդյունահանման ժամանակ մնում է մանր կտոր/փոշի, որն առանձին <b>վատ է այրվում</b>։'],['Բարձր ճնշում','Այս ֆրակցիան <b>մեծ ճնշմամբ սեղմվում է</b>՝ միատարր բրիկետների։'],['Պատրաստի բրիկետ','Արդյունքը՝ <b>ամուր, չոր, կայուն</b> բրիկետ, որ այրվում է երկար և հավասար։']],
   how_note:'➜ Դրա համար բրիկետը շատ ավելի արդյունավետ է, քան ածխի փոշին կամ առանձին կտորները։',
   why_h:'🔥 Ինչո՞ւ է լավ փայտից',
-  cmp_h:'🪵 Բրիկետ vs փայտ — թվերով',cmp_brik:'1 կգ բրիկետ',cmp_brik_s:'~10 ժամ այրում · 7 951 կկալ/կգ',cmp_wood:'~10 կգ փայտ',cmp_wood_s:'6–8× ավելացում · ~2 100 կկալ/կգ',cmp_eq:'նույն ջերմությունը',cmp_big:'1 կգ բրիկետ = ~10 կգ փայտ',cmp_note:'1 խմ փայտ ≈ 500 կգ → նույն ջերմությունը տալիս է ~50 կգ բրիկետ։',
+  cmp_h:'🪵 Բրիկետ vs փայտ — թվերով',cmp_brik:'1 կգ բրիկետ',cmp_brik_s:'~10 ժամ այրում · 7 951 կկալ/կգ',cmp_wood:'~10 կգ փայտ',cmp_wood_s:'6–8× ավելացում · ~2 100 կկալ/կգ',cmp_eq:'նույն ջերմությունը',cmp_big:'1 կգ բրիկետ = ~10 կգ փայտ',cmp_note:'1 խմ փայտ ≈ 500 կգ → նույն ջերմությունը տալիս է ~50 կգ բրիկետ։',econ_h:'💚 Ձմռան խնայողություն — 4 ամիս',econ_wl:'🪵 Փայտ (8 խմ)',econ_wv:'8 × 200 = 1600 ₾',econ_bl:'🔥 Բրիկետ (400 կգ)',econ_bv:'400 × 2 = 800 ₾',econ_sl:'✅ Խնայողություն',econ_sv:'≈ 800 ₾',econ_note:'Օրինակ՝ ~2 խմ/ամիս × 4 ամիս = 8 խմ։ Բրիկետով ~2× քիչ ծախս։',
   why:['🌡 <b>2× ավելի ջերմություն</b> — բարձր կալորիականություն (7 951 կկալ/կգ)։','⏱ <b>8–12 ժամ</b> մեկ լիցքով (փայտը՝ ընդամենը 1–2 ժ)։','💨 <b>Քիչ ծուխ և մոխիր</b> — ավելի մաքուր այրում։','💰 <b>Խնայող</b> — ջեռուցման քիչ ծախս։','📦 <b>Կոմպակտ և չոր</b> — հեշտ պահվող։','🎯 <b>Կայուն որակ</b> — նույնը յուրաքանչյուր խմբաքանակում։'],
   use_h:'📍 Որտեղ է կիրառվում',
   uses:[['🔥','Փակ բուխարի և վառարան'],['🏠','Տան ջեռուցում'],['🌱','Ջերմոցների ջեռուցում'],['🏭','Արդյունաբերական կաթսաներ'],['♨️','Ջրատաքացուցիչներ'],['🏢','Առևտրային օբյեկտներ']],
@@ -257,21 +266,20 @@ function render(lang){
   '<div class="hero"><div class="wrap">'+
     '<h1>'+t.title+'</h1><div class="sub">'+t.sub+'</div>'+
     '<div class="foto"><img src="foto.jpg" alt=""></div>'+
-    '<a class="dl" href="'+PDF[lang]+'" download>'+t.dl+'</a>'+
     '<div class="chips">'+chips+'</div>'+
   '</div></div>'+
   '<div class="wrap">'+
    '<section><h2>'+t.made_h+'</h2><div class="two">'+made+'</div></section>'+
    '<section><h2>'+t.how_h+'</h2><div class="steps">'+how+'</div><div class="note">'+t.how_note+'</div></section>'+
    '<section><h2>'+t.why_h+'</h2><div class="why">'+why+'</div></section>'+
-   '<section><h2>'+t.cmp_h+'</h2><div class="cmp"><div class="side brik"><div class="em">🔥</div><div class="q">'+t.cmp_brik+'</div><div class="s">'+t.cmp_brik_s+'</div></div><div class="eq"><b>=</b><span>'+t.cmp_eq+'</span></div><div class="side wood"><div class="em">🪵</div><div class="q">'+t.cmp_wood+'</div><div class="s">'+t.cmp_wood_s+'</div></div></div><div class="cmpbig">🔥 '+t.cmp_big+'</div><div class="cmpnote">'+t.cmp_note+'</div></section>'+
+   '<section><h2>'+t.cmp_h+'</h2><div class="cmp"><div class="side brik"><div class="em">🔥</div><div class="q">'+t.cmp_brik+'</div><div class="s">'+t.cmp_brik_s+'</div></div><div class="eq"><b>=</b><span>'+t.cmp_eq+'</span></div><div class="side wood"><div class="em">🪵</div><div class="q">'+t.cmp_wood+'</div><div class="s">'+t.cmp_wood_s+'</div></div></div><div class="cmpbig">🔥 '+t.cmp_big+'</div><div class="cmpnote">'+t.cmp_note+'</div>'+
+    '<div class="econ"><div class="eh">'+t.econ_h+'</div><div class="er"><div class="ec"><span>'+t.econ_wl+'</span><b>'+t.econ_wv+'</b></div><div class="ec"><span>'+t.econ_bl+'</span><b>'+t.econ_bv+'</b></div><div class="ec save"><span>'+t.econ_sl+'</span><b>'+t.econ_sv+'</b></div></div><div class="en">'+t.econ_note+'</div></div></section>'+
    '<section><h2>'+t.use_h+'</h2><div class="uses">'+uses+'</div></section>'+
    '<section><h2>'+t.spec_h+'</h2><table><tr><th>'+t.spec_th[0]+'</th><th style="text-align:right">'+t.spec_th[1]+'</th></tr>'+spec+'</table></section>'+
    '<section><h2>'+t.cert_h+'</h2><div class="pills"><span class="pill">ISO 9001</span><span class="pill">ISO 14001</span><span class="pill">ISO 45001</span><span class="pill o">ГОСТ Р 57016-2016</span><span class="pill">MSDS</span><span class="pill">COTECNA</span></div></section>'+
    '<section><h2>'+t.price_h+'</h2><div class="cards">'+cards+'</div><div class="pinfo">'+pinfo+'</div></section>'+
    '<section><h2>'+t.safe_h+'</h2><div class="recbox">'+safe+'</div></section>'+
    '<section><h2>'+t.wh_h+'</h2><div class="loc"><a class="qr" href="'+MAPS+'" target="_blank" rel="noopener"><img src="qr.png" alt="QR"></a><div class="lt"><div class="h">'+t.wh_h+'</div><div class="d">'+t.wh_t+'</div><a class="mapbtn" href="'+MAPS+'" target="_blank" rel="noopener">'+t.wh_btn+'</a></div></div></section>'+
-   '<div style="text-align:center;margin:22px 0"><a class="dl" href="'+PDF[lang]+'" download>'+t.dl+'</a></div>'+
   '</div>'+
   '<div class="foot"><div class="wrap in">'+
     '<a href="tel:+995595533500">'+t.c_call+' · 595 533 500</a>'+
