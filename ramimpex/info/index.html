@@ -81,6 +81,8 @@ tr:last-child td{border-bottom:none}
 .loc .qr{width:120px;height:120px;flex:0 0 auto;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
 .loc .lt .h{font-weight:900;font-size:18px;color:var(--g);margin-bottom:5px}
 .loc .lt .d{font-weight:700;font-size:14px;color:#3a2410;line-height:1.4}
+.mapbtn{display:inline-flex;align-items:center;gap:7px;background:var(--g);color:#fff;font-weight:800;font-size:15px;text-decoration:none;border-radius:10px;padding:10px 18px;margin-top:10px}
+.loc a.qr{display:block;cursor:pointer}
 .foot{background:var(--g2);color:#fff;padding:22px 0;margin-top:26px}
 .foot .in{display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center}
 .foot a{color:#fff;text-decoration:none;font-weight:800;font-size:17px}
@@ -111,6 +113,7 @@ body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 <div id="app"></div>
 <script>
 const PDF={ka:'../files/RAM_IMPEX_briketi_info.pdf',ru:'../files/RAM_IMPEX_briketi_info_ru.pdf',az:'../files/RAM_IMPEX_briketi_info_az.pdf',hy:'../files/RAM_IMPEX_briketi_info_hy.pdf'};
+const MAPS='https://maps.app.goo.gl/7PTqBqMCZngpTgqQ6';
 const LANGS=[['ka','🇬🇪','ქარ'],['az','🇦🇿','AZ'],['hy','🇦🇲','ՀԱՅ'],['ru','🇷🇺','РУС']];
 const T={
  ka:{dir:'ltr',
@@ -137,7 +140,7 @@ const T={
   safe_h:'⚠️ უსაფრთხოება და რეკომენდაცია',
   safe:[['🔥','<b>მხოლოდ გათბობისთვის.</b> განკუთვნილია <span class="g">დახურული ფეჩების, ღუმელებისა და სათბურებისთვის.</span> არ არის რეკომენდებული ღია ცეცხლზე საკვების მოსამზადებლად.'],['🌫️','წვისას <b>გამოყოფს ნახშირორჟანგს (CO₂) და ნახშირჟანგს (CO).</b> გამოიყენეთ <span class="g">მხოლოდ დახურულ ფეჩებსა და ღუმელებში</span> — საკვამურითა და კარგი ვენტილაციით.'],['🔩','<b>მაღალი წვის ტემპერატურის გამო</b> სასურველია <span class="g">ძლიერი რკინის ან თუჯის ფეჩი/ღუმელი</span>. იდეალურია თუჯის ღუმელი (თუჯის ცხაურით).']],
   wh_h:'📍 საწყობი — ნატახტარი',
-  wh_t:'დაასკანერე QR-კოდი — პირდაპირ Google Maps-ზე გადახვალ საწყობის მდებარეობაზე.',
+  wh_t:'დაასკანერე QR-კოდი ან დააჭირე ღილაკს — გაიხსნება საწყობის მდებარეობა Google Maps-ზე.',wh_btn:'📍 რუკაზე ნახვა',
   c_call:'📞 დარეკე'},
  ru:{dir:'ltr',
   title:'Антрацитовый брикет',
@@ -163,7 +166,7 @@ const T={
   safe_h:'⚠️ Безопасность и рекомендации',
   safe:[['🔥','<b>Только для отопления.</b> Предназначен для <span class="g">закрытых каминов, печей и теплиц.</span> Не рекомендуется готовить пищу на открытом огне.'],['🌫️','При горении <b>выделяет углекислый газ (CO₂) и угарный газ (CO).</b> Используйте <span class="g">только в закрытых печах и каминах</span> — с дымоходом и хорошей вентиляцией.'],['🔩','<b>Из-за высокой температуры горения</b> желательна <span class="g">прочная чугунная или стальная печь/камин</span>. Идеальна чугунная печь (с чугунной решёткой).']],
   wh_h:'📍 Склад — Натахтари',
-  wh_t:'Отсканируйте QR-код — сразу перейдёте к местоположению склада в Google Maps.',
+  wh_t:'Отсканируйте QR-код или нажмите кнопку — откроется местоположение склада в Google Maps.',wh_btn:'📍 Открыть на карте',
   c_call:'📞 Позвонить'},
  az:{dir:'ltr',
   title:'Antrasit briket',
@@ -189,7 +192,7 @@ const T={
   safe_h:'⚠️ Təhlükəsizlik və tövsiyə',
   safe:[['🔥','<b>Yalnız istilik üçün.</b> <span class="g">Qapalı buxarı, soba və istixanalar üçün</span> nəzərdə tutulub. Açıq odda yemək bişirmək tövsiyə olunmur.'],['🌫️','Yanarkən <b>karbon qazı (CO₂) və dəm qazı (CO) buraxır.</b> <span class="g">Yalnız qapalı soba və buxarılarda</span> — baca və yaxşı ventilyasiya ilə istifadə edin.'],['🔩','<b>Yüksək yanma temperaturuna görə</b> <span class="g">möhkəm çuqun və ya polad soba/buxarı</span> tövsiyə olunur. İdeal olan çuqun sobadır (çuqun barmaqlıqla).']],
   wh_h:'📍 Anbar — Nataxtari',
-  wh_t:'QR-kodu skan edin — birbaşa Google Maps-də anbarın yerinə keçəcəksiniz.',
+  wh_t:'QR-kodu skan edin və ya düyməyə basın — anbarın yeri Google Maps-də açılacaq.',wh_btn:'📍 Xəritədə aç',
   c_call:'📞 Zəng et'},
  hy:{dir:'ltr',
   title:'Անտրացիտային բրիկետ',
@@ -215,7 +218,7 @@ const T={
   safe_h:'⚠️ Անվտանգություն և խորհուրդ',
   safe:[['🔥','<b>Միայն ջեռուցման համար։</b> Նախատեսված է <span class="g">փակ բուխարիների, վառարանների և ջերմոցների համար։</span> Բաց կրակի վրա սնունդ պատրաստել խորհուրդ չի տրվում։'],['🌫️','Այրվելիս <b>արտազատում է ածխաթթու գազ (CO₂) և շմոլ գազ (CO)։</b> Օգտագործեք <span class="g">միայն փակ վառարաններում և բուխարիներում</span>՝ ծխնելույզով և լավ օդափոխությամբ։'],['🔩','<b>Այրման բարձր ջերմաստիճանի պատճառով</b> ցանկալի է <span class="g">ամուր չուգունե կամ պողպատե վառարան/բուխարի</span>։ Իդեալական է չուգունե վառարանը (չուգունե վանդակով)։']],
   wh_h:'📍 Պահեստ — Նատախտարի',
-  wh_t:'Սկանավորեք QR-կոդը՝ ուղիղ կանցնեք պահեստի գտնվելու վայրը Google Maps-ում։',
+  wh_t:'Սկանավորեք QR-կոդը կամ սեղմեք կոճակը՝ պահեստի գտնվելու վայրը կբացվի Google Maps-ում։',wh_btn:'📍 Բացել քարտեզում',
   c_call:'📞 Զանգահարել'}
 };
 function esc(s){return s;}
@@ -248,7 +251,7 @@ function render(lang){
    '<section><h2>'+t.cert_h+'</h2><div class="pills"><span class="pill">ISO 9001</span><span class="pill">ISO 14001</span><span class="pill">ISO 45001</span><span class="pill o">ГОСТ Р 57016-2016</span><span class="pill">MSDS</span><span class="pill">COTECNA</span></div></section>'+
    '<section><h2>'+t.price_h+'</h2><div class="cards">'+cards+'</div><div class="pinfo">'+pinfo+'</div></section>'+
    '<section><h2>'+t.safe_h+'</h2><div class="recbox">'+safe+'</div></section>'+
-   '<section><h2>'+t.wh_h+'</h2><div class="loc"><div class="qr"><img src="qr.png" alt="QR"></div><div class="lt"><div class="h">'+t.wh_h+'</div><div class="d">'+t.wh_t+'</div></div></div></section>'+
+   '<section><h2>'+t.wh_h+'</h2><div class="loc"><a class="qr" href="'+MAPS+'" target="_blank" rel="noopener"><img src="qr.png" alt="QR"></a><div class="lt"><div class="h">'+t.wh_h+'</div><div class="d">'+t.wh_t+'</div><a class="mapbtn" href="'+MAPS+'" target="_blank" rel="noopener">'+t.wh_btn+'</a></div></div></section>'+
    '<div style="text-align:center;margin:22px 0"><a class="dl" href="'+PDF[lang]+'" download>'+t.dl+'</a></div>'+
   '</div>'+
   '<div class="foot"><div class="wrap in">'+
