@@ -960,7 +960,15 @@ async function notifyTelegramPaid(inv){
     (INVOICES||[]).forEach(v=>{if((v.status||invStatus(v))!=='paid')return;(v.lines||[]).forEach(l=>{const b=saleDirOf(l.code,(byCode(l.code)||{}).dir);if(!agg[b])agg[b]={qty:0,amt:0};const amt=(+l.price||0)*(+l.qty||0);agg[b].qty+=(+l.qty||0);agg[b].amt+=amt;grand+=amt;});});
     let analytics='';SAL_DIRS.forEach(d=>{if(d[0]==='all')return;const a=agg[d[0]];if(!a||a.amt<=0)return;const unit=(d[0]==='ანთრაციტის ბრიკეტი')?'კგ':'ცალი';analytics+='\n'+d[2]+' '+esc(d[1])+': '+fmtNum(a.qty)+' '+unit+' · <b>'+money(a.amt)+' ₾</b>';});
     const lines=(inv.lines||[]).map(tgLineText).join('\n');
-    const msg='✅ <b>გადახდილი — ინვოისი '+esc(inv.no||inv.id)+'</b>\n👤 '+esc(inv.cust||'—')+(inv.idc?' · ს/კ '+esc(inv.idc):'')+'\n📅 '+esc(inv.date||todayStr())+'\n\n<b>ამ ინვოისით:</b>\n'+lines+'\n💵 ინვოისის ჯამი: <b>'+money(inv.grand)+' ₾</b>\n\n📊 <b>საერთო გაყიდვები (გადახდილი):</b>'+(analytics||'\n—')+'\n━━━━━━━━━━\n🏆 სულ: <b>'+money(grand)+' ₾</b>';
+    // 📦 საწყობის მდგომარეობა: დარჩენილი (STOCK) + გასული (გატანილ ინვოისებში)
+    const goneAgg={};(INVOICES||[]).forEach(v=>{if(!(v.extra&&v.extra.dispensed))return;(v.lines||[]).forEach(l=>{if(!l.code)return;goneAgg[l.code]=(goneAgg[l.code]||0)+(+l.qty||0);});});
+    const scodes=Array.from(new Set(Object.keys(STOCK).concat(Object.keys(goneAgg)))).filter(c=>c).sort();
+    let stockTxt='';const remByU={},goneByU={};
+    scodes.forEach(c=>{const rem=+STOCK[c]||0;const gone=+goneAgg[c]||0;const u=unitOf(c);const nm=(byCode(c)||{}).name||ruCode(c)||c;stockTxt+='\n'+(isBriket(c)?'🔥':'📦')+' '+esc(nm)+' — დარჩა: <b>'+fmtNum(rem)+' '+u+'</b> · გასული: '+fmtNum(gone)+' '+u;remByU[u]=(remByU[u]||0)+rem;goneByU[u]=(goneByU[u]||0)+gone;});
+    const remTot=Object.keys(remByU).map(u=>fmtNum(remByU[u])+' '+u).join(' · ')||'0';
+    const goneTot=Object.keys(goneByU).map(u=>fmtNum(goneByU[u])+' '+u).join(' · ')||'0';
+    const stockBlock=scodes.length?('\n\n📦 <b>საწყობის მდგომარეობა:</b>'+stockTxt+'\n━━━━━━━━━━\n📥 სულ დარჩა: <b>'+remTot+'</b>\n📤 სულ გასული: <b>'+goneTot+'</b>'):'';
+    const msg='✅ <b>გადახდილი — ინვოისი '+esc(inv.no||inv.id)+'</b>\n👤 '+esc(inv.cust||'—')+(inv.idc?' · ს/კ '+esc(inv.idc):'')+'\n📅 '+esc(inv.date||todayStr())+'\n\n<b>ამ ინვოისით:</b>\n'+lines+'\n💵 ინვოისის ჯამი: <b>'+money(inv.grand)+' ₾</b>\n\n📊 <b>საერთო გაყიდვები (გადახდილი):</b>'+(analytics||'\n—')+'\n━━━━━━━━━━\n🏆 სულ: <b>'+money(grand)+' ₾</b>'+stockBlock;
     const {error}=await sb.functions.invoke('telegram-notify',{body:{text:msg}});
     if(error)console.error('telegram notify error',error);
   }catch(e){console.error('telegram notify failed',e);}
