@@ -704,9 +704,9 @@ function editInvoice(inv){
   if($('iCust'))$('iCust').value=inv.cust||'';
   if($('iId'))$('iId').value=inv.idc||'';
   if($('iPhone'))$('iPhone').value=inv.phone||'';
-  if($('iAddr'))$('iAddr').value=inv.addr||'';
-  if($('iEmail'))$('iEmail').value=inv.email||'';
   const ex=inv.extra||{};
+  if($('iAddr'))$('iAddr').value=ex.addr||inv.addr||'';
+  if($('iEmail'))$('iEmail').value=ex.email||inv.email||'';
   if($('iLegalT'))$('iLegalT').checked=!!ex.legal;
   if($('iLegalF'))$('iLegalF').checked=!ex.legal;
   if($('iNeedWaybill'))$('iNeedWaybill').checked=!!ex.needWaybill;
@@ -839,9 +839,9 @@ function updInvTotals(){const t=invTotals();$('tSub').textContent=money(t.sub)+'
   if(invVatIncl){if($('tVatL'))$('tVatL').textContent='მ.შ. დღგ 18%';if($('tVat'))$('tVat').textContent=money(t.vat)+' ₾';}
   else{if($('tVatL'))$('tVatL').textContent='დღგ';if($('tVat'))$('tVat').textContent='დღგ-ს გარეშე';}}
 function updInvRow(i,inp){const l=invDraft[i];const tr=inp.closest('tr');if(tr){const s=tr.querySelector('.sum');if(s)s.textContent=money(l.price*l.qty);}updInvTotals();}
-function currentInv(){const t=invTotals();return {no:$('iNo').value,date:$('iDate').value||todayStr(),cust:$('iCust').value,idc:$('iId').value,phone:($('iPhone')?$('iPhone').value:''),addr:($('iAddr')?$('iAddr').value:''),email:($('iEmail')?$('iEmail').value:''),
+function currentInv(){const t=invTotals();return {no:$('iNo').value,date:$('iDate').value||todayStr(),cust:$('iCust').value,idc:$('iId').value,phone:($('iPhone')?$('iPhone').value:''),
   lines:invDraft.map(l=>{const p=byCode(l.code)||{};return {code:l.code,name:l.name||p.name,size:l.size||p.size,ply:l.ply||'',brand:l.brand||'',pack:l.pack||'',tier:l.tier||null,color:p.color,price:l.price,priceEdited:!!l.priceEdited,qty:l.qty,min:(l.min!=null?l.min:''),img:pubImg(l.code)};}),
-  sub:t.sub,vat:t.vat,extra:{brandAmt:t.brandAmt,transAmt:t.transAmt,note:($('iNote')?$('iNote').value:''),minQty:($('iMinQty')?$('iMinQty').value:''),vatIncl:invVatIncl,transp:($('iTransp')?$('iTransp').checked:false),transpNo:($('iTranspNo')?$('iTranspNo').value:''),legal:!!($('iLegalT')&&$('iLegalT').checked),needWaybill:($('iNeedWaybill')?$('iNeedWaybill').checked:false)},grand:t.grand};}
+  sub:t.sub,vat:t.vat,extra:{brandAmt:t.brandAmt,transAmt:t.transAmt,note:($('iNote')?$('iNote').value:''),minQty:($('iMinQty')?$('iMinQty').value:''),vatIncl:invVatIncl,transp:($('iTransp')?$('iTransp').checked:false),transpNo:($('iTranspNo')?$('iTranspNo').value:''),legal:!!($('iLegalT')&&$('iLegalT').checked),needWaybill:($('iNeedWaybill')?$('iNeedWaybill').checked:false),addr:($('iAddr')?$('iAddr').value:''),email:($('iEmail')?$('iEmail').value:'')},grand:t.grand};}
 async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}const inv=currentInv();
   const isEdit=!!editingInvId; inv.id=editingInvId||String(Date.now());
   const prev=isEdit?(INVOICES.find(x=>String(x.id)===String(inv.id))||{}):{};
@@ -1154,7 +1154,7 @@ function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map(
   return '<div style="max-width:720px;margin:0 auto;color:#14261C;padding:20px;font-family:system-ui,\'Noto Sans Georgian\',sans-serif">'+
    '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #0F8A4D;padding-bottom:10px;margin-bottom:14px"><div><div style="font-size:26px;font-weight:800;color:#0B6B3C">RAM IMPEX</div><div style="font-size:12px;color:#5C6B62">შპს „რამ იმპექს" · <b style="color:#0B6B3C">ს/კ: 405565794</b><br>იმპორტი · დისტრიბუცია · 📞 595 533 500 · ✉ info@ramimpex.com.ge · 🌐 ramimpex.com.ge</div></div>'+
    '<div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#0B6B3C">ინვოისი</div><div>№ <b>'+esc(inv.no||"—")+'</b></div><div>თარიღი: '+esc(inv.date||"")+'</div></div></div>'+
-   '<div style="margin-bottom:12px;font-size:13px">მყიდველი: <b>'+esc(inv.cust||"—")+'</b>'+(inv.idc?' · ს/კ: '+esc(inv.idc):'')+(inv.phone?' · 📞 '+esc(inv.phone):'')+(inv.email?' · ✉ '+esc(inv.email):'')+(inv.addr?'<br>მისამართი: '+esc(inv.addr):'')+'</div>'+
+   '<div style="margin-bottom:12px;font-size:13px">მყიდველი: <b>'+esc(inv.cust||"—")+'</b>'+(inv.idc?' · ს/კ: '+esc(inv.idc):'')+(inv.phone?' · 📞 '+esc(inv.phone):'')+((ex.email||inv.email)?' · ✉ '+esc(ex.email||inv.email):'')+((ex.addr||inv.addr)?'<br>მისამართი: '+esc(ex.addr||inv.addr):'')+'</div>'+
    '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0F8A4D;color:#fff"><th style="padding:7px">№</th><th style="padding:7px;text-align:left">კოდი</th><th style="padding:7px;text-align:left">დასახელება</th><th style="padding:7px;text-align:left">ზომა</th><th style="padding:7px;text-align:right">რაოდ.</th><th style="padding:7px;text-align:right">ფასი</th><th style="padding:7px;text-align:right">ჯამი</th></tr></thead><tbody>'+rows+'</tbody></table>'+
    '<div style="max-width:300px;margin-left:auto;margin-top:14px;font-size:14px">'+
    '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>ქვეჯამი'+(ex.vatIncl?' (დღგ-ით)':'')+'</span><b>'+money(inv.sub)+' ₾</b></div>'+
