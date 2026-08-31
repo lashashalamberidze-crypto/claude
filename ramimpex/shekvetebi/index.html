@@ -547,6 +547,18 @@ async function ensureDirs(){
   // შევინახოთ ხელით შექმნილი კატეგორიები (SEED-ში რომ არ არის) — მაგრამ დუბლების გარეშე
   const haveName=new Set(result.map(g=>g.name));
   stored.forEach(g=>{if(g&&!used.has(g)&&g.name&&!haveName.has(g.name)){used.add(g);haveName.add(g.name);result.push(g);}});
+  // ერთჯერადი: 4 ახალი მუყაოს ყუთი „სხვა მუყაოს ყუთებში" (МК-03..06)
+  try{const plain=result.find(g=>g&&(g.id==='plainbox'||g.name==='სხვა მუყაოს ყუთები'));
+    if(plain&&!plain._mkPatch1){plain.items=plain.items||[];
+      const NEWMK=[
+        {code:'МК-03',name:'მუყაოს ყუთი',size:'411×260×180',mark:'',color:'მუყაოს ფერი',rub:23.89,cap:36000},
+        {code:'МК-04',name:'მუყაოს ყუთი',size:'340×175×185',mark:'',color:'მუყაოს ფერი',rub:17.38,cap:52500},
+        {code:'МК-05',name:'მუყაოს ყუთი',size:'405×280×161',mark:'',color:'მუყაოს ფერი',rub:24.3,cap:34500},
+        {code:'МК-06',name:'მუყაოს ყუთი',size:'530×260×200',mark:'',color:'მუყაოს ფერი',rub:28.08,cap:25875}
+      ];
+      NEWMK.forEach(it=>{if(!plain.items.some(x=>x&&x.code===it.code))plain.items.push(it);});
+      plain._mkPatch1=true;
+    }}catch(e){}
   DIRS=result;
   await sb.from('catalog').upsert({id:'main',dirs:DIRS,updated_at:new Date().toISOString()},{onConflict:'id'});
   return true;
