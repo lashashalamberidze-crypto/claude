@@ -1103,7 +1103,7 @@ async function loadExpenses(){try{const {data}=await sb.from('expenses').select(
 function expRevenueByDir(){const rev={};(INVOICES||[]).forEach(v=>{if((v.status||invStatus(v))!=='paid')return;(v.lines||[]).forEach(l=>{const d=saleDirOf(l.code,(byCode(l.code)||{}).dir);rev[d]=(rev[d]||0)+(+l.price||0)*(+l.qty||0);});});return rev;}
 function expByDir(){const e={};(EXPENSES||[]).forEach(x=>{const c=x.code||'';e[c]=(e[c]||0)+(+x.amount||0);});return e;}
 function expDetail(x){let s='';if(x.category==='salary'&&x.docs&&x.docs.people&&x.docs.people.length){s='👷 '+x.docs.people.map(p=>p.name+(p.amount?(' — '+money(p.amount)+'₾'):'')).join('; ');}if(x.note)s=s?(s+' · 📝 '+x.note):('📝 '+x.note);return s;}
-function filteredExpenses(){let list=EXPENSES.slice();if(EXP_FILTER==='__gen__')list=list.filter(x=>!(x.code));else if(EXP_FILTER)list=list.filter(x=>(x.code||'')===EXP_FILTER);if(EXP_FROM)list=list.filter(x=>(x.date||'')>=EXP_FROM);if(EXP_TO)list=list.filter(x=>(x.date||'')<=EXP_TO);return list;}
+function filteredExpenses(){let list=EXPENSES.slice();if(EXP_FILTER==='__gen__')list=list.filter(x=>!(x.code));else if(EXP_FILTER)list=list.filter(x=>(x.code||'')===EXP_FILTER);if(EXP_FROM)list=list.filter(x=>(x.date||'')>=EXP_FROM);if(EXP_TO)list=list.filter(x=>(x.date||'')<=EXP_TO);list.sort((a,b)=>{const d=(b.date||'').localeCompare(a.date||'');return d!==0?d:String(b.id||'').localeCompare(String(a.id||''));});return list;}
 async function openExpenses(){
   if(!document.getElementById('salCss')){const st=document.createElement('style');st.id='salCss';st.textContent=SAL_CSS;document.head.appendChild(st);}
   salEl.innerHTML='<div class="empty">იტვირთება…</div>';
@@ -1130,7 +1130,7 @@ function renderExpenses(){
      '<div class="scroll" style="margin-top:8px"><table style="width:100%;border-collapse:collapse;font-size:13px"><tbody id="ePeople"></tbody></table></div>'+
      '<div style="text-align:right;font-weight:800;margin-top:6px">სულ ხელფასი: <span id="epTotal" style="color:#6d3ad6">0.00 ₾</span></div>'+
    '</div>'+
-   '<div class="row" style="margin-top:8px"><div><label>თარიღი <span style="color:#b00020">*</span></label><input id="eDate" type="date" value="'+todayStr()+'" required></div></div>'+
+   '<div class="row" style="margin-top:8px"><div style="flex:0 0 240px"><label>თარიღი <span style="color:#b00020">*</span></label><input id="eDate" type="date" value="'+todayStr()+'" required style="width:100%"></div><div></div></div>'+
    '<label style="margin-top:8px;display:block">შენიშვნა (არჩ.)</label><input id="eNote" placeholder="მაგ. მომწოდებელი, დეტალები…">'+
    '<label style="margin-top:8px;display:block">ზედნადები / ქვითარი (არჩ.) — ატვირთვისას გამწვანდება</label><input id="eDoc" type="file">'+
    '<div style="margin-top:12px"><button class="btn" id="eSave">💾 ხარჯის დამატება</button></div></div>'+
