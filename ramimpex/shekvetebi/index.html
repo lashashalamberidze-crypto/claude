@@ -1095,7 +1095,7 @@ function printInvLedger(list){let T=0,P=0;list.forEach(inv=>{T+=(+inv.grand||0);
     return '<tr style="background:'+bg+'"><td>'+(i+1)+'</td><td>'+esc(inv.date||'')+'</td><td>'+esc(inv.no||'')+'</td><td>'+esc(inv.cust||'')+'</td><td>'+esc(ls)+'</td><td style="text-align:right">'+money(g)+'</td><td style="text-align:right">'+money(pd)+'</td><td style="text-align:right">'+money(g-pd)+'</td><td>'+stl+'</td></tr>';}).join('');
   $('printArea').innerHTML='<div style="font-family:sans-serif;padding:20px;color:#111"><h2 style="color:#0B6B3C">RAM IMPEX — გაყიდვები/ინვოისები</h2><p style="font-size:12px;color:#555">დაბეჭდილია: '+todayStr()+' · ჩანაწერი: '+list.length+'</p><table style="width:100%;border-collapse:collapse;font-size:12px" border="1"><thead><tr style="background:#0B6B3C;color:#fff"><th>#</th><th>თარიღი</th><th>№</th><th>მყიდველი</th><th>პროდუქცია</th><th>სულ</th><th>გადახდ.</th><th>ნაშთი</th><th>სტატუსი</th></tr></thead><tbody>'+rows+'<tr style="background:#0B6B3C;color:#fff;font-weight:bold"><td colspan="5">ჯამი</td><td style="text-align:right">'+money(T)+'</td><td style="text-align:right">'+money(P)+'</td><td style="text-align:right">'+money(T-P)+'</td><td></td></tr></tbody></table></div>';window.print();}
 /* ========================= ხარჯები (EXPENSES) — მიმართულებაზე ========================= */
-let EXPENSES=[], EXP_FILTER='', expPeople=[], editingExpId=null;
+let EXPENSES=[], EXP_FILTER='', EXP_FROM='', EXP_TO='', expPeople=[], editingExpId=null;
 const EXP_DIRS=SAL_DIRS.filter(d=>d[0]!=='all'); // [key, short, emoji]
 function dirLabel(k){if(!k)return '🔧 ზოგადი';const d=SAL_DIRS.find(x=>x[0]===k);return d?(d[2]+' '+d[0]):k;}
 function expDirOptions(sel){return '<option value="">🔧 ზოგადი (მიმართულების გარეშე)</option>'+EXP_DIRS.map(d=>'<option value="'+esc(d[0])+'"'+(d[0]===sel?' selected':'')+'>'+d[2]+' '+esc(d[0])+'</option>').join('');}
@@ -1103,7 +1103,7 @@ async function loadExpenses(){try{const {data}=await sb.from('expenses').select(
 function expRevenueByDir(){const rev={};(INVOICES||[]).forEach(v=>{if((v.status||invStatus(v))!=='paid')return;(v.lines||[]).forEach(l=>{const d=saleDirOf(l.code,(byCode(l.code)||{}).dir);rev[d]=(rev[d]||0)+(+l.price||0)*(+l.qty||0);});});return rev;}
 function expByDir(){const e={};(EXPENSES||[]).forEach(x=>{const c=x.code||'';e[c]=(e[c]||0)+(+x.amount||0);});return e;}
 function expDetail(x){if(x.category==='salary'&&x.docs&&x.docs.people&&x.docs.people.length){return x.docs.people.map(p=>p.name+(p.amount?(' — '+money(p.amount)+'₾'):'')).join('; ');}return x.note||'';}
-function filteredExpenses(){let list=EXPENSES.slice();if(EXP_FILTER==='__gen__')list=list.filter(x=>!(x.code));else if(EXP_FILTER)list=list.filter(x=>(x.code||'')===EXP_FILTER);return list;}
+function filteredExpenses(){let list=EXPENSES.slice();if(EXP_FILTER==='__gen__')list=list.filter(x=>!(x.code));else if(EXP_FILTER)list=list.filter(x=>(x.code||'')===EXP_FILTER);if(EXP_FROM)list=list.filter(x=>(x.date||'')>=EXP_FROM);if(EXP_TO)list=list.filter(x=>(x.date||'')<=EXP_TO);return list;}
 async function openExpenses(){
   if(!document.getElementById('salCss')){const st=document.createElement('style');st.id='salCss';st.textContent=SAL_CSS;document.head.appendChild(st);}
   salEl.innerHTML='<div class="empty">იტვირთება…</div>';
@@ -1138,7 +1138,7 @@ function renderExpenses(){
    '<div class="salkpi" style="margin-top:12px"><div class="skpi green"><div class="l">შემოსავალი (გადახდ.)</div><div class="v">'+money(TR)+' ₾</div></div><div class="skpi red"><div class="l">ხარჯი</div><div class="v">'+money(TE)+' ₾</div></div><div class="skpi '+(TP>=0?'blue':'red')+'"><div class="l">მოგება</div><div class="v">'+money(TP)+' ₾</div></div></div>'+
    '<div class="scroll" style="margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0F8A4D;color:#fff"><th style="padding:7px;text-align:left">მიმართულება</th><th style="padding:7px;text-align:right">შემოსავალი ₾</th><th style="padding:7px;text-align:right">ხარჯი ₾</th><th style="padding:7px;text-align:right">მოგება ₾</th></tr></thead><tbody>'+drows+genRow+'<tr style="background:#0B6B3C;color:#fff;font-weight:bold"><td style="padding:7px">ჯამი (ერთიანი)</td><td style="padding:7px;text-align:right">'+money(TR)+'</td><td style="padding:7px;text-align:right">'+money(TE)+'</td><td style="padding:7px;text-align:right">'+money(TP)+'</td></tr></tbody></table></div></div>'+
    '<div class="card"><h2>🧾 ხარჯების ჩამონათვალი</h2>'+
-   '<div class="row"><div><label>ფილტრი მიმართულებით</label><select id="eFilter"><option value="">ყველა მიმართულება</option>'+EXP_DIRS.map(d=>'<option value="'+esc(d[0])+'">'+d[2]+' '+esc(d[0])+'</option>').join('')+'<option value="__gen__">🔧 ზოგადი</option></select></div><div style="align-self:flex-end;display:flex;gap:8px"><button class="btn a" id="eXls">📊 Excel</button><button class="btn line" id="ePdf">📄 PDF</button></div></div>'+
+   '<div class="row"><div><label>ფილტრი მიმართულებით</label><select id="eFilter"><option value="">ყველა მიმართულება</option>'+EXP_DIRS.map(d=>'<option value="'+esc(d[0])+'">'+d[2]+' '+esc(d[0])+'</option>').join('')+'<option value="__gen__">🔧 ზოგადი</option></select></div><div><label>დან</label><input id="eFrom" type="date"></div><div><label>მდე</label><input id="eTo" type="date"></div><div style="align-self:flex-end;display:flex;gap:8px"><button class="btn a" id="eXls">📊 Excel</button><button class="btn line" id="ePdf">📄 PDF</button></div></div>'+
    '<div class="scroll" style="margin-top:10px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:6px;text-align:left">თარიღი</th><th style="padding:6px;text-align:left">მიმართულება</th><th style="padding:6px;text-align:left">კატეგორია</th><th style="padding:6px;text-align:right">თანხა ₾</th><th style="padding:6px;text-align:center">ქვითარი</th><th style="padding:6px">დეტალები</th><th></th></tr></thead><tbody id="eRows"></tbody></table></div><div id="eEmpty" class="empty" style="display:none">ჯერ ხარჯი არ არის.</div></div>';
   const g=id=>document.getElementById(id);
   expPeople=[];editingExpId=null;
@@ -1146,6 +1146,8 @@ function renderExpenses(){
   g('eCat').onchange=updateExpForm;
   g('epAdd').onclick=()=>{const nm=g('epName').value.trim();const amt=+g('epAmt').value||0;if(!nm){alert('ჩაწერე სახელი გვარი');return;}expPeople.push({name:nm,pid:g('epPid').value.trim(),phone:g('epPhone').value.trim(),amount:amt});g('epName').value='';g('epPid').value='';g('epPhone').value='';g('epAmt').value='';renderPeople();};
   if(g('eFilter')){g('eFilter').value=EXP_FILTER||'';g('eFilter').onchange=()=>{EXP_FILTER=g('eFilter').value;renderExpList();};}
+  if(g('eFrom')){g('eFrom').value=EXP_FROM||'';g('eFrom').onchange=()=>{EXP_FROM=g('eFrom').value;renderExpList();};}
+  if(g('eTo')){g('eTo').value=EXP_TO||'';g('eTo').onchange=()=>{EXP_TO=g('eTo').value;renderExpList();};}
   if(g('eXls'))g('eXls').onclick=()=>exportExpXls(filteredExpenses());
   if(g('ePdf'))g('ePdf').onclick=()=>downloadExpPDF(filteredExpenses());
   updateExpForm();renderPeople();renderExpList();
