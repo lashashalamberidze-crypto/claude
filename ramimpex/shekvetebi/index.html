@@ -1102,7 +1102,7 @@ function expDirOptions(sel){return '<option value="">🔧 ზოგადი (�
 async function loadExpenses(){try{const {data}=await sb.from('expenses').select('*').order('date',{ascending:false});EXPENSES=data||[];}catch(e){EXPENSES=[];}}
 function expRevenueByDir(){const rev={};(INVOICES||[]).forEach(v=>{if((v.status||invStatus(v))!=='paid')return;(v.lines||[]).forEach(l=>{const d=saleDirOf(l.code,(byCode(l.code)||{}).dir);rev[d]=(rev[d]||0)+(+l.price||0)*(+l.qty||0);});});return rev;}
 function expByDir(){const e={};(EXPENSES||[]).forEach(x=>{const c=x.code||'';e[c]=(e[c]||0)+(+x.amount||0);});return e;}
-function expDetail(x){if(x.category==='salary'&&x.docs&&x.docs.people&&x.docs.people.length){return x.docs.people.map(p=>p.name+(p.amount?(' — '+money(p.amount)+'₾'):'')).join('; ');}return x.note||'';}
+function expDetail(x){let s='';if(x.category==='salary'&&x.docs&&x.docs.people&&x.docs.people.length){s='👷 '+x.docs.people.map(p=>p.name+(p.amount?(' — '+money(p.amount)+'₾'):'')).join('; ');}if(x.note)s=s?(s+' · 📝 '+x.note):('📝 '+x.note);return s;}
 function filteredExpenses(){let list=EXPENSES.slice();if(EXP_FILTER==='__gen__')list=list.filter(x=>!(x.code));else if(EXP_FILTER)list=list.filter(x=>(x.code||'')===EXP_FILTER);if(EXP_FROM)list=list.filter(x=>(x.date||'')>=EXP_FROM);if(EXP_TO)list=list.filter(x=>(x.date||'')<=EXP_TO);return list;}
 async function openExpenses(){
   if(!document.getElementById('salCss')){const st=document.createElement('style');st.id='salCss';st.textContent=SAL_CSS;document.head.appendChild(st);}
