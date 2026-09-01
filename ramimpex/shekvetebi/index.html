@@ -176,7 +176,7 @@ const REGIONS={
  'ქვემო ქართლი':['რუსთავი','ბოლნისი','გარდაბანი','დმანისი','თეთრიწყარო','მარნეული','წალკა'],
  'შიდა ქართლი':['გორი','კასპი','ქარელი','ხაშური']
 };
-const EXP_CATS=[['pack','📦 პარკი/შეფუთვა'],['transport','🚚 ტრანსპორტი'],['material','⛏ ნედლეული/ყიდვა'],['salary','👷 ხელფასი/მუშახელი'],['tax','🧾 გადასახადი'],['other','🔧 სხვა']];
+const EXP_CATS=[['pack','📦 პარკი/შეფუთვა'],['transport','🚚 ტრანსპორტირება'],['fuel','⛽ საწვავი'],['material','⛏ ნედლეული/ყიდვა'],['inventory','🧰 ინვენტარი'],['salary','👷 ხელფასი/მუშახელი'],['tax','🧾 გადასახადი'],['other','🔧 სხვა']];
 function expCatLabel(k){const f=EXP_CATS.find(c=>c[0]===k);return f?f[1]:(k||'—');}
 const SAL_CSS='.salkpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}'+
 '.skpi{background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 3px 10px rgba(16,60,40,.06);border-left:5px solid #0B6B3C}'+
