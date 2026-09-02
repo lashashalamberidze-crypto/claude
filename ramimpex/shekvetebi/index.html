@@ -1095,7 +1095,7 @@ function printInvLedger(list){let T=0,P=0;list.forEach(inv=>{T+=(+inv.grand||0);
     return '<tr style="background:'+bg+'"><td>'+(i+1)+'</td><td>'+esc(inv.date||'')+'</td><td>'+esc(inv.no||'')+'</td><td>'+esc(inv.cust||'')+'</td><td>'+esc(ls)+'</td><td style="text-align:right">'+money(g)+'</td><td style="text-align:right">'+money(pd)+'</td><td style="text-align:right">'+money(g-pd)+'</td><td>'+stl+'</td></tr>';}).join('');
   $('printArea').innerHTML='<div style="font-family:sans-serif;padding:20px;color:#111"><h2 style="color:#0B6B3C">RAM IMPEX — გაყიდვები/ინვოისები</h2><p style="font-size:12px;color:#555">დაბეჭდილია: '+todayStr()+' · ჩანაწერი: '+list.length+'</p><table style="width:100%;border-collapse:collapse;font-size:12px" border="1"><thead><tr style="background:#0B6B3C;color:#fff"><th>#</th><th>თარიღი</th><th>№</th><th>მყიდველი</th><th>პროდუქცია</th><th>სულ</th><th>გადახდ.</th><th>ნაშთი</th><th>სტატუსი</th></tr></thead><tbody>'+rows+'<tr style="background:#0B6B3C;color:#fff;font-weight:bold"><td colspan="5">ჯამი</td><td style="text-align:right">'+money(T)+'</td><td style="text-align:right">'+money(P)+'</td><td style="text-align:right">'+money(T-P)+'</td><td></td></tr></tbody></table></div>';window.print();}
 /* ========================= ხარჯები (EXPENSES) — მიმართულებაზე ========================= */
-let EXPENSES=[], EXP_FILTER='', EXP_FROM='', EXP_TO='', expPeople=[], editingExpId=null;
+let EXPENSES=[], EXP_FILTER='', EXP_FROM='', EXP_TO='', expPeople=[], editingExpId=null, expEditIdx=null;
 const EXP_DIRS=SAL_DIRS.filter(d=>d[0]!=='all'); // [key, short, emoji]
 function dirLabel(k){if(!k)return '🔧 ზოგადი';const d=SAL_DIRS.find(x=>x[0]===k);return d?(d[2]+' '+d[0]):k;}
 function expDirOptions(sel){return '<option value="">🔧 ზოგადი (მიმართულების გარეშე)</option>'+EXP_DIRS.map(d=>'<option value="'+esc(d[0])+'"'+(d[0]===sel?' selected':'')+'>'+d[2]+' '+esc(d[0])+'</option>').join('');}
@@ -1142,10 +1142,10 @@ function renderExpenses(){
    '<div class="row"><div><label>დან</label><input id="eFrom" type="date"></div><div><label>მდე</label><input id="eTo" type="date"></div><div style="align-self:flex-end;display:flex;gap:8px"><button class="btn a" id="eXls">📊 Excel</button><button class="btn line" id="ePdf">📄 PDF</button></div></div>'+
    '<div class="scroll" style="margin-top:10px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:6px;text-align:left">თარიღი</th><th style="padding:6px;text-align:left">მიმართულება</th><th style="padding:6px;text-align:left">კატეგორია</th><th style="padding:6px;text-align:right">თანხა ₾</th><th style="padding:6px;text-align:center">ზედნადები</th><th style="padding:6px">დეტალები</th><th></th></tr></thead><tbody id="eRows"></tbody></table></div><div id="eEmpty" class="empty" style="display:none">ჯერ ხარჯი არ არის.</div></div>';
   const g=id=>document.getElementById(id);
-  expPeople=[];editingExpId=null;
+  expPeople=[];editingExpId=null;expEditIdx=null;
   g('eSave').onclick=saveExpense;
   g('eCat').onchange=updateExpForm;
-  g('epAdd').onclick=()=>{const nm=g('epName').value.trim();const amt=+g('epAmt').value||0;if(!nm){alert('ჩაწერე სახელი გვარი');return;}expPeople.push({name:nm,pid:g('epPid').value.trim(),phone:g('epPhone').value.trim(),amount:amt});g('epName').value='';g('epPid').value='';g('epPhone').value='';g('epAmt').value='';renderPeople();};
+  g('epAdd').onclick=()=>{const nm=g('epName').value.trim();const amt=+g('epAmt').value||0;if(!nm){alert('ჩაწერე სახელი გვარი');return;}const person={name:nm,pid:g('epPid').value.trim(),phone:g('epPhone').value.trim(),amount:amt};if(expEditIdx!=null&&expPeople[expEditIdx]){expPeople[expEditIdx]=person;expEditIdx=null;g('epAdd').textContent='➕ დამატება';g('epAdd').style.background='#6d3ad6';}else{expPeople.push(person);}g('epName').value='';g('epPid').value='';g('epPhone').value='';g('epAmt').value='';renderPeople();};
   salEl.querySelectorAll('#eDirTabs [data-etab]').forEach(b=>b.onclick=()=>{EXP_FILTER=b.dataset.etab;salEl.querySelectorAll('#eDirTabs .chip').forEach(x=>x.classList.toggle('on',x.dataset.etab===EXP_FILTER));renderExpList();});
   if(g('eFrom')){g('eFrom').value=EXP_FROM||'';g('eFrom').onchange=()=>{EXP_FROM=g('eFrom').value;renderExpList();};}
   if(g('eTo')){g('eTo').value=EXP_TO||'';g('eTo').onchange=()=>{EXP_TO=g('eTo').value;renderExpList();};}
@@ -1155,9 +1155,10 @@ function renderExpenses(){
 }
 function updateExpForm(){const g=id=>document.getElementById(id);if(!g('eCat'))return;const sal=g('eCat').value==='salary';if(g('eSalBlock'))g('eSalBlock').style.display=sal?'':'none';if(g('eGenRow'))g('eGenRow').style.display=sal?'none':'';}
 function renderPeople(){const tb=document.getElementById('ePeople');if(!tb)return;let tot=0;
-  tb.innerHTML=expPeople.map((p,i)=>{tot+=(+p.amount||0);return '<tr><td style="padding:4px 6px"><b>'+esc(p.name)+'</b>'+(p.pid?' <span class="muted" style="font-size:11px">'+esc(p.pid)+'</span>':'')+(p.phone?' <span class="muted" style="font-size:11px">📞 '+esc(p.phone)+'</span>':'')+'</td><td style="padding:4px 6px;text-align:right;font-weight:700;color:#6d3ad6">'+money(p.amount)+' ₾</td><td style="padding:4px 6px;text-align:right"><button class="smini danger" data-eprm="'+i+'">✕</button></td></tr>';}).join('');
+  tb.innerHTML=expPeople.map((p,i)=>{tot+=(+p.amount||0);return '<tr><td style="padding:4px 6px"><b>'+esc(p.name)+'</b>'+(p.pid?' <span class="muted" style="font-size:11px">'+esc(p.pid)+'</span>':'')+(p.phone?' <span class="muted" style="font-size:11px">📞 '+esc(p.phone)+'</span>':'')+'</td><td style="padding:4px 6px;text-align:right;font-weight:700;color:#6d3ad6">'+money(p.amount)+' ₾</td><td style="padding:4px 6px;text-align:right;white-space:nowrap"><button class="smini" data-eped="'+i+'" title="რედაქტ.">✏</button> <button class="smini danger" data-eprm="'+i+'" title="წაშლა">✕</button></td></tr>';}).join('');
   const t=document.getElementById('epTotal');if(t)t.textContent=money(tot)+' ₾';
-  tb.querySelectorAll('[data-eprm]').forEach(b=>b.onclick=()=>{expPeople.splice(+b.dataset.eprm,1);renderPeople();});
+  tb.querySelectorAll('[data-eped]').forEach(b=>b.onclick=()=>{const i=+b.dataset.eped;const p=expPeople[i];const g=id=>document.getElementById(id);if(g('epName'))g('epName').value=p.name||'';if(g('epPid'))g('epPid').value=p.pid||'';if(g('epPhone'))g('epPhone').value=p.phone||'';if(g('epAmt'))g('epAmt').value=(p.amount!=null?p.amount:'');expEditIdx=i;if(g('epAdd')){g('epAdd').textContent='💾 განახლება';g('epAdd').style.background='#0B6B3C';}if(g('epName'))g('epName').focus();});
+  tb.querySelectorAll('[data-eprm]').forEach(b=>b.onclick=()=>{const i=+b.dataset.eprm;expPeople.splice(i,1);if(expEditIdx===i){expEditIdx=null;const g=id=>document.getElementById(id);if(g('epAdd')){g('epAdd').textContent='➕ დამატება';g('epAdd').style.background='#6d3ad6';}}renderPeople();});
 }
 function renderExpList(){const tb=document.getElementById('eRows');if(!tb)return;
   const list=filteredExpenses();
@@ -1174,6 +1175,7 @@ function editExpense(id){const x=EXPENSES.find(e=>String(e.id)===String(id));if(
   if(g('eDate'))g('eDate').value=x.date||todayStr();
   if(g('eNote'))g('eNote').value=x.note||'';
   updateExpForm();
+  expEditIdx=null;const gA=document.getElementById('epAdd');if(gA){gA.textContent='➕ დამატება';gA.style.background='#6d3ad6';}
   if(x.category==='salary'){expPeople=((x.docs||{}).people||[]).slice();renderPeople();}
   else{expPeople=[];if(g('eAmt'))g('eAmt').value=x.amount||'';if(g('eQty'))g('eQty').value=(x.qty!=null?x.qty:'');}
   if(g('eSave'))g('eSave').textContent='💾 განახლება';
