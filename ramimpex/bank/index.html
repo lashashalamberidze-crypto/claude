@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ka">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAM IMPEX — საბანკო რეკვიზიტები</title>
+<meta property="og:title" content="RAM IMPEX — საბანკო რეკვიზიტები">
+<meta property="og:description" content="საქართველოს ბანკი · IBAN · SWIFT · საწყობის რუკა">
+<style>
+:root{--g:#0B6B3C;--g2:#0F8A4D;--o:#c9701a;--ink:#14261c;--mut:#5c6b62;--line:#e5ece7}
+*{margin:0;box-sizing:border-box}
+body{font-family:'Noto Sans Georgian',system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--ink);background:#eef3ef;line-height:1.4}
+.wrap{max-width:560px;margin:0 auto;padding:0 14px 40px}
+.hd{background:linear-gradient(120deg,var(--g),var(--g2));color:#fff;padding:20px 16px;display:flex;align-items:center;gap:14px;border-radius:0 0 20px 20px}
+.hd img{width:52px;height:52px;background:#fff;border-radius:10px;padding:4px}
+.hd b{font-size:22px;font-weight:900;letter-spacing:.3px;display:block}
+.hd span{font-size:13px;opacity:.9}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:16px;box-shadow:0 4px 16px rgba(16,60,40,.06)}
+.card h2{font-size:16px;color:var(--g);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px dashed var(--line)}
+.row:last-child{border-bottom:0}
+.row .k{font-size:12px;color:var(--mut);font-weight:700}
+.row .v{font-size:15px;font-weight:800;color:var(--ink);word-break:break-all}
+.copy{flex:0 0 auto;border:1.5px solid var(--g);color:var(--g);background:#eef7f1;border-radius:9px;padding:8px 12px;font:inherit;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;transition:.15s}
+.copy:active{transform:scale(.96)}
+.copy.ok{background:var(--g);color:#fff;border-color:var(--g)}
+.iban{background:#f3faf5;border:2px solid var(--g2);border-radius:12px;padding:14px;margin-top:6px;text-align:center}
+.iban .k{font-size:12px;color:var(--mut);font-weight:700}
+.iban .n{font-size:22px;font-weight:900;color:var(--g);letter-spacing:.5px;margin:6px 0 12px;word-break:break-all}
+.iban .copy{width:100%;padding:14px;font-size:16px}
+.allbtn{width:100%;margin-top:12px;background:var(--o);color:#fff;border:0;border-radius:12px;padding:14px;font:inherit;font-weight:900;font-size:15px;cursor:pointer}
+.allbtn:active{transform:scale(.99)}
+.allbtn.ok{background:var(--g)}
+.note{margin-top:12px;background:#FFF4D6;border:1px solid #f0d98a;border-radius:10px;padding:10px 12px;font-size:13px;color:#8a6a00;font-weight:600}
+.fx{margin-top:10px}
+.fxsum{cursor:pointer;font-weight:800;color:var(--g);font-size:14px;display:flex;align-items:center;gap:6px;padding:6px 0}
+.fxbody{display:none;margin-top:6px}
+.fxbody.on{display:block}
+.fxrow{font-size:13px;padding:8px 10px;background:#f6faf7;border-radius:8px;margin-top:6px}
+.fxrow b{color:var(--g)}
+.map{display:flex;gap:14px;align-items:center}
+.map img{width:110px;height:110px;border-radius:12px;border:1px solid var(--line);flex:0 0 auto}
+.mapbtn{display:inline-block;background:var(--g);color:#fff;text-decoration:none;border-radius:10px;padding:12px 16px;font-weight:800;font-size:14px;margin-top:8px}
+.foot{text-align:center;color:var(--mut);font-size:13px;margin-top:20px;line-height:1.7}
+.foot a{color:var(--g);font-weight:800;text-decoration:none}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-weight:800;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:99}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="hd">
+  <img src="../info/logo.png" alt="RAM IMPEX">
+  <div><b>RAM IMPEX</b><span>საბანკო რეკვიზიტები · გადახდა</span></div>
+</div>
+<div class="wrap">
+
+  <div class="card">
+    <h2>🏦 საქართველოს ბანკი (ლარი)</h2>
+    <div class="row"><div><div class="k">მიმღები</div><div class="v" id="v_name">შპს „რამ იმპექს"</div></div><button class="copy" data-copy="v_name">📋</button></div>
+    <div class="row"><div><div class="k">ს/კ (საიდ. კოდი)</div><div class="v" id="v_id">405565794</div></div><button class="copy" data-copy="v_id">📋</button></div>
+    <div class="row"><div><div class="k">ბანკი</div><div class="v" id="v_bank">სს „საქართველოს ბანკი"</div></div></div>
+    <div class="row"><div><div class="k">ბანკის კოდი (SWIFT)</div><div class="v" id="v_swift">BAGAGE22</div></div><button class="copy" data-copy="v_swift">📋</button></div>
+
+    <div class="iban">
+      <div class="k">ანგარიშის ნომერი (IBAN)</div>
+      <div class="n" id="v_iban">GE47BG0000000611211417</div>
+      <button class="copy" data-copy="v_iban">📋 ანგარიშის კოპირება</button>
+    </div>
+
+    <button class="allbtn" id="allBtn">📄 ყველა რეკვიზიტის კოპირება</button>
+    <div class="note">⚠️ გადარიცხვისას დანიშნულებაში აუცილებლად მიუთითეთ <b>ინვოისის ნომერი</b>.</div>
+
+    <div class="fx">
+      <div class="fxsum" id="fxToggle">🌍 უცხოური ვალუტით გადარიცხვა (USD / EUR / GBP) ▾</div>
+      <div class="fxbody" id="fxBody">
+        <div class="fxrow">🇺🇸 <b>USD</b> — შუამავალი ბანკი: <b>Citibank N.A., New York</b> · SWIFT: <b>CITIUS33</b></div>
+        <div class="fxrow">🇪🇺 <b>EUR</b> — შუამავალი ბანკი: <b>Commerzbank, Frankfurt</b> · SWIFT: <b>COBADEFF</b></div>
+        <div class="fxrow">🇬🇧 <b>GBP</b> — შუამავალი ბანკი: <b>Citibank N.A., London</b> · SWIFT: <b>CITIGB2L</b></div>
+        <div class="fxrow" style="background:#eef7f1">მიმღები ბანკი ყველა ვალუტაზე: <b>Bank of Georgia (BAGAGE22)</b> · ანგარიში: <b>GE47BG0000000611211417</b></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📍 საწყობი — ნატახტარი</h2>
+    <div class="map">
+      <img src="../info/qr.png" alt="QR — რუკა">
+      <div>
+        <div style="font-size:13px;color:var(--mut)">დაასკანერე QR ან დააჭირე ღილაკს — გაიხსნება მდებარეობა Google Maps-ზე.</div>
+        <a class="mapbtn" href="https://maps.app.goo.gl/7PTqBqMCZngpTgqQ6" target="_blank" rel="noopener">🗺️ რუკაზე ნახვა</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    📞 <a href="tel:+995595533500">595 533 500</a> · ✉ info@ramimpex.com.ge<br>
+    🌐 <a href="https://ramimpex.com.ge/info" target="_blank">ramimpex.com.ge/info</a>
+  </div>
+</div>
+
+<div class="toast" id="toast">✓ დაკოპირდა</div>
+
+<script>
+var toast=document.getElementById('toast'),tt;
+function showToast(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(tt);tt=setTimeout(function(){toast.classList.remove('show');},1400);}
+function copyText(text,btn,okLabel){
+  function done(){if(btn){var o=btn.textContent;btn.classList.add('ok');btn.textContent='✓ დაკოპირდა';setTimeout(function(){btn.classList.remove('ok');btn.textContent=o;},1400);}showToast(okLabel||'✓ დაკოპირდა');}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done,function(){fallback(text,done);});}
+  else fallback(text,done);
+}
+function fallback(text,cb){try{var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();cb();}catch(e){showToast('კოპირება ვერ მოხერხდა');}}
+document.querySelectorAll('.copy[data-copy]').forEach(function(b){
+  b.addEventListener('click',function(){var el=document.getElementById(b.getAttribute('data-copy'));if(el)copyText(el.textContent.trim(),b);});
+});
+document.getElementById('allBtn').addEventListener('click',function(){
+  var t='მიმღები: შპს „რამ იმპექს"\\nს/კ: 405565794\\nბანკი: სს „საქართველოს ბანკი"\\nSWIFT: BAGAGE22\\nIBAN: GE47BG0000000611211417';
+  copyText(t,this,'✓ რეკვიზიტები დაკოპირდა');
+});
+document.getElementById('fxToggle').addEventListener('click',function(){
+  var b=document.getElementById('fxBody');b.classList.toggle('on');
+  this.textContent=this.textContent.replace(/[▾▴]/,b.classList.contains('on')?'▴':'▾');
+});
+</script>
+</body>
+</html>
