@@ -742,8 +742,11 @@ function renderInvoice(){
 }
 /* ========================= გაყიდვები (📊) — ორი ქვე-ტაბი: 🛒 საცალო · 🚚 დისტრიბუცია ========================= */
 let SALES_SUB='retail';
-let DISTRIBUTORS=[], DIST_PICKUPS=[], DIST_SALES=[], DIST_ERR='', distReportFor='', distShowAdd=false;
+let DISTRIBUTORS=[], DIST_PICKUPS=[], DIST_SALES=[], DIST_ERR='', distReportFor='';
 function gotoTab(t){const b=$('tabbar')&&$('tabbar').querySelector('[data-t="'+t+'"]');if(b)b.click();}
+// უსაფრთხო insert/update — თუ არასავალდებულო სვეტი ჯერ არ არსებობს ბაზაში, ავტ. ამოიღებს და თავიდან სცდის
+async function sbInsertSafe(table,rec,optKeys){let r=await sb.from(table).insert(rec);if(r.error&&/column|schema|cache/i.test(r.error.message||'')){const base=Object.assign({},rec);(optKeys||[]).forEach(k=>delete base[k]);r=await sb.from(table).insert(base);}return r;}
+async function sbUpdateSafe(table,rec,id,optKeys){let r=await sb.from(table).update(rec).eq('id',id);if(r.error&&/column|schema|cache/i.test(r.error.message||'')){const base=Object.assign({},rec);(optKeys||[]).forEach(k=>delete base[k]);r=await sb.from(table).update(base).eq('id',id);}return r;}
 async function loadDistrib(){
   DIST_ERR='';
   try{const {data,error}=await sb.from('distributors').select('*').order('created_at',{ascending:false});if(error)throw error;DISTRIBUTORS=data||[];}
@@ -815,15 +818,6 @@ function renderDist(){
        '<div style="flex:2"><label>დისტრიბუტორი</label><select id="dpDist"><option value="">— აირჩიე —</option>'+distSelectOptions()+'</select></div>'+
        '<div style="flex:0 0 auto;align-self:flex-end"><button class="dbtn line" id="dpAddNew">➕ ახალი</button></div>'+
      '</div>';
-  if(distShowAdd){
-    h+='<div class="dnote" style="background:#f6faf8;border-color:#cfe0d6;color:#22332a"><div class="drow">'+
-       '<div><label>სახელი/დასახელება</label><input id="dnName" placeholder="სახელი გვარი / შპს"></div>'+
-       '<div style="flex:0 0 150px"><label>პ/ნ ან ს/კ</label><input id="dnIdc" placeholder="პირადი № / საიდ. კოდი"></div>'+
-       '<div style="flex:0 0 150px"><label>რეგიონი</label><select id="dnRegion"><option value="">—</option>'+Object.keys(REGIONS).map(r=>'<option>'+esc(r)+'</option>').join('')+'</select></div>'+
-       '<div style="flex:0 0 150px"><label>ტელეფონი</label><input id="dnPhone" placeholder="5xx…"></div>'+
-       '<div style="flex:0 0 auto;align-self:flex-end"><button class="dbtn" id="dnSave">💾 დამატება</button></div>'+
-     '</div></div>';
-  }
   h+='<div class="drow" style="margin-top:10px">'+
        '<div style="flex:2"><label>პროდუქტი</label><select id="dpProd">'+distProdOptions('')+'</select></div>'+
        '<div style="flex:0 0 120px"><label>რაოდ.</label><input id="dpQty" type="number" step="any" placeholder="0"></div>'+
@@ -889,8 +883,7 @@ function renderDist(){
 }
 function wireDist(){
   const q=id=>$(id);
-  if(q('dpAddNew'))q('dpAddNew').onclick=()=>{distShowAdd=!distShowAdd;renderDist();};
-  if(q('dnSave'))q('dnSave').onclick=distAddNew;
+  if(q('dpAddNew'))q('dpAddNew').onclick=()=>distForm(null);
   if(q('dpGo'))q('dpGo').onclick=distPickup;
   if(q('dsGo'))q('dsGo').onclick=distAddSale;
   if(q('drepClose'))q('drepClose').onclick=()=>{distReportFor='';renderDist();};
@@ -919,7 +912,7 @@ function distSalePay(id){const s=distFindSale(id);if(!s)return;const amt=(+s.amo
   q('#dpqClose').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove();};
   q('#dpqSave').onclick=async()=>{const paid=+q('#dpqAmt').value||0;const status=(amt>0&&paid>=amt-0.001)?'paid':(paid>0?'part':'due');const btn=q('#dpqSave');btn.disabled=true;btn.textContent='⏳…';
     try{const {error}=await sb.from('dist_sales').update({paid,status}).eq('id',s.id);if(error)throw error;s.paid=paid;s.status=status;ov.remove();renderDist();}
-    catch(e){q('#dpqMsg').innerHTML='<span style="color:#c62828">ვერ განახლდა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='💾 შენახვა';}};
+    catch(e){const hint=/column|schema|cache/i.test(e.message||'')?' — გაუშვი sql/distribution.sql (paid/status სვეტები)':'';q('#dpqMsg').innerHTML='<span style="color:#c62828">ვერ განახლდა: '+esc(e.message||e)+hint+'</span>';btn.disabled=false;btn.textContent='💾 შენახვა';}};
 }
 function distDocsPanel(table,id,prefix){
   const row=(table==='dist_sales'?DIST_SALES:DIST_PICKUPS).find(x=>String(x.id)===String(id));if(!row)return;const docs=row.docs||{};
@@ -932,16 +925,7 @@ function distDocsPanel(table,id,prefix){
     try{const inps=ov.querySelectorAll('input[type=file][data-doc]');
       for(const inp of inps){const f=inp.files&&inp.files[0];if(!f)continue;const t=inp.dataset.doc;const path=prefix+'/'+id+'/'+t+'-'+Date.now()+'-'+f.name.replace(/[^\w.\-]/g,'_');const up=await sb.storage.from('sale-docs').upload(path,f,{upsert:true});if(up.error)throw up.error;nd[t]=sb.storage.from('sale-docs').getPublicUrl(path).data.publicUrl;}
       const {error}=await sb.from(table).update({docs:nd}).eq('id',id);if(error)throw error;row.docs=nd;ov.remove();renderDist();
-    }catch(e){msg.innerHTML='<span style="color:#c62828">ვერ აიტვირთა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='💾 ატვირთვა';}};
-}
-async function distAddNew(){
-  const name=($('dnName').value||'').trim();if(!name){alert('ჩაწერე სახელი');return;}
-  const region=$('dnRegion').value||'',phone=($('dnPhone').value||'').trim(),idc=($('dnIdc').value||'').trim();
-  const id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-  const btn=$('dnSave');btn.disabled=true;btn.textContent='⏳…';
-  try{const {error}=await sb.from('distributors').insert({id,name,idc,region,phone,approved:false});if(error)throw error;
-    distShowAdd=false;await loadDistrib();renderDist();}
-  catch(e){alert('ვერ დაემატა: '+(e.message||e));btn.disabled=false;btn.textContent='💾 დამატება';}
+    }catch(e){const hint=/column|schema|cache/i.test(e.message||'')?' — გაუშვი sql/distribution.sql (docs სვეტი)':'';msg.innerHTML='<span style="color:#c62828">ვერ აიტვირთა: '+esc(e.message||e)+hint+'</span>';btn.disabled=false;btn.textContent='💾 ატვირთვა';}};
 }
 async function distPickup(){
   const did=$('dpDist').value;const code=$('dpProd').value;const qty=parseFloat($('dpQty').value);const price=parseFloat($('dpPrice').value)||0;const date=$('dpDate').value||todayStr();
@@ -969,7 +953,7 @@ async function distAddSale(){
   const amount=qty*price;const status=(amount>0&&paid>=amount-0.001)?'paid':(paid>0?'part':'due');
   const btn=$('dsGo');btn.disabled=true;btn.textContent='⏳…';
   const id='ds'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-  try{const {error}=await sb.from('dist_sales').insert({id,distributor_id:did,distributor_name:distName(did),qty,buyer,price,amount,paid,status,date});if(error)throw error;
+  try{const r=await sbInsertSafe('dist_sales',{id,distributor_id:did,distributor_name:distName(did),qty,buyer,price,amount,paid,status,date},['paid','status']);if(r.error)throw r.error;
     await loadDistrib();renderDist();window.scrollTo(0,document.body.scrollHeight);}
   catch(e){msg.innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='💾 ჩაწერა';}
 }
@@ -1008,18 +992,35 @@ function distView(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));if
   q('#dvEdit').onclick=()=>{ov.remove();distEdit(id);};
   if(q('#dvApprove'))q('#dvApprove').onclick=async()=>{try{const {error}=await sb.from('distributors').update({approved:true}).eq('id',id);if(error)throw error;d.approved=true;ov.remove();await loadDistrib();renderDist();}catch(e){alert('ვერ დამტკიცდა: '+(e.message||e));}};
 }
-function distEdit(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));if(!d)return;
+function distEdit(id){distForm(id);}
+const CTYPES=['ფიზიკური პირი','ინდ. მეწარმე','შპს'];
+const CHANNELS=['მაღაზიაში','თვითონ ვავრცელებ','ორივე'];
+const TRANSPORTS=['ჩემი ტრანსპორტი','საწყობიდან','მიწოდება'];
+// ერთი ფორმა — ახალიც და რედაქტირებაც (id=null → ახალი). სრული ინფო.
+function distForm(id){const d=(id?DISTRIBUTORS.find(x=>String(x.id)===String(id)):null)||{};const isNew=!id;
+  const selOpts=(arr,cur)=>'<option value="">—</option>'+arr.map(o=>'<option'+(o===cur?' selected':'')+'>'+esc(o)+'</option>').join('');
   const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
-  ov.innerHTML='<div class="card salform" style="max-width:560px;width:100%"><h2>✏ დისტრიბუტორი — '+esc(d.name||'—')+'</h2>'+
-   '<div class="fg" style="grid-template-columns:1fr 1fr"><div><label>სახელი/დასახელება</label><input id="edName" value="'+esc(d.name||'')+'"></div><div><label>მაღაზიის სახელი (რუკაზე)</label><input id="edShop" value="'+esc(d.shop_name||'')+'"></div>'+
-   '<div><label>პ/ნ ან ს/კ</label><input id="edIdc" value="'+esc(d.idc||'')+'"></div><div><label>ტელეფონი</label><input id="edPhone" value="'+esc(d.phone||'')+'"></div>'+
+  ov.innerHTML='<div class="card salform" style="max-width:600px;width:100%"><h2>'+(isNew?'➕ ახალი დისტრიბუტორი':('✏ '+esc(d.name||'—')))+'</h2>'+
+   '<div class="fg" style="grid-template-columns:1fr 1fr">'+
+   '<div><label>სახელი/დასახელება *</label><input id="edName" value="'+esc(d.name||'')+'"></div>'+
+   '<div><label>პ/ნ ან ს/კ</label><input id="edIdc" value="'+esc(d.idc||'')+'"></div>'+
+   '<div><label>პირის ტიპი</label><select id="edCtype">'+selOpts(CTYPES,d.company_type)+'</select></div>'+
+   '<div><label>კომპანია (შპს/ინდ.მეწ.)</label><input id="edCompany" value="'+esc(d.company||'')+'"></div>'+
+   '<div><label>მაღაზიის სახელი (რუკაზე)</label><input id="edShop" value="'+esc(d.shop_name||'')+'"></div>'+
+   '<div><label>ტელეფონი</label><input id="edPhone" value="'+esc(d.phone||'')+'"></div>'+
    '<div><label>რეგიონი</label><select id="edRegion"><option value="">—</option>'+Object.keys(REGIONS).map(r=>'<option'+(r===d.region?' selected':'')+'>'+esc(r)+'</option>').join('')+'</select></div>'+
-   '<div><label>მუნიციპალიტეტი</label><select id="edMuni"><option value="">—</option></select></div><div><label>მისამართი</label><input id="edAddr" value="'+esc(d.address||'')+'"></div>'+
+   '<div><label>მუნიციპალიტეტი</label><select id="edMuni"><option value="">—</option></select></div>'+
+   '<div style="grid-column:span 2"><label>მისამართი</label><input id="edAddr" value="'+esc(d.address||'')+'"></div>'+
+   '<div><label>გაყიდვის არხი</label><select id="edChannel">'+selOpts(CHANNELS,d.channel)+'</select></div>'+
+   '<div><label>ტრანსპორტი</label><select id="edTransport">'+selOpts(TRANSPORTS,d.transport)+'</select></div>'+
+   '<div><label>სავარ. თვიური შესყ.</label><input id="edMonthly" value="'+esc(d.monthly||'')+'" placeholder="მაგ. 2–3 ტ/თვე"></div>'+
+   '<div><label>სხვა კონტაქტი</label><input id="edContact2" value="'+esc(d.contact2||'')+'" placeholder="WhatsApp / mail"></div>'+
+   '<div style="grid-column:span 2"><label>შენიშვნა</label><input id="edNote" value="'+esc(d.note||'')+'"></div>'+
    '<div style="grid-column:span 2"><label>🗺 Google Maps ბმული ან კოორდინატები (რუკაზე დასამატებლად)</label><input id="edMaps" placeholder="ჩააკოპირე Google Maps-ის ბმული ან: 41.7151, 44.8271"></div>'+
    '<div><label>Lat</label><input id="edLat" value="'+esc(d.lat!=null?d.lat:'')+'" placeholder="41.7…"></div><div><label>Lng</label><input id="edLng" value="'+esc(d.lng!=null?d.lng:'')+'" placeholder="44.8…"></div></div>'+
-   '<div class="dnote" style="margin-top:6px">🗺 <b>როგორ დავამატო რუკაზე:</b> Google Maps-ში იპოვე მაღაზია → გაზიარება/მისამართის ბარი → ჩააკოპირე ბმული აქ (ავტომატურად ამოიღებს კოორდინატებს). ან ხელით ჩაწერე Lat/Lng. მერე მონიშნე „✅ დამტკიცებული".</div>'+
+   '<div class="dnote" style="margin-top:6px">🗺 <b>რუკაზე დასამატებლად:</b> Google Maps-ში იპოვე მაღაზია → დააკოპირე ბმული → ჩააკოპირე აქ (კოორდინატები ავტომატურად ამოვა). ან ხელით ჩაწერე Lat/Lng. მერე მონიშნე „✅ დამტკიცებული".</div>'+
    '<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:800;cursor:pointer"><input type="checkbox" id="edApproved"'+(d.approved?' checked':'')+' style="width:18px;height:18px"> ✅ დამტკიცებული (ჩანს /info-ზე რუკაზე/ცნობარში)</label>'+
-   '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="dbtn" id="edSave">💾 შენახვა</button><button class="dbtn line" id="edClose">დახურვა</button><button class="smini danger" id="edDel" style="margin-left:auto">🗑 წაშლა</button></div>'+
+   '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="dbtn" id="edSave">💾 შენახვა</button><button class="dbtn line" id="edClose">დახურვა</button>'+(isNew?'':'<button class="smini danger" id="edDel" style="margin-left:auto">🗑 წაშლა</button>')+'</div>'+
    '<div id="edMsg" style="margin-top:8px;font-size:12.5px"></div></div>';
   document.body.appendChild(ov);
   const qq=s=>ov.querySelector(s);
@@ -1028,12 +1029,21 @@ function distEdit(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));if
   qq('#edRegion').onchange=()=>fillM(qq('#edRegion').value,'');
   qq('#edMaps').oninput=()=>{const c=parseLatLng(qq('#edMaps').value);if(c){qq('#edLat').value=c[0];qq('#edLng').value=c[1];qq('#edMsg').innerHTML='<span style="color:#0B6B3C">✔ კოორდინატები ამოღებულია: '+c[0]+', '+c[1]+'</span>';}else if(qq('#edMaps').value.indexOf('goo.gl')>=0){qq('#edMsg').innerHTML='<span style="color:#8a6a00">⚠️ მოკლე ბმული (goo.gl) — გახსენი ბრაუზერში, დააკოპირე გახსნილი გრძელი ბმული, ან ხელით ჩაწერე Lat/Lng.</span>';}};
   qq('#edClose').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove();};
-  qq('#edSave').onclick=async()=>{const upd={name:qq('#edName').value.trim(),idc:qq('#edIdc').value.trim(),shop_name:qq('#edShop').value.trim(),phone:qq('#edPhone').value.trim(),region:qq('#edRegion').value,municipality:qq('#edMuni').value,address:qq('#edAddr').value.trim(),approved:qq('#edApproved').checked};
-    const la=parseFloat(qq('#edLat').value);const ln=parseFloat(qq('#edLng').value);upd.lat=isNaN(la)?null:la;upd.lng=isNaN(ln)?null:ln;
+  qq('#edSave').onclick=async()=>{const name=qq('#edName').value.trim();if(!name){qq('#edMsg').innerHTML='<span style="color:#b00020">ჩაწერე სახელი</span>';return;}
+    const rec={name,idc:qq('#edIdc').value.trim(),company_type:qq('#edCtype').value,company:qq('#edCompany').value.trim(),shop_name:qq('#edShop').value.trim(),phone:qq('#edPhone').value.trim(),region:qq('#edRegion').value,municipality:qq('#edMuni').value,address:qq('#edAddr').value.trim(),channel:qq('#edChannel').value,transport:qq('#edTransport').value,monthly:qq('#edMonthly').value.trim(),contact2:qq('#edContact2').value.trim(),note:qq('#edNote').value.trim(),approved:qq('#edApproved').checked};
+    const la=parseFloat(qq('#edLat').value);const ln=parseFloat(qq('#edLng').value);rec.lat=isNaN(la)?null:la;rec.lng=isNaN(ln)?null:ln;
     const b=qq('#edSave');b.disabled=true;b.textContent='⏳…';
-    try{const {error}=await sb.from('distributors').update(upd).eq('id',id);if(error)throw error;ov.remove();await loadDistrib();renderDist();}
+    // არასავალდებულო სვეტები — თუ ბაზაში ჯერ არ არსებობს, ავტ. ამოვიღოთ და თავიდან
+    const OPT=['company_type','company','shop_name','channel','transport','monthly','contact2','note','lat','lng','idc','address'];
+    try{let r;
+      if(isNew){rec.id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);r=await sb.from('distributors').insert(rec);
+        if(r.error&&/column|schema|cache/i.test(r.error.message||'')){const base=Object.assign({},rec);OPT.forEach(k=>delete base[k]);r=await sb.from('distributors').insert(base);}
+      }else{r=await sb.from('distributors').update(rec).eq('id',id);
+        if(r.error&&/column|schema|cache/i.test(r.error.message||'')){const base=Object.assign({},rec);OPT.forEach(k=>delete base[k]);r=await sb.from('distributors').update(base).eq('id',id);}
+      }
+      if(r.error)throw r.error;ov.remove();await loadDistrib();renderDist();}
     catch(e){qq('#edMsg').innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+'</span>';b.disabled=false;b.textContent='💾 შენახვა';}};
-  qq('#edDel').onclick=async()=>{if(!confirm('წავშალო დისტრიბუტორი? (გატანები/რეპორტები დარჩება ბაზაში)'))return;try{const {error}=await sb.from('distributors').delete().eq('id',id);if(error)throw error;ov.remove();await loadDistrib();renderDist();}catch(e){alert('ვერ წაიშალა: '+(e.message||e));}};
+  if(qq('#edDel'))qq('#edDel').onclick=async()=>{if(!confirm('წავშალო დისტრიბუტორი? (გატანები/რეპორტები დარჩება ბაზაში)'))return;try{const {error}=await sb.from('distributors').delete().eq('id',id);if(error)throw error;ov.remove();await loadDistrib();renderDist();}catch(e){alert('ვერ წაიშალა: '+(e.message||e));}};
 }
 function renderInvLines(){
   const tb=$('iRows');$('iEmpty').style.display=invDraft.length?'none':'block';$('iTbl').style.display=invDraft.length?'':'none';
