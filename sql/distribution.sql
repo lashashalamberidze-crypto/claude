@@ -66,6 +66,7 @@ create table if not exists public.dist_pickups (
   date             date,
   note             text
 );
+alter table public.dist_pickups add column if not exists docs jsonb; -- დოკუმენტები (ზედნადები/გადარიცხვა)
 create index if not exists dist_pickups_dist_idx on public.dist_pickups (distributor_id);
 alter table public.dist_pickups enable row level security;
 drop policy if exists "dist_pickups all authed" on public.dist_pickups;
@@ -85,6 +86,9 @@ create table if not exists public.dist_sales (
   date             date,
   note             text
 );
+alter table public.dist_sales add column if not exists paid   numeric default 0; -- გადახდილი ₾ (ამ გაყიდვაზე)
+alter table public.dist_sales add column if not exists status text;   -- paid / part / due
+alter table public.dist_sales add column if not exists docs   jsonb;  -- დოკუმენტები (ზედნადები/გადარიცხვა)
 create index if not exists dist_sales_dist_idx on public.dist_sales (distributor_id);
 alter table public.dist_sales enable row level security;
 drop policy if exists "dist_sales all authed" on public.dist_sales;
