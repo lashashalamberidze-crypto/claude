@@ -881,7 +881,7 @@ function renderDist(){
   h+='<div class="card"><h2>👥 დისტრიბუტორები / განაცხადები</h2><p class="muted" style="font-size:12px">✅ დამტკიცებული ჩანს <b>/info</b>-ს რუკაზე და ცნობარში (მუნიციპალიტეტების ჭრილში).</p>';
   if(!DISTRIBUTORS.length)h+='<div class="empty">ჯერ განაცხადი არ არის.</div>';
   else{h+='<div class="scroll"><table><thead><tr><th>სახელი</th><th>მაღაზია</th><th>რეგ./მუნიც.</th><th>ტელ.</th><th class="right">დამტკ.</th><th></th></tr></thead><tbody>';
-    DISTRIBUTORS.forEach(d=>{h+='<tr><td><b>'+esc(d.name||'—')+'</b>'+(d.company?'<div class="muted" style="font-size:10px">'+esc(d.company)+'</div>':'')+(d.idc?'<div class="muted" style="font-size:10px">პ/ნ·ს/კ: '+esc(d.idc)+'</div>':'')+'</td><td>'+esc(d.shop_name||'—')+'</td><td>'+esc(d.region||'—')+(d.municipality?' · '+esc(d.municipality):'')+'</td><td>'+esc(d.phone||'—')+'</td><td class="right">'+(d.approved?'<span class="dtag ok">✅</span>':'<span class="dtag wait">⏳</span>')+'</td><td class="right"><button class="smini" data-dedit="'+esc(d.id)+'">✏</button></td></tr>';});
+    DISTRIBUTORS.forEach(d=>{h+='<tr><td><b>'+esc(d.name||'—')+'</b>'+(d.company?'<div class="muted" style="font-size:10px">'+esc(d.company)+'</div>':'')+(d.idc?'<div class="muted" style="font-size:10px">პ/ნ·ს/კ: '+esc(d.idc)+'</div>':'')+'</td><td>'+esc(d.shop_name||'—')+'</td><td>'+esc(d.region||'—')+(d.municipality?' · '+esc(d.municipality):'')+'</td><td>'+esc(d.phone||'—')+'</td><td class="right">'+(d.approved?'<span class="dtag ok">✅</span>':'<span class="dtag wait">⏳</span>')+'</td><td class="right" style="white-space:nowrap"><button class="smini" data-dview="'+esc(d.id)+'" title="სრული ინფო">👁</button> <button class="smini" data-dedit="'+esc(d.id)+'" title="რედაქტ.">✏</button></td></tr>';});
     h+='</tbody></table></div>';}
   h+='</div>';
   body.innerHTML=h;
@@ -897,6 +897,7 @@ function wireDist(){
   salesEl.querySelectorAll('[data-drep]').forEach(b=>b.onclick=()=>{distReportFor=b.dataset.drep;renderDist();window.scrollTo(0,document.body.scrollHeight);});
   salesEl.querySelectorAll('[data-dpay]').forEach(b=>b.onclick=()=>distPayment(b.dataset.dpay));
   salesEl.querySelectorAll('[data-dedit]').forEach(b=>b.onclick=()=>distEdit(b.dataset.dedit));
+  salesEl.querySelectorAll('[data-dview]').forEach(b=>b.onclick=()=>distView(b.dataset.dview));
   salesEl.querySelectorAll('[data-dsdel]').forEach(b=>b.onclick=()=>distDelSale(b.dataset.dsdel));
   salesEl.querySelectorAll('[data-dpdel]').forEach(b=>b.onclick=()=>distDelPickup(b.dataset.dpdel));
   salesEl.querySelectorAll('[data-dspay]').forEach(b=>b.onclick=()=>distSalePay(b.dataset.dspay));
@@ -983,6 +984,30 @@ async function distPayment(id){const a=distAgg(id);const cur=(DISTRIBUTORS.find(
   if(v==null)return;const paid=parseFloat(v);if(isNaN(paid)){alert('არასწორი რიცხვი');return;}
   try{const {error}=await sb.from('distributors').update({paid}).eq('id',id);if(error)throw error;await loadDistrib();renderDist();}
   catch(e){alert('ვერ შეინახა (გაუშვი sql/distribution.sql — paid სვეტი): '+(e.message||e));}}
+function parseLatLng(s){if(!s)return null;s=''+s;
+  let m=s.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+  if(!m)m=s.match(/[?&](?:q|ll|daddr|destination|center)=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+  if(!m)m=s.match(/!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/);
+  if(!m)m=s.match(/^\s*(-?\d{1,3}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)\s*$/);
+  if(!m)return null;const la=+m[1],ln=+m[2];if(isNaN(la)||isNaN(ln)||la<-90||la>90||ln<-180||ln>180)return null;
+  return [Math.round(la*1e6)/1e6,Math.round(ln*1e6)/1e6];}
+function distView(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));if(!d)return;const a=distAgg(id);
+  const row=(l,v)=>v?('<div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px dashed #eef1ef"><div style="flex:0 0 150px;font-weight:800;color:#5c6b62;font-size:12.5px">'+l+'</div><div style="flex:1;font-size:13.5px">'+esc(v)+'</div></div>'):'';
+  const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
+  const created=d.created_at?(''+d.created_at).slice(0,10):'';
+  ov.innerHTML='<div class="card" style="max-width:560px;width:100%;max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:flex-start"><h2>👁 '+esc(d.name||'—')+' '+(d.approved?'<span class="dtag ok">✅ დამტკიცებული</span>':'<span class="dtag wait">⏳ განსახილველი</span>')+'</h2><button class="smini" id="dvClose">✕</button></div>'+
+    '<div class="salkpi" style="margin:10px 0"><div class="skpi"><div class="l">გატანილი</div><div class="v" style="font-size:17px">'+fmtKg(a.pickedKg)+'</div></div><div class="skpi blue"><div class="l">გაყიდა</div><div class="v" style="font-size:17px">'+fmtKg(a.soldKg)+'</div></div><div class="skpi amber"><div class="l">დარჩა</div><div class="v" style="font-size:17px">'+fmtKg(a.remKg)+'</div></div><div class="skpi red"><div class="l">ვალი ₾</div><div class="v" style="font-size:17px">'+money(a.debt)+'</div></div></div>'+
+    row('პირის ტიპი',d.company_type)+row('კომპანია',d.company)+row('პ/ნ ან ს/კ',d.idc)+row('მაღაზიის სახელი',d.shop_name)+
+    row('რეგიონი',d.region)+row('მუნიციპალიტეტი',d.municipality)+row('მისამართი',d.address)+
+    row('🛒 გაყიდვის არხი',d.channel)+row('🚚 ტრანსპორტი',d.transport)+row('📦 თვიური შესყ.',d.monthly)+row('💼 გამოცდილება',d.experience)+
+    row('📞 ტელეფონი',d.phone)+row('სხვა კონტაქტი',d.contact2)+row('📝 შენიშვნა',d.note)+row('📅 განაცხადი',created)+
+    (d.lat!=null&&d.lng!=null?row('🗺 კოორდინატები',(+d.lat)+', '+(+d.lng)):'')+
+    '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'+(d.approved?'':'<button class="dbtn" id="dvApprove">✅ დამტკიცება</button>')+'<button class="dbtn v" id="dvEdit">✏ რედაქტირება</button>'+(d.phone?'<a class="dbtn line" href="tel:'+esc((''+d.phone).replace(/\s/g,''))+'">📞 დარეკვა</a>':'')+'<button class="dbtn line" id="dvClose2">დახურვა</button></div></div>';
+  document.body.appendChild(ov);const q=s=>ov.querySelector(s);
+  q('#dvClose').onclick=q('#dvClose2').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  q('#dvEdit').onclick=()=>{ov.remove();distEdit(id);};
+  if(q('#dvApprove'))q('#dvApprove').onclick=async()=>{try{const {error}=await sb.from('distributors').update({approved:true}).eq('id',id);if(error)throw error;d.approved=true;ov.remove();await loadDistrib();renderDist();}catch(e){alert('ვერ დამტკიცდა: '+(e.message||e));}};
+}
 function distEdit(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));if(!d)return;
   const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
   ov.innerHTML='<div class="card salform" style="max-width:560px;width:100%"><h2>✏ დისტრიბუტორი — '+esc(d.name||'—')+'</h2>'+
@@ -990,7 +1015,9 @@ function distEdit(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));if
    '<div><label>პ/ნ ან ს/კ</label><input id="edIdc" value="'+esc(d.idc||'')+'"></div><div><label>ტელეფონი</label><input id="edPhone" value="'+esc(d.phone||'')+'"></div>'+
    '<div><label>რეგიონი</label><select id="edRegion"><option value="">—</option>'+Object.keys(REGIONS).map(r=>'<option'+(r===d.region?' selected':'')+'>'+esc(r)+'</option>').join('')+'</select></div>'+
    '<div><label>მუნიციპალიტეტი</label><select id="edMuni"><option value="">—</option></select></div><div><label>მისამართი</label><input id="edAddr" value="'+esc(d.address||'')+'"></div>'+
-   '<div><label>Lat (რუკა, არჩ.)</label><input id="edLat" value="'+esc(d.lat!=null?d.lat:'')+'" placeholder="41.7…"></div><div><label>Lng (რუკა, არჩ.)</label><input id="edLng" value="'+esc(d.lng!=null?d.lng:'')+'" placeholder="44.8…"></div></div>'+
+   '<div style="grid-column:span 2"><label>🗺 Google Maps ბმული ან კოორდინატები (რუკაზე დასამატებლად)</label><input id="edMaps" placeholder="ჩააკოპირე Google Maps-ის ბმული ან: 41.7151, 44.8271"></div>'+
+   '<div><label>Lat</label><input id="edLat" value="'+esc(d.lat!=null?d.lat:'')+'" placeholder="41.7…"></div><div><label>Lng</label><input id="edLng" value="'+esc(d.lng!=null?d.lng:'')+'" placeholder="44.8…"></div></div>'+
+   '<div class="dnote" style="margin-top:6px">🗺 <b>როგორ დავამატო რუკაზე:</b> Google Maps-ში იპოვე მაღაზია → გაზიარება/მისამართის ბარი → ჩააკოპირე ბმული აქ (ავტომატურად ამოიღებს კოორდინატებს). ან ხელით ჩაწერე Lat/Lng. მერე მონიშნე „✅ დამტკიცებული".</div>'+
    '<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:800;cursor:pointer"><input type="checkbox" id="edApproved"'+(d.approved?' checked':'')+' style="width:18px;height:18px"> ✅ დამტკიცებული (ჩანს /info-ზე რუკაზე/ცნობარში)</label>'+
    '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="dbtn" id="edSave">💾 შენახვა</button><button class="dbtn line" id="edClose">დახურვა</button><button class="smini danger" id="edDel" style="margin-left:auto">🗑 წაშლა</button></div>'+
    '<div id="edMsg" style="margin-top:8px;font-size:12.5px"></div></div>';
@@ -999,6 +1026,7 @@ function distEdit(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));if
   const fillM=(reg,selv)=>{const sel=qq('#edMuni');const list=REGIONS[reg]||[];sel.innerHTML='<option value="">—</option>'+list.map(m=>'<option'+(m===selv?' selected':'')+'>'+esc(m)+'</option>').join('');};
   fillM(d.region||'',d.municipality||'');
   qq('#edRegion').onchange=()=>fillM(qq('#edRegion').value,'');
+  qq('#edMaps').oninput=()=>{const c=parseLatLng(qq('#edMaps').value);if(c){qq('#edLat').value=c[0];qq('#edLng').value=c[1];qq('#edMsg').innerHTML='<span style="color:#0B6B3C">✔ კოორდინატები ამოღებულია: '+c[0]+', '+c[1]+'</span>';}else if(qq('#edMaps').value.indexOf('goo.gl')>=0){qq('#edMsg').innerHTML='<span style="color:#8a6a00">⚠️ მოკლე ბმული (goo.gl) — გახსენი ბრაუზერში, დააკოპირე გახსნილი გრძელი ბმული, ან ხელით ჩაწერე Lat/Lng.</span>';}};
   qq('#edClose').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove();};
   qq('#edSave').onclick=async()=>{const upd={name:qq('#edName').value.trim(),idc:qq('#edIdc').value.trim(),shop_name:qq('#edShop').value.trim(),phone:qq('#edPhone').value.trim(),region:qq('#edRegion').value,municipality:qq('#edMuni').value,address:qq('#edAddr').value.trim(),approved:qq('#edApproved').checked};
     const la=parseFloat(qq('#edLat').value);const ln=parseFloat(qq('#edLng').value);upd.lat=isNaN(la)?null:la;upd.lng=isNaN(ln)?null:ln;

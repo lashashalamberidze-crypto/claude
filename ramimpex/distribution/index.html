@@ -10,9 +10,10 @@
 :root{--g:#0B6B3C;--g2:#0F8A4D;--o:#c9701a;--gold:#F2B807;--ink:#14261c;--mut:#5c6b62;--line:#e5ece7}
 *{margin:0;box-sizing:border-box}
 body{font-family:'Noto Sans Georgian',system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--ink);background:#eef3ef;line-height:1.45}
-.wrap{max-width:600px;margin:0 auto;padding:0 14px 44px}
-.hero{position:relative;color:#fff;padding:30px 20px 26px;border-radius:0 0 22px 22px;overflow:hidden;
- background:radial-gradient(700px 380px at 82% 0%,rgba(201,112,26,.5),transparent 60%),linear-gradient(150deg,#241507,#12100a 70%)}
+.wrap{max-width:920px;margin:0 auto;padding:0 16px 44px}
+.hero{position:relative;color:#fff;padding:34px 24px 30px;border-radius:0 0 22px 22px;overflow:hidden;
+ background:radial-gradient(760px 420px at 82% 0%,rgba(201,112,26,.5),transparent 60%),linear-gradient(150deg,#241507,#12100a 70%)}
+.hero .in{max-width:920px;margin:0 auto}
 .hero .top{display:flex;align-items:center;gap:14px}
 .hero .top img{width:52px;height:52px}
 .hero .top b{font-size:24px;font-weight:900;letter-spacing:.4px}
@@ -28,7 +29,9 @@ label{display:block;font-size:13px;font-weight:800;color:#33413a;margin:12px 0 5
 label .req{color:#b00020}
 input,select,textarea{width:100%;font:inherit;font-size:15px;padding:12px 13px;border:1.5px solid #d7e0da;border-radius:10px;background:#fff;color:var(--ink)}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g2);box-shadow:0 0 0 3px rgba(15,138,77,.12)}
-.row2{display:flex;gap:10px}.row2>div{flex:1}
+.row2{display:flex;gap:12px;flex-wrap:wrap}.row2>div{flex:1;min-width:180px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 .chip{flex:1;min-width:120px;text-align:center;border:1.5px solid #d7e0da;border-radius:10px;padding:11px 8px;font-size:14px;font-weight:800;cursor:pointer;background:#fff;color:#44514a;user-select:none}
 .chip.on{border-color:var(--g);background:#eef7f1;color:var(--g)}
@@ -44,13 +47,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g2);box-
 </style>
 </head>
 <body>
-<div class="hero">
+<div class="hero"><div class="in">
  <div class="top"><img src="../info/logo.png" alt="RAM IMPEX"><b>RAM IMPEX</b></div>
  <span class="kick">🤝 თანამშრომლობა</span>
  <h1>გახდი წარმომადგენელი შენს რეგიონში</h1>
  <p>ანთრაციტის ბრიკეტის დისტრიბუცია რეგიონებსა და მუნიციპალიტეტებში. შეავსე ქვემოთ მოკლე განაცხადი — დაგიკავშირდებით.</p>
  <div class="perks"><span>🔥 მოთხოვნადი პროდუქტი</span><span>💰 მიმზიდველი პირობები</span><span>🚚 სტაბილური მიწოდება</span><span>📦 მინ. 5000 კგ</span></div>
-</div>
+</div></div>
 <div class="wrap">
  <div class="card">
    <h2>📋 თანამშრომლობის პირობები</h2>
@@ -62,8 +65,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g2);box-
    <h2>📝 წარმომადგენლობის განაცხადი</h2>
    <div class="sub">ვარსკვლავიანი ველები (<span style="color:#b00020">*</span>) სავალდებულოა.</div>
 
-   <label>სახელი და გვარი <span class="req">*</span></label>
-   <input id="f_name" placeholder="მაგ. გიორგი მელაძე">
+   <div class="row2">
+     <div><label>სახელი და გვარი <span class="req">*</span></label><input id="f_name" placeholder="მაგ. გიორგი მელაძე"></div>
+     <div><label>პ/ნ ან ს/კ (არჩ.)</label><input id="f_idc" placeholder="პირადი № / საიდ. კოდი"></div>
+   </div>
 
    <label>ვინ ხარ? <span class="req">*</span></label>
    <div class="chips" id="ctype">
@@ -72,28 +77,37 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g2);box-
      <div class="chip" data-v="შპს">🏢 შპს</div>
    </div>
 
-   <div class="row2" id="coRow" style="display:none">
-     <div><label>კომპანიის დასახელება</label><input id="f_company" placeholder="შპს ..."></div>
-     <div><label>ს/კ (არჩ.)</label><input id="f_idc" placeholder="საიდ. კოდი"></div>
-   </div>
+   <div id="coRow" style="display:none"><label>კომპანიის დასახელება</label><input id="f_company" placeholder="შპს ..."></div>
+
+   <label>მაღაზიის/ობიექტის სახელი (არჩ.)</label>
+   <input id="f_shop" placeholder="მაგ. მაღაზია „თბილი კერა" — გამოჩნდება რუკაზეც">
 
    <div class="row2">
      <div><label>რეგიონი <span class="req">*</span></label><select id="f_region"><option value="">— აირჩიე —</option></select></div>
-     <div><label>მუნიციპალიტეტი</label><select id="f_muni"><option value="">— ჯერ რეგიონი —</option></select></div>
+     <div><label>მუნიციპალიტეტი <span class="req">*</span></label><select id="f_muni"><option value="">— ჯერ რეგიონი —</option></select></div>
    </div>
 
    <label>მაღაზიის/საქმიანობის მისამართი</label>
-   <input id="f_addr" placeholder="ქალაქი, ქუჩა — სად მდებარეობს მაღაზია">
+   <input id="f_addr" placeholder="ქალაქი, ქუჩა, № — სად მდებარეობს ობიექტი">
 
-   <label>სავარაუდო თვიური შესყიდვა</label>
-   <input id="f_monthly" placeholder="მაგ. 2–3 ტონა / თვეში">
-
-   <label>გაყიდვების გამოცდილება</label>
-   <div class="chips" id="exp">
-     <div class="chip" data-v="საცალო">🏪 საცალო</div>
-     <div class="chip" data-v="საბითუმო">📦 საბითუმო</div>
+   <label>როგორ ახორციელებ გაყიდვას? <span class="req">*</span></label>
+   <div class="chips" id="channel">
+     <div class="chip" data-v="მაღაზიაში">🏪 მაღაზიაში ვყიდი</div>
+     <div class="chip" data-v="თვითონ ვავრცელებ">🚗 თვითონ ვავრცელებ</div>
      <div class="chip" data-v="ორივე">🔁 ორივე</div>
-     <div class="chip" data-v="ახალი">🆕 ახალი</div>
+   </div>
+
+   <label>ტრანსპორტი — როგორ მიიღებ პროდუქციას? <span class="req">*</span></label>
+   <div class="chips" id="transport">
+     <div class="chip" data-v="ჩემი ტრანსპორტი">🚚 ჩემი ტრანსპორტით წავიღებ</div>
+     <div class="chip" data-v="საწყობიდან">🏭 საწყობიდან (ნატახტარი)</div>
+     <div class="chip" data-v="მიწოდება">📦 მიწოდება მჭირდება</div>
+   </div>
+
+   <div class="row2">
+     <div><label>სავარაუდო თვიური შესყიდვა</label><input id="f_monthly" placeholder="მაგ. 2–3 ტონა / თვეში"></div>
+     <div><label>გაყიდვების გამოცდილება</label>
+       <select id="f_exp"><option value="">— აირჩიე —</option><option>საცალო</option><option>საბითუმო</option><option>ორივე</option><option>ახალი ვარ</option></select></div>
    </div>
 
    <div class="row2">
@@ -102,7 +116,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g2);box-
    </div>
 
    <label>დამატებითი ინფორმაცია (არჩ.)</label>
-   <textarea id="f_note" rows="3" placeholder="მაგ. კლიენტების ბაზა, სასაწყობე ფართი, ტრანსპორტი…"></textarea>
+   <textarea id="f_note" rows="3" placeholder="მაგ. კლიენტების ბაზა, სასაწყობე ფართი, სხვა პროდუქცია რასაც ყიდი…"></textarea>
 
    <button class="submit" id="sendBtn">📩 განაცხადის გაგზავნა</button>
    <div class="msg" id="msg"></div>
@@ -140,21 +154,27 @@ const $=id=>document.getElementById(id);
 $('f_region').innerHTML='<option value="">— აირჩიე —</option>'+Object.keys(REGIONS).map(r=>'<option>'+r+'</option>').join('');
 $('f_region').onchange=()=>{const list=REGIONS[$('f_region').value]||[];$('f_muni').innerHTML='<option value="">'+(list.length?'— აირჩიე —':'— ჯერ რეგიონი —')+'</option>'+list.map(m=>'<option>'+m+'</option>').join('');};
 // chip groups
-let ctype='ფიზიკური პირი', exp='';
-document.querySelectorAll('#ctype .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#ctype .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');ctype=c.dataset.v;$('coRow').style.display=(ctype==='ფიზიკური პირი')?'none':'flex';});
-document.querySelectorAll('#exp .chip').forEach(c=>c.onclick=()=>{const on=c.classList.contains('on');document.querySelectorAll('#exp .chip').forEach(x=>x.classList.remove('on'));if(!on){c.classList.add('on');exp=c.dataset.v;}else exp='';});
+let ctype='ფიზიკური პირი', channel='', transport='';
+document.querySelectorAll('#ctype .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#ctype .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');ctype=c.dataset.v;$('coRow').style.display=(ctype==='ფიზიკური პირი')?'none':'block';});
+document.querySelectorAll('#channel .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#channel .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');channel=c.dataset.v;});
+document.querySelectorAll('#transport .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#transport .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');transport=c.dataset.v;});
 function showMsg(t,ok){const m=$('msg');m.textContent=t;m.className='msg '+(ok?'ok':'err');}
 $('sendBtn').onclick=async()=>{
   const name=$('f_name').value.trim(), phone=$('f_phone').value.trim();
   if(!name){showMsg('ჩაწერე სახელი და გვარი',false);return;}
   if(!$('f_region').value){showMsg('აირჩიე რეგიონი',false);return;}
+  if(!$('f_muni').value){showMsg('აირჩიე მუნიციპალიტეტი',false);return;}
+  if(!channel){showMsg('აირჩიე როგორ ახორციელებ გაყიდვას',false);return;}
+  if(!transport){showMsg('აირჩიე ტრანსპორტის ვარიანტი',false);return;}
   if(!phone){showMsg('ჩაწერე ტელეფონი',false);return;}
   const btn=$('sendBtn');btn.disabled=true;btn.textContent='⏳ იგზავნება…';
   const rec={id:String(Date.now())+Math.floor(Math.random()*1000),name,company_type:ctype,company:$('f_company').value.trim(),idc:$('f_idc').value.trim(),
-    region:$('f_region').value,municipality:$('f_muni').value,address:$('f_addr').value.trim(),monthly:$('f_monthly').value.trim(),
-    experience:exp,phone,contact2:$('f_contact2').value.trim(),note:$('f_note').value.trim()};
+    shop_name:$('f_shop').value.trim(),region:$('f_region').value,municipality:$('f_muni').value,address:$('f_addr').value.trim(),monthly:$('f_monthly').value.trim(),
+    experience:$('f_exp').value,channel,transport,phone,contact2:$('f_contact2').value.trim(),note:$('f_note').value.trim()};
   const msg='🤝 <b>ახალი წარმომადგენლობის განაცხადი</b>\n\n👤 <b>'+esc(name)+'</b> · '+esc(ctype)+(rec.company?(' — '+esc(rec.company)):'')+(rec.idc?(' · ს/კ '+esc(rec.idc)):'')+
+    (rec.shop_name?('\n🏬 '+esc(rec.shop_name)):'')+
     '\n📍 '+esc(rec.region)+(rec.municipality?(' · '+esc(rec.municipality)):'')+(rec.address?('\n🏪 '+esc(rec.address)):'')+
+    '\n🛒 გაყიდვა: '+esc(channel)+'\n🚚 ტრანსპორტი: '+esc(transport)+
     (rec.monthly?('\n📦 თვიური: '+esc(rec.monthly)):'')+(rec.experience?('\n💼 გამოცდილება: '+esc(rec.experience)):'')+
     '\n📞 '+esc(phone)+(rec.contact2?(' · '+esc(rec.contact2)):'')+(rec.note?('\n📝 '+esc(rec.note)):'');
   let saved=false;

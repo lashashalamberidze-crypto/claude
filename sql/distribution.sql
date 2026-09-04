@@ -28,6 +28,8 @@ alter table public.distributors add column if not exists lat       numeric; -- �
 alter table public.distributors add column if not exists lng       numeric;
 alter table public.distributors add column if not exists price     numeric; -- შეთანხმებული ფასი ₾/კგ (არჩ.)
 alter table public.distributors add column if not exists paid      numeric default 0; -- ჯამურად გადახდილი ₾ (ვალის დასათვლელად)
+alter table public.distributors add column if not exists channel   text;   -- როგორ ყიდის (მაღაზიაში / თვითონ / ორივე)
+alter table public.distributors add column if not exists transport text;   -- ტრანსპორტი (ჩემი / საწყობიდან / მიწოდება)
 
 create index if not exists distributors_approved_idx on public.distributors (approved);
 
