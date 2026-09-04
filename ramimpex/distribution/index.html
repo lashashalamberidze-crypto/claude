@@ -29,6 +29,11 @@ label{display:block;font-size:13px;font-weight:800;color:#33413a;margin:12px 0 5
 label .req{color:#b00020}
 input,select,textarea{width:100%;font:inherit;font-size:15px;padding:12px 13px;border:1.5px solid #d7e0da;border-radius:10px;background:#fff;color:var(--ink)}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g2);box-shadow:0 0 0 3px rgba(15,138,77,.12)}
+.terms{display:flex;flex-direction:column;gap:10px}
+.term{display:flex;gap:12px;align-items:flex-start;background:#f3faf5;border:1px solid #cfe6d8;border-radius:12px;padding:12px 14px}
+.term .te{font-size:26px;flex:0 0 auto;line-height:1.1}
+.term .td{font-size:14.5px;font-weight:600;color:#2a3b32;line-height:1.4}
+.term .td b{color:var(--g)}
 .row2{display:flex;gap:12px;flex-wrap:wrap}.row2>div{flex:1;min-width:180px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
 @media(max-width:560px){.grid{grid-template-columns:1fr}}
@@ -57,8 +62,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g2);box-
 <div class="wrap">
  <div class="card">
    <h2>📋 თანამშრომლობის პირობები</h2>
-   <div style="background:#FFF4D6;border:1px solid #f0d98a;border-radius:10px;padding:13px 15px;font-weight:800;color:#8a6a00;font-size:14.5px">📦 მინიმალური დისტრიბუცია — <b>5000 კგ (5 ტონა)</b> შეთანხმებულ პერიოდში.</div>
-   <div class="sub" style="margin:12px 0 0">გაეცანი სადისტრიბუციო ხელშეკრულების ნიმუშს:</div>
+   <div class="terms">
+     <div class="term"><div class="te">💰</div><div class="td"><b>ფასი 1.80 ₾/კგ</b> — ბრიკეტს გაძლევთ საბითუმო ფასად, ყიდით თქვენივე ფასად და <b>ფასნამატი (მოგება) მთლიანად თქვენია</b>.</div></div>
+     <div class="term"><div class="te">🗺️</div><div class="td"><b>ტერიტორია თქვენია</b> — თუ წარმოადგენთ კონკრეტულ მუნიციპალიტეტს, იქ <b>სხვას აღარ მივყიდით</b>; დაინტერესებულ კლიენტებს <b>თქვენს კონტაქტს ვაძლევთ</b>.</div></div>
+     <div class="term"><div class="te">📦</div><div class="td"><b>მინიმალური მოცულობა — 5000 კგ (5 ტონა)</b> შეთანხმებულ პერიოდში.</div></div>
+     <div class="term"><div class="te">🚚</div><div class="td"><b>მიწოდება</b> — საწყობი ნატახტარში; ტრანსპორტი თქვენი ან შეთანხმებით.</div></div>
+   </div>
+   <div class="sub" style="margin:14px 0 0">გაეცანი სადისტრიბუციო ხელშეკრულების ნიმუშს:</div>
    <a href="../files/RAM_IMPEX_distributor_contract.pdf" download style="display:block;text-align:center;text-decoration:none;background:var(--g);color:#fff;font-weight:900;font-size:16px;border-radius:12px;padding:14px;margin-top:8px">📄 ხელშეკრულების ნიმუშის ჩამოტვირთვა</a>
  </div>
  <div class="card" id="formCard">
