@@ -17,6 +17,7 @@
 📍 საწყობი — ნატახტარი
 📞 595 533 500
 👉 სრული ინფორმაცია: ramimpex.com.ge/info
+🤝 გახდი ჩვენი დისტრიბუტორი შენს რეგიონში: ramimpex.com.ge/distribution
 
 #ბრიკეტი #ანთრაციტი #გათბობა #შეშა #ნახშირი #ქვანახშირი #RamImpex #ნატახტარი #თბილისი #რუსთავი #მარნეული #ბოლნისი #გარდაბანი #დმანისი #წალკა #ახალქალაქი #ნინოწმინდა #ახალციხე #ბათუმი #ქუთაისი #საქართველო #ზამთარი
 
@@ -34,6 +35,7 @@
 📍 Anbar — Nataxtari
 📞 595 533 500
 👉 Ətraflı məlumat: ramimpex.com.ge/info?lang=az
+🤝 Bölgəndə distribyutorumuz ol: ramimpex.com.ge/distribution
 
 #briket #antrasit #kömür #qızdırıcı #istilik #Marneuli #Bolnisi #Qardabani #Dmanisi #Tsalka #Sadaxlı #Kvemokartli #RamImpex #Gürcüstan #Tbilisi #Rustavi #odun #qış
 
@@ -51,6 +53,7 @@
 📍 Պահեստ — Նատախտարի
 📞 595 533 500
 👉 Մանրամասն՝ ramimpex.com.ge/info?lang=hy
+🤝 Դարձիր մեր բաշխիչը քո տարածաշրջանում՝ ramimpex.com.ge/distribution
 
 #բրիկետ #անտրացիտ #ածուխ #ջեռուցում #Ախալքալաք #Նինոծմինդա #Ախալցիխե #Ջավախք #RamImpex #Վրաստան #Թբիլիսի #փայտ #ձմեռ #Samtskhe #Javakheti
 
