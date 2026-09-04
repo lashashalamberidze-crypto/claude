@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ანთრაციტის ბრიკეტი — RAM IMPEX</title>
 <meta name="description" content="ანთრაციტის ბრიკეტი — მაღალკალორიული, უკვამლო საწვავი. RAM IMPEX, ნატახტარი.">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root{--g:#0B6B3C;--g2:#0F8A4D;--o:#c9701a;--ink:#26201a;--mut:#6b5f52;--bg:#fbf7f0;--card:#fff;--line:#e7dcc9}
 *{margin:0;box-sizing:border-box}
@@ -126,9 +124,9 @@ tr:last-child td{border-bottom:none}
  .hero h1{font-size:27px}
  .loc{flex-direction:column;text-align:center}
 }
-/* distributors directory + map */
-#distMap{height:340px;border-radius:14px;border:2px solid #bfe3ce;margin-bottom:14px;z-index:1}
+/* distributors directory (ჩამონათვალი) */
 .dist-become{display:inline-flex;align-items:center;gap:8px;background:var(--o);color:#fff;font-weight:800;font-size:15px;text-decoration:none;border-radius:11px;padding:11px 20px;margin-bottom:16px}
+.dcard .dsub{font-weight:700;font-size:13px;color:var(--mut);margin-top:1px}
 .reg-grp{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
 .reg-grp .rh{font-weight:900;font-size:17px;color:var(--g);margin-bottom:8px;display:flex;align-items:center;gap:8px}
 .muni-grp{margin:8px 0 4px}
@@ -335,8 +333,16 @@ const DTX={
  ru:{h:'Наши дистрибьюторы',sub:'Где купить брикет — по регионам и муниципалитетам',none:'Дистрибьюторы скоро добавятся. Заинтересованы?',become:'🚚 Стать дистрибьютором',route:'Показать на карте'}
 };
 const esc=s=>(s==null?'':(''+s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let cache=null, mapObj=null;
+let cache=null;
 async function ensure(){ if(cache)return; try{const {data,error}=await sb.from('distributors').select('*').eq('approved',true).order('region',{ascending:true});if(error)throw error;cache=data||[];}catch(e){cache=[];} }
+function distCard(d){
+  const nm=d.shop_name||d.name||'—';
+  const sub=(d.shop_name&&d.name&&d.shop_name!==d.name)?('<div class="dsub">'+esc(d.name)+'</div>'):'';
+  const addr=d.address?('<div class="dd">📍 '+esc(d.address)+'</div>'):'';
+  const phone=d.phone?('<div class="dd"><a href="tel:'+esc((''+d.phone).replace(/\s/g,''))+'">📞 '+esc(d.phone)+'</a></div>'):'';
+  return '<div class="dcard"><span class="di">🏬</span><div style="flex:1">'+
+    '<div class="dt">'+esc(nm)+'</div>'+sub+addr+phone+'</div></div>';
+}
 window.RIfillDist=async function(lang){
   const sec=document.getElementById('distSec'); if(!sec)return;
   const t=DTX[lang]||DTX.ka;
@@ -344,42 +350,19 @@ window.RIfillDist=async function(lang){
   const list=cache||[];
   let h='<h2>🚚 '+esc(t.h)+'</h2><p style="color:var(--mut);font-weight:600;font-size:14.5px;margin:-6px 0 12px">'+esc(t.sub)+'</p>';
   h+='<a class="dist-become" href="../distribution/">'+esc(t.become)+'</a>';
-  const withCoords=list.filter(d=>d.lat!=null&&d.lng!=null&&!isNaN(+d.lat)&&!isNaN(+d.lng));
-  if(withCoords.length)h+='<div id="distMap"></div>';
   if(!list.length){h+='<div class="dist-empty">'+esc(t.none)+' <a href="../distribution/" style="color:var(--o);font-weight:800">'+esc(t.become)+'</a></div>';sec.innerHTML=h;return;}
-  // group by region -> municipality
+  // group by region -> municipality (ჩამონათვალი)
   const byReg={};
-  list.forEach(d=>{const r=d.region||'—';const m=d.municipality||'—';(byReg[r]=byReg[r]||{})[m]=(byReg[r][m]||[]);byReg[r][m].push(d);});
+  list.forEach(d=>{const r=d.region||'—';const m=d.municipality||'';(byReg[r]=byReg[r]||{})[m]=(byReg[r][m]||[]);byReg[r][m].push(d);});
   Object.keys(byReg).sort().forEach(r=>{
     h+='<div class="reg-grp"><div class="rh">📍 '+esc(r)+'</div>';
     Object.keys(byReg[r]).sort().forEach(m=>{
-      h+='<div class="muni-grp"><div class="mh">'+esc(m)+'</div>';
-      byReg[r][m].forEach(d=>{
-        const nm=d.shop_name||d.name||'—';
-        const addr=d.address?esc(d.address):'';
-        const phone=d.phone?('<a href="tel:'+esc((''+d.phone).replace(/\s/g,''))+'">📞 '+esc(d.phone)+'</a>'):'';
-        const gmap=(d.lat!=null&&d.lng!=null)?('<a href="https://maps.google.com/?q='+(+d.lat)+','+(+d.lng)+'" target="_blank" rel="noopener">🗺 '+esc(t.route)+'</a>'):'';
-        const dd=[addr,phone,gmap].filter(Boolean).join(' · ');
-        h+='<div class="dcard"><span class="di">🏬</span><div><div class="dt">'+esc(nm)+'</div>'+(dd?'<div class="dd">'+dd+'</div>':'')+'</div></div>';
-      });
-      h+='</div>';
+      if(m)h+='<div class="muni-grp"><div class="mh">🏛 '+esc(m)+'</div>'+byReg[r][m].map(distCard).join('')+'</div>';
+      else h+=byReg[r][m].map(distCard).join('');
     });
     h+='</div>';
   });
   sec.innerHTML=h;
-  // map
-  if(withCoords.length&&window.L){
-    try{
-      if(mapObj){mapObj.remove();mapObj=null;}
-      const first=withCoords[0];
-      mapObj=L.map('distMap').setView([+first.lat,+first.lng],7);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(mapObj);
-      const grp=[];
-      withCoords.forEach(d=>{const mk=L.marker([+d.lat,+d.lng]).addTo(mapObj);mk.bindPopup('<b>'+esc(d.shop_name||d.name||'')+'</b>'+(d.municipality?'<br>'+esc(d.municipality):'')+(d.phone?'<br>📞 '+esc(d.phone):''));grp.push([+d.lat,+d.lng]);});
-      if(grp.length>1)mapObj.fitBounds(grp,{padding:[30,30]});
-      setTimeout(()=>{if(mapObj)mapObj.invalidateSize();},200);
-    }catch(e){}
-  }
 };
 if(window.RI_LANG)window.RIfillDist(window.RI_LANG);
 </script>
