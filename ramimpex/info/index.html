@@ -30,6 +30,8 @@ img{max-width:100%;display:block}
 .hero .foto img{width:100%;height:230px;object-fit:cover}
 .dl{display:inline-flex;align-items:center;gap:9px;background:var(--o);color:#fff;font-weight:800;font-size:16px;text-decoration:none;border-radius:12px;padding:13px 22px;margin-top:16px;box-shadow:0 6px 16px rgba(201,112,26,.4)}
 .dl:active{transform:translateY(1px)}
+.jumpbtn{display:block;width:100%;margin-top:16px;background:#0F8A4D;color:#fff;font-weight:900;font-size:16px;border:2px solid #2ec77e;border-radius:12px;padding:14px;cursor:pointer;box-shadow:0 6px 16px rgba(15,138,77,.35)}
+.jumpbtn:active{transform:translateY(1px)}
 .chips{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:16px}
 .ch{background:rgba(255,255,255,.08);border:1.5px solid rgba(201,112,26,.4);border-radius:12px;padding:11px 6px;text-align:center}
 .ch .v{color:#ffb347;font-weight:900;font-size:21px;line-height:1}
@@ -294,6 +296,7 @@ function render(lang){
     '<h1>'+t.title+'</h1><div class="sub">'+t.sub+'</div>'+
     '<div class="foto"><img src="foto.jpg" alt=""></div>'+
     '<div class="chips">'+chips+'</div>'+
+    '<button class="jumpbtn" onclick="document.getElementById(\'distSec\').scrollIntoView({behavior:\'smooth\'})">'+({ka:'📍 სად ვიყიდო — დისტრიბუტორები რეგიონებში',az:'📍 Haradan almaq olar — bölgələr üzrə',hy:'📍 Որտեղ գնել — բաշխիչներ մարզերում',ru:'📍 Где купить — дистрибьюторы по регионам'}[lang]||'📍 დისტრიბუტორები')+'</button>'+
   '</div></div>'+
   '<div class="wrap">'+
    '<section><h2>'+t.made_h+'</h2><div class="two">'+made+'</div></section>'+
