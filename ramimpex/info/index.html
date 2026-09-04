@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ანთრაციტის ბრიკეტი — RAM IMPEX</title>
 <meta name="description" content="ანთრაციტის ბრიკეტი — მაღალკალორიული, უკვამლო საწვავი. RAM IMPEX, ნატახტარი.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root{--g:#0B6B3C;--g2:#0F8A4D;--o:#c9701a;--ink:#26201a;--mut:#6b5f52;--bg:#fbf7f0;--card:#fff;--line:#e7dcc9}
 *{margin:0;box-sizing:border-box}
@@ -124,6 +126,20 @@ tr:last-child td{border-bottom:none}
  .hero h1{font-size:27px}
  .loc{flex-direction:column;text-align:center}
 }
+/* distributors directory + map */
+#distMap{height:340px;border-radius:14px;border:2px solid #bfe3ce;margin-bottom:14px;z-index:1}
+.dist-become{display:inline-flex;align-items:center;gap:8px;background:var(--o);color:#fff;font-weight:800;font-size:15px;text-decoration:none;border-radius:11px;padding:11px 20px;margin-bottom:16px}
+.reg-grp{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.reg-grp .rh{font-weight:900;font-size:17px;color:var(--g);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.muni-grp{margin:8px 0 4px}
+.muni-grp .mh{font-weight:800;font-size:14px;color:#8a2b00;margin-bottom:5px}
+.dcard{display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px dashed #e7dcc9}
+.dcard:first-of-type{border-top:none}
+.dcard .di{flex:0 0 auto;font-size:22px}
+.dcard .dt{font-weight:800;font-size:15px;color:#3a2410}
+.dcard .dd{font-weight:600;font-size:13.5px;color:var(--mut);line-height:1.4;margin-top:2px}
+.dcard .dd a{color:var(--g);font-weight:800;text-decoration:none}
+.dist-empty{background:#eef7f1;border:1.5px solid #bfe3ce;border-radius:12px;padding:16px;text-align:center;font-weight:700;color:var(--g)}
 body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 @media print{
  .top{position:static;box-shadow:none;border-bottom:2px solid var(--g)}
@@ -261,6 +277,7 @@ const T={
 };
 function esc(s){return s;}
 function render(lang){
+ window.RI_LANG=lang;
  const t=T[lang]||T.ka;
  document.documentElement.lang=lang;
  document.getElementById('langs').innerHTML=LANGS.map(l=>'<button data-l="'+l[0]+'" class="'+(l[0]===lang?'on':'')+'"><span class="fl">'+l[1]+'</span>'+l[2]+'</button>').join('');
@@ -293,18 +310,78 @@ function render(lang){
    '<section><h2>'+t.rules_h+'</h2><div class="rules">'+rules+'</div></section>'+
    '<section><h2>'+t.safe_h+'</h2><div class="recbox">'+safe+'</div></section>'+
    '<section><h2>'+t.wh_h+'</h2><div class="loc"><a class="qr" href="'+MAPS+'" target="_blank" rel="noopener"><img src="qr.png" alt="QR"></a><div class="lt"><div class="h">'+t.wh_h+'</div><div class="d">'+t.wh_t+'</div><a class="mapbtn" href="'+MAPS+'" target="_blank" rel="noopener">'+t.wh_btn+'</a></div></div></section>'+
+   '<section id="distSec"></section>'+
   '</div>'+
   '<div class="foot"><div class="wrap in">'+
     '<a href="tel:+995595533500">'+t.c_call+' · 595 533 500</a>'+
     '<div class="r">ramimpex.com.ge · info@ramimpex.com.ge</div>'+
     '<a class="dl2" href="'+PDF[lang]+'" download>'+t.dl+'</a>'+
   '</div></div>';
+ if(window.RIfillDist)window.RIfillDist(lang);
 }
 function pickLang(){const u=new URLSearchParams(location.search).get('lang');if(u&&T[u])return u;try{const s=localStorage.getItem('ri_lang');if(s&&T[s])return s;}catch(e){}return 'ka';}
 let cur=pickLang();
 document.addEventListener('click',e=>{const b=e.target.closest('[data-l]');if(!b)return;cur=b.dataset.l;try{localStorage.setItem('ri_lang',cur);}catch(e){}
  const url=new URL(location);url.searchParams.set('lang',cur);history.replaceState(null,'',url);render(cur);window.scrollTo(0,0);});
 render(cur);
+</script>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/+esm";
+const sb=createClient("https://mhyoqypzacvztwhntsvv.supabase.co","sb_publishable_FXhFmDRboFeOEqxyvwUePg_SgIwnmmM");
+const DTX={
+ ka:{h:'ჩვენი დისტრიბუტორები',sub:'სად შეიძლია ბრიკეტის შეძენა — რეგიონებისა და მუნიციპალიტეტების მიხედვით',none:'დისტრიბუტორები მალე დაემატება. დაინტერესებული ხარ?',become:'🚚 გახდი დისტრიბუტორი',route:'რუკაზე ჩვენება'},
+ az:{h:'Distribyutorlarımız',sub:'Briketi haradan almaq olar — bölgə və bələdiyyələr üzrə',none:'Distribyutorlar tezliklə əlavə olunacaq. Maraqlanırsan?',become:'🚚 Distribyutor ol',route:'Xəritədə göstər'},
+ hy:{h:'Մեր բաշխիչները',sub:'Որտեղ կարելի է գնել բրիկետը — ըստ մարզերի և համայնքների',none:'Բաշխիչները շուտով կ ավելացվեն։ Հետաքրքրվա՞ծ ես։',become:'🚚 Դարձիր բաշխիչ',route:'Ցույց տալ քարտեզի վրա'},
+ ru:{h:'Наши дистрибьюторы',sub:'Где купить брикет — по регионам и муниципалитетам',none:'Дистрибьюторы скоро добавятся. Заинтересованы?',become:'🚚 Стать дистрибьютором',route:'Показать на карте'}
+};
+const esc=s=>(s==null?'':(''+s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let cache=null, mapObj=null;
+async function ensure(){ if(cache)return; try{const {data,error}=await sb.from('distributors').select('*').eq('approved',true).order('region',{ascending:true});if(error)throw error;cache=data||[];}catch(e){cache=[];} }
+window.RIfillDist=async function(lang){
+  const sec=document.getElementById('distSec'); if(!sec)return;
+  const t=DTX[lang]||DTX.ka;
+  await ensure();
+  const list=cache||[];
+  let h='<h2>🚚 '+esc(t.h)+'</h2><p style="color:var(--mut);font-weight:600;font-size:14.5px;margin:-6px 0 12px">'+esc(t.sub)+'</p>';
+  h+='<a class="dist-become" href="../distribution/">'+esc(t.become)+'</a>';
+  const withCoords=list.filter(d=>d.lat!=null&&d.lng!=null&&!isNaN(+d.lat)&&!isNaN(+d.lng));
+  if(withCoords.length)h+='<div id="distMap"></div>';
+  if(!list.length){h+='<div class="dist-empty">'+esc(t.none)+' <a href="../distribution/" style="color:var(--o);font-weight:800">'+esc(t.become)+'</a></div>';sec.innerHTML=h;return;}
+  // group by region -> municipality
+  const byReg={};
+  list.forEach(d=>{const r=d.region||'—';const m=d.municipality||'—';(byReg[r]=byReg[r]||{})[m]=(byReg[r][m]||[]);byReg[r][m].push(d);});
+  Object.keys(byReg).sort().forEach(r=>{
+    h+='<div class="reg-grp"><div class="rh">📍 '+esc(r)+'</div>';
+    Object.keys(byReg[r]).sort().forEach(m=>{
+      h+='<div class="muni-grp"><div class="mh">'+esc(m)+'</div>';
+      byReg[r][m].forEach(d=>{
+        const nm=d.shop_name||d.name||'—';
+        const addr=d.address?esc(d.address):'';
+        const phone=d.phone?('<a href="tel:'+esc((''+d.phone).replace(/\s/g,''))+'">📞 '+esc(d.phone)+'</a>'):'';
+        const gmap=(d.lat!=null&&d.lng!=null)?('<a href="https://maps.google.com/?q='+(+d.lat)+','+(+d.lng)+'" target="_blank" rel="noopener">🗺 '+esc(t.route)+'</a>'):'';
+        const dd=[addr,phone,gmap].filter(Boolean).join(' · ');
+        h+='<div class="dcard"><span class="di">🏬</span><div><div class="dt">'+esc(nm)+'</div>'+(dd?'<div class="dd">'+dd+'</div>':'')+'</div></div>';
+      });
+      h+='</div>';
+    });
+    h+='</div>';
+  });
+  sec.innerHTML=h;
+  // map
+  if(withCoords.length&&window.L){
+    try{
+      if(mapObj){mapObj.remove();mapObj=null;}
+      const first=withCoords[0];
+      mapObj=L.map('distMap').setView([+first.lat,+first.lng],7);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(mapObj);
+      const grp=[];
+      withCoords.forEach(d=>{const mk=L.marker([+d.lat,+d.lng]).addTo(mapObj);mk.bindPopup('<b>'+esc(d.shop_name||d.name||'')+'</b>'+(d.municipality?'<br>'+esc(d.municipality):'')+(d.phone?'<br>📞 '+esc(d.phone):''));grp.push([+d.lat,+d.lng]);});
+      if(grp.length>1)mapObj.fitBounds(grp,{padding:[30,30]});
+      setTimeout(()=>{if(mapObj)mapObj.invalidateSize();},200);
+    }catch(e){}
+  }
+};
+if(window.RI_LANG)window.RIfillDist(window.RI_LANG);
 </script>
 </body>
 </html>

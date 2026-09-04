@@ -87,9 +87,9 @@ td.right,th.right{text-align:right}
 </style></head>
 <body>
 <div class="top"><div><div class="lg">RAM IMPEX</div><div class="su">ადმინ პანელი</div></div>
- <div class="tabbar" id="tabbar" style="display:none"><button class="tb on" data-t="orders">📋 შეკვეთები</button><button class="tb" data-t="catalog">💰 კატალოგი & ფასები</button><button class="tb" data-t="invoice">🧾 ინვოისები / გაყიდვები</button><button class="tb" data-t="expenses">💸 ხარჯები</button><button class="tb" data-t="booklets">📄 ბუკლეტები</button></div>
+ <div class="tabbar" id="tabbar" style="display:none"><button class="tb on" data-t="orders">📋 შეკვეთები</button><button class="tb" data-t="catalog">💰 კატალოგი & ფასები</button><button class="tb" data-t="invoice">🧾 ინვოისი</button><button class="tb" data-t="sales">📊 გაყიდვები</button><button class="tb" data-t="expenses">💸 ხარჯები</button><button class="tb" data-t="booklets">📄 ბუკლეტები</button></div>
  <button class="btn line sm" id="logout" style="display:none">გასვლა</button></div>
-<div class="wrap"><div id="app"><div class="empty">იტვირთება…</div></div><div id="cat" style="display:none"></div><div id="inv" style="display:none"></div><div id="sal" style="display:none"></div><div id="buk" style="display:none"></div></div>
+<div class="wrap"><div id="app"><div class="empty">იტვირთება…</div></div><div id="cat" style="display:none"></div><div id="inv" style="display:none"></div><div id="sales" style="display:none"></div><div id="sal" style="display:none"></div><div id="buk" style="display:none"></div></div>
 <div class="ov" id="ov"><img id="ovImg" src=""></div>
 <div id="printArea"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -103,7 +103,7 @@ const IMG_BY_CODE={"PL-1418": "/img/r3.jpg", "PL-1068": "/img/r3.jpg", "PL-1134"
 const PIZZA_IMG={"PZC01": "/files/pizza_corner_kraft.png", "PZC02": "/files/pizza_corner.png", "PZC03": "/files/pizza_corner_kraft.png", "PZC04": "/files/pizza_corner.png", "PZC05": "/files/pizza_corner_kraft.png", "PZC06": "/files/pizza_corner.png", "PZC07": "/files/pizza_corner_kraft.png", "PZC08": "/files/pizza_corner.png", "PZC09": "/files/pizza_corner_kraft.png", "PZC10": "/files/pizza_corner.png", "PZC11": "/files/pizza_corner_kraft.png", "PZC12": "/files/pizza_corner.png", "PZC13": "/files/pizza_corner_kraft.png", "PZC14": "/files/pizza_corner.png", "PZC15": "/files/pizza_corner_kraft.png", "PZC16": "/files/pizza_corner.png", "PZC17": "/files/pizza_corner_kraft.png", "PZC18": "/files/pizza_corner.png", "PZC19": "/files/pizza_corner_kraft.png", "PZC20": "/files/pizza_corner.png", "PZS01": "/files/pizza_square_kraft.png", "PZS02": "/files/pizza_square.png", "PZS03": "/files/pizza_square_kraft.png", "PZS04": "/files/pizza_square.png", "PZS05": "/files/pizza_square_kraft.png", "PZS06": "/files/pizza_square.png", "PZS07": "/files/pizza_square_kraft.png", "PZS08": "/files/pizza_square.png", "PZS09": "/files/pizza_square_kraft.png", "PZS10": "/files/pizza_square.png", "PZS11": "/files/pizza_square_kraft.png", "PZS12": "/files/pizza_square.png", "PZS13": "/files/pizza_square_kraft.png", "PZS14": "/files/pizza_square.png", "PZS15": "/files/pizza_square_kraft.png", "PZS16": "/files/pizza_square.png", "PZS17": "/files/pizza_square_kraft.png", "PZS18": "/files/pizza_square.png", "PZR01": "/files/pizza_round_kraft.png", "PZR02": "/files/pizza_round.png", "PZR03": "/files/pizza_round_kraft.png", "PZR04": "/files/pizza_round.png", "PZR05": "/files/pizza_round_kraft.png", "PZR06": "/files/pizza_round.png"};    // პიცის ფორმა-სურათი კოდით (კვადრატი/მოჭრილკუთხა/მრგვალი × კრაფტი/თეთრი) — გადაწონის
 const PIZZA_SHAPE={PZS:'კვადრატული',PZC:'მოჭრილკუთხებიანი',PZR:'მრგვალი'};
 function pizzaShapeWord(code,name){const m=(''+(code||'')).match(/^(PZ[SCR])/);if(!m)return '';const w=PIZZA_SHAPE[m[1]]||'';if(!w)return '';return (name||'').indexOf(w)>=0?'':w;}
-const $=id=>document.getElementById(id), app=$('app'), catEl=$('cat'), invEl=$('inv'), salEl=$('sal'), bukEl=$('buk');
+const $=id=>document.getElementById(id), app=$('app'), catEl=$('cat'), invEl=$('inv'), salesEl=$('sales'), salEl=$('sal'), bukEl=$('buk');
 const esc=s=>(s==null?'':(''+s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const money=v=>(Math.round((+v||0)*100)/100).toFixed(2);
 const DIR_RU={boxes:'Картонные ящики',edge:'Уголковые защиты',anth:'Антрацитовый брикет',contact:'Сообщение с сайта','':'—'};
@@ -125,10 +125,12 @@ $('tabbar').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{
   app.style.display=t==='orders'?'':'none';
   catEl.style.display=t==='catalog'?'':'none';
   invEl.style.display=t==='invoice'?'':'none';
+  salesEl.style.display=t==='sales'?'':'none';
   salEl.style.display=t==='expenses'?'':'none';
   bukEl.style.display=t==='booklets'?'':'none';
   if(t==='catalog'){if(!catEl.dataset.ready)loadCatalog();}
   if(t==='invoice')openInvoice();
+  if(t==='sales')openSales();
   if(t==='expenses')openExpenses();
   if(t==='booklets')renderBooklets();
 });
@@ -210,6 +212,17 @@ const SAL_CSS='.salkpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px
 '.salform input,.salform select{width:100%;border:1.5px solid #d6e2da;border-radius:8px;padding:8px 10px;font-size:13px;background:#fafcfb}'+
 '.salform .ro{background:#eef7f1;font-weight:800;color:#0B6B3C}'+
 '.saldocs{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:8px}'+
+'.subtabs{display:flex;gap:8px;flex-wrap:wrap}'+
+'.subtab{flex:1;min-width:130px;text-align:center;background:#eef3ef;border:2px solid #d6e2da;border-radius:11px;padding:12px;font-weight:900;font-size:15px;color:#44514a;cursor:pointer}'+
+'.subtab.on{background:#0B6B3C;border-color:#0B6B3C;color:#fff}'+
+'.dbtn{background:#0B6B3C;color:#fff;border:0;border-radius:9px;padding:10px 15px;font:inherit;font-weight:800;font-size:13.5px;cursor:pointer;white-space:nowrap}'+
+'.dbtn.v{background:#6d3ad6}.dbtn.line{background:#fff;color:#0B6B3C;border:1.5px solid #0B6B3C}.dbtn.a{background:#F2B807;color:#3a2600}'+
+'.drow{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.drow>div{flex:1;min-width:120px}'+
+'.drow label{font-size:11px;font-weight:800;color:#5c6b62;display:block;margin-bottom:3px}'+
+'.drow input,.drow select{width:100%;border:1.5px solid #d6e2da;border-radius:8px;padding:9px 10px;font-size:13px;background:#fafcfb}'+
+'.dnote{margin-top:8px;font-size:12px;color:#8a6a00;background:#FFF4D6;border:1px solid #f0d98a;border-radius:8px;padding:8px 10px}'+
+'.dtag{display:inline-block;font-size:11px;font-weight:800;border-radius:6px;padding:2px 7px}'+
+'.dtag.ok{background:#dff3e6;color:#0B6B3C}.dtag.wait{background:#fff2cf;color:#8a6a00}.dtag.debt{background:#fde3e3;color:#b00020}'+
 '@media(max-width:640px){.salkpi{grid-template-columns:1fr 1fr}.salform .fg{grid-template-columns:1fr 1fr}.salocs,.saldocs{grid-template-columns:1fr 1fr}}';
 function saleDirOf(code,dir){const d=dir||((byCode(code)||{}).dir)||'';if(d==='ანთრაციტის ბრიკეტი')return 'ანთრაციტის ბრიკეტი';if(d==='კუთხოვანი დამცავები')return 'კუთხოვანი დამცავები';if(/პიცის/.test(d))return 'პიცის';if(/სამედიცინო|Safety/.test(d))return 'სამედიცინო';return 'მუყაოს ყუთები';}
 function fmtQty(q,u){if(q==null||q==='')return '';const n=+q;const s=isNaN(n)?q:n.toLocaleString('ka-GE');return s+(u?' '+u:'');}
@@ -223,138 +236,8 @@ function invProdOptions(dirFilter){let h='<option value="">— აირჩი�
   if(d.dir==='ანთრაციტის ბრიკეტი'){[1,2,3].forEach(t=>{inner+='<option value="'+esc(it.code)+'|'+t+'">'+esc(ruCode(it.code))+' · '+esc(it.name||'')+' · '+esc(briketTierLabel(t))+' — '+(+briketTierPrice(t))+' ₾/კგ</option>';});}
   else{const pr=effective(d,it);inner+='<option value="'+esc(it.code)+'">'+esc(ruCode(it.code))+' · '+esc(it.name||'')+(it.size?' · '+esc(it.size):'')+' — '+money(pr)+' ₾</option>';}
   });if(inner)h+='<optgroup label="'+esc(d.name)+'">'+inner+'</optgroup>';});return h;}
-async function openSales(){
-  if(!document.getElementById('salCss')){const st=document.createElement('style');st.id='salCss';st.textContent=SAL_CSS;document.head.appendChild(st);}
-  salEl.innerHTML='<div class="empty">იტვირთება…</div>';editingSaleId=null;
-  try{await ensureDirs();}catch(e){}
-  try{const r=await sb.from('sales').select('*').order('date',{ascending:false});if(r.error)throw r.error;SALES=r.data||[];}
-  catch(e){salEl.innerHTML='<div class="card"><h2>📊 გაყიდვები</h2><p style="color:#c62828;font-weight:700">ცხრილი „sales" ჯერ არ არსებობს ან წვდომა არ არის.</p><p class="muted" style="font-size:12.5px;margin-top:6px">გახსენი Supabase → SQL Editor და გაუშვი ფაილი <b>sql/sales_table.sql</b> (ერთხელ). მერე განაახლე ეს გვერდი.</p><pre style="white-space:pre-wrap;font-size:11px;background:#f6faf8;padding:10px;border-radius:8px;margin-top:8px">'+esc(e.message||e)+'</pre></div>';return;}
-  renderSales();
-}
-function renderSales(){
-  salEl.innerHTML=
-   '<div class="card"><h2>📊 გაყიდვები</h2><p class="muted" style="font-size:12px">ვის რა მიეყიდა · გადახდები · დოკუმენტები · ფილტრები · Excel</p></div>'+
-   '<div class="salkpi"><div class="skpi blue"><div class="l">სულ გაყიდვები</div><div class="v" id="salK1">—</div></div>'+
-   '<div class="skpi green"><div class="l">გადახდილი</div><div class="v" id="salK2">—</div></div>'+
-   '<div class="skpi red"><div class="l">გადასახდელი (ვალი)</div><div class="v" id="salK3">—</div></div>'+
-   '<div class="skpi amber"><div class="l">გაყიდვების რაოდ.</div><div class="v" id="salK4">—</div></div></div>'+
-   '<div class="card">'+
-    '<div class="saldir" id="salDir">'+SAL_DIRS.map(d=>'<button class="chip'+(SAL_DIR===d[0]?' on':'')+'" data-sd="'+esc(d[0])+'">'+d[2]+' '+esc(d[1])+'</button>').join('')+'<span style="flex:1"></span><button class="btn" id="salAdd">➕ ახალი გაყიდვა</button></div>'+
-    '<div class="salflt"><div><label>მყიდველი</label><input id="salQ" placeholder="🔍 სახელი/ს.კ."></div>'+
-      '<div><label>თარიღიდან</label><input id="salFrom" type="date"></div>'+
-      '<div><label>თარიღამდე</label><input id="salTo" type="date"></div>'+
-      '<div><label>სტატუსი</label><select id="salStatus"><option value="">ყველა</option><option value="paid">გადახდილი</option><option value="part">ნაწილობრივ</option><option value="due">გადასახდელი</option></select></div>'+
-      '<div style="align-self:flex-end;display:flex;gap:8px"><button class="btn a" id="salXls">📊 Excel</button><button class="btn line" id="salPrint">🖨 ბეჭდვა</button></div></div>'+
-    '<div class="scroll"><table><thead><tr><th>თარიღი</th><th>მყიდველი</th><th>მიმართ.</th><th>პროდუქცია</th><th class="right">რაოდ.</th><th class="right">თანხა ₾</th><th class="right">გადახდ.</th><th class="right">ნაშთი</th><th>სტატუსი</th><th>დოკუმენტები</th><th></th></tr></thead><tbody id="salRows"></tbody></table></div>'+
-    '<div id="salEmpty" class="empty" style="display:none">ჯერ გაყიდვა არ არის (ან ფილტრი ცარიელია).</div>'+
-    '<div style="margin-top:10px;font-size:11.5px;color:#5c6b62">🚚 ზედნადები · 💳 გადარიცხვის დოკ. — <b style="color:#0B6B3C">მწვანე = ატვირთულია</b></div>'+
-   '</div>';
-  $('salDir').querySelectorAll('[data-sd]').forEach(b=>b.onclick=()=>{SAL_DIR=b.dataset.sd;$('salDir').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x.dataset.sd===SAL_DIR));refreshSal();});
-  ['salQ','salFrom','salTo','salStatus'].forEach(id=>{const el=$(id);if(el)el.oninput=el.onchange=refreshSal;});
-  $('salAdd').onclick=()=>openSaleForm(null);
-  $('salXls').onclick=()=>exportSalesXls(salFiltered());
-  $('salPrint').onclick=()=>printSales(salFiltered());
-  refreshSal();
-}
-function refreshSal(){
-  const list=salFiltered(),T=salTotals(list);
-  $('salK1').textContent=money(T.t)+' ₾';$('salK2').textContent=money(T.p)+' ₾';$('salK3').textContent=money(T.due)+' ₾';$('salK4').textContent=T.n;
-  const tb=$('salRows');
-  tb.innerHTML=list.map(s=>{const dir=saleDirOf(s.code,s.direction);const meta=SAL_DIRS.find(x=>x[0]===dir)||['','',''];const docs=s.docs||{};
-    const dochtml=SAL_DOCS.map(dc=>{const u=docs[dc[0]];return '<a class="dchip'+(u?' ok':'')+'"'+(u?(' href="'+esc(u)+'" target="_blank"'):'')+' title="'+dc[1]+'">'+dc[2]+'</a>';}).join('');
-    const due=(+s.total||0)-(+s.paid||0);
-    return '<tr><td>'+esc(s.date||'')+'</td>'+
-      '<td><b>'+esc(s.cust_name||'')+'</b>'+(s.cust_id?'<div class="muted" style="font-size:10px">ს.კ. '+esc(s.cust_id)+'</div>':(s.cust_phone?'<div class="muted" style="font-size:10px">📞 '+esc(s.cust_phone)+'</div>':''))+'</td>'+
-      '<td>'+meta[2]+' <span class="muted" style="font-size:11px">'+esc(meta[1])+'</span></td>'+
-      '<td>'+esc(s.name||s.code||'')+'</td>'+
-      '<td class="right">'+esc(fmtQty(s.qty,s.unit))+'</td>'+
-      '<td class="right"><b>'+money(s.total)+'</b></td>'+
-      '<td class="right">'+money(s.paid)+'</td>'+
-      '<td class="right">'+(due>0.001?'<b style="color:#b00020">'+money(due)+'</b>':'0.00')+'</td>'+
-      '<td>'+salStatusTag(s.status)+'</td>'+
-      '<td><div class="docrow">'+dochtml+'</div></td>'+
-      '<td class="right" style="white-space:nowrap"><button class="smini" data-spay="'+esc(s.id)+'" title="გადახდის განახლება">💵</button> <button class="smini" data-sedit="'+esc(s.id)+'" title="რედაქტირება">✏️</button> <button class="smini danger" data-sdel="'+esc(s.id)+'" title="წაშლა">✕</button></td></tr>';
-  }).join('');
-  $('salEmpty').style.display=list.length?'none':'';
-  tb.querySelectorAll('[data-sedit]').forEach(b=>b.onclick=()=>openSaleForm(SALES.find(s=>String(s.id)===b.dataset.sedit)));
-  tb.querySelectorAll('[data-sdel]').forEach(b=>b.onclick=()=>delSale(b.dataset.sdel));
-  tb.querySelectorAll('[data-spay]').forEach(b=>b.onclick=()=>quickPay(b.dataset.spay));
-}
-function openSaleForm(sale){
-  const s=sale||{};editingSaleId=s.id||null;const docs=s.docs||{};const preDir=s.direction||((byCode(s.code)||{}).dir)||'';
-  salEl.innerHTML='<div class="card salform"><h2>'+(editingSaleId?'✏️ გაყიდვის რედაქტირება':'➕ ახალი გაყიდვა')+'</h2>'+
-   '<p class="muted" style="font-size:12px;margin-bottom:12px">შეავსე მონაცემები და ატვირთე დოკუმენტები (თითოს თავისი ადგილი აქვს).</p>'+
-   '<div class="fg">'+
-    '<div><label>მყიდველი *</label><input id="sfCust" value="'+esc(s.cust_name||'')+'"></div>'+
-    '<div><label>ს/კ (არჩ.)</label><input id="sfId" value="'+esc(s.cust_id||'')+'"></div>'+
-    '<div><label>ტელეფონი (არჩ.)</label><input id="sfPhone" value="'+esc(s.cust_phone||'')+'"></div>'+
-    '<div><label>მიმართულება</label><select id="sfDir"><option value="">ყველა მიმართულება</option>'+salDirList().map(dn=>'<option'+(preDir===dn?' selected':'')+'>'+esc(dn)+'</option>').join('')+'</select></div>'+
-    '<div style="grid-column:span 2"><label>პროდუქტი *</label><select id="sfProd">'+invProdOptions(preDir)+'</select></div>'+
-    '<div><label>რაოდენობა *</label><input id="sfQty" type="number" step="any" value="'+esc(s.qty!=null?s.qty:'')+'"></div>'+
-    '<div><label>ერთეული</label><select id="sfUnit"><option>კგ</option><option>ცალი</option><option>ტონა</option><option>მ</option></select></div>'+
-    '<div><label>ერთ. ფასი ₾</label><input id="sfPrice" type="number" step="any" value="'+esc(s.price!=null?s.price:'')+'"></div>'+
-    '<div><label>ჯამი ₾ (ავტომ.)</label><input id="sfTotal" class="ro" readonly value="'+money(s.total)+'"></div>'+
-    '<div><label>გადახდილი ₾</label><input id="sfPaid" type="number" step="any" value="'+esc(s.paid!=null?s.paid:'')+'"></div>'+
-    '<div><label>ნაშთი ₾ (ავტომ.)</label><input id="sfBal" class="ro" readonly value="'+money((+s.total||0)-(+s.paid||0))+'"></div>'+
-    '<div><label>თარიღი *</label><input id="sfDate" type="date" value="'+esc(s.date||todayStr())+'"></div>'+
-   '</div>'+
-   '<div style="margin-top:16px;font-weight:800;color:#0B6B3C;font-size:15px">📎 დოკუმენტების ატვირთვა</div>'+
-   '<div class="salocs saldocs">'+SAL_DOCS.map(dc=>{const u=docs[dc[0]];return '<div class="saldz'+(u?' has':'')+'"><div class="e">'+dc[2]+'</div><div class="t">'+dc[1]+'</div>'+(u?'<a href="'+esc(u)+'" target="_blank" style="font-size:11px;color:#0B6B3C;font-weight:800;display:block;margin-top:4px">✔ ატვირთულია</a>':'')+'<input type="file" data-doc="'+dc[0]+'"></div>';}).join('')+'</div>'+
-   '<div style="margin-top:14px"><label style="font-size:11px;font-weight:800;color:#5c6b62;display:block;margin-bottom:3px">შენიშვნა (არჩ.)</label><input id="sfNote" style="width:100%;border:1.5px solid #d6e2da;border-radius:8px;padding:8px 10px" value="'+esc(s.note||'')+'"></div>'+
-   '<div style="display:flex;gap:8px;margin-top:16px"><button class="btn" id="sfSave">💾 შენახვა</button><button class="btn line" id="sfCancel">გაუქმება</button></div>'+
-   '<div id="sfMsg" style="margin-top:8px;font-size:12px"></div></div>';
-  if(s.code){const sel=$('sfProd');if(sel)sel.value=s.code;}
-  if(s.unit){$('sfUnit').value=s.unit;}
-  $('sfDir').onchange=()=>{$('sfProd').innerHTML=invProdOptions($('sfDir').value);recalc();};
-  function recalc(){const q=+$('sfQty').value||0,p=+$('sfPrice').value||0,tot=q*p;$('sfTotal').value=money(tot);$('sfBal').value=money(tot-(+$('sfPaid').value||0));}
-  $('sfProd').onchange=()=>{const sp=splitTier($('sfProd').value),pr=byCode(sp.code);if(pr){if(sp.tier){$('sfPrice').value=briketTierPrice(sp.tier);}else if(pr.price!=null&&!$('sfPrice').value){$('sfPrice').value=pr.price;}$('sfUnit').value=(pr.dir==='ანთრაციტის ბრიკეტი')?'კგ':'ცალი';}recalc();};
-  ['sfQty','sfPrice','sfPaid'].forEach(id=>$(id).oninput=recalc);
-  $('sfCancel').onclick=()=>openSales();
-  $('sfSave').onclick=saveSale;
-}
-async function saveSale(){
-  const cust=$('sfCust').value.trim();if(!cust){alert('შეავსე მყიდველი');return;}
-  const sp=splitTier($('sfProd').value),code=sp.code,pr=byCode(code)||{};
-  const pname=(pr.name||'')+(sp.tier?' — '+briketTierLabel(sp.tier):'');
-  const qty=+$('sfQty').value||0,price=+$('sfPrice').value||0,total=qty*price,paid=+$('sfPaid').value||0;
-  const status=(total>0&&paid>=total)?'paid':(paid>0?'part':'due');
-  const id=editingSaleId||String(Date.now());
-  const btn=$('sfSave'),msg=$('sfMsg');btn.disabled=true;btn.textContent='⏳ ინახება…';msg.textContent='';
-  const cur=editingSaleId?(SALES.find(x=>String(x.id)===String(editingSaleId))||{}):{};
-  const docs=Object.assign({},cur.docs||{});
-  try{
-    const inps=salEl.querySelectorAll('input[type=file][data-doc]');
-    for(const inp of inps){const f=inp.files&&inp.files[0];if(!f)continue;const t=inp.dataset.doc;const path=id+'/'+t+'-'+Date.now()+'-'+f.name.replace(/[^\\w.\\-]/g,'_');
-      const up=await sb.storage.from('sale-docs').upload(path,f,{upsert:true});if(up.error)throw up.error;
-      const pu=sb.storage.from('sale-docs').getPublicUrl(path);docs[t]=pu.data.publicUrl;}
-    const row={id:id,date:$('sfDate').value||todayStr(),cust_name:cust,cust_id:$('sfId').value.trim(),cust_phone:$('sfPhone').value.trim(),direction:pr.dir||'',code:code,name:pname||pr.name||'',qty:qty,unit:$('sfUnit').value,price:price,total:total,paid:paid,status:status,note:$('sfNote').value.trim(),docs:docs};
-    const {error}=await sb.from('sales').upsert(row,{onConflict:'id'});if(error)throw error;
-    editingSaleId=null;openSales();
-  }catch(e){msg.innerHTML='<span style="color:#c62828">ვერ შეინახა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='💾 შენახვა';}
-}
-async function delSale(id){if(!confirm('წავშალო ეს გაყიდვა?'))return;try{const {error}=await sb.from('sales').delete().eq('id',id);if(error)throw error;SALES=SALES.filter(s=>String(s.id)!==String(id));refreshSal();}catch(e){alert('ვერ წაიშალა: '+(e.message||e));}}
-async function quickPay(id){const s=SALES.find(x=>String(x.id)===String(id));if(!s)return;const cur=(s.paid!=null?s.paid:0);const v=prompt('გადახდილი თანხა ₾ (სულ ჯამი: '+money(s.total)+' ₾).\\nსრულად გადახდისთვის ჩაწერე '+money(s.total)+':',cur);if(v===null)return;const paid=+v||0;const status=(+s.total>0&&paid>=+s.total)?'paid':(paid>0?'part':'due');try{const {error}=await sb.from('sales').update({paid:paid,status:status}).eq('id',id);if(error)throw error;s.paid=paid;s.status=status;refreshSal();}catch(e){alert('ვერ განახლდა: '+(e.message||e));}}
-function exportSalesXls(list){
-  const rows=list.map((s,i)=>{const st=s.status||'due',bg=st==='paid'?'#e3f5e9':st==='part'?'#fff2cf':'#fde3e3',due=(+s.total||0)-(+s.paid||0),stl={paid:'გადახდილი',part:'ნაწილობრივ',due:'გადასახდელი'}[st];
-    return '<tr><td>'+(i+1)+'</td><td>'+esc(s.date||'')+'</td><td>'+esc(s.cust_name||'')+'</td><td>'+esc(s.cust_id||'')+'</td><td>'+esc(saleDirOf(s.code,s.direction))+'</td><td>'+esc(s.name||s.code||'')+'</td><td>'+esc(fmtQty(s.qty,s.unit))+'</td><td>'+money(s.total)+'</td><td>'+money(s.paid)+'</td><td>'+money(due)+'</td><td style="background:'+bg+'">'+stl+'</td></tr>';}).join('');
-  const T=salTotals(list);
-  const html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>'+
-   '<table border="1" cellspacing="0" cellpadding="4"><tr><td colspan="11" style="font-size:15px;font-weight:bold;color:#0B6B3C">RAM IMPEX — გაყიდვების რეპორტი</td></tr>'+
-   '<tr><td colspan="11">დაბეჭდილია: '+todayStr()+' · ჩანაწერი: '+list.length+'</td></tr>'+
-   '<tr style="background:#0B6B3C;color:#ffffff;font-weight:bold"><td>#</td><td>თარიღი</td><td>მყიდველი</td><td>ს.კ.</td><td>მიმართულება</td><td>პროდუქცია</td><td>რაოდ.</td><td>თანხა</td><td>გადახდილი</td><td>ნაშთი</td><td>სტატუსი</td></tr>'+
-   rows+
-   '<tr style="background:#0B6B3C;color:#ffffff;font-weight:bold"><td colspan="7">ჯამი</td><td>'+money(T.t)+'</td><td>'+money(T.p)+'</td><td>'+money(T.due)+'</td><td></td></tr>'+
-   '</table></body></html>';
-  const blob=new Blob(['\\ufeff'+html],{type:'application/vnd.ms-excel'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='RAM_IMPEX_gayidvebi_'+todayStr()+'.xls';document.body.appendChild(a);a.click();a.remove();
-}
-function printSales(list){const T=salTotals(list);
-  const rows=list.map((s,i)=>{const st=s.status||'due',bg=st==='paid'?'#e3f5e9':st==='part'?'#fff2cf':'#fde3e3',due=(+s.total||0)-(+s.paid||0),stl={paid:'გადახდილი',part:'ნაწილობრივ',due:'გადასახდელი'}[st];
-    return '<tr style="background:'+bg+'"><td>'+(i+1)+'</td><td>'+esc(s.date||'')+'</td><td>'+esc(s.cust_name||'')+'</td><td>'+esc(saleDirOf(s.code,s.direction))+'</td><td>'+esc(s.name||s.code||'')+'</td><td style="text-align:right">'+esc(fmtQty(s.qty,s.unit))+'</td><td style="text-align:right">'+money(s.total)+'</td><td style="text-align:right">'+money(s.paid)+'</td><td style="text-align:right">'+money(due)+'</td><td>'+stl+'</td></tr>';}).join('');
-  $('printArea').innerHTML='<div style="font-family:sans-serif;padding:20px;color:#111"><h2 style="color:#0B6B3C">RAM IMPEX — გაყიდვების რეპორტი</h2><p style="font-size:12px;color:#555">დაბეჭდილია: '+todayStr()+' · ჩანაწერი: '+list.length+'</p><table style="width:100%;border-collapse:collapse;font-size:12px" border="1"><thead><tr style="background:#0B6B3C;color:#fff"><th>#</th><th>თარიღი</th><th>მყიდველი</th><th>მიმართ.</th><th>პროდუქცია</th><th>რაოდ.</th><th>თანხა</th><th>გადახდ.</th><th>ნაშთი</th><th>სტატუსი</th></tr></thead><tbody>'+rows+'<tr style="background:#0B6B3C;color:#fff;font-weight:bold"><td colspan="6">ჯამი</td><td style="text-align:right">'+money(T.t)+'</td><td style="text-align:right">'+money(T.p)+'</td><td style="text-align:right">'+money(T.due)+'</td><td></td></tr></tbody></table></div>';
-  window.print();}
 function loginView(msg){
- $('tabbar').style.display='none';$('logout').style.display='none';catEl.style.display='none';invEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';app.style.display='';
+ $('tabbar').style.display='none';$('logout').style.display='none';catEl.style.display='none';invEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';app.style.display='';
  app.innerHTML='<div class="card" style="max-width:380px;margin:40px auto"><h2 style="margin-bottom:6px">შესვლა</h2><p class="muted" style="font-size:12px;margin-bottom:8px">ადმინის ელ.ფოსტა/პაროლი (Supabase)</p>'+(msg?'<p style="color:#c62828;font-size:12px;margin-bottom:6px">'+esc(msg)+'</p>':'')+'<label>ელ. ფოსტა</label><input id="em" type="email"><label>პაროლი</label><input id="pw" type="password"><button class="btn" id="lg" style="width:100%;margin-top:12px">შესვლა</button></div>';
  $('lg').onclick=async()=>{$('lg').disabled=true;$('lg').textContent='...';const {error}=await sb.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});if(error){loginView(error.message);}else{onLogin();}};
 }
@@ -730,6 +613,10 @@ function unitOf(code){return isBriket(code)?'კგ':'ცალ.';}
 async function loadStock(){try{const {data}=await sb.from('stock').select('*');STOCK={};(data||[]).forEach(r=>{STOCK[r.code]=+r.qty||0;});}catch(e){STOCK={};}}
 // შენახული ინვოისის ჩატვირთვა რედაქტირებისთვის
 function editInvoice(inv){
+  // ვიზუალურად გადავდივართ „ინვოისის" ტაბზე openInvoice-ის გამოძახების გარეშე (რომ ფორმა არ გაიწმინდოს)
+  $('tabbar').querySelectorAll('.tb').forEach(x=>x.classList.remove('on'));
+  const ib=$('tabbar').querySelector('[data-t="invoice"]');if(ib)ib.classList.add('on');
+  app.style.display='none';catEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';invEl.style.display='';
   editingInvId=inv.id;
   invVatIncl=!!((inv.extra||{}).vatIncl);
   invDraft=(inv.lines||[]).map(l=>({code:l.code,price:l.price,qty:l.qty,name:l.name,size:l.size,ply:l.ply||'',brand:l.brand||'',pack:l.pack||'',packSet:!!l.pack,tier:l.tier||0,priceEdited:true,min:(l.min!=null&&l.min!=='')?l.min:'3000'}));
@@ -765,7 +652,7 @@ async function invoiceFromOrder(o){
   // ინვოისის ტაბზე გადასვლა
   $('tabbar').querySelectorAll('.tb').forEach(x=>x.classList.remove('on'));
   const ib=$('tabbar').querySelector('[data-t="invoice"]'); if(ib)ib.classList.add('on');
-  app.style.display='none';catEl.style.display='none';bukEl.style.display='none';invEl.style.display='';
+  app.style.display='none';catEl.style.display='none';bukEl.style.display='none';salesEl.style.display='none';invEl.style.display='';
   await openInvoice();
   if($('iCust'))$('iCust').value=o.cust_name||'';
   if($('iPhone'))$('iPhone').value=o.cust_phone||'';
@@ -831,15 +718,8 @@ function renderInvoice(){
    '<label style="display:flex;align-items:center;gap:7px;margin-top:12px;font-size:13px;cursor:pointer;font-weight:600"><input type="checkbox" id="iVat"'+(invVatIncl?' checked':'')+' style="width:16px;height:16px"> დღგ 18% შედის თანხაში <span class="muted" style="font-weight:400">(მოუნიშნავი = დღგ-ს გარეშე)</span></label>'+
    '<div class="ttl"><div class="tr"><span id="tSubL">ქვეჯამი</span><b id="tSub">0.00 ₾</b></div><div class="tr" id="tVatRow" style="color:var(--muted);font-size:12px"><span id="tVatL">დღგ</span><span id="tVat">—</span></div><div class="tr grand"><span>სულ</span><span id="tGrand">0.00 ₾</span></div></div>'+
    '<div class="row" style="margin-top:6px;font-size:12px;color:var(--muted)">🖨 <b>ბეჭდვა/PDF</b> = შეკვეთა/ინვოისი (რაოდენობა + ჯამი) · 💰 <b>შეთავაზება JPG</b> = მხოლოდ ერთეული ფასები + მინ. რაოდ. + შენიშვნა (ჯამის გარეშე)</div>'+
-   '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><button class="btn" id="iPrint">📄 ინვოისი — PDF ჩამოტვირთვა</button><button class="btn" id="iOffer" style="background:#6d3ad6">💰 ფასების შეთავაზება (JPG)</button><button class="btn" id="iToOrders" style="background:#0B6B3C">📥 შეკვეთებში დამატება</button><button class="btn line" id="iSave">💾 შენახვა</button><button class="btn danger" id="iClear">🗑 გასუფთავება</button></div></div>'+
-   '<div class="card"><h2>📊 ინვოისები / გაყიდვები</h2><p class="muted" style="font-size:12px">ყოველი შენახული ინვოისი აქ ჩნდება როგორც გაყიდვა — გადახდისა და დოკუმენტების სტატუსით.</p>'+
-   '<div style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap;background:#f6f2fd;border:1px solid #e0d4f7;border-radius:10px;padding:8px 12px"><button class="btn" id="ilStock" style="background:#6d3ad6;margin-top:0">📦 მარაგი / შევსება</button><span id="ilStockSum" class="muted" style="font-size:12px"></span></div>'+
-   '<div class="salkpi" style="margin-top:12px"><div class="skpi blue"><div class="l">სულ</div><div class="v" id="ilK1">—</div></div><div class="skpi green"><div class="l">გადახდილი</div><div class="v" id="ilK2">—</div></div><div class="skpi red"><div class="l">დარჩენილი (ვალი)</div><div class="v" id="ilK3">—</div></div><div class="skpi amber"><div class="l">რაოდ.</div><div class="v" id="ilK4">—</div></div></div>'+
-   '<div class="saldir" id="ilDir">'+SAL_DIRS.map(d=>'<button class="chip'+(IL_DIR===d[0]?' on':'')+'" data-ild="'+esc(d[0])+'">'+d[2]+' '+esc(d[1])+'</button>').join('')+'</div>'+
-   '<div class="salflt"><div><label>ძებნა</label><input id="ilQ" placeholder="🔍 მყიდველი / №"></div><div><label>დან</label><input id="ilFrom" type="date"></div><div><label>მდე</label><input id="ilTo" type="date"></div><div><label>სტატუსი</label><select id="ilStatus"><option value="">ყველა</option><option value="paid">გადახდილი</option><option value="part">ნაწილობრივ</option><option value="due">გადასახდელი</option></select></div><div style="align-self:flex-end;display:flex;gap:8px"><button class="btn a" id="ilXls">📊 Excel</button><button class="btn line" id="ilPrint">📄 PDF ჩამოტვირთვა</button></div></div>'+
-   '<div class="scroll"><table><thead><tr><th>თარიღი</th><th>№</th><th>მყიდველი</th><th>პროდუქცია</th><th class="right">სულ ₾</th><th class="right">გადახდ.</th><th class="right">ნაშთი</th><th>სტატუსი</th><th>დოკ.</th><th></th></tr></thead><tbody id="ilRows"></tbody></table></div>'+
-   '<div id="ilEmpty" class="empty" style="display:none">ჯერ ინვოისი არ არის.</div>'+
-   '<div style="margin-top:10px;font-size:11.5px;color:#5c6b62">🚚 ზედნადები · 💳 გადარიცხვის დოკ. — <b style="color:#0B6B3C">მწვანე=ატვირთულია</b> · 💵 გადახდის განახლება · 📎 დოკ. ატვირთვა · ✏ რედაქტ. · 🖨 ბეჭდვა · 🗑 წაშლა</div></div>';
+   '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><button class="btn" id="iPrint">📄 ინვოისი — PDF ჩამოტვირთვა</button><button class="btn" id="iOffer" style="background:#6d3ad6">💰 ფასების შეთავაზება (JPG)</button><button class="btn" id="iToOrders" style="background:#0B6B3C">📥 შეკვეთებში დამატება</button><button class="btn line" id="iSave">💾 შენახვა</button><button class="btn danger" id="iClear">🗑 გასუფთავება</button></div>'+
+   '<div class="row" style="margin-top:8px;font-size:12px;color:var(--muted)">💾 შენახვის შემდეგ ინვოისი გამოჩნდება ტაბში <b>📊 გაყიდვები → 🛒 საცალო</b>.</div></div>';
   $('iAdd').onclick=()=>{const raw=$('iPick').value;if(!raw)return;const sp=splitTier(raw);const code=sp.code;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ply=itmBox({code:code})?((($('iPlyAdd')&&$('iPlyAdd').value)||p.ply||'')):'';const ex=invDraft.find(l=>l.code===code&&(l.tier||0)===(sp.tier||0));if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else{const line={code:code,price:sp.tier?briketTierPrice(sp.tier):(isBriket(code)?briketPrice(qty):p.price),qty:qty,ply:ply,min:'3000'};if(sp.tier){line.tier=sp.tier;line.pack=briketTierPack(sp.tier);line.packSet=true;}invDraft.push(line);}if($('iPlyAdd'))$('iPlyAdd').value='';renderInvLines();};
   if($('iPickDir'))$('iPickDir').onchange=()=>{$('iPick').innerHTML=invProdOptions($('iPickDir').value);};
   $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}downloadInvoicePDF(currentInv());};
@@ -851,7 +731,233 @@ function renderInvoice(){
   if($('iVat'))$('iVat').onchange=()=>{invVatIncl=$('iVat').checked;updInvTotals();};
   if($('iRegion'))$('iRegion').onchange=()=>fillMuni($('iRegion').value,'');
   if(!editingInvId&&$('iDate'))$('iDate').onchange=()=>{const no=$('iNo');if(no){const seq=invSeqOf(no.value)||nextInvSeq();no.value=makeInvNo(invPrefix(),seq);}};
-  wireLedgerControls();renderInvLines();renderInvList();
+  renderInvLines();
+}
+/* ========================= გაყიდვები (📊) — ორი ქვე-ტაბი: 🛒 საცალო · 🚚 დისტრიბუცია ========================= */
+let SALES_SUB='retail';
+let DISTRIBUTORS=[], DIST_PICKUPS=[], DIST_SALES=[], DIST_ERR='', distReportFor='', distShowAdd=false;
+function gotoTab(t){const b=$('tabbar')&&$('tabbar').querySelector('[data-t="'+t+'"]');if(b)b.click();}
+async function loadDistrib(){
+  DIST_ERR='';
+  try{const {data,error}=await sb.from('distributors').select('*').order('created_at',{ascending:false});if(error)throw error;DISTRIBUTORS=data||[];}
+  catch(e){DISTRIBUTORS=[];DIST_ERR='distributors';}
+  try{const {data,error}=await sb.from('dist_pickups').select('*').order('date',{ascending:false});if(error)throw error;DIST_PICKUPS=data||[];}
+  catch(e){DIST_PICKUPS=[];if(!DIST_ERR)DIST_ERR='dist_pickups';}
+  try{const {data,error}=await sb.from('dist_sales').select('*').order('date',{ascending:false});if(error)throw error;DIST_SALES=data||[];}
+  catch(e){DIST_SALES=[];if(!DIST_ERR)DIST_ERR='dist_sales';}
+}
+async function openSales(){
+  if(!document.getElementById('salCss')){const st=document.createElement('style');st.id='salCss';st.textContent=SAL_CSS;document.head.appendChild(st);}
+  salesEl.innerHTML='<div class="empty">იტვირთება…</div>';
+  try{await ensureDirs();}catch(e){salesEl.innerHTML='<div class="card"><p style="color:#c62828">ვერ ჩაიტვირთა: '+esc(e.message||e)+'</p></div>';return;}
+  if(!Object.keys(PUB).length)await loadPub();
+  await loadStock();
+  try{const {data}=await sb.from('invoices').select('*').order('created_at',{ascending:false}).limit(500);INVOICES=data||[];}catch(e){INVOICES=[];}
+  await loadDistrib();
+  renderSales();
+}
+function renderSales(){
+  salesEl.innerHTML=
+   '<div class="card" style="padding:10px;margin-bottom:14px"><div class="subtabs">'+
+     '<button class="subtab'+(SALES_SUB==='retail'?' on':'')+'" data-sub="retail">🛒 საცალო</button>'+
+     '<button class="subtab'+(SALES_SUB==='dist'?' on':'')+'" data-sub="dist">🚚 დისტრიბუცია</button>'+
+   '</div></div><div id="salesBody"></div>';
+  salesEl.querySelectorAll('[data-sub]').forEach(b=>b.onclick=()=>{SALES_SUB=b.dataset.sub;renderSales();});
+  if(SALES_SUB==='retail')renderRetail();else renderDist();
+}
+function renderRetail(){
+  $('salesBody').innerHTML=
+   '<div class="card"><h2>📊 ინვოისები / გაყიდვები (საცალო)</h2><p class="muted" style="font-size:12px">ყოველი შენახული ინვოისი აქ ჩნდება როგორც გაყიდვა — გადახდისა და დოკუმენტების სტატუსით.</p>'+
+   '<div style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap;background:#f6f2fd;border:1px solid #e0d4f7;border-radius:10px;padding:8px 12px"><button class="btn" id="ilStock" style="background:#6d3ad6;margin-top:0">📦 მარაგი / შევსება</button><span id="ilStockSum" class="muted" style="font-size:12px"></span></div>'+
+   '<div class="salkpi" style="margin-top:12px"><div class="skpi blue"><div class="l">სულ</div><div class="v" id="ilK1">—</div></div><div class="skpi green"><div class="l">გადახდილი</div><div class="v" id="ilK2">—</div></div><div class="skpi red"><div class="l">დარჩენილი (ვალი)</div><div class="v" id="ilK3">—</div></div><div class="skpi amber"><div class="l">რაოდ.</div><div class="v" id="ilK4">—</div></div></div>'+
+   '<div class="saldir" id="ilDir">'+SAL_DIRS.map(d=>'<button class="chip'+(IL_DIR===d[0]?' on':'')+'" data-ild="'+esc(d[0])+'">'+d[2]+' '+esc(d[1])+'</button>').join('')+'</div>'+
+   '<div class="salflt"><div><label>ძებნა</label><input id="ilQ" placeholder="🔍 მყიდველი / №"></div><div><label>დან</label><input id="ilFrom" type="date"></div><div><label>მდე</label><input id="ilTo" type="date"></div><div><label>სტატუსი</label><select id="ilStatus"><option value="">ყველა</option><option value="paid">გადახდილი</option><option value="part">ნაწილობრივ</option><option value="due">გადასახდელი</option></select></div><div style="align-self:flex-end;display:flex;gap:8px"><button class="btn a" id="ilXls">📊 Excel</button><button class="btn line" id="ilPrint">📄 PDF ჩამოტვირთვა</button></div></div>'+
+   '<div class="scroll"><table><thead><tr><th>თარიღი</th><th>№</th><th>მყიდველი</th><th>პროდუქცია</th><th class="right">სულ ₾</th><th class="right">გადახდ.</th><th class="right">ნაშთი</th><th>სტატუსი</th><th>დოკ.</th><th></th></tr></thead><tbody id="ilRows"></tbody></table></div>'+
+   '<div id="ilEmpty" class="empty" style="display:none">ჯერ ინვოისი არ არის.</div>'+
+   '<div style="margin-top:10px;font-size:11.5px;color:#5c6b62">🚚 ზედნადები · 💳 გადარიცხვის დოკ. — <b style="color:#0B6B3C">მწვანე=ატვირთულია</b> · 💵 გადახდის განახლება · 📎 დოკ. ატვირთვა · ✏ რედაქტ. · 🖨 ბეჭდვა · 🗑 წაშლა</div></div>';
+  wireLedgerControls();renderInvList();
+}
+/* ---------- დისტრიბუცია ---------- */
+function distName(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));return d?(d.name||d.shop_name||'—'):'—';}
+function distProdOptions(sel){let h='<option value="">— აირჩიე პროდუქტი —</option>';(DIRS||[]).forEach(d=>{let inner='';(d.items||[]).forEach(it=>{inner+='<option value="'+esc(it.code)+'"'+(sel===it.code?' selected':'')+'>'+esc(ruCode(it.code))+' · '+esc(it.name||'')+(it.size?' · '+esc(it.size):'')+'</option>';});if(inner)h+='<optgroup label="'+esc(d.name)+'">'+inner+'</optgroup>';});return h;}
+function distSelectOptions(){return DISTRIBUTORS.map(d=>'<option value="'+esc(d.id)+'">'+esc(d.name||d.shop_name||'—')+(d.region?' — '+esc(d.region):'')+(d.approved?'':' ⏳')+'</option>').join('');}
+function distAgg(id){
+  const pk=DIST_PICKUPS.filter(p=>String(p.distributor_id)===String(id));
+  const sl=DIST_SALES.filter(s=>String(s.distributor_id)===String(id));
+  const pickedKg=pk.reduce((a,p)=>a+(+p.qty||0),0);
+  const soldKg=sl.reduce((a,s)=>a+(+s.qty||0),0);
+  const takenVal=pk.reduce((a,p)=>a+((+p.qty||0)*(+p.price||0)),0);
+  const avgW=pickedKg>0?takenVal/pickedKg:0;
+  const owedSold=soldKg*avgW;
+  const revenue=sl.reduce((a,s)=>a+((+s.amount)|| ((+s.qty||0)*(+s.price||0)) ),0);
+  const dd=DISTRIBUTORS.find(d=>String(d.id)===String(id))||{};
+  const paid=+dd.paid||0;
+  return {pickedKg,soldKg,remKg:pickedKg-soldKg,takenVal,avgW,owedSold,revenue,paid,debt:Math.max(0,owedSold-paid)};
+}
+function fmtKg(n){return (Math.round((+n||0)*100)/100).toLocaleString('ka-GE');}
+function renderDist(){
+  const body=$('salesBody');
+  if(DIST_ERR){body.innerHTML='<div class="card"><h2>🚚 დისტრიბუცია</h2><p style="color:#c62828;font-weight:700">ცხრილი „'+esc(DIST_ERR)+'" ვერ მოიძებნა.</p><p class="muted" style="font-size:13px">გაუშვი <b>sql/distribution.sql</b> Supabase → SQL Editor-ში, შემდეგ განაახლე გვერდი.</p></div>';return;}
+  // KPIs (ჯამური)
+  let tPick=0,tSold=0,tRem=0,tDebt=0;
+  DISTRIBUTORS.forEach(d=>{const a=distAgg(d.id);tPick+=a.pickedKg;tSold+=a.soldKg;tRem+=a.remKg;tDebt+=a.debt;});
+  let h='';
+  // 1) გატანის ფორმა
+  h+='<div class="card"><h2>📦 დისტრიბუტორზე გატანა (კონსიგნაცია)</h2>'+
+     '<div class="drow">'+
+       '<div style="flex:2"><label>დისტრიბუტორი</label><select id="dpDist"><option value="">— აირჩიე —</option>'+distSelectOptions()+'</select></div>'+
+       '<div style="flex:0 0 auto;align-self:flex-end"><button class="dbtn line" id="dpAddNew">➕ ახალი</button></div>'+
+     '</div>';
+  if(distShowAdd){
+    h+='<div class="dnote" style="background:#f6faf8;border-color:#cfe0d6;color:#22332a"><div class="drow">'+
+       '<div><label>სახელი/დასახელება</label><input id="dnName" placeholder="სახელი გვარი / შპs"></div>'+
+       '<div style="flex:0 0 150px"><label>რეგიონი</label><select id="dnRegion"><option value="">—</option>'+Object.keys(REGIONS).map(r=>'<option>'+esc(r)+'</option>').join('')+'</select></div>'+
+       '<div style="flex:0 0 150px"><label>ტელეფონი</label><input id="dnPhone" placeholder="5xx…"></div>'+
+       '<div style="flex:0 0 auto;align-self:flex-end"><button class="dbtn" id="dnSave">💾 დამატება</button></div>'+
+     '</div></div>';
+  }
+  h+='<div class="drow" style="margin-top:10px">'+
+       '<div style="flex:2"><label>პროდუქტი</label><select id="dpProd">'+distProdOptions('')+'</select></div>'+
+       '<div style="flex:0 0 120px"><label>რაოდ.</label><input id="dpQty" type="number" step="any" placeholder="0"></div>'+
+       '<div style="flex:0 0 130px"><label>ფასი ₾/ერთ. (არჩ.)</label><input id="dpPrice" type="number" step="0.01" placeholder="0.00"></div>'+
+       '<div style="flex:0 0 150px"><label>თარიღი</label><input id="dpDate" type="date" value="'+todayStr()+'"></div>'+
+       '<div style="flex:0 0 auto;align-self:flex-end"><button class="dbtn" id="dpGo">＋ გატანა</button></div>'+
+     '</div>'+
+     '<div class="dnote">ℹ️ გატანისას პროდუქცია <b>დააკლდება საწყობის მარაგს</b> და დაემატება დისტრიბუტორის „მასთან დარჩენილს". ფასი = შეთანხმებული საბითუმო ფასი (ვალის დასათვლელად).</div>'+
+     '<div id="dpMsg" style="margin-top:6px;font-size:12.5px"></div></div>';
+  // 2) დაშბორდი
+  h+='<div class="card"><h2>📊 დისტრიბუციის დაშბორდი</h2>'+
+     '<div class="salkpi"><div class="skpi green"><div class="l">სულ გატანილი</div><div class="v">'+fmtKg(tPick)+'</div></div>'+
+       '<div class="skpi blue"><div class="l">გაყიდა (რეპორტი)</div><div class="v">'+fmtKg(tSold)+'</div></div>'+
+       '<div class="skpi amber"><div class="l">დარჩა დისტრიბ.</div><div class="v">'+fmtKg(tRem)+'</div></div>'+
+       '<div class="skpi red"><div class="l">ვალი სულ ₾</div><div class="v">'+money(tDebt)+'</div></div></div>';
+  if(!DISTRIBUTORS.length){h+='<div class="empty">ჯერ დისტრიბუტორი არ არის. დაამატე „➕ ახალი" ან განაცხადი მოვა /distribution გვერდიდან.</div>';}
+  else{
+    h+='<div class="scroll"><table><thead><tr><th>დისტრიბუტორი</th><th>რეგიონი</th><th class="right">გატანილი</th><th class="right">გაყიდა</th><th class="right">დარჩა</th><th class="right">ვალი ₾</th><th></th></tr></thead><tbody>';
+    DISTRIBUTORS.forEach(d=>{const a=distAgg(d.id);h+='<tr><td><b>'+esc(d.name||d.shop_name||'—')+'</b>'+(d.approved?'':' <span class="dtag wait">⏳</span>')+'</td><td>'+esc(d.region||'—')+(d.municipality?' <span class="muted" style="font-size:10px">'+esc(d.municipality)+'</span>':'')+'</td>'+
+      '<td class="right">'+fmtKg(a.pickedKg)+'</td><td class="right">'+fmtKg(a.soldKg)+'</td><td class="right"><b>'+fmtKg(a.remKg)+'</b></td>'+
+      '<td class="right">'+(a.debt>0.01?'<b style="color:#b00020">'+money(a.debt)+'</b>':'0.00')+'</td>'+
+      '<td class="right" style="white-space:nowrap"><button class="smini" data-drep="'+esc(d.id)+'" title="გაყიდვის რეპორტი">📊</button> <button class="smini" data-dpay="'+esc(d.id)+'" title="გადახდის ჩაწერა">💰</button> <button class="smini" data-dedit="'+esc(d.id)+'" title="რედაქტ./დამტკიცება">✏</button></td></tr>';});
+    h+='</tbody></table></div>';
+  }
+  h+='</div>';
+  // 3) რეპორტ-პანელი
+  if(distReportFor){const d=DISTRIBUTORS.find(x=>String(x.id)===String(distReportFor));if(d){const a=distAgg(d.id);
+    h+='<div class="card" style="border:2px solid #6d3ad6"><h2 style="color:#6d3ad6">📊 გაყიდვის რეპორტი — '+esc(d.name||d.shop_name||'—')+' <span class="dtag ok" style="font-weight:800">დარჩა '+fmtKg(a.remKg)+'</span></h2>'+
+       '<div style="display:flex;justify-content:space-between;align-items:center"><p class="muted" style="font-size:12px">დისტრიბუტორი წერს რამდენი და ვის მიჰყიდა — რაოდენობა მასთან მცირდება.</p><button class="smini" id="drepClose">✕ დახურვა</button></div>'+
+       '<div class="dnote" style="background:#faf7ff;border-color:#d9c8f5;color:#4a2b8a"><div class="drow">'+
+         '<div style="flex:0 0 110px"><label>რაოდ.</label><input id="dsQty" type="number" step="any" placeholder="0"></div>'+
+         '<div style="flex:2"><label>ვის მიჰყიდა</label><input id="dsBuyer" placeholder="მაღაზია / კლიენტი"></div>'+
+         '<div style="flex:0 0 120px"><label>ფასი ₾/ერთ.</label><input id="dsPrice" type="number" step="0.01" placeholder="0.00"></div>'+
+         '<div style="flex:0 0 150px"><label>თარიღი</label><input id="dsDate" type="date" value="'+todayStr()+'"></div>'+
+         '<div style="flex:0 0 auto;align-self:flex-end"><button class="dbtn v" id="dsGo">💾 ჩაწერა</button></div>'+
+       '</div><div id="dsMsg" style="margin-top:6px;font-size:12.5px"></div></div>';
+    const sl=DIST_SALES.filter(s=>String(s.distributor_id)===String(d.id));
+    h+='<div class="scroll" style="margin-top:12px"><table><thead><tr><th>თარიღი</th><th>ვის მიჰყიდა</th><th class="right">რაოდ.</th><th class="right">₾/ერთ.</th><th class="right">ჯამი ₾</th><th></th></tr></thead><tbody>';
+    if(!sl.length)h+='<tr><td colspan="6" class="muted" style="padding:12px">ჯერ რეპორტი არ არის.</td></tr>';
+    sl.forEach(s=>{h+='<tr><td>'+esc(s.date||'')+'</td><td>'+esc(s.buyer||'—')+(s.note?'<div class="muted" style="font-size:10px">'+esc(s.note)+'</div>':'')+'</td><td class="right">'+fmtKg(s.qty)+'</td><td class="right">'+money(s.price)+'</td><td class="right"><b>'+money((+s.amount)||((+s.qty||0)*(+s.price||0)))+'</b></td><td class="right"><button class="smini danger" data-dsdel="'+esc(s.id)+'">🗑</button></td></tr>';});
+    h+='</tbody></table></div>';
+    // pickup history
+    const pk=DIST_PICKUPS.filter(p=>String(p.distributor_id)===String(d.id));
+    h+='<h2 style="font-size:14px;margin-top:14px">📦 გატანების ისტორია</h2><div class="scroll"><table><thead><tr><th>თარიღი</th><th>პროდუქტი</th><th class="right">რაოდ.</th><th class="right">₾/ერთ.</th><th></th></tr></thead><tbody>';
+    if(!pk.length)h+='<tr><td colspan="5" class="muted" style="padding:12px">ჯერ გატანა არ არის.</td></tr>';
+    pk.forEach(p=>{h+='<tr><td>'+esc(p.date||'')+'</td><td>'+esc(ruCode(p.code)||'')+' · '+esc(p.product||'')+'</td><td class="right">'+fmtKg(p.qty)+'</td><td class="right">'+money(p.price)+'</td><td class="right"><button class="smini danger" data-dpdel="'+esc(p.id)+'" title="წაშლა — მარაგი დაბრუნდება">🗑</button></td></tr>';});
+    h+='</tbody></table></div></div>';
+  }}
+  // 4) დისტრიბუტორები / განაცხადები (რუკა/ცნობარისთვის)
+  h+='<div class="card"><h2>👥 დისტრიბუტორები / განაცხადები</h2><p class="muted" style="font-size:12px">✅ დამტკიცებული ჩანს <b>/info</b>-ს რუკაზე და ცნობარში (მუნიციპალიტეტების ჭრილში).</p>';
+  if(!DISTRIBUTORS.length)h+='<div class="empty">ჯერ განაცხადი არ არის.</div>';
+  else{h+='<div class="scroll"><table><thead><tr><th>სახელი</th><th>მაღაზია</th><th>რეგ./მუნიც.</th><th>ტელ.</th><th class="right">დამტკ.</th><th></th></tr></thead><tbody>';
+    DISTRIBUTORS.forEach(d=>{h+='<tr><td><b>'+esc(d.name||'—')+'</b>'+(d.company?'<div class="muted" style="font-size:10px">'+esc(d.company)+'</div>':'')+'</td><td>'+esc(d.shop_name||'—')+'</td><td>'+esc(d.region||'—')+(d.municipality?' · '+esc(d.municipality):'')+'</td><td>'+esc(d.phone||'—')+'</td><td class="right">'+(d.approved?'<span class="dtag ok">✅</span>':'<span class="dtag wait">⏳</span>')+'</td><td class="right"><button class="smini" data-dedit="'+esc(d.id)+'">✏</button></td></tr>';});
+    h+='</tbody></table></div>';}
+  h+='</div>';
+  body.innerHTML=h;
+  wireDist();
+}
+function wireDist(){
+  const q=id=>$(id);
+  if(q('dpAddNew'))q('dpAddNew').onclick=()=>{distShowAdd=!distShowAdd;renderDist();};
+  if(q('dnSave'))q('dnSave').onclick=distAddNew;
+  if(q('dpGo'))q('dpGo').onclick=distPickup;
+  if(q('dsGo'))q('dsGo').onclick=distAddSale;
+  if(q('drepClose'))q('drepClose').onclick=()=>{distReportFor='';renderDist();};
+  salesEl.querySelectorAll('[data-drep]').forEach(b=>b.onclick=()=>{distReportFor=b.dataset.drep;renderDist();window.scrollTo(0,document.body.scrollHeight);});
+  salesEl.querySelectorAll('[data-dpay]').forEach(b=>b.onclick=()=>distPayment(b.dataset.dpay));
+  salesEl.querySelectorAll('[data-dedit]').forEach(b=>b.onclick=()=>distEdit(b.dataset.dedit));
+  salesEl.querySelectorAll('[data-dsdel]').forEach(b=>b.onclick=()=>distDelSale(b.dataset.dsdel));
+  salesEl.querySelectorAll('[data-dpdel]').forEach(b=>b.onclick=()=>distDelPickup(b.dataset.dpdel));
+}
+async function distAddNew(){
+  const name=($('dnName').value||'').trim();if(!name){alert('ჩაწერე სახელი');return;}
+  const region=$('dnRegion').value||'',phone=($('dnPhone').value||'').trim();
+  const id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const btn=$('dnSave');btn.disabled=true;btn.textContent='⏳…';
+  try{const {error}=await sb.from('distributors').insert({id,name,region,phone,approved:false});if(error)throw error;
+    distShowAdd=false;await loadDistrib();renderDist();}
+  catch(e){alert('ვერ დაემატა: '+(e.message||e));btn.disabled=false;btn.textContent='💾 დამატება';}
+}
+async function distPickup(){
+  const did=$('dpDist').value;const code=$('dpProd').value;const qty=parseFloat($('dpQty').value);const price=parseFloat($('dpPrice').value)||0;const date=$('dpDate').value||todayStr();
+  const msg=$('dpMsg');
+  if(!did){msg.innerHTML='<span style="color:#b00020">აირჩიე დისტრიბუტორი</span>';return;}
+  if(!code){msg.innerHTML='<span style="color:#b00020">აირჩიე პროდუქტი</span>';return;}
+  if(!qty||qty<=0){msg.innerHTML='<span style="color:#b00020">ჩაწერე რაოდენობა</span>';return;}
+  const p=byCode(code)||{};const btn=$('dpGo');btn.disabled=true;btn.textContent='⏳…';
+  const id='pk'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  try{
+    const {error}=await sb.from('dist_pickups').insert({id,distributor_id:did,distributor_name:distName(did),region:(DISTRIBUTORS.find(x=>String(x.id)===String(did))||{}).region||'',code,product:p.name||'',qty,price,date});
+    if(error)throw error;
+    // საწყობის მარაგის დაკლება
+    const nv=(+STOCK[code]||0)-qty;
+    try{await sb.from('stock').upsert([{code,qty:nv,updated_at:new Date().toISOString()}],{onConflict:'code'});STOCK[code]=nv;}catch(se){}
+    await loadDistrib();renderDist();
+    try{sb.functions.invoke('telegram-notify',{body:{text:'🚚 დისტრიბუციაზე გატანა\n👤 '+distName(did)+'\n📦 '+(ruCode(code))+' · '+(p.name||'')+'\n⚖️ '+fmtKg(qty)+' '+unitOf(code)+(price?('\n💰 '+money(price)+' ₾/ერთ.'):'')+'\n🏬 საწყობში დარჩა: '+fmtKg(nv)+' '+unitOf(code)}});}catch(te){}
+  }catch(e){msg.innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='＋ გატანა';}
+}
+async function distAddSale(){
+  const did=distReportFor;const qty=parseFloat($('dsQty').value);const buyer=($('dsBuyer').value||'').trim();const price=parseFloat($('dsPrice').value)||0;const date=$('dsDate').value||todayStr();
+  const msg=$('dsMsg');
+  if(!qty||qty<=0){msg.innerHTML='<span style="color:#b00020">ჩაწერე რაოდენობა</span>';return;}
+  const a=distAgg(did);if(qty>a.remKg+0.001){if(!confirm('რაოდენობა ('+fmtKg(qty)+') აღემატება მასთან დარჩენილს ('+fmtKg(a.remKg)+'). გავაგრძელო?'))return;}
+  const btn=$('dsGo');btn.disabled=true;btn.textContent='⏳…';
+  const id='ds'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  try{const {error}=await sb.from('dist_sales').insert({id,distributor_id:did,distributor_name:distName(did),qty,buyer,price,amount:qty*price,date});if(error)throw error;
+    await loadDistrib();renderDist();window.scrollTo(0,document.body.scrollHeight);}
+  catch(e){msg.innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='💾 ჩაწერა';}
+}
+async function distDelSale(id){if(!confirm('წავშალო ეს რეპორტი?'))return;try{const {error}=await sb.from('dist_sales').delete().eq('id',id);if(error)throw error;await loadDistrib();renderDist();}catch(e){alert('ვერ წაიშალა: '+(e.message||e));}}
+async function distDelPickup(id){const p=DIST_PICKUPS.find(x=>String(x.id)===String(id));if(!p)return;if(!confirm('წავშალო გატანა? მარაგი დაბრუნდება საწყობში.'))return;
+  try{const {error}=await sb.from('dist_pickups').delete().eq('id',id);if(error)throw error;
+    if(p.code){const nv=(+STOCK[p.code]||0)+(+p.qty||0);try{await sb.from('stock').upsert([{code:p.code,qty:nv,updated_at:new Date().toISOString()}],{onConflict:'code'});STOCK[p.code]=nv;}catch(se){}}
+    await loadDistrib();renderDist();}
+  catch(e){alert('ვერ წაიშალა: '+(e.message||e));}}
+async function distPayment(id){const a=distAgg(id);const cur=(DISTRIBUTORS.find(x=>String(x.id)===String(id))||{}).paid||0;
+  const v=prompt('გადახდის ჩაწერა — '+distName(id)+'\nვალი ამჟამად: '+money(a.debt)+' ₾\n\nჩაწერე ჯამური გადახდილი თანხა ₾ (მიმდინარე: '+money(cur)+'):',money(cur));
+  if(v==null)return;const paid=parseFloat(v);if(isNaN(paid)){alert('არასწორი რიცხვი');return;}
+  try{const {error}=await sb.from('distributors').update({paid}).eq('id',id);if(error)throw error;await loadDistrib();renderDist();}
+  catch(e){alert('ვერ შეინახა (გაუშვი sql/distribution.sql — paid სვეტი): '+(e.message||e));}}
+function distEdit(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));if(!d)return;
+  const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
+  ov.innerHTML='<div class="card salform" style="max-width:560px;width:100%"><h2>✏ დისტრიბუტორი — '+esc(d.name||'—')+'</h2>'+
+   '<div class="fg" style="grid-template-columns:1fr 1fr"><div><label>სახელი/დასახელება</label><input id="edName" value="'+esc(d.name||'')+'"></div><div><label>მაღაზიის სახელი (რუკაზე)</label><input id="edShop" value="'+esc(d.shop_name||'')+'"></div>'+
+   '<div><label>ტელეფონი</label><input id="edPhone" value="'+esc(d.phone||'')+'"></div><div><label>რეგიონი</label><select id="edRegion"><option value="">—</option>'+Object.keys(REGIONS).map(r=>'<option'+(r===d.region?' selected':'')+'>'+esc(r)+'</option>').join('')+'</select></div>'+
+   '<div><label>მუნიციპალიტეტი</label><select id="edMuni"><option value="">—</option></select></div><div><label>მისამართი</label><input id="edAddr" value="'+esc(d.address||'')+'"></div>'+
+   '<div><label>Lat (რუკა, არჩ.)</label><input id="edLat" value="'+esc(d.lat!=null?d.lat:'')+'" placeholder="41.7…"></div><div><label>Lng (რუკა, არჩ.)</label><input id="edLng" value="'+esc(d.lng!=null?d.lng:'')+'" placeholder="44.8…"></div></div>'+
+   '<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:800;cursor:pointer"><input type="checkbox" id="edApproved"'+(d.approved?' checked':'')+' style="width:18px;height:18px"> ✅ დამტკიცებული (ჩანს /info-ზე რუკაზე/ცნობარში)</label>'+
+   '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="dbtn" id="edSave">💾 შენახვა</button><button class="dbtn line" id="edClose">დახურვა</button><button class="smini danger" id="edDel" style="margin-left:auto">🗑 წაშლა</button></div>'+
+   '<div id="edMsg" style="margin-top:8px;font-size:12.5px"></div></div>';
+  document.body.appendChild(ov);
+  const qq=s=>ov.querySelector(s);
+  const fillM=(reg,selv)=>{const sel=qq('#edMuni');const list=REGIONS[reg]||[];sel.innerHTML='<option value="">—</option>'+list.map(m=>'<option'+(m===selv?' selected':'')+'>'+esc(m)+'</option>').join('');};
+  fillM(d.region||'',d.municipality||'');
+  qq('#edRegion').onchange=()=>fillM(qq('#edRegion').value,'');
+  qq('#edClose').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  qq('#edSave').onclick=async()=>{const upd={name:qq('#edName').value.trim(),shop_name:qq('#edShop').value.trim(),phone:qq('#edPhone').value.trim(),region:qq('#edRegion').value,municipality:qq('#edMuni').value,address:qq('#edAddr').value.trim(),approved:qq('#edApproved').checked};
+    const la=parseFloat(qq('#edLat').value);const ln=parseFloat(qq('#edLng').value);upd.lat=isNaN(la)?null:la;upd.lng=isNaN(ln)?null:ln;
+    const b=qq('#edSave');b.disabled=true;b.textContent='⏳…';
+    try{const {error}=await sb.from('distributors').update(upd).eq('id',id);if(error)throw error;ov.remove();await loadDistrib();renderDist();}
+    catch(e){qq('#edMsg').innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+'</span>';b.disabled=false;b.textContent='💾 შენახვა';}};
+  qq('#edDel').onclick=async()=>{if(!confirm('წავშალო დისტრიბუტორი? (გატანები/რეპორტები დარჩება ბაზაში)'))return;try{const {error}=await sb.from('distributors').delete().eq('id',id);if(error)throw error;ov.remove();await loadDistrib();renderDist();}catch(e){alert('ვერ წაიშალა: '+(e.message||e));}};
 }
 function renderInvLines(){
   const tb=$('iRows');$('iEmpty').style.display=invDraft.length?'none':'block';$('iTbl').style.display=invDraft.length?'':'none';
