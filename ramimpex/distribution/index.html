@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ka">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAM IMPEX — დისტრიბუცია / წარმომადგენლობა</title>
+<meta property="og:title" content="RAM IMPEX — გახდი წარმომადგენელი">
+<meta property="og:description" content="ანთრაციტის ბრიკეტის დისტრიბუცია რეგიონებში — შეავსე განაცხადი">
+<style>
+:root{--g:#0B6B3C;--g2:#0F8A4D;--o:#c9701a;--gold:#F2B807;--ink:#14261c;--mut:#5c6b62;--line:#e5ece7}
+*{margin:0;box-sizing:border-box}
+body{font-family:'Noto Sans Georgian',system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--ink);background:#eef3ef;line-height:1.45}
+.wrap{max-width:600px;margin:0 auto;padding:0 14px 44px}
+.hero{position:relative;color:#fff;padding:30px 20px 26px;border-radius:0 0 22px 22px;overflow:hidden;
+ background:radial-gradient(700px 380px at 82% 0%,rgba(201,112,26,.5),transparent 60%),linear-gradient(150deg,#241507,#12100a 70%)}
+.hero .top{display:flex;align-items:center;gap:14px}
+.hero .top img{width:52px;height:52px}
+.hero .top b{font-size:24px;font-weight:900;letter-spacing:.4px}
+.kick{margin-top:16px;display:inline-block;background:var(--gold);color:#3a2600;font-weight:900;font-size:15px;padding:8px 16px;border-radius:999px}
+.hero h1{margin-top:12px;font-size:34px;line-height:1.08;font-weight:900;background:linear-gradient(180deg,#ffcf7a,#ff8c1a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{margin-top:8px;font-size:15px;color:#efe2d2;font-weight:600}
+.perks{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.perks span{font-size:12.5px;font-weight:800;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:7px 12px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px;box-shadow:0 4px 16px rgba(16,60,40,.06)}
+.card h2{font-size:18px;color:var(--g);margin-bottom:4px}
+.card .sub{font-size:13px;color:var(--mut);margin-bottom:14px}
+label{display:block;font-size:13px;font-weight:800;color:#33413a;margin:12px 0 5px}
+label .req{color:#b00020}
+input,select,textarea{width:100%;font:inherit;font-size:15px;padding:12px 13px;border:1.5px solid #d7e0da;border-radius:10px;background:#fff;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g2);box-shadow:0 0 0 3px rgba(15,138,77,.12)}
+.row2{display:flex;gap:10px}.row2>div{flex:1}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.chip{flex:1;min-width:120px;text-align:center;border:1.5px solid #d7e0da;border-radius:10px;padding:11px 8px;font-size:14px;font-weight:800;cursor:pointer;background:#fff;color:#44514a;user-select:none}
+.chip.on{border-color:var(--g);background:#eef7f1;color:var(--g)}
+.submit{width:100%;margin-top:20px;background:var(--o);color:#fff;border:0;border-radius:12px;padding:15px;font:inherit;font-weight:900;font-size:17px;cursor:pointer}
+.submit:active{transform:scale(.99)}.submit:disabled{opacity:.6}
+.msg{margin-top:12px;font-size:14px;font-weight:700;border-radius:10px;padding:12px 14px;display:none}
+.msg.ok{display:block;background:#e3f5e9;color:var(--g);border:1px solid #b6e2c6}
+.msg.err{display:block;background:#fde3e3;color:#b00020;border:1px solid #f2b8b8}
+.done{display:none;text-align:center;padding:20px}
+.done .ic{font-size:60px}.done h3{color:var(--g);font-size:22px;margin:8px 0 6px}.done p{color:var(--mut);font-size:14px}
+.foot{text-align:center;color:var(--mut);font-size:13px;margin-top:18px;line-height:1.7}
+.foot a{color:var(--g);font-weight:800;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="hero">
+ <div class="top"><img src="../info/logo.png" alt="RAM IMPEX"><b>RAM IMPEX</b></div>
+ <span class="kick">🤝 თანამშრომლობა</span>
+ <h1>გახდი წარმომადგენელი შენს რეგიონში</h1>
+ <p>ანთრაციტის ბრიკეტის დისტრიბუცია რეგიონებსა და მუნიციპალიტეტებში. შეავსე ქვემოთ მოკლე განაცხადი — დაგიკავშირდებით.</p>
+ <div class="perks"><span>🔥 მოთხოვნადი პროდუქტი</span><span>💰 მიმზიდველი პირობები</span><span>🚚 სტაბილური მიწოდება</span></div>
+</div>
+<div class="wrap">
+ <div class="card" id="formCard">
+   <h2>📝 წარმომადგენლობის განაცხადი</h2>
+   <div class="sub">ვარსკვლავიანი ველები (<span style="color:#b00020">*</span>) სავალდებულოა.</div>
+
+   <label>სახელი და გვარი <span class="req">*</span></label>
+   <input id="f_name" placeholder="მაგ. გიორგი მელაძე">
+
+   <label>ვინ ხარ? <span class="req">*</span></label>
+   <div class="chips" id="ctype">
+     <div class="chip on" data-v="ფიზიკური პირი">👤 ფიზიკური</div>
+     <div class="chip" data-v="ინდ. მეწარმე">🧾 ინდ. მეწარმე</div>
+     <div class="chip" data-v="შპს">🏢 შპს</div>
+   </div>
+
+   <div class="row2" id="coRow" style="display:none">
+     <div><label>კომპანიის დასახელება</label><input id="f_company" placeholder="შპს ..."></div>
+     <div><label>ს/კ (არჩ.)</label><input id="f_idc" placeholder="საიდ. კოდი"></div>
+   </div>
+
+   <div class="row2">
+     <div><label>რეგიონი <span class="req">*</span></label><select id="f_region"><option value="">— აირჩიე —</option></select></div>
+     <div><label>მუნიციპალიტეტი</label><select id="f_muni"><option value="">— ჯერ რეგიონი —</option></select></div>
+   </div>
+
+   <label>მაღაზიის/საქმიანობის მისამართი</label>
+   <input id="f_addr" placeholder="ქალაქი, ქუჩა — სად მდებარეობს მაღაზია">
+
+   <label>სავარაუდო თვიური შესყიდვა</label>
+   <input id="f_monthly" placeholder="მაგ. 2–3 ტონა / თვეში">
+
+   <label>გაყიდვების გამოცდილება</label>
+   <div class="chips" id="exp">
+     <div class="chip" data-v="საცალო">🏪 საცალო</div>
+     <div class="chip" data-v="საბითუმო">📦 საბითუმო</div>
+     <div class="chip" data-v="ორივე">🔁 ორივე</div>
+     <div class="chip" data-v="ახალი">🆕 ახალი</div>
+   </div>
+
+   <div class="row2">
+     <div><label>ტელეფონი <span class="req">*</span></label><input id="f_phone" type="tel" placeholder="5xx xx xx xx"></div>
+     <div><label>სხვა კონტაქტი (არჩ.)</label><input id="f_contact2" placeholder="WhatsApp / ელ-ფოსტა"></div>
+   </div>
+
+   <label>დამატებითი ინფორმაცია (არჩ.)</label>
+   <textarea id="f_note" rows="3" placeholder="მაგ. კლიენტების ბაზა, სასაწყობე ფართი, ტრანსპორტი…"></textarea>
+
+   <button class="submit" id="sendBtn">📩 განაცხადის გაგზავნა</button>
+   <div class="msg" id="msg"></div>
+ </div>
+
+ <div class="card done" id="doneCard">
+   <div class="ic">✅</div>
+   <h3>განაცხადი მიღებულია!</h3>
+   <p>მადლობა — მალე დაგიკავშირდებით.<br>სასწრაფოდ დაგვირეკე: <b>595 533 500</b></p>
+ </div>
+
+ <div class="foot">
+   📞 <a href="tel:+995595533500">595 533 500</a> · ✉ info@ramimpex.com.ge<br>
+   🌐 <a href="https://ramimpex.com.ge/info" target="_blank">ramimpex.com.ge/info</a>
+ </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/+esm";
+const sb=createClient("https://mhyoqypzacvztwhntsvv.supabase.co","sb_publishable_FXhFmDRboFeOEqxyvwUePg_SgIwnmmM");
+const REGIONS={
+ 'თბილისი':['თბილისი'],
+ 'აჭარა':['ბათუმი','ქობულეთი','ხელვაჩაური','ქედა','შუახევი','ხულო'],
+ 'გურია':['ოზურგეთი','ლანჩხუთი','ჩოხატაური'],
+ 'იმერეთი':['ქუთაისი','ბაღდათი','ვანი','ზესტაფონი','თერჯოლა','სამტრედია','საჩხერე','ტყიბული','წყალტუბო','ჭიათურა','ხარაგაული','ხონი'],
+ 'კახეთი':['თელავი','ახმეტა','გურჯაანი','დედოფლისწყარო','ლაგოდეხი','საგარეჯო','სიღნაღი','ყვარელი'],
+ 'მცხეთა-მთიანეთი':['მცხეთა','დუშეთი','თიანეთი','ყაზბეგი'],
+ 'რაჭა-ლეჩხუმი და ქვ. სვანეთი':['ამბროლაური','ონი','ცაგერი','ლენტეხი'],
+ 'სამეგრელო-ზემო სვანეთი':['ზუგდიდი','აბაშა','მარტვილი','მესტია','სენაკი','ჩხოროწყუ','წალენჯიხა','ხობი'],
+ 'სამცხე-ჯავახეთი':['ახალციხე','ადიგენი','ასპინძა','ახალქალაქი','ბორჯომი','ნინოწმინდა'],
+ 'ქვემო ქართლი':['რუსთავი','ბოლნისი','გარდაბანი','დმანისი','თეთრიწყარო','მარნეული','წალკა'],
+ 'შიდა ქართლი':['გორი','კასპი','ქარელი','ხაშური']
+};
+const $=id=>document.getElementById(id);
+$('f_region').innerHTML='<option value="">— აირჩიე —</option>'+Object.keys(REGIONS).map(r=>'<option>'+r+'</option>').join('');
+$('f_region').onchange=()=>{const list=REGIONS[$('f_region').value]||[];$('f_muni').innerHTML='<option value="">'+(list.length?'— აირჩიე —':'— ჯერ რეგიონი —')+'</option>'+list.map(m=>'<option>'+m+'</option>').join('');};
+// chip groups
+let ctype='ფიზიკური პირი', exp='';
+document.querySelectorAll('#ctype .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#ctype .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');ctype=c.dataset.v;$('coRow').style.display=(ctype==='ფიზიკური პირი')?'none':'flex';});
+document.querySelectorAll('#exp .chip').forEach(c=>c.onclick=()=>{const on=c.classList.contains('on');document.querySelectorAll('#exp .chip').forEach(x=>x.classList.remove('on'));if(!on){c.classList.add('on');exp=c.dataset.v;}else exp='';});
+function showMsg(t,ok){const m=$('msg');m.textContent=t;m.className='msg '+(ok?'ok':'err');}
+$('sendBtn').onclick=async()=>{
+  const name=$('f_name').value.trim(), phone=$('f_phone').value.trim();
+  if(!name){showMsg('ჩაწერე სახელი და გვარი',false);return;}
+  if(!$('f_region').value){showMsg('აირჩიე რეგიონი',false);return;}
+  if(!phone){showMsg('ჩაწერე ტელეფონი',false);return;}
+  const btn=$('sendBtn');btn.disabled=true;btn.textContent='⏳ იგზავნება…';
+  const rec={id:String(Date.now())+Math.floor(Math.random()*1000),name,company_type:ctype,company:$('f_company').value.trim(),idc:$('f_idc').value.trim(),
+    region:$('f_region').value,municipality:$('f_muni').value,address:$('f_addr').value.trim(),monthly:$('f_monthly').value.trim(),
+    experience:exp,phone,contact2:$('f_contact2').value.trim(),note:$('f_note').value.trim()};
+  const msg='🤝 <b>ახალი წარმომადგენლობის განაცხადი</b>\n\n👤 <b>'+esc(name)+'</b> · '+esc(ctype)+(rec.company?(' — '+esc(rec.company)):'')+(rec.idc?(' · ს/კ '+esc(rec.idc)):'')+
+    '\n📍 '+esc(rec.region)+(rec.municipality?(' · '+esc(rec.municipality)):'')+(rec.address?('\n🏪 '+esc(rec.address)):'')+
+    (rec.monthly?('\n📦 თვიური: '+esc(rec.monthly)):'')+(rec.experience?('\n💼 გამოცდილება: '+esc(rec.experience)):'')+
+    '\n📞 '+esc(phone)+(rec.contact2?(' · '+esc(rec.contact2)):'')+(rec.note?('\n📝 '+esc(rec.note)):'');
+  let saved=false;
+  try{const {error}=await sb.from('distributors').insert(rec);if(!error)saved=true;}catch(e){}
+  try{await sb.functions.invoke('telegram-notify',{body:{text:msg}});}catch(e){}
+  if(saved || true){$('formCard').style.display='none';$('doneCard').style.display='block';window.scrollTo({top:0,behavior:'smooth'});}
+  else{showMsg('ვერ გაიგზავნა — დაგვირეკე 595 533 500',false);btn.disabled=false;btn.textContent='📩 განაცხადის გაგზავნა';}
+};
+function esc(s){return String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));}
+</script>
+</body>
+</html>
