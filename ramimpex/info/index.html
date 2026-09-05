@@ -126,6 +126,13 @@ tr:last-child td{border-bottom:none}
  .hero h1{font-size:27px}
  .loc{flex-direction:column;text-align:center}
 }
+/* recommendations + stove */
+.recwrap{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.recsvg{flex:0 0 280px;max-width:320px;background:linear-gradient(160deg,#241507,#0b0603);border-radius:16px;padding:14px;border:2px solid #e7dcc9}
+.reclist{flex:1;min-width:250px;list-style:none;display:flex;flex-direction:column;gap:10px;margin:0;padding:0}
+.reclist li{background:var(--card);border:1.5px solid var(--line);border-left:5px solid var(--o);border-radius:12px;padding:12px 15px;font-weight:600;font-size:15px;color:#3a2f22;line-height:1.4}
+.reclist li b{color:var(--g)}
+@media(max-width:560px){.recsvg{flex:0 0 100%;max-width:100%}}
 /* distributors directory (ჩამონათვალი) */
 .dist-become{display:inline-flex;align-items:center;gap:8px;background:var(--o);color:#fff;font-weight:800;font-size:15px;text-decoration:none;border-radius:11px;padding:11px 20px;margin-bottom:16px}
 .dcard .dsub{font-weight:700;font-size:13px;color:var(--mut);margin-top:1px}
@@ -276,6 +283,28 @@ const T={
   c_call:'📞 Զանգահարել'}
 };
 function esc(s){return s;}
+const STOVE_SVG='<svg viewBox="0 0 900 900" width="100%" xmlns="http://www.w3.org/2000/svg">'+
+ '<defs><linearGradient id="st1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b6f75"/><stop offset=".45" stop-color="#3a3d42"/><stop offset="1" stop-color="#1c1e21"/></linearGradient>'+
+ '<linearGradient id="st2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a4d52"/><stop offset="1" stop-color="#141517"/></linearGradient>'+
+ '<linearGradient id="st3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#55585d"/><stop offset="1" stop-color="#232528"/></linearGradient></defs>'+
+ '<g stroke="#2a2c2f" stroke-width="14" stroke-linecap="round"><line x1="250" y1="640" x2="215" y2="820"/><line x1="640" y1="640" x2="700" y2="820"/><line x1="360" y1="655" x2="345" y2="805"/><line x1="560" y1="655" x2="600" y2="805"/><line x1="230" y1="760" x2="680" y2="760"/></g>'+
+ '<polygon points="250,250 640,250 700,300 700,655 250,655" fill="url(#st1)" stroke="#111" stroke-width="3"/>'+
+ '<polygon points="250,250 640,250 700,300 260,300" fill="url(#st2)" stroke="#111" stroke-width="3"/>'+
+ '<polygon points="640,250 700,300 700,655 640,610" fill="#17181a" stroke="#111" stroke-width="3"/>'+
+ '<rect x="300" y="150" width="70" height="105" rx="6" fill="url(#st2)" stroke="#111" stroke-width="3"/><ellipse cx="335" cy="152" rx="35" ry="12" fill="#0d0e0f" stroke="#111" stroke-width="3"/>'+
+ '<rect x="285" y="330" width="330" height="120" rx="8" fill="url(#st3)" stroke="#0c0c0c" stroke-width="4"/><rect x="600" y="378" width="34" height="24" rx="5" fill="#7a7d82"/>'+
+ '<rect x="285" y="462" width="330" height="120" rx="8" fill="url(#st3)" stroke="#0c0c0c" stroke-width="4"/><g stroke="#0b0b0b" stroke-width="7"><line x1="315" y1="500" x2="585" y2="500"/><line x1="315" y1="522" x2="585" y2="522"/><line x1="315" y1="544" x2="585" y2="544"/></g><rect x="600" y="508" width="34" height="24" rx="5" fill="#7a7d82"/>'+
+ '<rect x="300" y="596" width="120" height="46" rx="6" fill="url(#st3)" stroke="#0c0c0c" stroke-width="3"/>'+
+ '<g font-weight="900" font-size="34" font-family="system-ui"><circle cx="335" cy="120" r="26" fill="#F2B807"/><text x="335" y="132" text-anchor="middle" fill="#2a1a05">1</text>'+
+ '<circle cx="670" cy="522" r="26" fill="#2ec77e"/><text x="670" y="534" text-anchor="middle" fill="#08331e">2</text>'+
+ '<circle cx="360" cy="690" r="26" fill="#c9701a"/><text x="360" y="702" text-anchor="middle" fill="#fff">3</text>'+
+ '<line x1="360" y1="668" x2="360" y2="640" stroke="#c9701a" stroke-width="4"/><line x1="646" y1="522" x2="600" y2="522" stroke="#2ec77e" stroke-width="4"/></g></svg>';
+const REC={
+ ka:{h:'⚙️ გამოყენების წესები — ღუმელი / რეკომენდაცია',pts:['<b>1</b> ცხაურიანი ფეჩი — <b>ჰაერი ქვევიდან</b> შემოდის.','<b>2</b> კარგი გამწოვობა — ღუმელის მილი <b>5–6 მ-ზე</b> ნაკლები არ იყოს.','<b>3</b> ნაცრის კარი ქვევით აწვდის ჰაერს — წვის ტემპერატურა <b>ჰაერზეა</b> დამოკიდებული.','ქვაბი/ბოილერი <b>ქვანახშირზე გათვლილი</b> → ანთრაციტიც მიდის (ზუსტდება მწარმოებელთან/ხელოსანთან).','<b>თუჯის ცხაური</b> იცავს ღუმელს.']},
+ az:{h:'⚙️ İstifadə qaydaları — soba',pts:['<b>1</b> Barmaqlıqlı soba — <b>hava aşağıdan</b> gəlir.','<b>2</b> Yaxşı çəkmə — baca borusu <b>5–6 m-dən</b> az olmasın.','<b>3</b> Kül qapısı aşağıda hava verir — yanma temperaturu <b>havadan</b> asılıdır.','Kömürə hesablanmış qazan/boyler → <b>antrasit də işləyir</b> (istehsalçı ilə dəqiqləşir).','<b>Çuqun barmaqlıq</b> sobanı qoruyur.']},
+ hy:{h:'⚙️ Օգտագործման կանոններ — վառարան',pts:['<b>1</b> Վանդակավոր վառարան — <b>օդը ներքևից</b> է գալիս։','<b>2</b> Լավ ձգում — խողովակը <b>5–6 մ-ից</b> պակաս չլինի։','<b>3</b> Մոխրի դուռը ներքևում օդ է տալիս — այրման ջերմաստիճանը կախված է <b>օդից</b>։','Ածխի համար նախատեսված կաթսա/բոյլեր → <b>անտրացիտն էլ է աշխատում</b> (ճշտվում է արտադրողի հետ)։','<b>Չուգունե վանդակը</b> պաշտպանում է վառարանը։']},
+ ru:{h:'⚙️ Правила использования — печь',pts:['<b>1</b> Печь с колосником — <b>воздух снизу</b>.','<b>2</b> Хорошая тяга — труба <b>не менее 5–6 м</b>.','<b>3</b> Зольная дверца снизу подаёт воздух — температура горения зависит от <b>воздуха</b>.','Котёл/бойлер, рассчитанный на уголь → <b>антрацит тоже подходит</b> (уточняется у производителя).','<b>Чугунный колосник</b> защищает печь.']}
+};
 function render(lang){
  window.RI_LANG=lang;
  const t=T[lang]||T.ka;
@@ -309,6 +338,7 @@ function render(lang){
    '<section><h2>'+t.cert_h+'</h2><div class="pills"><span class="pill">ISO 9001</span><span class="pill">ISO 14001</span><span class="pill">ISO 45001</span><span class="pill o">ГОСТ Р 57016-2016</span><span class="pill">MSDS</span><span class="pill">COTECNA</span></div></section>'+
    '<section><h2>'+t.price_h+'</h2><div class="cards">'+cards+'</div><div class="pinfo">'+pinfo+'</div></section>'+
    '<section><h2>'+t.rules_h+'</h2><div class="rules">'+rules+'</div></section>'+
+   '<section><h2>'+(REC[lang]||REC.ka).h+'</h2><div class="recwrap"><div class="recsvg">'+STOVE_SVG+'</div><ul class="reclist">'+(REC[lang]||REC.ka).pts.map(p=>'<li>'+p+'</li>').join('')+'</ul></div></section>'+
    '<section><h2>'+t.safe_h+'</h2><div class="recbox">'+safe+'</div></section>'+
    '<section><h2>'+t.wh_h+'</h2><div class="loc"><a class="qr" href="'+MAPS+'" target="_blank" rel="noopener"><img src="qr.png" alt="QR"></a><div class="lt"><div class="h">'+t.wh_h+'</div><div class="d">'+t.wh_t+'</div><a class="mapbtn" href="'+MAPS+'" target="_blank" rel="noopener">'+t.wh_btn+'</a></div></div></section>'+
    '<section id="distSec"></section>'+
