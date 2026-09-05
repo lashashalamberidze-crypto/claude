@@ -29,6 +29,48 @@ scene(8.1,'','ანთრაციტის შეშასთან შედ�
 
 // how to use / what to consider
 scene(7.8,'⚙️ რა უნდა გაითვალისწინოთ','<span class="num">1</span> სჭირდება <b>ჰაერის მიწოდება ქვემოდან</b> — ცხაურიანი ფეჩი.');
+// stove illustration scene
+push(8.4,'s-stove',`<div class="kh">✅ ასეთი ღუმელი გამოდგება</div>
+ <div class="stovewrap">
+ <svg viewBox="0 0 900 900" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" font-family="${F}">
+  <defs>
+   <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6b6f75"/><stop offset=".45" stop-color="#3a3d42"/><stop offset="1" stop-color="#1c1e21"/></linearGradient>
+   <linearGradient id="steelD" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a4d52"/><stop offset="1" stop-color="#141517"/></linearGradient>
+   <linearGradient id="door" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#55585d"/><stop offset="1" stop-color="#232528"/></linearGradient>
+  </defs>
+  <!-- legs -->
+  <g stroke="#2a2c2f" stroke-width="14" stroke-linecap="round">
+   <line x1="250" y1="640" x2="215" y2="820"/><line x1="640" y1="640" x2="700" y2="820"/>
+   <line x1="360" y1="655" x2="345" y2="805"/><line x1="560" y1="655" x2="600" y2="805"/>
+   <line x1="230" y1="760" x2="680" y2="760"/>
+  </g>
+  <!-- body -->
+  <polygon points="250,250 640,250 700,300 700,655 250,655" fill="url(#steel)" stroke="#111" stroke-width="3"/>
+  <polygon points="250,250 640,250 700,300 260,300" fill="url(#steelD)" stroke="#111" stroke-width="3"/>
+  <polygon points="640,250 700,300 700,655 640,610" fill="#17181a" stroke="#111" stroke-width="3"/>
+  <!-- chimney -->
+  <rect x="300" y="150" width="70" height="105" rx="6" fill="url(#steelD)" stroke="#111" stroke-width="3"/>
+  <ellipse cx="335" cy="152" rx="35" ry="12" fill="#0d0e0f" stroke="#111" stroke-width="3"/>
+  <!-- upper door -->
+  <rect x="285" y="330" width="330" height="120" rx="8" fill="url(#door)" stroke="#0c0c0c" stroke-width="4"/>
+  <rect x="600" y="378" width="34" height="24" rx="5" fill="#7a7d82"/>
+  <!-- grate door (middle) -->
+  <rect x="285" y="462" width="330" height="120" rx="8" fill="url(#door)" stroke="#0c0c0c" stroke-width="4"/>
+  <g stroke="#0b0b0b" stroke-width="7"><line x1="315" y1="500" x2="585" y2="500"/><line x1="315" y1="522" x2="585" y2="522"/><line x1="315" y1="544" x2="585" y2="544"/></g>
+  <rect x="600" y="508" width="34" height="24" rx="5" fill="#7a7d82"/>
+  <!-- ash door (small, bottom) -->
+  <rect x="300" y="596" width="120" height="46" rx="6" fill="url(#door)" stroke="#0c0c0c" stroke-width="3"/>
+  <!-- labels -->
+  <g font-weight="900" font-size="30" fill="#ffd486">
+   <line x1="335" y1="150" x2="150" y2="95" stroke="#F2B807" stroke-width="4"/><circle cx="335" cy="150" r="7" fill="#F2B807"/>
+   <text x="20" y="86">🌫️ საკვამური</text><text x="20" y="120" font-size="24" fill="#e9d9c2">(წევა · 5–6 მ+)</text>
+   <line x1="585" y1="522" x2="760" y2="470" stroke="#2ec77e" stroke-width="4"/><circle cx="585" cy="522" r="7" fill="#2ec77e"/>
+   <text x="640" y="455" fill="#7dfab0">🔲 ცხაური</text>
+   <line x1="360" y1="619" x2="150" y2="700" stroke="#F2B807" stroke-width="4"/><circle cx="360" cy="619" r="7" fill="#F2B807"/>
+   <text x="20" y="726">💨 ნაცრის კარი</text><text x="20" y="760" font-size="24" fill="#e9d9c2">ჰაერი ქვევიდან ⬆</text>
+  </g>
+ </svg></div>
+ ${foot}`);
 scene(8.4,'','<span class="num">2</span> საჭიროა <b>კარგი გამწოვობა</b>, რომ ცეცხლი არ ჩაქრეს — ღუმელის მილი <b>5–6 მეტრზე</b> ნაკლები არ უნდა იყოს.');
 scene(7.8,'','<span class="num">3</span> წვის ტემპერატურა <b>ჰაერის მიწოდებაზეა</b> დამოკიდებული — რაც მეტი ჰაერი, მით მაღალი სიმხურვალე.');
 
@@ -56,6 +98,8 @@ const CSS=`
 .s-body .bd b{color:#ffce7d}
 .num{display:inline-flex;align-items:center;justify-content:center;width:74px;height:74px;border-radius:50%;background:linear-gradient(160deg,#F2B807,#d97a12);color:#2a1a05;font-size:44px;font-weight:900;margin-right:16px;vertical-align:middle}
 .ibg{position:absolute;inset:0;background:radial-gradient(900px 620px at 50% 30%,rgba(242,184,7,.16),transparent 62%)}
+.s-stove .kh{font-size:56px;font-weight:900;line-height:1.1;margin-bottom:24px;text-align:center;color:#7dfab0}
+.s-stove .stovewrap{flex:1;max-height:1080px;display:flex;align-items:center;justify-content:center;margin-bottom:40px}
 .s-out{align-items:center;text-align:center}
 .otop{display:flex;align-items:center;gap:20px;justify-content:center}
 .lg{width:92px;height:92px}.otop b{font-size:50px;font-weight:900;letter-spacing:.5px}
