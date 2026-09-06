@@ -36,6 +36,17 @@ img{max-width:100%;display:block}
 .lk.g{border-color:#bfe3ce;background:#eef7f1;color:var(--g)}
 .lk.o{border-color:#f0d98a;background:#fff7e4;color:#8a6a00}
 .lk.v{border-color:#d9c8f5;background:#f6f2fd;color:#5a2ea6}
+.reg-grp{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.reg-grp .rh{font-weight:900;font-size:16px;color:var(--g);margin-bottom:8px}
+.muni-grp{margin:8px 0 4px}.muni-grp .mh{font-weight:800;font-size:14px;color:#8a2b00;margin-bottom:5px}
+.dcard{display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-top:1px dashed var(--line)}
+.dcard:first-of-type{border-top:none}
+.dcard .di{flex:0 0 auto;font-size:22px}
+.dcard .dt{font-weight:800;font-size:15px;color:#3a2410}
+.dcard .dsub{font-weight:700;font-size:13px;color:var(--mut);margin-top:1px}
+.dcard .dd{font-weight:600;font-size:13.5px;color:var(--mut);line-height:1.4;margin-top:2px}
+.dcard .dd a{color:var(--g);font-weight:800;text-decoration:none}
+.dist-empty{background:#eef7f1;border:1.5px solid #bfe3ce;border-radius:12px;padding:16px;text-align:center;font-weight:700;color:var(--g)}
 .foot{text-align:center;color:var(--mut);font-size:13px;margin-top:18px;line-height:1.7}
 .foot a{color:var(--g);font-weight:800;text-decoration:none}
 @media(max-width:520px){.links{grid-template-columns:1fr}.loc{flex-direction:column;text-align:center}}
@@ -72,16 +83,32 @@ img{max-width:100%;display:block}
   <h2>🔗 სასარგებლო ბმულები</h2>
   <div class="links">
    <a class="lk g" href="../info/"><span class="e">📄</span> სრული ინფო & ფასები</a>
-   <a class="lk" href="../info/#distSec"><span class="e">🚚</span> დისტრიბუტორები რეგიონებში</a>
    <a class="lk v" href="../distribution/"><span class="e">🤝</span> გახდი დისტრიბუტორი</a>
    <a class="lk o" href="../bank/"><span class="e">🏦</span> საბანკო რეკვიზიტები</a>
   </div>
  </div>
+
+ <div class="card"><section id="distSec"><h2>🚚 ჩვენი დისტრიბუტორები</h2><p style="color:var(--mut);font-size:13px">იტვირთება…</p></section></div>
 
  <div class="foot">
    📞 <a href="tel:+995595533500">595 533 500</a> · ✉ info@ramimpex.com.ge<br>
    🌐 <a href="https://ramimpex.com.ge/info" target="_blank">ramimpex.com.ge</a>
  </div>
 </div>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/+esm";
+const sb=createClient("https://mhyoqypzacvztwhntsvv.supabase.co","sb_publishable_FXhFmDRboFeOEqxyvwUePg_SgIwnmmM");
+const esc=s=>(s==null?'':(''+s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function card(d){const nm=d.shop_name||d.name||'—';const sub=(d.shop_name&&d.name&&d.shop_name!==d.name)?('<div class="dsub">'+esc(d.name)+'</div>'):'';const addr=d.address?('<div class="dd">📍 '+esc(d.address)+'</div>'):'';const ph=d.phone?('<div class="dd"><a href="tel:'+esc((''+d.phone).replace(/\s/g,''))+'">📞 '+esc(d.phone)+'</a></div>'):'';return '<div class="dcard"><span class="di">🏬</span><div style="flex:1"><div class="dt">'+esc(nm)+'</div>'+sub+addr+ph+'</div></div>';}
+(async()=>{
+ const sec=document.getElementById('distSec');
+ let list=[];try{const {data,error}=await sb.from('distributors').select('*').eq('approved',true).order('region',{ascending:true});if(error)throw error;list=data||[];}catch(e){list=[];}
+ let h='<h2>🚚 ჩვენი დისტრიბუტორები</h2><p style="color:var(--mut);font-weight:600;font-size:13.5px;margin:-4px 0 12px">სად შეიძლია ბრიკეტის შეძენა — რეგიონებისა და მუნიციპალიტეტების მიხედვით</p>';
+ if(!list.length){h+='<div class="dist-empty">დისტრიბუტორები მალე დაემატება. დაინტერესებული ხარ? <a href="../distribution/" style="color:var(--o);font-weight:800">🚚 გახდი დისტრიბუტორი</a></div>';sec.innerHTML=h;return;}
+ const byReg={};list.forEach(d=>{const r=d.region||'—';const m=d.municipality||'';(byReg[r]=byReg[r]||{})[m]=(byReg[r][m]||[]);byReg[r][m].push(d);});
+ Object.keys(byReg).sort().forEach(r=>{h+='<div class="reg-grp"><div class="rh">📍 '+esc(r)+'</div>';Object.keys(byReg[r]).sort().forEach(m=>{if(m)h+='<div class="muni-grp"><div class="mh">🏛 '+esc(m)+'</div>'+byReg[r][m].map(card).join('')+'</div>';else h+=byReg[r][m].map(card).join('');});h+='</div>';});
+ sec.innerHTML=h;
+})();
+</script>
 </body>
 </html>
