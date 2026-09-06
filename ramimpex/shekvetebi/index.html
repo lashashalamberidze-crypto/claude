@@ -1007,7 +1007,7 @@ function reportModal(){
   const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
   ov.innerHTML='<div class="card salform" style="max-width:520px;width:100%"><h2>📈 ანგარიშის PDF</h2>'+
    '<p class="muted" style="font-size:12.5px">გაყიდვები/შემოსავალი/ხარჯი ავტომატურად დაითვლება. ქვემოთ (არჩევით) ჩაწერე ფეისბუქის ციფრები — Professional dashboard-იდან.</p>'+
-   '<div class="fg" style="grid-template-columns:1fr 1fr;margin-top:10px"><div><label>პერიოდი (წარწერა)</label><input id="rpPeriod" placeholder="მაგ. 28 დღე / ზამთარი 2026"></div><div><label>👁 ნახვები (Views)</label><input id="rpViews" placeholder="მაგ. 137060"></div>'+
+   '<div class="fg" style="grid-template-columns:1fr 1fr;margin-top:10px"><div><label>ენა / язык</label><select id="rpLang"><option value="ka">ქართული</option><option value="ru">Русский</option></select></div><div><label>პერიოდი (წარწერა)</label><input id="rpPeriod" placeholder="მაგ. 28 დღე / ზამთარი 2026"></div><div><label>👁 ნახვები (Views)</label><input id="rpViews" placeholder="მაგ. 137060"></div>'+
    '<div><label>💬 ჩართულობა</label><input id="rpEng" placeholder="მაგ. 5587"></div><div><label>👥 ახალი გამომწერი</label><input id="rpFol" placeholder="მაგ. 308"></div>'+
    '<div><label>Views %</label><input id="rpViewsP" placeholder="მაგ. 376"></div><div><label>Engagement %</label><input id="rpEngP" placeholder="მაგ. 440"></div>'+
    '<div><label>Followers %</label><input id="rpFolP" placeholder="მაგ. 806"></div></div>'+
@@ -1017,33 +1017,39 @@ function reportModal(){
   q('#rpClose').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove();};
   q('#rpGo').onclick=async()=>{const btn=q('#rpGo');btn.disabled=true;btn.textContent='⏳ ვამზადებ…';
     const soc={period:q('#rpPeriod').value.trim(),views:q('#rpViews').value.trim(),eng:q('#rpEng').value.trim(),fol:q('#rpFol').value.trim(),viewsP:q('#rpViewsP').value.trim(),engP:q('#rpEngP').value.trim(),folP:q('#rpFolP').value.trim()};
+    const lang=q('#rpLang').value||'ka';
     try{let exp=0;try{const {data}=await sb.from('expenses').select('amount');(data||[]).forEach(e=>exp+=(+e.amount||0));}catch(e){}
-      const html=reportHTML(soc,exp);await htmlToPDF(html,'RAM_IMPEX_angarishi_'+todayStr(),'p',760);ov.remove();}
+      const html=reportHTML(soc,exp,lang);await htmlToPDF(html,'RAM_IMPEX_'+(lang==='ru'?'otchet':'angarishi')+'_'+todayStr(),'p',760);ov.remove();}
     catch(e){q('#rpMsg').innerHTML='<span style="color:#b00020">ვერ შეიქმნა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='📄 PDF-ის შექმნა';}};
 }
-function reportHTML(soc,expenses){
+const RPL={
+ ka:{sub:'📈 შემაჯამებელი ანგარიში',date:'თარიღი',sold:'სულ გაყიდული',kg:'კგ',rev:'სულ შემოსავალი',exp:'ხარჯები',profit:'სუფთა მოგება',retail:'🛒 საცალო',dist:'🚚 დისტრიბუცია',paid:'გადახდილი',debt:'ვალი',trend:'📅 შემოსავლის ტენდენცია (₾)',nodata:'მონაცემები ჯერ არ არის.',soc:'📱 სოციალური აქტივობა (Facebook)',views:'👁 ნახვები',eng:'💬 ჩართულობა',fol:'👥 ახალი გამომწერი',foot:'შპს „რამ იმპექს" · 📞 595 533 500 · 🌐 ramimpex.com.ge · დაბეჭდილია',mon:{'01':'იან','02':'თებ','03':'მარ','04':'აპრ','05':'მაი','06':'ივნ','07':'ივლ','08':'აგვ','09':'სექ','10':'ოქტ','11':'ნოე','12':'დეკ'}},
+ ru:{sub:'📈 Сводный отчёт',date:'Дата',sold:'Всего продано',kg:'кг',rev:'Общий доход',exp:'Расходы',profit:'Чистая прибыль',retail:'🛒 Розница',dist:'🚚 Дистрибуция',paid:'Оплачено',debt:'Долг',trend:'📅 Динамика дохода (₾)',nodata:'Пока нет данных.',soc:'📱 Активность (Facebook)',views:'👁 Просмотры',eng:'💬 Вовлечённость',fol:'👥 Новые подписчики',foot:'ООО «Рам Импекс» · 📞 595 533 500 · 🌐 ramimpex.com.ge · Распечатано',mon:{'01':'янв','02':'фев','03':'мар','04':'апр','05':'май','06':'июн','07':'июл','08':'авг','09':'сен','10':'окт','11':'ноя','12':'дек'}}
+};
+function reportHTML(soc,expenses,lang){
+  const L=RPL[lang]||RPL.ka;
   const rt=retailTotals(),dt=distTotals();
   const revenue=rt.T+dt.soldAmt, profit=revenue-(expenses||0);
   const kg=retailKg()+dt.sold;
   const tr=monthTrend();const mx=Math.max(1,...tr.map(x=>x[1]));
-  const MON={ '01':'იან','02':'თებ','03':'მარ','04':'აპრ','05':'მაი','06':'ივნ','07':'ივლ','08':'აგვ','09':'სექ','10':'ოქტ','11':'ნოე','12':'დეკ'};
+  const MON=L.mon;
   const bars=tr.map(x=>{const h=Math.round(x[1]/mx*150);const lbl=MON[x[0].slice(5,7)]||x[0].slice(5,7);return '<td style="vertical-align:bottom;text-align:center;padding:0 6px"><div style="font-size:11px;font-weight:800;color:#0B6B3C">'+money(x[1])+'</div><div style="width:44px;height:'+h+'px;margin:4px auto 0;background:linear-gradient(180deg,#0F8A4D,#0B6B3C);border-radius:6px 6px 0 0"></div><div style="font-size:12px;color:#5c6b62;font-weight:700;border-top:2px solid #e3ece7;margin-top:4px;padding-top:4px">'+lbl+'</div></td>';}).join('');
   const kpi=(l,v,c)=>'<td style="padding:6px"><div style="background:#f6faf8;border-left:5px solid '+(c||'#0B6B3C')+';border-radius:10px;padding:10px 12px"><div style="font-size:11px;color:#556;font-weight:700">'+l+'</div><div style="font-size:20px;font-weight:900;color:'+(c||'#0B6B3C')+'">'+v+'</div></div></td>';
   const soch=(soc&&(soc.views||soc.eng||soc.fol))?(
-    '<h3 style="font-size:15px;color:#0B6B3C;margin:16px 0 6px;border-left:4px solid #6d3ad6;padding-left:8px">📱 სოციალური აქტივობა (Facebook)'+(soc.period?' — '+esc(soc.period):'')+'</h3>'+
+    '<h3 style="font-size:15px;color:#0B6B3C;margin:16px 0 6px;border-left:4px solid #6d3ad6;padding-left:8px">'+L.soc+(soc.period?' — '+esc(soc.period):'')+'</h3>'+
     '<table style="width:100%;border-collapse:separate;border-spacing:8px"><tr>'+
-     '<td style="width:33%"><div style="background:#f6f2fd;border:1px solid #d9d0f0;border-radius:10px;padding:10px 12px"><div style="font-size:11px;color:#556;font-weight:700">👁 ნახვები</div><div style="font-size:20px;font-weight:900;color:#3a2b8a">'+esc(soc.views||'—')+'</div>'+(soc.viewsP?'<div style="font-size:12px;font-weight:900;color:#0B6B3C">↑ '+esc(soc.viewsP)+'%</div>':'')+'</div></td>'+
-     '<td style="width:33%"><div style="background:#f6f2fd;border:1px solid #d9d0f0;border-radius:10px;padding:10px 12px"><div style="font-size:11px;color:#556;font-weight:700">💬 ჩართულობა</div><div style="font-size:20px;font-weight:900;color:#3a2b8a">'+esc(soc.eng||'—')+'</div>'+(soc.engP?'<div style="font-size:12px;font-weight:900;color:#0B6B3C">↑ '+esc(soc.engP)+'%</div>':'')+'</div></td>'+
-     '<td style="width:33%"><div style="background:#f6f2fd;border:1px solid #d9d0f0;border-radius:10px;padding:10px 12px"><div style="font-size:11px;color:#556;font-weight:700">👥 ახალი გამომწერი</div><div style="font-size:20px;font-weight:900;color:#3a2b8a">'+esc(soc.fol||'—')+'</div>'+(soc.folP?'<div style="font-size:12px;font-weight:900;color:#0B6B3C">↑ '+esc(soc.folP)+'%</div>':'')+'</div></td>'+
+     '<td style="width:33%"><div style="background:#f6f2fd;border:1px solid #d9d0f0;border-radius:10px;padding:10px 12px"><div style="font-size:11px;color:#556;font-weight:700">'+L.views+'</div><div style="font-size:20px;font-weight:900;color:#3a2b8a">'+esc(soc.views||'—')+'</div>'+(soc.viewsP?'<div style="font-size:12px;font-weight:900;color:#0B6B3C">↑ '+esc(soc.viewsP)+'%</div>':'')+'</div></td>'+
+     '<td style="width:33%"><div style="background:#f6f2fd;border:1px solid #d9d0f0;border-radius:10px;padding:10px 12px"><div style="font-size:11px;color:#556;font-weight:700">'+L.eng+'</div><div style="font-size:20px;font-weight:900;color:#3a2b8a">'+esc(soc.eng||'—')+'</div>'+(soc.engP?'<div style="font-size:12px;font-weight:900;color:#0B6B3C">↑ '+esc(soc.engP)+'%</div>':'')+'</div></td>'+
+     '<td style="width:33%"><div style="background:#f6f2fd;border:1px solid #d9d0f0;border-radius:10px;padding:10px 12px"><div style="font-size:11px;color:#556;font-weight:700">'+L.fol+'</div><div style="font-size:20px;font-weight:900;color:#3a2b8a">'+esc(soc.fol||'—')+'</div>'+(soc.folP?'<div style="font-size:12px;font-weight:900;color:#0B6B3C">↑ '+esc(soc.folP)+'%</div>':'')+'</div></td>'+
     '</tr></table>'):'';
   return '<div style="font-family:\'Noto Sans Georgian\',sans-serif;padding:26px;color:#14261C;background:#fff;width:760px">'+
-   '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #0F8A4D;padding-bottom:10px;margin-bottom:14px"><div><div style="font-size:24px;font-weight:900;color:#0B6B3C">RAM IMPEX</div><div style="font-size:13px;color:#5C6B62">📈 შემაჯამებელი ანგარიში</div></div><div style="text-align:right;font-size:12px;color:#5C6B62">თარიღი: '+todayStr()+'</div></div>'+
-   '<table style="width:100%;border-collapse:collapse"><tr>'+kpi('სულ გაყიდული','~'+fmtKg(kg)+' კგ')+kpi('სულ შემოსავალი',money(revenue)+' ₾','#2b6cb0')+kpi('ხარჯები',money(expenses||0)+' ₾','#c9701a')+kpi('სუფთა მოგება',money(profit)+' ₾','#0B6B3C')+'</tr><tr>'+
-     kpi('🛒 საცალო',money(rt.T)+' ₾')+kpi('🚚 დისტრიბუცია',money(dt.soldAmt)+' ₾','#6d3ad6')+kpi('გადახდილი',money(rt.P+dt.paid)+' ₾','#0B6B3C')+kpi('ვალი',money(rt.due+dt.debt)+' ₾','#b00020')+'</tr></table>'+
-   '<h3 style="font-size:15px;color:#0B6B3C;margin:18px 0 6px;border-left:4px solid #F2B807;padding-left:8px">📅 შემოსავლის ტენდენცია (₾)</h3>'+
-   (tr.length?('<table style="width:100%;border-collapse:collapse;height:210px"><tr>'+bars+'</tr></table>'):'<div style="color:#8a939c;font-size:13px">მონაცემები ჯერ არ არის.</div>')+
+   '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #0F8A4D;padding-bottom:10px;margin-bottom:14px"><div><div style="font-size:24px;font-weight:900;color:#0B6B3C">RAM IMPEX</div><div style="font-size:13px;color:#5C6B62">'+L.sub+'</div></div><div style="text-align:right;font-size:12px;color:#5C6B62">'+L.date+': '+todayStr()+'</div></div>'+
+   '<table style="width:100%;border-collapse:collapse"><tr>'+kpi(L.sold,'~'+fmtKg(kg)+' '+L.kg)+kpi(L.rev,money(revenue)+' ₾','#2b6cb0')+kpi(L.exp,money(expenses||0)+' ₾','#c9701a')+kpi(L.profit,money(profit)+' ₾','#0B6B3C')+'</tr><tr>'+
+     kpi(L.retail,money(rt.T)+' ₾')+kpi(L.dist,money(dt.soldAmt)+' ₾','#6d3ad6')+kpi(L.paid,money(rt.P+dt.paid)+' ₾','#0B6B3C')+kpi(L.debt,money(rt.due+dt.debt)+' ₾','#b00020')+'</tr></table>'+
+   '<h3 style="font-size:15px;color:#0B6B3C;margin:18px 0 6px;border-left:4px solid #F2B807;padding-left:8px">'+L.trend+'</h3>'+
+   (tr.length?('<table style="width:100%;border-collapse:collapse;height:210px"><tr>'+bars+'</tr></table>'):'<div style="color:#8a939c;font-size:13px">'+L.nodata+'</div>')+
    soch+
-   '<div style="margin-top:18px;font-size:11px;color:#5C6B62;border-top:1px solid #ddd;padding-top:8px">RAM IMPEX · შპს „რამ იმპექს" · 📞 595 533 500 · 🌐 ramimpex.com.ge · დაბეჭდილია '+todayStr()+'</div></div>';
+   '<div style="margin-top:18px;font-size:11px;color:#5C6B62;border-top:1px solid #ddd;padding-top:8px">RAM IMPEX · '+L.foot+' '+todayStr()+'</div></div>';
 }
 async function distPickup(){
   const did=$('dpDist').value;const code=$('dpProd').value;const qty=parseFloat($('dpQty').value);const price=parseFloat($('dpPrice').value)||0;const date=$('dpDate').value||todayStr();
