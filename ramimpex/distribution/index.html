@@ -104,9 +104,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g2);box-
 
    <div id="coRow" style="display:none"><label>კომპანიის დასახელება</label><input id="f_company" placeholder="შპს ..."></div>
 
-   <label>მაღაზიის/ობიექტის სახელი (არჩ.)</label>
-   <input id="f_shop" placeholder="მაგ. მაღაზია „თბილი კერა" — გამოჩნდება რუკაზეც">
-
    <div class="row2">
      <div><label>რეგიონი <span class="req">*</span></label><select id="f_region"><option value="">— აირჩიე —</option></select></div>
      <div><label>მუნიციპალიტეტი <span class="req">*</span></label><select id="f_muni"><option value="">— ჯერ რეგიონი —</option></select></div>
@@ -194,10 +191,9 @@ $('sendBtn').onclick=async()=>{
   if(!phone){showMsg('ჩაწერე ტელეფონი',false);return;}
   const btn=$('sendBtn');btn.disabled=true;btn.textContent='⏳ იგზავნება…';
   const rec={id:String(Date.now())+Math.floor(Math.random()*1000),name,company_type:ctype,company:$('f_company').value.trim(),idc:$('f_idc').value.trim(),
-    shop_name:$('f_shop').value.trim(),region:$('f_region').value,municipality:$('f_muni').value,address:$('f_addr').value.trim(),monthly:$('f_monthly').value.trim(),
+    region:$('f_region').value,municipality:$('f_muni').value,address:$('f_addr').value.trim(),monthly:$('f_monthly').value.trim(),
     experience:$('f_exp').value,channel,transport,phone,contact2:$('f_contact2').value.trim(),note:$('f_note').value.trim()};
   const msg='🤝 <b>ახალი წარმომადგენლობის განაცხადი</b>\n\n👤 <b>'+esc(name)+'</b> · '+esc(ctype)+(rec.company?(' — '+esc(rec.company)):'')+(rec.idc?(' · ს/კ '+esc(rec.idc)):'')+
-    (rec.shop_name?('\n🏬 '+esc(rec.shop_name)):'')+
     '\n📍 '+esc(rec.region)+(rec.municipality?(' · '+esc(rec.municipality)):'')+(rec.address?('\n🏪 '+esc(rec.address)):'')+
     '\n🛒 გაყიდვა: '+esc(channel)+'\n🚚 ტრანსპორტი: '+esc(transport)+
     (rec.monthly?('\n📦 თვიური: '+esc(rec.monthly)):'')+(rec.experience?('\n💼 გამოცდილება: '+esc(rec.experience)):'')+
