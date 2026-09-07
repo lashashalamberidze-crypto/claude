@@ -472,6 +472,18 @@ async function ensureDirs(){
       NEWMK.forEach(it=>{if(!plain.items.some(x=>x&&x.code===it.code))plain.items.push(it);});
       plain._mkPatch1=true;
     }}catch(e){}
+  // ერთჯერადი 2: კვერცხი/მზესუმზირა/ნაყინი ყუთები (მომწოდებლისგან) — შენიშვნით რისთვისაა
+  try{const plain=result.find(g=>g&&(g.id==='plainbox'||g.name==='სხვა მუყაოს ყუთები'));
+    if(plain&&!plain._mkPatch2){plain.items=plain.items||[];
+      const NEWMK2=[
+        {code:'МК-07',name:'გოფროყუთი',size:'595×320×355',mark:'П-32К СЕ',ply:'5',color:'მუყაოს ფერი',rub:67.43,cap:10350,pack:'Уп. 1404×954 — 450 шт',note:'🥚 კვერცხისთვის (Яйцо) · ფურაში 10350 ცალი'},
+        {code:'МК-08',name:'გოფროყუთი',size:'550×360×195',mark:'Т-25К С',ply:'3',color:'მუყაოს ფერი',rub:42.96,cap:17920,pack:'Уп. 1200×946 — 640 шт',note:'🌻 მზესუმზირისთვის (Семечка) · ფურაში 17920 ცალი'},
+        {code:'МК-09',name:'გოფროყუთი',size:'550×360×195',mark:'Т-24К С',ply:'3',color:'მუყაოს ფერი',rub:38.61,cap:17920,pack:'Уп. 1200×946 — 640 шт',note:'🌻 მზესუმზირისთვის (Семечка) · ფურაში 17920 ცალი'},
+        {code:'МК-10',name:'გოფროყუთი',size:'300×220×300',mark:'Т-23К В',ply:'3',color:'მუყაოს ფერი',rub:22.28,cap:36000,pack:'Уп. 1200×1082 — 1500 шт',note:'🍦 ნაყინისთვის (Мороженое) · ფურაში 36000 ცალი'}
+      ];
+      NEWMK2.forEach(it=>{if(!plain.items.some(x=>x&&x.code===it.code))plain.items.push(it);});
+      plain._mkPatch2=true;
+    }}catch(e){}
   DIRS=result;
   await sb.from('catalog').upsert({id:'main',dirs:DIRS,updated_at:new Date().toISOString()},{onConflict:'id'});
   return true;
