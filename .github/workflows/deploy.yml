@@ -47,5 +47,6 @@ jobs:
             **/.github/**
             sql/**
             supabase/**
+            myevents/**
             *.md
             README*

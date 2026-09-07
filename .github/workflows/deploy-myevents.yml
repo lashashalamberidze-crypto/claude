@@ -1,0 +1,48 @@
+# ============================================================================
+# myevents.ge — ავტომატური deploy (GitHub → cPanel FTP)
+#
+# ატვირთავს მხოლოდ `myevents/` საქაღალდის შიგთავსს საიტის ძირში.
+#
+# საჭიროა 3 secret (GitHub → Settings → Secrets and variables → Actions):
+#   MYEVENTS_FTP_SERVER    — მაგ. ftp.myevents.ge
+#   MYEVENTS_FTP_USERNAME  — cPanel FTP მომხმარებელი
+#   MYEVENTS_FTP_PASSWORD  — იმ FTP ანგარიშის პაროლი
+#
+# ⚠️ sms-proxy.php-ს API key სერვერზე ხელით ჩასვი (რეპოში key არ ინახება);
+#    deploy-ის exclude სიაში ის განზრახ არ არის, ამიტომ ატვირთვისას
+#    სერვერზე არსებული ვერსია გადაეწერება — key თავიდან ჩასვი, ან
+#    გადაარქვი სახელი და exclude-ში დაამატე.
+# ============================================================================
+name: Deploy to myevents.ge
+
+on:
+  push:
+    branches:
+      - main
+      - claude/wedding-planning-app-2sja7g
+    paths:
+      - 'myevents/**'
+      - '.github/workflows/deploy-myevents.yml'
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: FTP deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.MYEVENTS_FTP_SERVER }}
+          username: ${{ secrets.MYEVENTS_FTP_USERNAME }}
+          password: ${{ secrets.MYEVENTS_FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./myevents/
+          server-dir: ./
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/README.md

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ka"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ადმინი — myevents.ge</title>
+<meta name="robots" content="noindex">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .vrow{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid var(--line);
+    border-radius:var(--r);padding:13px;margin-bottom:10px}
+  .vrow .th{flex:0 0 96px;aspect-ratio:4/3;border-radius:11px;background:var(--sand) center/cover no-repeat;
+    display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:var(--muted)}
+  .vrow.pending{border-right:4px solid var(--gold)}
+</style>
+</head>
+<body>
+<div id="me-header"></div>
+<div class="wrap" id="app"><div class="loading"><span class="spin"></span> იტვირთება…</div></div>
+<div id="toasts"></div>
+
+<script src="assets/core.js"></script>
+<script>
+var ALL = [], TAB = 'pending';
+
+(async function () {
+  if (!(await ME.boot({ auth: true, active: '' }))) return;
+  var isAdmin = false;
+  try {
+    var r = await ME.sb().rpc('ev_is_admin');
+    isAdmin = !r.error && r.data === true;
+  } catch (e) {}
+  if (!isAdmin) {
+    ME.$('app').innerHTML = '<div class="empty"><div class="em">🔒</div>' +
+      '<h2>წვდომა შეზღუდულია</h2>' +
+      '<p class="small" style="margin-top:8px">ეს გვერდი მხოლოდ ადმინისთვისაა.<br>' +
+      'ადმინად დასანიშნად გაუშვი Supabase → SQL Editor-ში:</p>' +
+      '<pre style="text-align:right;direction:ltr;background:var(--sand);padding:12px;border-radius:12px;' +
+      'margin:12px auto;max-width:560px;overflow:auto;font-size:.78rem">update public.ev_profiles set role = \'admin\'\n' +
+      'where user_id = (select id from auth.users where email = \'' + ME.esc((ME.user && ME.user.email) || 'you@mail.com') + '\');</pre></div>';
+    return;
+  }
+  await load();
+})();
+
+async function load() {
+  var r = await ME.sb().from('ev_vendors').select('*').order('created_at', { ascending: false }).limit(500);
+  if (r.error) { ME.$('app').innerHTML = '<div class="empty">⚠️ ' + ME.esc(r.error.message) + '</div>'; return; }
+  ALL = r.data || [];
+  draw();
+}
+
+function draw() {
+  var cnt = { pending: 0, approved: 0, rejected: 0 };
+  ALL.forEach(function (v) { cnt[v.status] = (cnt[v.status] || 0) + 1; });
+  ME.$('app').innerHTML =
+    '<h1 style="font-size:1.6rem">🛡️ მოდერაცია</h1>' +
+    '<div class="muted small">ვენდორების განაცხადების განხილვა</div>' +
+    '<div class="stats" style="margin-top:14px">' +
+      '<div class="stat gold"><b>' + (cnt.pending || 0) + '</b><span>მოლოდინში</span></div>' +
+      '<div class="stat"><b>' + (cnt.approved || 0) + '</b><span>დადასტურებული</span></div>' +
+      '<div class="stat"><b>' + (cnt.rejected || 0) + '</b><span>უარყოფილი</span></div>' +
+      '<div class="stat rose"><b>' + ALL.length + '</b><span>სულ</span></div></div>' +
+    '<div class="row" style="margin:16px 0">' +
+      [['pending','⏳ მოლოდინში'],['approved','✅ დადასტურებული'],['rejected','❌ უარყოფილი'],['all','ყველა']]
+        .map(function (t) { return '<button class="chip' + (TAB === t[0] ? ' on' : '') + '" onclick="setTab(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') +
+    '</div><div id="list"></div>';
+  list();
+}
+window.setTab = function (t) { TAB = t; draw(); };
+
+function list() {
+  var rows = ALL.filter(function (v) { return TAB === 'all' || v.status === TAB; });
+  var box = ME.$('list');
+  if (!rows.length) { box.innerHTML = '<div class="empty"><div class="em">📭</div>ცარიელია</div>'; return; }
+  box.innerHTML = rows.map(function (v) {
+    var c = ME.CATS[v.category] || { t: v.category, e: '✨' };
+    var photos = Array.isArray(v.photos) ? v.photos : [];
+    return '<div class="vrow ' + ME.esc(v.status) + '">' +
+      '<div class="th"' + (v.cover_url ? ' style="background-image:url(' + ME.esc(v.cover_url) + ')"' : '') + '>' +
+        (v.cover_url ? '' : c.e) + '</div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="spread"><b>' + ME.esc(v.name) + '</b>' +
+        '<span class="badge ' + (v.status === 'approved' ? 'b-yes' : v.status === 'rejected' ? 'b-no' : 'b-maybe') + '">' +
+        ME.esc(v.status) + '</span></div>' +
+        '<div class="small muted">' + c.e + ' ' + ME.esc(c.t) + (v.city ? ' · 📍 ' + ME.esc(v.city) : '') +
+        ' · 📷 ' + photos.length + ' · 📞 ' + ME.esc(v.phone || '—') + '</div>' +
+        (v.description ? '<div class="small" style="margin-top:5px;max-height:44px;overflow:hidden">' + ME.esc(v.description) + '</div>' : '') +
+        '<div class="row" style="margin-top:9px">' +
+          (v.status !== 'approved' ? '<button class="btn xs" onclick="setStatus(\'' + v.id + '\',\'approved\')">✅ დადასტურება</button>' : '') +
+          (v.status !== 'rejected' ? '<button class="btn ghost xs" onclick="rejectV(\'' + v.id + '\')">❌ უარი</button>' : '') +
+          '<button class="btn ghost xs" onclick="toggleFeat(\'' + v.id + '\')">' + (v.featured ? '⭐ გამორჩეულია' : '☆ გამორჩეულად') + '</button>' +
+          (photos.length ? '<button class="btn ghost xs" onclick="viewPhotos(\'' + v.id + '\')">📷 ფოტოები</button>' : '') +
+        '</div>' +
+      '</div></div>';
+  }).join('');
+}
+
+window.setStatus = async function (id, st, reason) {
+  var upd = { status: st };
+  if (st === 'rejected') upd.reject_reason = reason || '';
+  var r = await ME.sb().from('ev_vendors').update(upd).eq('id', id).select().maybeSingle();
+  if (r.error) return ME.bad(r.error.message);
+  ALL = ALL.map(function (x) { return x.id === id ? r.data : x; });
+  draw(); ME.ok(st === 'approved' ? 'დადასტურდა ✅' : 'სტატუსი განახლდა');
+};
+window.rejectV = async function (id) {
+  var why = await ME.prompt('უარის მიზეზი (ვენდორი დაინახავს)', '', 'მაგ. ფოტოები არ არის');
+  if (why === null) return;
+  setStatus(id, 'rejected', why);
+};
+window.toggleFeat = async function (id) {
+  var v = ALL.find(function (x) { return x.id === id; });
+  var r = await ME.sb().from('ev_vendors').update({ featured: !v.featured }).eq('id', id).select().maybeSingle();
+  if (r.error) return ME.bad(r.error.message);
+  ALL = ALL.map(function (x) { return x.id === id ? r.data : x; });
+  draw();
+};
+window.viewPhotos = function (id) {
+  var v = ALL.find(function (x) { return x.id === id; });
+  var photos = Array.isArray(v.photos) ? v.photos : [];
+  ME.modal('<div class="spread"><h2>📷 ' + ME.esc(v.name) + '</h2><button class="x" data-close>✕</button></div>' +
+    '<div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));margin-top:12px">' +
+    photos.map(function (p) {
+      return '<img src="' + ME.esc(p) + '" loading="lazy" style="width:100%;aspect-ratio:4/3;object-fit:cover;' +
+        'border-radius:12px;cursor:zoom-in" onclick="window.open(this.src,\'_blank\')">';
+    }).join('') + '</div>', { wide: true });
+};
+</script>
+</body></html>

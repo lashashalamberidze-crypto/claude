@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ka"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>მოსაწვევი</title>
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="assets/invite.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;700;800&family=Noto+Serif+Georgian:wght@400;600;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%}
+  body{font-family:'Noto Sans Georgian',system-ui,sans-serif;background:#f2ede5}
+  #root{max-width:620px;margin:0 auto;min-height:100vh;background:#fdfbf7;box-shadow:0 0 60px rgba(43,33,24,.14)}
+  .state{padding:70px 24px;text-align:center;color:#6b5c4d}
+  .state .em{font-size:3rem;margin-bottom:10px}
+  .state a{color:#c9a227;font-weight:700}
+  .spin{display:inline-block;width:26px;height:26px;border:3px solid #e8ddcd;border-top-color:#c9a227;
+    border-radius:50%;animation:sp .8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .done{padding:60px 26px;text-align:center}
+  .done .em{font-size:3.4rem}
+  .done h2{font-family:'Noto Serif Georgian',Georgia,serif;font-size:1.5rem;margin:12px 0 8px;color:#2b2118}
+  .done p{color:#6b5c4d;line-height:1.7}
+  .done button{margin-top:18px;padding:11px 22px;border:1.5px solid #e8ddcd;background:#fff;border-radius:99px;
+    font-family:inherit;font-weight:700;cursor:pointer;color:#6b5c4d}
+</style>
+</head>
+<body>
+<div id="root"><div class="state"><div class="spin"></div><div style="margin-top:12px">იტვირთება…</div></div></div>
+
+<script src="assets/invite.js"></script>
+<script>
+(function () {
+  'use strict';
+  var SB_URL = 'https://rycyvlugqqyzrazssgop.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA';
+
+  var root = document.getElementById('root');
+  var qs = new URLSearchParams(location.search);
+  var slug = qs.get('s') || '', token = qs.get('g') || '';
+  var sb = null, INV = null, GUEST = null, ANS = '';
+
+  function state(em, msg, extra) {
+    root.innerHTML = '<div class="state"><div class="em">' + em + '</div><div>' + msg + '</div>' +
+      (extra ? '<div style="margin-top:12px;font-size:.85rem">' + extra + '</div>' : '') + '</div>';
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+
+  async function boot() {
+    if (!slug) return state('🔗', 'მოსაწვევის ლინკი არასრულია.');
+    if (!window.supabase) return state('⚠️', 'ვერ დავუკავშირდი სერვერს.');
+    sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+
+    var r = await sb.from('ev_invitations').select('*').eq('slug', slug).eq('published', true).maybeSingle();
+    if (r.error) return state('⚠️', 'შეცდომა', esc(r.error.message));
+    if (!r.data) return state('💌', 'ეს მოსაწვევი ვერ მოიძებნა ან ჯერ არ არის გამოქვეყნებული.');
+    INV = r.data;
+
+    document.title = (INV.names || 'მოსაწვევი') + ' — მოსაწვევი';
+
+    if (token) {
+      try {
+        var g = await sb.rpc('ev_guest_by_token', { p_slug: slug, p_token: token });
+        if (!g.error && g.data) GUEST = g.data;
+      } catch (e) {}
+    }
+
+    draw();
+    try { sb.rpc('ev_invite_view', { p_slug: slug }); } catch (e) {}
+  }
+
+  function draw() {
+    root.innerHTML = renderInvite(INV, { guest: GUEST });
+    startInviteCountdown(root);
+    bindRsvp();
+  }
+
+  function bindRsvp() {
+    var box = document.getElementById('rsvpBox');
+    if (!box) return;
+    var opts = box.querySelectorAll('.opt');
+    opts.forEach(function (o) {
+      o.onclick = function () {
+        opts.forEach(function (x) { x.classList.remove('on'); });
+        o.classList.add('on'); ANS = o.dataset.a;
+        var out = document.getElementById('rMsgOut'); if (out) out.textContent = '';
+      };
+    });
+    var btn = document.getElementById('rSend');
+    if (!btn) return;
+    btn.onclick = async function () {
+      var out = document.getElementById('rMsgOut');
+      var name = (document.getElementById('rName').value || '').trim();
+      var phone = (document.getElementById('rPhone').value || '').trim();
+      var cnt = parseInt(document.getElementById('rCount').value, 10) || 1;
+      var msg = (document.getElementById('rMsg').value || '').trim();
+
+      if (!ANS) { out.textContent = 'აირჩიე პასუხი 💛 / 🤔 / 🙏'; return; }
+      if (!name && !GUEST) { out.textContent = 'გთხოვ, მიუთითე სახელი'; return; }
+
+      btn.disabled = true; btn.textContent = 'იგზავნება…';
+      try {
+        var r = await sb.rpc('ev_rsvp_submit', {
+          p_slug: slug, p_token: token, p_name: name, p_phone: phone,
+          p_answer: ANS, p_count: ANS === 'no' ? 0 : cnt, p_message: msg
+        });
+        if (r.error) throw new Error(r.error.message);
+        if (r.data && r.data.ok === false) throw new Error(r.data.error || 'ვერ გაიგზავნა');
+        thanks(ANS, name || (GUEST && GUEST.full_name) || '');
+      } catch (e) {
+        out.textContent = '❌ ' + e.message;
+        btn.disabled = false; btn.textContent = 'პასუხის გაგზავნა';
+      }
+    };
+  }
+
+  function thanks(ans, name) {
+    var txt = ans === 'yes'
+      ? { em: '💛', h: 'მადლობა, გელოდებით!', p: 'შენი პასუხი მიღებულია. მალე შევხვდებით!' }
+      : ans === 'maybe'
+      ? { em: '🤔', h: 'მადლობა პასუხისთვის', p: 'როცა გადაწყვეტ, შეგიძლია თავიდან შემოხვიდე და პასუხი შეცვალო.' }
+      : { em: '🙏', h: 'მადლობა, რომ გვაცნობე', p: 'ვწუხვართ, რომ ვერ შეძლებ მოსვლას. სულით მაინც ერთად ვიქნებით.' };
+    root.innerHTML = '<div class="inv t-' + esc(INV.template || 'gold') + '"><div class="done">' +
+      '<div class="em">' + txt.em + '</div><h2>' + esc(txt.h) + '</h2>' +
+      '<p>' + (name ? esc(name) + ', ' : '') + esc(txt.p) + '</p>' +
+      '<button id="again">მოსაწვევის ნახვა</button></div></div>';
+    document.getElementById('again').onclick = draw;
+  }
+
+  boot();
+})();
+</script>
+</body></html>

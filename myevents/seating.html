@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ka"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>დარბაზის გეგმა — myevents.ge</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:14px;align-items:start}
+  .layout>*{min-width:0}
+  @media(max-width:920px){.layout{grid-template-columns:1fr}}
+  .pane{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;box-shadow:var(--shadow)}
+  .pane h3{font-size:1rem;margin-bottom:8px}
+  #unseated{max-height:58vh;overflow:auto;display:flex;flex-direction:column;gap:5px}
+  .gpill{display:flex;align-items:center;gap:7px;padding:7px 10px;border:1.5px solid var(--line);
+    border-radius:11px;font-size:.85rem;cursor:grab;background:#fff;user-select:none}
+  .gpill:hover{border-color:var(--gold);background:var(--gold-soft)}
+  .gpill.sel{border-color:var(--gold);background:var(--gold-soft);box-shadow:0 0 0 3px rgba(201,162,39,.16)}
+  .gpill>span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gpill .s{flex:0 0 auto;font-size:.72rem;color:var(--muted);font-weight:700}
+  .gpill.yes{border-right:4px solid var(--green)}
+  .gpill.no{opacity:.5}
+  .gpill.maybe{border-right:4px solid #d9a441}
+
+  .stage{position:relative;background:
+      linear-gradient(#f3ece1 1px,transparent 1px) 0 0/28px 28px,
+      linear-gradient(90deg,#f3ece1 1px,transparent 1px) 0 0/28px 28px, #fdfbf7;
+    border:1px solid var(--line);border-radius:var(--r-lg);height:70vh;min-height:420px;
+    overflow:auto;touch-action:none}
+  .canvas{position:relative;width:1600px;height:1100px}
+  .tb{position:absolute;transform:translate(-50%,-50%);will-change:left,top;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;cursor:grab;user-select:none;
+    border:2.5px solid var(--gold);background:#fff;box-shadow:0 4px 14px rgba(43,33,24,.1);
+    text-align:center;padding:4px}
+  .tb.round{border-radius:50%}
+  .tb.rect{border-radius:12px}
+  .tb.head{border-radius:12px;border-color:var(--rose);background:var(--rose-soft)}
+  .tb.full{border-color:var(--green);background:#f2faf6}
+  .tb.over{border-color:var(--red);background:#fdf2f1}
+  .tb.drop{box-shadow:0 0 0 5px rgba(201,162,39,.3)}
+  .tb .n{font-family:var(--serif);font-weight:700;font-size:.82rem;line-height:1.1}
+  .tb .c{font-size:.7rem;color:var(--muted);font-weight:700}
+  .tb .seatdots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;max-width:88%;margin-top:2px}
+  .tb .seatdots i{width:5px;height:5px;border-radius:50%;background:var(--line)}
+  .tb .seatdots i.f{background:var(--gold)}
+  .zoombar{position:absolute;left:10px;bottom:10px;display:flex;gap:5px;z-index:5}
+  .zoombar button{background:#fff;border:1px solid var(--line);border-radius:9px;padding:5px 10px;cursor:pointer;font-weight:700}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.76rem;color:var(--muted);margin-top:8px}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-left:4px}
+  @media print{
+    .layout{grid-template-columns:1fr}
+    .pane,.toolbar,.zoombar,.legend{display:none !important}
+    .stage{height:auto;overflow:visible;border:0}
+    #printList{display:block !important}
+  }
+  #printList{display:none}
+  #printList h3{margin:14px 0 6px;font-size:1rem}
+  #printList .pt{break-inside:avoid;margin-bottom:10px;border:1px solid var(--line);border-radius:10px;padding:9px}
+</style>
+</head>
+<body>
+<div id="me-header"></div>
+<div class="wrap" id="app"><div class="loading"><span class="spin"></span> იტვირთება…</div></div>
+<div id="toasts"></div>
+
+<script src="assets/core.js"></script>
+<script>
+var W = null, G = [], T = [], SELG = null, ZOOM = 1, DRAG = null;
+
+(async function () {
+  if (!(await ME.boot({ auth: true, wedding: true, active: 'seating.html' }))) return;
+  W = ME.wedding;
+  shell();
+  await load();
+})();
+
+function shell() {
+  ME.$('app').innerHTML =
+    '<div class="spread"><div><h1 style="font-size:1.6rem">🪑 დარბაზის გეგმა</h1>' +
+    '<div class="muted small">გადმოათრიე სტუმარი მაგიდაზე ან დააჭირე სტუმარს და მერე მაგიდას</div></div>' +
+    '<div class="row toolbar">' +
+      '<button class="btn ghost sm" id="bAutoT">✨ მაგიდების გენერაცია</button>' +
+      '<button class="btn ghost sm" id="bAutoS">🎯 ავტო-დასხდომა</button>' +
+      '<button class="btn ghost sm" id="bPrint">🖨️ ბეჭდვა</button>' +
+      '<button class="btn sm" id="bAddT">+ მაგიდა</button></div></div>' +
+    '<div class="stats" style="margin:14px 0" id="st"></div>' +
+    '<div class="layout">' +
+      '<div class="pane"><div class="spread"><h3>დასასხდომი სტუმრები</h3>' +
+        '<span class="badge b-pending" id="unCnt">0</span></div>' +
+        '<input type="search" id="gq" placeholder="🔍 ძებნა" style="margin-bottom:8px">' +
+        '<label class="inline small" style="margin-bottom:8px"><input type="checkbox" id="onlyYes" checked> მხოლოდ დამდასტურებლები</label>' +
+        '<div id="unseated"></div>' +
+      '</div>' +
+      '<div><div class="stage" id="stage"><div class="canvas" id="canvas"></div>' +
+        '<div class="zoombar"><button id="zOut">−</button><button id="zIn">+</button><button id="zFit">⤢</button></div></div>' +
+        '<div class="legend">' +
+          '<span><i style="background:#fff;border:2px solid var(--gold)"></i> თავისუფალი</span>' +
+          '<span><i style="background:#f2faf6;border:2px solid var(--green)"></i> სავსე</span>' +
+          '<span><i style="background:#fdf2f1;border:2px solid var(--red)"></i> გადატვირთული</span>' +
+          '<span><i style="background:var(--rose-soft);border:2px solid var(--rose)"></i> სამზეო / მთავარი</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div id="printList"></div>';
+
+  ME.$('bAddT').onclick = function () { tableForm(); };
+  ME.$('bAutoT').onclick = autoTables;
+  ME.$('bAutoS').onclick = autoSeat;
+  ME.$('bPrint').onclick = function () { buildPrint(); window.print(); };
+  ME.$('gq').oninput = drawUnseated;
+  ME.$('onlyYes').onchange = drawUnseated;
+  ME.$('zIn').onclick = function () { zoom(0.12); };
+  ME.$('zOut').onclick = function () { zoom(-0.12); };
+  ME.$('zFit').onclick = fit;
+}
+
+async function load() {
+  var sb = ME.sb();
+  var r = await Promise.all([
+    sb.from('ev_guests').select('*').eq('wedding_id', W.id).order('full_name'),
+    sb.from('ev_tables').select('*').eq('wedding_id', W.id).order('sort')
+  ]);
+  if (r[0].error) return ME.bad(r[0].error.message);
+  G = r[0].data || []; T = r[1].data || [];
+  fit();
+  drawAll();
+}
+
+function seatsOf(g) { return g.rsvp_count != null ? g.rsvp_count : (g.seats || 1); }
+function atTable(id) { return G.filter(function (g) { return g.table_id === id; }); }
+function usedSeats(id) { return atTable(id).reduce(function (a, g) { return a + seatsOf(g); }, 0); }
+
+function drawAll() { drawStats(); drawUnseated(); drawTables(); }
+
+function drawStats() {
+  var cap = T.reduce(function (a, t) { return a + (t.seats || 0); }, 0);
+  var used = G.filter(function (g) { return g.table_id; }).reduce(function (a, g) { return a + seatsOf(g); }, 0);
+  var yes = G.filter(function (g) { return g.rsvp === 'yes'; });
+  var need = yes.reduce(function (a, g) { return a + seatsOf(g); }, 0);
+  ME.$('st').innerHTML = [
+    ['gold', T.length, 'მაგიდა'],
+    ['', cap, 'სულ ადგილი'],
+    ['', used, 'დაკავებული'],
+    ['rose', Math.max(0, cap - used), 'თავისუფალი'],
+    ['', need, 'ადგილი სჭირდება (დამდასტურებლები)'],
+    ['', need > cap ? '⚠️ ' + (need - cap) : '✅', need > cap ? 'ადგილი აკლია' : 'ადგილები საკმარისია']
+  ].map(function (s) { return '<div class="stat ' + s[0] + '"><b>' + s[1] + '</b><span>' + s[2] + '</span></div>'; }).join('');
+}
+
+function drawUnseated() {
+  var q = (ME.$('gq').value || '').toLowerCase();
+  var onlyYes = ME.$('onlyYes').checked;
+  var rows = G.filter(function (g) {
+    if (g.table_id) return false;
+    if (onlyYes && g.rsvp !== 'yes') return false;
+    if (q && (g.full_name || '').toLowerCase().indexOf(q) < 0 && (g.group_name || '').toLowerCase().indexOf(q) < 0) return false;
+    return true;
+  });
+  ME.$('unCnt').textContent = rows.length;
+  var box = ME.$('unseated');
+  if (!rows.length) {
+    box.innerHTML = '<div class="empty" style="padding:18px"><div class="em">🎉</div>' +
+      '<span class="small">ყველა დასხდომილია</span></div>';
+    return;
+  }
+  box.innerHTML = rows.map(function (g) {
+    return '<div class="gpill ' + (g.rsvp || 'pending') + (SELG === g.id ? ' sel' : '') + '" draggable="true" data-id="' + g.id + '">' +
+      '<span>' + ME.esc(g.full_name) + '</span>' +
+      '<span class="s">' + seatsOf(g) + (g.group_name ? ' · ' + ME.esc(g.group_name.slice(0, 10)) : '') + '</span></div>';
+  }).join('');
+  box.querySelectorAll('.gpill').forEach(function (p) {
+    p.onclick = function () { SELG = (SELG === p.dataset.id ? null : p.dataset.id); drawUnseated(); };
+    p.ondragstart = function (e) { e.dataTransfer.setData('text/plain', p.dataset.id); SELG = p.dataset.id; };
+  });
+}
+
+function tSize(t) {
+  var n = t.seats || 10;
+  if (t.shape === 'round') { var d = Math.max(84, Math.min(180, 56 + n * 7)); return [d, d]; }
+  if (t.shape === 'head')  return [Math.max(150, 60 + n * 16), 74];
+  return [Math.max(120, 50 + n * 13), 78];
+}
+
+function drawTables() {
+  var c = ME.$('canvas');
+  c.style.transform = 'scale(' + ZOOM + ')';
+  c.style.transformOrigin = '0 0';
+  // მასშტაბირება layout-ს არ ცვლის — ზედმეტ სქროლს უარყოფითი margin-ით ვასწორებთ
+  c.style.marginRight = Math.round(-(1 - ZOOM) * 1600) + 'px';
+  c.style.marginBottom = Math.round(-(1 - ZOOM) * 1100) + 'px';
+  if (!T.length) {
+    c.innerHTML = '<div class="empty" style="position:absolute;top:60px;right:0;left:0"><div class="em">🪑</div>' +
+      'მაგიდები ჯერ არ არის.<br><span class="small">დააჭირე „✨ მაგიდების გენერაცია"-ს ან დაამატე ხელით.</span></div>';
+    return;
+  }
+  c.innerHTML = T.map(function (t) {
+    var sz = tSize(t), used = usedSeats(t.id), cap = t.seats || 0;
+    var cls = t.shape + (used > cap ? ' over' : used === cap && cap ? ' full' : '');
+    var dots = '';
+    for (var i = 0; i < Math.min(cap, 24); i++) dots += '<i class="' + (i < used ? 'f' : '') + '"></i>';
+    return '<div class="tb ' + cls + '" data-id="' + t.id + '" style="left:' + t.x + 'px;top:' + t.y + 'px;' +
+      'width:' + sz[0] + 'px;height:' + sz[1] + 'px' +
+      (t.rotation ? ';transform:translate(-50%,-50%) rotate(' + t.rotation + 'deg)' : '') + '">' +
+      '<div class="n">' + ME.esc(t.name) + '</div>' +
+      '<div class="c">' + used + ' / ' + cap + '</div>' +
+      '<div class="seatdots">' + dots + '</div></div>';
+  }).join('');
+
+  c.querySelectorAll('.tb').forEach(function (el) {
+    var id = el.dataset.id;
+    el.addEventListener('pointerdown', onDown);
+    el.addEventListener('dragover', function (e) { e.preventDefault(); el.classList.add('drop'); });
+    el.addEventListener('dragleave', function () { el.classList.remove('drop'); });
+    el.addEventListener('drop', function (e) {
+      e.preventDefault(); el.classList.remove('drop');
+      var gid = e.dataTransfer.getData('text/plain');
+      if (gid) seat(gid, id);
+    });
+  });
+}
+
+// ─── გადათრევა ──────────────────────────────────────────────────
+function onDown(e) {
+  if (e.button === 2) return;
+  var el = e.currentTarget, id = el.dataset.id;
+  var t = T.find(function (x) { return x.id === id; }); if (!t) return;
+  var stage = ME.$('stage');
+  DRAG = { id: id, moved: false, sx: e.clientX, sy: e.clientY, ox: Number(t.x), oy: Number(t.y), el: el };
+  el.setPointerCapture(e.pointerId);
+  el.style.cursor = 'grabbing';
+  el.addEventListener('pointermove', onMove);
+  el.addEventListener('pointerup', onUp);
+  el.addEventListener('pointercancel', onUp);
+  e.preventDefault();
+}
+function onMove(e) {
+  if (!DRAG) return;
+  var dx = (e.clientX - DRAG.sx) / ZOOM, dy = (e.clientY - DRAG.sy) / ZOOM;
+  if (Math.abs(dx) + Math.abs(dy) > 4) DRAG.moved = true;
+  var t = T.find(function (x) { return x.id === DRAG.id; });
+  t.x = Math.max(20, Math.min(1580, DRAG.ox + dx));
+  t.y = Math.max(20, Math.min(1080, DRAG.oy + dy));
+  DRAG.el.style.left = t.x + 'px'; DRAG.el.style.top = t.y + 'px';
+}
+async function onUp(e) {
+  if (!DRAG) return;
+  var d = DRAG; DRAG = null;
+  d.el.style.cursor = 'grab';
+  d.el.removeEventListener('pointermove', onMove);
+  d.el.removeEventListener('pointerup', onUp);
+  d.el.removeEventListener('pointercancel', onUp);
+  var t = T.find(function (x) { return x.id === d.id; });
+  if (d.moved) {
+    var r = await ME.sb().from('ev_tables').update({ x: Math.round(t.x), y: Math.round(t.y) }).eq('id', t.id);
+    if (r.error) ME.bad(r.error.message);
+  } else {
+    if (SELG) { seat(SELG, t.id); SELG = null; }
+    else tableView(t.id);
+  }
+}
+
+function zoom(d) { ZOOM = Math.max(0.35, Math.min(1.6, ZOOM + d)); drawTables(); }
+function fit() {
+  var st = ME.$('stage');
+  ZOOM = Math.max(0.35, Math.min(1.2, (st.clientWidth - 20) / 1600));
+  drawTables();
+}
+
+// ─── დასხდომა ───────────────────────────────────────────────────
+async function seat(gid, tid) {
+  var g = G.find(function (x) { return x.id === gid; });
+  var t = T.find(function (x) { return x.id === tid; });
+  if (!g || !t) return;
+  if (usedSeats(tid) + seatsOf(g) > (t.seats || 0)) {
+    if (!(await ME.confirm('მაგიდაზე „' + t.name + '" საკმარისი ადგილი არ არის.\nმაინც დავსვა?', 'დიახ'))) return;
+  }
+  var r = await ME.sb().from('ev_guests').update({ table_id: tid }).eq('id', gid);
+  if (r.error) return ME.bad(r.error.message);
+  g.table_id = tid; SELG = null; drawAll();
+  ME.toast(g.full_name + ' → ' + t.name);
+}
+window.unseat = async function (gid) {
+  var r = await ME.sb().from('ev_guests').update({ table_id: null }).eq('id', gid);
+  if (r.error) return ME.bad(r.error.message);
+  var g = G.find(function (x) { return x.id === gid; }); if (g) g.table_id = null;
+  drawAll();
+  var open = document.querySelector('.ovl'); if (open) open.remove(), document.body.style.overflow = '';
+};
+
+function tableView(id) {
+  var t = T.find(function (x) { return x.id === id; }); if (!t) return;
+  var rows = atTable(id);
+  var m = ME.modal(
+    '<div class="spread"><h2>🪑 ' + ME.esc(t.name) + '</h2><button class="x" data-close>✕</button></div>' +
+    '<div class="small muted" style="margin-top:4px">' + usedSeats(id) + ' / ' + t.seats + ' ადგილი · ' +
+      (t.shape === 'round' ? 'მრგვალი' : t.shape === 'head' ? 'მთავარი' : 'გრძელი') + '</div>' +
+    '<div style="margin-top:12px">' + (rows.length
+      ? rows.map(function (g) {
+          return '<div class="chk"><span class="t">' + ME.esc(g.full_name) +
+            ' <span class="muted small">(' + seatsOf(g) + ')</span>' +
+            (g.food_pref ? ' <span class="badge b-pending">' + ME.esc(g.food_pref) + '</span>' : '') + '</span>' +
+            '<button class="btn xs ghost" onclick="unseat(\'' + g.id + '\')">გაშვება</button></div>';
+        }).join('')
+      : '<div class="empty" style="padding:16px">მაგიდა ცარიელია</div>') + '</div>' +
+    '<div class="row" style="margin-top:16px;justify-content:flex-end">' +
+      '<button class="btn ghost" id="tEdit">✎ რედაქტირება</button>' +
+      '<button class="btn ghost" id="tClear">გაასუფთავე</button>' +
+      '<button class="btn danger" id="tDel">წაშლა</button></div>');
+  m.querySelector('#tEdit').onclick = function () { m.close(); tableForm(t); };
+  m.querySelector('#tClear').onclick = async function () {
+    var r = await ME.sb().from('ev_guests').update({ table_id: null }).eq('table_id', id);
+    if (r.error) return ME.bad(r.error.message);
+    G.forEach(function (g) { if (g.table_id === id) g.table_id = null; });
+    m.close(); drawAll();
+  };
+  m.querySelector('#tDel').onclick = async function () {
+    if (!(await ME.confirm('მაგიდა „' + t.name + '" წაიშლება. სტუმრები დაუსხდომელი გახდება.', 'წაშლა'))) return;
+    var r = await ME.sb().from('ev_tables').delete().eq('id', id);
+    if (r.error) return ME.bad(r.error.message);
+    G.forEach(function (g) { if (g.table_id === id) g.table_id = null; });
+    T = T.filter(function (x) { return x.id !== id; });
+    m.close(); drawAll();
+  };
+}
+
+function tableForm(t) {
+  t = t || {};
+  var m = ME.modal(
+    '<div class="spread"><h2>' + (t.id ? '✎ მაგიდა' : '+ ახალი მაგიდა') + '</h2><button class="x" data-close>✕</button></div>' +
+    '<label class="f">დასახელება</label><input id="tN" value="' + ME.esc(t.name || ('მაგიდა ' + (T.length + 1))) + '">' +
+    '<div class="field-row">' +
+    '<div><label class="f">ფორმა</label><select id="tS">' +
+      '<option value="round"' + (t.shape === 'round' || !t.shape ? ' selected' : '') + '>მრგვალი</option>' +
+      '<option value="rect"' + (t.shape === 'rect' ? ' selected' : '') + '>გრძელი</option>' +
+      '<option value="head"' + (t.shape === 'head' ? ' selected' : '') + '>მთავარი (სამზეო)</option></select></div>' +
+    '<div><label class="f">ადგილები</label><input id="tC" type="number" min="1" max="40" value="' + (t.seats || 10) + '"></div>' +
+    '</div>' +
+    '<div class="row" style="margin-top:16px;justify-content:flex-end">' +
+    '<button class="btn ghost" data-close>გაუქმება</button><button class="btn" id="tSave">შენახვა</button></div>');
+  m.querySelector('#tSave').onclick = async function () {
+    var row = { name: m.querySelector('#tN').value.trim() || 'მაგიდა',
+                shape: m.querySelector('#tS').value,
+                seats: parseInt(m.querySelector('#tC').value, 10) || 10 };
+    var sb = ME.sb(), r;
+    if (t.id) r = await sb.from('ev_tables').update(row).eq('id', t.id).select().maybeSingle();
+    else {
+      row.wedding_id = W.id; row.user_id = ME.user.id; row.sort = T.length;
+      var pos = freeSpot();
+      row.x = pos[0]; row.y = pos[1];
+      r = await sb.from('ev_tables').insert(row).select().maybeSingle();
+    }
+    if (r.error) return ME.bad(r.error.message);
+    if (t.id) T = T.map(function (x) { return x.id === t.id ? r.data : x; }); else T.push(r.data);
+    m.close(); drawAll();
+  };
+}
+
+function freeSpot() {
+  var n = T.length, cols = 5;
+  return [180 + (n % cols) * 260, 140 + Math.floor(n / cols) * 210];
+}
+
+async function autoTables() {
+  var yes = G.filter(function (g) { return g.rsvp === 'yes'; });
+  var need = yes.reduce(function (a, g) { return a + seatsOf(g); }, 0) || (W.guests_target || 100);
+  var m = ME.modal(
+    '<div class="spread"><h2>✨ მაგიდების გენერაცია</h2><button class="x" data-close>✕</button></div>' +
+    '<p class="hint" style="margin-top:6px">გამოვთვლი საჭირო რაოდენობას და დავალაგებ ბადეზე.</p>' +
+    '<div class="field-row" style="margin-top:10px">' +
+    '<div><label class="f">სტუმრები</label><input id="aG" type="number" value="' + need + '"></div>' +
+    '<div><label class="f">ადგილი მაგიდაზე</label><input id="aS" type="number" min="4" max="30" value="10"></div></div>' +
+    '<label class="inline" style="margin-top:12px"><input type="checkbox" id="aH" checked> დაამატე მთავარი (სამზეო) მაგიდა</label>' +
+    '<div class="hint" id="aPrev" style="margin-top:10px"></div>' +
+    '<div class="row" style="margin-top:14px;justify-content:flex-end">' +
+    '<button class="btn ghost" data-close>გაუქმება</button><button class="btn" id="aGo">გენერაცია</button></div>');
+  function prev() {
+    var g = parseInt(m.querySelector('#aG').value, 10) || 0, s = parseInt(m.querySelector('#aS').value, 10) || 10;
+    m.querySelector('#aPrev').textContent = 'შეიქმნება ' + Math.ceil(g / s) + ' მაგიდა × ' + s + ' ადგილი';
+  }
+  m.querySelector('#aG').oninput = prev; m.querySelector('#aS').oninput = prev; prev();
+  m.querySelector('#aGo').onclick = async function () {
+    var g = parseInt(m.querySelector('#aG').value, 10) || 0, s = parseInt(m.querySelector('#aS').value, 10) || 10;
+    var n = Math.ceil(g / s), rows = [], base = T.length, cols = 5;
+    if (m.querySelector('#aH').checked) {
+      rows.push({ wedding_id: W.id, user_id: ME.user.id, name: 'სამზეო', shape: 'head', seats: 8,
+                  x: 800, y: 70, sort: base });
+    }
+    for (var i = 0; i < n; i++) {
+      var k = base + rows.length;
+      rows.push({ wedding_id: W.id, user_id: ME.user.id, name: 'მაგიდა ' + (i + 1), shape: 'round', seats: s,
+                  x: 180 + (i % cols) * 280, y: 230 + Math.floor(i / cols) * 220, sort: k });
+    }
+    if (!rows.length) return m.close();
+    var r = await ME.sb().from('ev_tables').insert(rows).select();
+    if (r.error) return ME.bad(r.error.message);
+    T = T.concat(r.data || []); m.close(); fit(); drawAll();
+    ME.ok(rows.length + ' მაგიდა შეიქმნა');
+  };
+}
+
+async function autoSeat() {
+  if (!T.length) return ME.bad('ჯერ შექმენი მაგიდები');
+  var pool = G.filter(function (g) { return !g.table_id && g.rsvp === 'yes'; });
+  if (!pool.length) return ME.bad('დასასხდომი (დამდასტურებელი) სტუმარი არ არის');
+  if (!(await ME.confirm(pool.length + ' სტუმარი ავტომატურად დაჯდება — ჯგუფები ერთად.\nგავაგრძელო?', 'დასხდომა'))) return;
+
+  // ჯგუფებად დაყოფა, დიდი ჯგუფები ჯერ
+  var byG = {};
+  pool.forEach(function (g) { var k = g.group_name || '—'; (byG[k] = byG[k] || []).push(g); });
+  var groups = Object.keys(byG).map(function (k) {
+    return { k: k, list: byG[k], size: byG[k].reduce(function (a, g) { return a + seatsOf(g); }, 0) };
+  }).sort(function (a, b) { return b.size - a.size; });
+
+  var free = T.filter(function (t) { return t.shape !== 'head'; })
+              .map(function (t) { return { t: t, left: (t.seats || 0) - usedSeats(t.id) }; })
+              .filter(function (x) { return x.left > 0; });
+  if (!free.length) return ME.bad('თავისუფალი ადგილი არ არის');
+
+  var upd = [];
+  groups.forEach(function (grp) {
+    grp.list.forEach(function (g) {
+      var need = seatsOf(g);
+      // ჯერ ვცდილობთ იმ მაგიდას, სადაც იგივე ჯგუფი უკვე ზის
+      var pick = free.filter(function (x) {
+        return x.left >= need && atTable(x.t.id).concat(upd.filter(function (u) { return u.tid === x.t.id; })
+          .map(function (u) { return G.find(function (z) { return z.id === u.gid; }); }))
+          .some(function (z) { return z && (z.group_name || '—') === grp.k; });
+      })[0];
+      if (!pick) pick = free.filter(function (x) { return x.left >= need; })
+                            .sort(function (a, b) { return b.left - a.left; })[0];
+      if (!pick) return;
+      pick.left -= need;
+      upd.push({ gid: g.id, tid: pick.t.id });
+    });
+  });
+
+  if (!upd.length) return ME.bad('თავისუფალი ადგილი ვერ მოიძებნა');
+  var sb = ME.sb(), fails = 0;
+  for (var i = 0; i < upd.length; i++) {
+    var r = await sb.from('ev_guests').update({ table_id: upd[i].tid }).eq('id', upd[i].gid);
+    if (r.error) fails++;
+    else { var g = G.find(function (x) { return x.id === upd[i].gid; }); if (g) g.table_id = upd[i].tid; }
+  }
+  drawAll();
+  ME.ok(upd.length - fails + ' სტუმარი დაჯდა' + (fails ? ' · ' + fails + ' ვერ მოხერხდა' : '') +
+        (upd.length < pool.length ? ' · ' + (pool.length - upd.length) + '-ს ადგილი ვერ მოვუძებნე' : ''));
+}
+
+function buildPrint() {
+  var h = '<h2 style="font-family:var(--serif)">' + ME.esc(W.title || 'ქორწილი') + ' — დასხდომის სია</h2>' +
+    '<div class="small muted">' + (W.event_date ? ME.fmtDate(W.event_date) : '') +
+    (W.venue_name ? ' · ' + ME.esc(W.venue_name) : '') + '</div>';
+  T.forEach(function (t) {
+    var rows = atTable(t.id);
+    h += '<div class="pt"><h3>' + ME.esc(t.name) + ' <span class="small muted">(' + usedSeats(t.id) + '/' + t.seats + ')</span></h3>' +
+      (rows.length ? '<ol style="padding-right:20px;font-size:.88rem">' + rows.map(function (g) {
+        return '<li>' + ME.esc(g.full_name) + (seatsOf(g) > 1 ? ' <span class="muted">×' + seatsOf(g) + '</span>' : '') +
+               (g.food_pref ? ' — ' + ME.esc(g.food_pref) : '') + '</li>';
+      }).join('') + '</ol>' : '<div class="small muted">ცარიელი</div>') + '</div>';
+  });
+  var un = G.filter(function (g) { return !g.table_id && g.rsvp === 'yes'; });
+  if (un.length) {
+    h += '<div class="pt"><h3>დაუსხდომელი (' + un.length + ')</h3><div class="small">' +
+      un.map(function (g) { return ME.esc(g.full_name); }).join(' · ') + '</div></div>';
+  }
+  ME.$('printList').innerHTML = h;
+}
+</script>
+</body></html>

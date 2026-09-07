@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ka"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ჩემი ქორწილი — myevents.ge</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .cover{border-radius:var(--r-lg);overflow:hidden;position:relative;min-height:190px;
+    background:linear-gradient(140deg,#f8f0d9,#fbeef1) center/cover no-repeat;
+    display:flex;flex-direction:column;justify-content:flex-end;padding:24px;border:1px solid var(--line)}
+  .cover.has::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(43,33,24,.72),rgba(43,33,24,.05))}
+  .cover>*{position:relative;z-index:2}
+  .cover.has .nm,.cover.has .dt{color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.35)}
+  .cover .nm{font-family:var(--serif);font-size:clamp(1.5rem,4vw,2.3rem)}
+  .cover .dt{color:var(--ink-2);font-size:.95rem;margin-top:4px}
+  .cover .up{position:absolute;top:14px;left:14px;z-index:3}
+  .cd{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:420px;margin-top:14px}
+  .cd div{background:rgba(255,255,255,.9);border-radius:12px;padding:8px 4px;text-align:center}
+  .cd b{display:block;font-family:var(--serif);font-size:1.4rem;line-height:1}
+  .cd span{font-size:.68rem;color:var(--muted);font-weight:700}
+  .quick{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .quick a{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px;
+    text-align:center;font-weight:700;font-size:.87rem;transition:transform .14s,box-shadow .14s}
+  .quick a:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+  .quick a .e{display:block;font-size:1.6rem;margin-bottom:4px}
+  .chk{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line)}
+  .chk:last-child{border:0}
+  .chk input{width:auto;flex:0 0 auto;accent-color:var(--gold)}
+  .chk.done .t{text-decoration:line-through;color:var(--muted)}
+  .chk .t{flex:1;font-size:.9rem}
+  .chk .d{font-size:.74rem;color:var(--muted);white-space:nowrap}
+  .bar{height:9px;background:var(--sand);border-radius:99px;overflow:hidden;margin-top:8px}
+  .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold),var(--rose));transition:width .5s}
+</style>
+</head>
+<body>
+<div id="me-header"></div>
+<div class="wrap" id="app"><div class="loading"><span class="spin"></span> იტვირთება…</div></div>
+<div id="toasts"></div>
+
+<script src="assets/core.js"></script>
+<script>
+var W = null, GUESTS = [], TABLES = [], CHK = [], EXP = [];
+
+(async function () {
+  if (!(await ME.boot({ auth: true, wedding: true, active: 'dashboard.html' }))) return;
+  W = ME.wedding;
+  if (!W) { ME.$('app').innerHTML = '<div class="empty">ქორწილი ვერ შეიქმნა</div>'; return; }
+  render();
+  await loadAll();
+})();
+
+function render() {
+  ME.$('app').innerHTML =
+    '<div class="cover' + (W.cover_url ? ' has' : '') + '" id="cov"' +
+      (W.cover_url ? ' style="background-image:url(' + ME.esc(W.cover_url) + ')"' : '') + '>' +
+      '<button class="btn ghost sm up" id="covBtn">🖼️ ფონი</button>' +
+      '<div class="nm">' + ME.esc(names()) + '</div>' +
+      '<div class="dt">' + (W.event_date ? '📅 ' + ME.fmtDate(W.event_date) + (W.event_time ? ' · ' + ME.esc(W.event_time) : '') : 'თარიღი ჯერ არ არის მითითებული') +
+        (W.venue_name ? ' · 📍 ' + ME.esc(W.venue_name) : '') + '</div>' +
+      '<div class="cd" id="cd"></div></div>' +
+
+    '<div class="stats" style="margin-top:16px" id="stats"></div>' +
+
+    '<h2 class="sec-title">სწრაფი მოქმედებები</h2>' +
+    '<div class="quick">' +
+      '<a href="guests.html"><span class="e">👥</span>სტუმრების სია</a>' +
+      '<a href="seating.html"><span class="e">🪑</span>დარბაზის გეგმა</a>' +
+      '<a href="invitations.html"><span class="e">💌</span>მოსაწვევი</a>' +
+      '<a href="guests.html#sms"><span class="e">📲</span>SMS დაგზავნა</a>' +
+      '<a href="vendors.html"><span class="e">🍽️</span>რესტორნები</a>' +
+      '<a href="vendors.html?cat=band"><span class="e">🎷</span>ბენდები</a>' +
+    '</div>' +
+
+    '<div class="grid g2" style="margin-top:22px">' +
+      '<div class="card"><div class="spread"><h2>💐 ღონისძიების დეტალები</h2>' +
+        '<button class="btn ghost sm" id="saveW">შენახვა</button></div>' +
+        '<div class="field-row" style="margin-top:12px">' +
+          '<div><label class="f">პატარძლის სახელი</label><input id="fBride" value="' + ME.esc(W.bride_name || '') + '"></div>' +
+          '<div><label class="f">სიძის სახელი</label><input id="fGroom" value="' + ME.esc(W.groom_name || '') + '"></div>' +
+        '</div>' +
+        '<div class="field-row">' +
+          '<div><label class="f">თარიღი</label><input id="fDate" type="date" value="' + ME.esc(W.event_date || '') + '"></div>' +
+          '<div><label class="f">დაწყების დრო</label><input id="fTime" value="' + ME.esc(W.event_time || '') + '" placeholder="18:00"></div>' +
+        '</div>' +
+        '<label class="f">დარბაზი / რესტორანი</label><input id="fVenue" value="' + ME.esc(W.venue_name || '') + '">' +
+        '<label class="f">მისამართი</label><input id="fAddr" value="' + ME.esc(W.venue_address || '') + '">' +
+        '<label class="f">რუკის ლინკი (Google Maps)</label><input id="fMap" value="' + ME.esc(W.venue_map || '') + '" placeholder="https://maps.app.goo.gl/...">' +
+        '<div class="field-row">' +
+          '<div><label class="f">სტუმრების სამიზნე</label><input id="fTarget" type="number" min="0" value="' + (W.guests_target || 0) + '"></div>' +
+          '<div><label class="f">ბიუჯეტი</label><input id="fBudget" type="number" min="0" step="50" value="' + (W.budget || 0) + '"></div>' +
+          '<div><label class="f">ვალუტა</label><select id="fCur">' +
+            ['GEL','USD','EUR'].map(function (c) { return '<option' + (W.currency === c ? ' selected' : '') + '>' + c + '</option>'; }).join('') +
+          '</select></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="card"><div class="spread"><h2>💰 ბიუჯეტი</h2>' +
+        '<button class="btn ghost sm" id="addExp">+ ხარჯი</button></div>' +
+        '<div id="budBox"><div class="loading small">…</div></div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="card" style="margin-top:16px"><div class="spread"><h2>✅ სამოქმედო გეგმა</h2>' +
+      '<div class="row"><button class="btn ghost sm" id="seedChk">📋 სტანდარტული სია</button>' +
+      '<button class="btn ghost sm" id="addChk">+ დამატება</button></div></div>' +
+      '<div id="chkBox" style="margin-top:10px"><div class="loading small">…</div></div></div>';
+
+  countdown();
+  ME.$('saveW').onclick = saveWedding;
+  ME.$('addChk').onclick = addChk;
+  ME.$('seedChk').onclick = seedChk;
+  ME.$('addExp').onclick = addExp;
+  ME.$('covBtn').onclick = pickCover;
+}
+
+function names() {
+  var b = (W.bride_name || '').trim(), g = (W.groom_name || '').trim();
+  if (b && g) return b + ' & ' + g;
+  return b || g || (W.title || 'ჩვენი ქორწილი');
+}
+
+function countdown() {
+  var box = ME.$('cd'); if (!box) return;
+  if (!W.event_date) { box.innerHTML = ''; return; }
+  function tick() {
+    var t = new Date(W.event_date + 'T' + ((W.event_time || '18:00').match(/^\d{1,2}:\d{2}/) ? W.event_time : '18:00')).getTime() - Date.now();
+    if (isNaN(t)) { box.innerHTML = ''; return; }
+    if (t <= 0) { box.innerHTML = '<div style="grid-column:1/-1"><b>🎉</b><span>დღეს არის!</span></div>'; return; }
+    var d = Math.floor(t / 864e5), h = Math.floor(t / 36e5) % 24, m = Math.floor(t / 6e4) % 60, s = Math.floor(t / 1e3) % 60;
+    box.innerHTML = [[d,'დღე'],[h,'საათი'],[m,'წუთი'],[s,'წამი']]
+      .map(function (x) { return '<div><b>' + x[0] + '</b><span>' + x[1] + '</span></div>'; }).join('');
+  }
+  tick(); clearInterval(window._cdT); window._cdT = setInterval(tick, 1000);
+}
+
+async function loadAll() {
+  var sb = ME.sb(), wid = W.id;
+  var res = await Promise.all([
+    sb.from('ev_guests').select('id,rsvp,seats,rsvp_count,table_id').eq('wedding_id', wid),
+    sb.from('ev_tables').select('id,seats').eq('wedding_id', wid),
+    sb.from('ev_checklist').select('*').eq('wedding_id', wid).order('done').order('due_date', { nullsFirst: false }).order('sort'),
+    sb.from('ev_expenses').select('*').eq('wedding_id', wid).order('created_at')
+  ]);
+  GUESTS = res[0].data || []; TABLES = res[1].data || []; CHK = res[2].data || []; EXP = res[3].data || [];
+  if (res[0].error) ME.bad('სტუმრები: ' + res[0].error.message);
+  drawStats(); drawChk(); drawBudget();
+}
+
+function drawStats() {
+  var yes = GUESTS.filter(function (g) { return g.rsvp === 'yes'; });
+  var no  = GUESTS.filter(function (g) { return g.rsvp === 'no'; });
+  var pend = GUESTS.filter(function (g) { return !g.rsvp || g.rsvp === 'pending'; });
+  var seatsYes = yes.reduce(function (a, g) { return a + (g.rsvp_count != null ? g.rsvp_count : (g.seats || 1)); }, 0);
+  var cap = TABLES.reduce(function (a, t) { return a + (t.seats || 0); }, 0);
+  var seated = GUESTS.filter(function (g) { return g.table_id; }).length;
+  ME.$('stats').innerHTML = [
+    ['gold', GUESTS.length, 'სტუმარი სიაში'],
+    ['', yes.length, 'დაადასტურა (' + seatsYes + ' ადგილი)'],
+    ['', no.length, 'უარი'],
+    ['', pend.length, 'პასუხის მოლოდინში'],
+    ['rose', TABLES.length, 'მაგიდა · ' + cap + ' ადგილი'],
+    ['', seated, 'დასხდომილია']
+  ].map(function (s) {
+    return '<div class="stat ' + s[0] + '"><b>' + s[1] + '</b><span>' + s[2] + '</span></div>';
+  }).join('');
+}
+
+// ─── ქორწილის შენახვა ───────────────────────────────────────────
+async function saveWedding() {
+  var upd = {
+    bride_name: ME.$('fBride').value.trim(), groom_name: ME.$('fGroom').value.trim(),
+    event_date: ME.$('fDate').value || null, event_time: ME.$('fTime').value.trim(),
+    venue_name: ME.$('fVenue').value.trim(), venue_address: ME.$('fAddr').value.trim(),
+    venue_map: ME.$('fMap').value.trim(),
+    guests_target: parseInt(ME.$('fTarget').value, 10) || 0,
+    budget: parseFloat(ME.$('fBudget').value) || 0, currency: ME.$('fCur').value
+  };
+  upd.title = (upd.bride_name && upd.groom_name) ? upd.bride_name + ' & ' + upd.groom_name : (W.title || 'ჩვენი ქორწილი');
+  var r = await ME.sb().from('ev_weddings').update(upd).eq('id', W.id).select().maybeSingle();
+  if (r.error) return ME.bad(r.error.message);
+  W = ME.wedding = r.data; ME.ok('შენახულია ✅');
+  render(); drawStats(); drawChk(); drawBudget();
+}
+
+function pickCover() {
+  var inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = async function () {
+    if (!inp.files[0]) return;
+    ME.toast('⏳ ვტვირთავ…');
+    try {
+      var f = await ME.shrink(inp.files[0], 1800);
+      var url = await ME.upload(f, 'covers');
+      var r = await ME.sb().from('ev_weddings').update({ cover_url: url }).eq('id', W.id).select().maybeSingle();
+      if (r.error) throw r.error;
+      W = ME.wedding = r.data; render(); drawStats(); drawChk(); drawBudget(); ME.ok('ფონი განახლდა');
+    } catch (e) { ME.bad(e.message); }
+  };
+  inp.click();
+}
+
+// ─── სამოქმედო გეგმა ────────────────────────────────────────────
+function drawChk() {
+  var box = ME.$('chkBox'); if (!box) return;
+  if (!CHK.length) {
+    box.innerHTML = '<div class="empty" style="padding:22px"><div class="em">📋</div>გეგმა ცარიელია — ' +
+      'დააჭირე „სტანდარტული სია"-ს და მიიღე მზა ჩამონათვალი.</div>';
+    return;
+  }
+  var done = CHK.filter(function (c) { return c.done; }).length;
+  box.innerHTML =
+    '<div class="small muted">შესრულებულია ' + done + ' / ' + CHK.length + '</div>' +
+    '<div class="bar"><i style="width:' + Math.round(done / CHK.length * 100) + '%"></i></div>' +
+    '<div style="margin-top:10px">' + CHK.map(function (c) {
+      return '<div class="chk' + (c.done ? ' done' : '') + '">' +
+        '<input type="checkbox" ' + (c.done ? 'checked' : '') + ' onchange="toggleChk(\'' + c.id + '\',this.checked)">' +
+        '<span class="t">' + ME.esc(c.title) + (c.category ? ' <span class="badge b-pending">' + ME.esc(c.category) + '</span>' : '') + '</span>' +
+        (c.due_date ? '<span class="d">' + ME.fmtDate(c.due_date) + '</span>' : '') +
+        '<button class="btn xs ghost" onclick="delChk(\'' + c.id + '\')">✕</button></div>';
+    }).join('') + '</div>';
+}
+
+window.toggleChk = async function (id, val) {
+  var r = await ME.sb().from('ev_checklist').update({ done: val }).eq('id', id);
+  if (r.error) return ME.bad(r.error.message);
+  var c = CHK.find(function (x) { return x.id === id; }); if (c) c.done = val;
+  drawChk();
+};
+window.delChk = async function (id) {
+  if (!(await ME.confirm('წავშალო ეს პუნქტი?', 'წაშლა'))) return;
+  var r = await ME.sb().from('ev_checklist').delete().eq('id', id);
+  if (r.error) return ME.bad(r.error.message);
+  CHK = CHK.filter(function (x) { return x.id !== id; }); drawChk();
+};
+
+async function addChk() {
+  var t = await ME.prompt('ახალი პუნქტი', '', 'მაგ. კაბის შერჩევა');
+  if (!t) return;
+  var r = await ME.sb().from('ev_checklist')
+    .insert({ wedding_id: W.id, user_id: ME.user.id, title: t.trim(), sort: CHK.length })
+    .select().maybeSingle();
+  if (r.error) return ME.bad(r.error.message);
+  CHK.push(r.data); drawChk();
+}
+
+async function seedChk() {
+  var seed = [
+    ['თარიღის და დარბაზის დაჯავშნა', 'ორგანიზაცია'],
+    ['სტუმრების სიის შედგენა', 'სტუმრები'],
+    ['ციფრული მოსაწვევის მომზადება', 'მოსაწვევი'],
+    ['მოსაწვევების დაგზავნა SMS-ით', 'მოსაწვევი'],
+    ['ბენდის / მუსიკის შერჩევა', 'გართობა'],
+    ['თამადის შეთანხმება', 'გართობა'],
+    ['ფოტოგრაფი და ვიდეოგრაფი', 'მედია'],
+    ['საქორწილო კაბა და კოსტიუმი', 'სტილი'],
+    ['ვიზაჟისტი და თმის სტილისტი', 'სტილი'],
+    ['ტორტის შეკვეთა', 'კეთერინგი'],
+    ['დეკორი და ყვავილები', 'დეკორი'],
+    ['ბეჭდების შეძენა', 'ორგანიზაცია'],
+    ['ტრანსპორტის მოწესრიგება', 'ლოგისტიკა'],
+    ['მაგიდებზე დასხდომის გეგმა', 'სტუმრები'],
+    ['სასურველი მენიუს დამტკიცება', 'კეთერინგი'],
+    ['შეხსენების SMS (1 კვირით ადრე)', 'სტუმრები'],
+    ['მადლობის SMS ქორწილის შემდეგ', 'სტუმრები']
+  ];
+  var have = CHK.map(function (c) { return c.title; });
+  var rows = seed.filter(function (s) { return have.indexOf(s[0]) < 0; })
+    .map(function (s, i) {
+      return { wedding_id: W.id, user_id: ME.user.id, title: s[0], category: s[1], sort: CHK.length + i };
+    });
+  if (!rows.length) return ME.toast('სია უკვე სრულია');
+  var r = await ME.sb().from('ev_checklist').insert(rows).select();
+  if (r.error) return ME.bad(r.error.message);
+  CHK = CHK.concat(r.data || []); drawChk(); ME.ok(rows.length + ' პუნქტი დაემატა');
+}
+
+// ─── ბიუჯეტი ────────────────────────────────────────────────────
+function drawBudget() {
+  var box = ME.$('budBox'); if (!box) return;
+  var cur = W.currency || 'GEL';
+  var planned = EXP.reduce(function (a, e) { return a + Number(e.planned || 0); }, 0);
+  var paid = EXP.reduce(function (a, e) { return a + Number(e.paid || 0); }, 0);
+  var budget = Number(W.budget || 0);
+  var pct = budget ? Math.min(100, Math.round(planned / budget * 100)) : 0;
+  var h = '<div class="stats" style="grid-template-columns:repeat(3,1fr)">' +
+    '<div class="stat"><b>' + ME.money(budget, cur) + '</b><span>ბიუჯეტი</span></div>' +
+    '<div class="stat"><b>' + ME.money(planned, cur) + '</b><span>დაგეგმილი</span></div>' +
+    '<div class="stat"><b>' + ME.money(paid, cur) + '</b><span>გადახდილი</span></div></div>' +
+    (budget ? '<div class="bar" style="margin-top:10px"><i style="width:' + pct + '%' +
+      (planned > budget ? ';background:var(--red)' : '') + '"></i></div>' +
+      '<div class="small muted" style="margin-top:5px">' +
+      (planned > budget ? '⚠️ ბიუჯეტი გადაჭარბებულია ' + ME.money(planned - budget, cur) + '-ით'
+                        : 'დარჩენილია ' + ME.money(budget - planned, cur)) + '</div>' : '');
+  if (!EXP.length) {
+    h += '<div class="empty" style="padding:20px"><div class="em">💰</div>ხარჯები ჯერ არ დაგიმატებია</div>';
+  } else {
+    h += '<div class="tbl-wrap" style="margin-top:12px"><table class="tbl" style="min-width:0">' +
+      '<tr><th>დასახელება</th><th>დაგეგმილი</th><th>გადახდილი</th><th></th></tr>' +
+      EXP.map(function (e) {
+        return '<tr><td>' + ME.esc(e.title) + (e.category ? '<div class="small muted">' + ME.esc(e.category) + '</div>' : '') + '</td>' +
+          '<td>' + ME.money(e.planned, cur) + '</td><td>' + ME.money(e.paid, cur) + '</td>' +
+          '<td><button class="btn xs ghost" onclick="editExp(\'' + e.id + '\')">✎</button> ' +
+          '<button class="btn xs ghost" onclick="delExp(\'' + e.id + '\')">✕</button></td></tr>';
+      }).join('') + '</table></div>';
+  }
+  box.innerHTML = h;
+}
+
+function expForm(e) {
+  e = e || {};
+  var m = ME.modal(
+    '<div class="spread"><h2>' + (e.id ? '✎ ხარჯის რედაქტირება' : '+ ახალი ხარჯი') + '</h2><button class="x" data-close>✕</button></div>' +
+    '<label class="f">დასახელება</label><input id="eT" value="' + ME.esc(e.title || '') + '" placeholder="მაგ. დარბაზი">' +
+    '<label class="f">კატეგორია</label><input id="eC" value="' + ME.esc(e.category || '') + '" placeholder="კეთერინგი / დეკორი / მუსიკა">' +
+    '<div class="field-row">' +
+    '<div><label class="f">დაგეგმილი</label><input id="eP" type="number" min="0" step="10" value="' + (e.planned || 0) + '"></div>' +
+    '<div><label class="f">გადახდილი</label><input id="eD" type="number" min="0" step="10" value="' + (e.paid || 0) + '"></div></div>' +
+    '<div class="row" style="margin-top:16px;justify-content:flex-end">' +
+    '<button class="btn ghost" data-close>გაუქმება</button><button class="btn" id="eS">შენახვა</button></div>');
+  m.querySelector('#eS').onclick = async function () {
+    var row = {
+      title: m.querySelector('#eT').value.trim(), category: m.querySelector('#eC').value.trim(),
+      planned: parseFloat(m.querySelector('#eP').value) || 0, paid: parseFloat(m.querySelector('#eD').value) || 0
+    };
+    if (!row.title) return ME.bad('დასახელება აუცილებელია');
+    var sb = ME.sb(), r;
+    if (e.id) r = await sb.from('ev_expenses').update(row).eq('id', e.id).select().maybeSingle();
+    else { row.wedding_id = W.id; row.user_id = ME.user.id; r = await sb.from('ev_expenses').insert(row).select().maybeSingle(); }
+    if (r.error) return ME.bad(r.error.message);
+    if (e.id) EXP = EXP.map(function (x) { return x.id === e.id ? r.data : x; }); else EXP.push(r.data);
+    m.close(); drawBudget();
+  };
+}
+function addExp() { expForm(); }
+window.editExp = function (id) { expForm(EXP.find(function (x) { return x.id === id; })); };
+window.delExp = async function (id) {
+  if (!(await ME.confirm('წავშალო ეს ხარჯი?', 'წაშლა'))) return;
+  var r = await ME.sb().from('ev_expenses').delete().eq('id', id);
+  if (r.error) return ME.bad(r.error.message);
+  EXP = EXP.filter(function (x) { return x.id !== id; }); drawBudget();
+};
+</script>
+</body></html>

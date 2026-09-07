@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ka"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>myevents.ge — ქორწილის დაგეგმვა ერთ სივრცეში</title>
+<meta name="description" content="სტუმრების სია, მაგიდებზე დასხდომა, SMS გაფრთხილება, ციფრული მოსაწვევები, რესტორნები და ბენდები — myevents.ge">
+<meta property="og:title" content="myevents.ge — ქორწილის დაგეგმვა">
+<meta property="og:description" content="დასხდომა, SMS, ციფრული მოსაწვევები, რესტორნები და ბენდები — ერთ სივრცეში.">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .hero{position:relative;overflow:hidden;background:
+    radial-gradient(900px 500px at 85% -10%, #fbeef1 0%, transparent 60%),
+    radial-gradient(800px 500px at 10% 0%, #f8f0d9 0%, transparent 55%), var(--cream)}
+  .hero .in{max-width:1240px;margin:0 auto;padding:56px 18px 44px;display:grid;gap:36px;
+    grid-template-columns:1.05fr .95fr;align-items:center}
+  @media(max-width:940px){.hero .in{grid-template-columns:1fr;padding:36px 18px 30px}}
+  .hero h1{font-size:clamp(2rem,5.2vw,3.4rem);line-height:1.15}
+  .hero h1 em{font-style:normal;background:linear-gradient(120deg,var(--gold-2),var(--rose));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero p.lead{font-size:1.05rem;color:var(--ink-2);margin:16px 0 24px;max-width:52ch}
+  .hero .cta{display:flex;gap:10px;flex-wrap:wrap}
+  .hero .trust{margin-top:22px;display:flex;gap:20px;flex-wrap:wrap;color:var(--muted);font-size:.83rem}
+  .hero .trust b{display:block;font-family:var(--serif);font-size:1.3rem;color:var(--ink)}
+  .card-stack{position:relative;min-height:320px}
+  .float{position:absolute;background:#fff;border:1px solid var(--line);border-radius:20px;
+    box-shadow:var(--shadow-lg);padding:14px 16px}
+  .float.a{top:0;right:0;width:62%;animation:fl 6s ease-in-out infinite}
+  .float.b{bottom:14px;left:0;width:58%;animation:fl 6s ease-in-out .9s infinite}
+  .float.c{top:40%;left:34%;width:40%;animation:fl 6s ease-in-out 1.8s infinite}
+  @keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  .float .t{font-size:.72rem;color:var(--muted);font-weight:700}
+  .float .v{font-family:var(--serif);font-size:1.25rem}
+  .seat-mini{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+  .seat-mini i{width:15px;height:15px;border-radius:50%;background:var(--sand);border:1.5px solid var(--line);display:block}
+  .seat-mini i.f{background:var(--gold);border-color:var(--gold-2)}
+  .feat{display:flex;gap:13px;align-items:flex-start;background:#fff;border:1px solid var(--line);
+    border-radius:var(--r-lg);padding:18px;box-shadow:var(--shadow)}
+  .feat .ic{flex:0 0 auto;width:42px;height:42px;border-radius:13px;background:var(--gold-soft);
+    display:flex;align-items:center;justify-content:center;font-size:1.25rem}
+  .feat h3{font-size:1rem;margin-bottom:3px}
+  .feat p{font-size:.85rem;color:var(--ink-2)}
+  .steps{counter-reset:s}
+  .step{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px dashed var(--line)}
+  .step:last-child{border:0}
+  .step .n{counter-increment:s;flex:0 0 auto;width:34px;height:34px;border-radius:50%;
+    background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#fff;display:flex;
+    align-items:center;justify-content:center;font-weight:800;font-size:.9rem}
+  .step .n::before{content:counter(s)}
+  .cats{display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .cat{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px 14px;text-align:center;
+    transition:transform .15s,box-shadow .15s}
+  .cat:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+  .cat .e{font-size:1.7rem}
+  .cat .t{font-size:.85rem;font-weight:700;margin-top:5px}
+  .band{background:linear-gradient(140deg,#2b2118,#4a3a2c);color:#fff;border-radius:var(--r-lg);padding:32px 26px;text-align:center}
+  .band h2{color:#fff;font-size:1.6rem}
+  .band p{color:#e8dccd;margin:8px auto 18px;max-width:56ch;font-size:.94rem}
+  .ftr{border-top:1px solid var(--line);background:var(--sand);padding:28px 18px;margin-top:50px}
+  .ftr .in{max-width:1240px;margin:0 auto;display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between;
+    color:var(--ink-2);font-size:.85rem}
+  .tabs{display:flex;gap:4px;background:var(--sand);padding:4px;border-radius:13px;margin-bottom:16px}
+  .tabs button{flex:1;padding:9px;border:none;background:none;border-radius:10px;font-family:inherit;
+    font-weight:700;font-size:.88rem;color:var(--ink-2);cursor:pointer}
+  .tabs button.on{background:#fff;color:var(--ink);box-shadow:0 2px 8px rgba(43,33,24,.08)}
+</style>
+</head>
+<body>
+<div id="me-header"></div>
+
+<section class="hero"><div class="in">
+  <div>
+    <span class="badge b-gold">💍 myevents.ge</span>
+    <h1 style="margin-top:12px">ქორწილი, რომელიც <em>თავად იგეგმება</em></h1>
+    <p class="lead">სტუმრების სია და მაგიდებზე დასხდომა, ავტომატური SMS გაფრთხილება, ლამაზი ციფრული
+      მოსაწვევები RSVP-ით, რესტორნებისა და ბენდების არჩევა-შეკვეთა — ყველაფერი ერთ სივრცეში.</p>
+    <div class="cta">
+      <button class="btn" id="ctaStart">უფასოდ დაწყება</button>
+      <a class="btn ghost" href="vendors.html">🍽️ რესტორნები და ბენდები</a>
+      <button class="btn ghost" id="ctaVendor">ბიზნესის რეგისტრაცია</button>
+    </div>
+    <div class="trust">
+      <div><b>10</b> სერვისის კატეგორია</div>
+      <div><b>∞</b> სტუმარი და მაგიდა</div>
+      <div><b>SMS</b> ქართულ ნომრებზე</div>
+    </div>
+  </div>
+  <div class="card-stack">
+    <div class="float a">
+      <div class="t">მაგიდა №4 — ნათესავები</div>
+      <div class="v">8 / 10 ადგილი</div>
+      <div class="seat-mini"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i></div>
+    </div>
+    <div class="float b">
+      <div class="t">RSVP პასუხები</div>
+      <div class="v">142 დაადასტურა</div>
+      <div class="small muted" style="margin-top:4px">18 უარი · 24 მოლოდინში</div>
+    </div>
+    <div class="float c">
+      <div class="t">📲 SMS</div>
+      <div class="small" style="margin-top:4px">„გელოდებით 12 ივნისს 18:00-ზე…"</div>
+    </div>
+  </div>
+</div></section>
+
+<div class="wrap">
+  <h2 class="sec-title">რას აკეთებს პლატფორმა<small>ექვსი მოდული, რომელიც ერთმანეთს ესაუბრება</small></h2>
+  <div class="grid g3">
+    <div class="feat"><div class="ic">👥</div><div><h3>სტუმრების სია</h3>
+      <p>დაამატე ხელით ან ჩასვი სიიდან, დაყავი ჯგუფებად (ნათესავები, კოლეგები), აკონტროლე ვინ დაადასტურა.</p></div></div>
+    <div class="feat"><div class="ic">🪑</div><div><h3>მაგიდებზე დასხდომა</h3>
+      <p>დარბაზის ინტერაქტიული გეგმა — მრგვალი და გრძელი მაგიდები, გადათრევით დასხდომა, ბეჭდვა.</p></div></div>
+    <div class="feat"><div class="ic">📲</div><div><h3>SMS გაფრთხილება</h3>
+      <p>მასობრივი მოწვევა, შეხსენება და მადლობის SMS — თითოეულს პერსონალური ლინკით და ჟურნალით.</p></div></div>
+    <div class="feat"><div class="ic">💌</div><div><h3>ციფრული მოსაწვევი</h3>
+      <p>5 დახვეწილი შაბლონი, შენი ფოტო, რუკა, უკუთვლა და RSVP ღილაკი — ერთი ლინკი, რომელიც ყველგან იხსნება.</p></div></div>
+    <div class="feat"><div class="ic">🍽️</div><div><h3>რესტორნები</h3>
+      <p>დარბაზები საკუთარი ფოტოებით, ტევადობით და ფასებით — ადგილზევე გაგზავნე ჯავშნის მოთხოვნა.</p></div></div>
+    <div class="feat"><div class="ic">🎷</div><div><h3>ბენდები და შოუ</h3>
+      <p>ჟანრები, ვიდეო-ჩანაწერები, საათობრივი ფასი და თავისუფალი თარიღები — შეარჩიე და შეუკვეთე.</p></div></div>
+  </div>
+
+  <h2 class="sec-title">სერვისების კატალოგი<small>აირჩიე კატეგორია და ნახე მიმწოდებლები</small></h2>
+  <div class="cats" id="catBox"></div>
+
+  <div class="grid g2" style="margin-top:34px">
+    <div class="card">
+      <h2>როგორ მუშაობს — წყვილისთვის</h2>
+      <div class="steps" style="margin-top:8px">
+        <div class="step"><div class="n"></div><div><b>დარეგისტრირდი</b><div class="small muted">ელფოსტა და პაროლი — 20 წამი.</div></div></div>
+        <div class="step"><div class="n"></div><div><b>შეიყვანე ქორწილის დეტალები</b><div class="small muted">თარიღი, დარბაზი, ბიუჯეტი.</div></div></div>
+        <div class="step"><div class="n"></div><div><b>ატვირთე სტუმრები</b><div class="small muted">სახელი + ნომერი; ჯგუფებად დაყოფა.</div></div></div>
+        <div class="step"><div class="n"></div><div><b>გაუგზავნე მოსაწვევი SMS-ით</b><div class="small muted">პასუხები ავტომატურად ჩაჯდება სიაში.</div></div></div>
+        <div class="step"><div class="n"></div><div><b>დასვი მაგიდებზე და დაბეჭდე</b><div class="small muted">დარბაზის გეგმა მზადაა.</div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>როგორ მუშაობს — ბიზნესისთვის</h2>
+      <div class="steps" style="margin-top:8px">
+        <div class="step"><div class="n"></div><div><b>დაარეგისტრირე ობიექტი</b><div class="small muted">რესტორანი, ბენდი, ფოტოგრაფი და სხვ.</div></div></div>
+        <div class="step"><div class="n"></div><div><b>ატვირთე ფოტოები და მენიუ</b><div class="small muted">გალერეა, ტევადობა, ფასები.</div></div></div>
+        <div class="step"><div class="n"></div><div><b>გაიარე მოდერაცია</b><div class="small muted">დადასტურების შემდეგ კატალოგში ჩნდები.</div></div></div>
+        <div class="step"><div class="n"></div><div><b>მიიღე ჯავშნები</b><div class="small muted">მოთხოვნები პირდაპირ პანელში.</div></div></div>
+      </div>
+      <button class="btn ghost wide" style="margin-top:14px" id="ctaVendor2">ბიზნესის რეგისტრაცია</button>
+    </div>
+  </div>
+
+  <h2 class="sec-title">გამორჩეული სივრცეები<small>ახლახან დამატებული და დადასტურებული</small></h2>
+  <div class="grid g3" id="featBox"><div class="loading"><span class="spin"></span></div></div>
+
+  <div class="band" style="margin-top:40px">
+    <h2>მზად ხარ დასაწყებად?</h2>
+    <p>ანგარიშის შექმნა უფასოა. სტუმრების სია, დასხდომა და მოსაწვევები — მაშინვე ხელმისაწვდომია.</p>
+    <button class="btn rose" id="ctaStart2">ანგარიშის შექმნა</button>
+  </div>
+</div>
+
+<footer class="ftr"><div class="in">
+  <div><b>myevents.ge</b> — ქორწილების დაგეგმვის პლატფორმა<div class="small muted" style="margin-top:4px">© <span id="yr"></span> ყველა უფლება დაცულია</div></div>
+  <div class="row" style="gap:16px">
+    <a href="vendors.html">სერვისები</a><a href="vendor.html">ბიზნესისთვის</a>
+    <a href="dashboard.html">ჩემი ქორწილი</a><a href="admin.html">ადმინი</a>
+  </div>
+</div></footer>
+
+<div id="toasts"></div>
+<script src="assets/core.js"></script>
+<script>
+(async function () {
+  ME.$('yr').textContent = new Date().getFullYear();
+  await ME.boot({ active: '' });
+
+  // კატეგორიები
+  ME.$('catBox').innerHTML = Object.keys(ME.CATS).map(function (k) {
+    var c = ME.CATS[k];
+    return '<a class="cat" href="vendors.html?cat=' + k + '"><div class="e">' + c.e + '</div><div class="t">' + ME.esc(c.t) + '</div></a>';
+  }).join('');
+
+  // გამორჩეულები
+  try {
+    var r = await ME.sb().from('ev_vendors')
+      .select('id,name,category,city,cover_url,price_from,price_to,price_unit,capacity_max,rating,reviews_count')
+      .eq('status', 'approved').order('featured', { ascending: false })
+      .order('created_at', { ascending: false }).limit(6);
+    var box = ME.$('featBox'), rows = (r.data || []);
+    if (r.error) throw r.error;
+    if (!rows.length) {
+      box.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="em">🏛️</div>' +
+        'კატალოგი ჯერ ცარიელია.<br><span class="small">დაარეგისტრირე პირველი ობიექტი — ' +
+        '<a href="vendor.html" style="color:var(--gold-2);font-weight:700">ბიზნესის პანელი</a></span></div>';
+    } else {
+      box.innerHTML = rows.map(function (v) {
+        var c = ME.CATS[v.category] || { t: v.category, e: '✨' };
+        var price = v.price_from ? ME.money(v.price_from) + (v.price_unit === 'per_person' ? ' / სტუმარი' : v.price_unit === 'per_hour' ? ' / სთ' : '-დან') : 'ფასი შეთანხმებით';
+        return '<a class="vcard" href="vendors.html?v=' + v.id + '">' +
+          '<div class="ph"' + (v.cover_url ? ' style="background-image:url(' + ME.esc(v.cover_url) + ')"' : '') + '>' +
+          (v.cover_url ? '' : c.e) + '<span class="cat">' + c.e + ' ' + ME.esc(c.t) + '</span></div>' +
+          '<div class="bd"><div class="nm">' + ME.esc(v.name) + '</div>' +
+          '<div class="mt">📍 ' + ME.esc(v.city || '—') + (v.capacity_max ? ' · 👥 ' + v.capacity_max + '-მდე' : '') + '</div>' +
+          (v.reviews_count ? '<div class="stars">' + '★'.repeat(Math.round(v.rating)) + ' <span class="muted small">' + v.rating + ' (' + v.reviews_count + ')</span></div>' : '') +
+          '<div class="pr">' + price + '</div></div></a>';
+      }).join('');
+    }
+  } catch (e) {
+    ME.$('featBox').innerHTML = '<div class="empty" style="grid-column:1/-1">' +
+      '<div class="em">⚠️</div>კატალოგი ვერ ჩაიტვირთა<div class="small">' + ME.esc(e.message || '') +
+      '<br>დარწმუნდი, რომ <code>sql/myevents.sql</code> გაშვებულია Supabase-ში.</div></div>';
+  }
+
+  // ─── ავტორიზაციის ფანჯარა ───
+  function authModal(mode) {
+    var m = ME.modal(
+      '<div class="spread"><h2>' + (mode === 'vendor' ? '🏛️ ბიზნესის ანგარიში' : '💍 myevents.ge') + '</h2>' +
+      '<button class="x" data-close>✕</button></div>' +
+      '<div class="tabs" style="margin-top:14px"><button class="on" id="tIn">შესვლა</button><button id="tUp">რეგისტრაცია</button></div>' +
+      '<div id="upOnly" class="hide">' +
+      '<label class="f">სახელი და გვარი</label><input id="aName" placeholder="ნინო და გიორგი">' +
+      '<label class="f">ტელეფონი</label><input id="aPhone" placeholder="5xx xx xx xx">' +
+      '<label class="f">ვინ ხარ?</label><select id="aRole">' +
+      '<option value="couple">წყვილი — ქორწილს ვგეგმავ</option>' +
+      '<option value="vendor">ბიზნესი — სერვისს ვთავაზობ</option></select></div>' +
+      '<label class="f">ელფოსტა</label><input id="aMail" type="email" autocomplete="email" placeholder="you@mail.com">' +
+      '<label class="f">პაროლი</label><input id="aPass" type="password" autocomplete="current-password" placeholder="მინიმუმ 6 სიმბოლო">' +
+      '<div class="err" id="aErr"></div>' +
+      '<button class="btn wide" id="aGo" style="margin-top:6px">შესვლა</button>' +
+      '<div class="center small muted" style="margin-top:12px">რეგისტრაციით ეთანხმები მონაცემთა დამუშავების წესებს.</div>');
+
+    var up = false;
+    var tIn = m.querySelector('#tIn'), tUp = m.querySelector('#tUp');
+    function setMode(v) {
+      up = v; tIn.classList.toggle('on', !v); tUp.classList.toggle('on', v);
+      m.querySelector('#upOnly').classList.toggle('hide', !v);
+      m.querySelector('#aGo').textContent = v ? 'რეგისტრაცია' : 'შესვლა';
+      m.querySelector('#aPass').setAttribute('autocomplete', v ? 'new-password' : 'current-password');
+    }
+    tIn.onclick = function () { setMode(false); };
+    tUp.onclick = function () { setMode(true); };
+    if (mode === 'signup' || mode === 'vendor') setMode(true);
+    if (mode === 'vendor') m.querySelector('#aRole').value = 'vendor';
+
+    var err = m.querySelector('#aErr'), btn = m.querySelector('#aGo');
+    async function go() {
+      var mail = m.querySelector('#aMail').value.trim(), pass = m.querySelector('#aPass').value;
+      err.textContent = '';
+      if (!mail || !pass) { err.textContent = 'შეავსე ელფოსტა და პაროლი'; return; }
+      btn.disabled = true; btn.textContent = '⏳ ...';
+      try {
+        if (up) {
+          var role = m.querySelector('#aRole').value;
+          var res = await ME.signUp(mail, pass, {
+            full_name: m.querySelector('#aName').value.trim(),
+            phone: m.querySelector('#aPhone').value.trim(), role: role
+          });
+          if (!res.session) {
+            m.close();
+            ME.modal('<h2>📧 დაადასტურე ელფოსტა</h2><p style="margin-top:10px;color:var(--ink-2)">' +
+              'გამოგიგზავნეთ დამადასტურებელი წერილი <b>' + ME.esc(mail) + '</b>-ზე. ' +
+              'გახსენი ლინკი და დაბრუნდი შესასვლელად.</p>' +
+              '<button class="btn wide" data-close style="margin-top:16px">გასაგებია</button>');
+            return;
+          }
+          location.href = role === 'vendor' ? 'vendor.html' : 'dashboard.html';
+        } else {
+          await ME.signIn(mail, pass);
+          var next = ME.qs('next');
+          location.href = next || (ME.profile && ME.profile.role === 'vendor' ? 'vendor.html' : 'dashboard.html');
+        }
+      } catch (e) {
+        err.textContent = '❌ ' + e.message;
+        btn.disabled = false; btn.textContent = up ? 'რეგისტრაცია' : 'შესვლა';
+      }
+    }
+    btn.onclick = go;
+    m.querySelector('#aPass').onkeydown = function (e) { if (e.key === 'Enter') go(); };
+    setTimeout(function () { m.querySelector('#aMail').focus(); }, 60);
+  }
+
+  function start(role) {
+    if (ME.user) { location.href = role === 'vendor' ? 'vendor.html' : 'dashboard.html'; return; }
+    authModal(role === 'vendor' ? 'vendor' : 'signup');
+  }
+  ME.$('ctaStart').onclick  = function () { start(); };
+  ME.$('ctaStart2').onclick = function () { start(); };
+  ME.$('ctaVendor').onclick = function () { start('vendor'); };
+  ME.$('ctaVendor2').onclick = function () { start('vendor'); };
+  window.authModal = authModal;
+  // ჰედერის „შესვლა" ლინკი — მოდალი გახსნას გვერდის დატოვების გარეშე
+  if (!ME.user) {
+    document.querySelectorAll('#meNav a[href="index.html"]').forEach(function (a) {
+      a.onclick = function (e) { e.preventDefault(); authModal('login'); };
+    });
+    if (location.hash === '#login' || ME.qs('next')) authModal('login');
+  }
+})();
+</script>
+</body></html>

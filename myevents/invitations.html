@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ka"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>მოსაწვევი — myevents.ge</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/invite.css">
+<style>
+  .split{display:grid;grid-template-columns:1fr 420px;gap:16px;align-items:start}
+  @media(max-width:1000px){.split{grid-template-columns:1fr}}
+  .tpls{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+  .tpl-b{border:2px solid var(--line);border-radius:13px;padding:9px 6px;text-align:center;cursor:pointer;
+    font-size:.74rem;font-weight:700;background:#fff}
+  .tpl-b.on{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft)}
+  .tpl-b .sw{height:34px;border-radius:8px;margin-bottom:5px}
+  .prevbox{position:sticky;top:78px}
+  .phone{border:9px solid #2b2118;border-radius:34px;overflow:hidden;background:#fff;
+    box-shadow:var(--shadow-lg);height:640px;overflow-y:auto}
+  .linkbox{display:flex;gap:6px;align-items:center;background:var(--sand);border-radius:12px;padding:9px 12px;
+    font-family:monospace;font-size:.78rem;word-break:break-all}
+</style>
+</head>
+<body>
+<div id="me-header"></div>
+<div class="wrap" id="app"><div class="loading"><span class="spin"></span> იტვირთება…</div></div>
+<div id="toasts"></div>
+
+<script src="assets/core.js"></script>
+<script src="assets/invite.js"></script>
+<script>
+var W = null, INV = null;
+
+(async function () {
+  if (!(await ME.boot({ auth: true, wedding: true, active: 'invitations.html' }))) return;
+  W = ME.wedding;
+  var r = await ME.sb().from('ev_invitations').select('*').eq('wedding_id', W.id)
+            .order('created_at').limit(1);
+  if (r.error) { ME.$('app').innerHTML = '<div class="empty">⚠️ ' + ME.esc(r.error.message) + '</div>'; return; }
+  INV = (r.data && r.data[0]) || null;
+  if (!INV) await create();
+  shell();
+})();
+
+async function create() {
+  var names = [W.bride_name, W.groom_name].filter(Boolean).join(' & ') || 'ჩვენი ქორწილი';
+  var row = {
+    wedding_id: W.id, user_id: ME.user.id,
+    slug: ME.slugify((W.bride_name || '') + '-' + (W.groom_name || '')),
+    template: 'gold',
+    headline: 'გეპატიჟებით ჩვენს ქორწილში',
+    names: names,
+    date_text: W.event_date ? ME.fmtDate(W.event_date) : '',
+    time_text: W.event_time || '18:00',
+    place_text: W.venue_name || '',
+    address_text: W.venue_address || '',
+    map_url: W.venue_map || '',
+    message: 'ჩვენი სიხარულის დღეს გვერდით გვინდა გვყავდეთ ყველაზე ძვირფასი ადამიანები.\nგელოდებით!',
+    event_date: W.event_date || null,
+    rsvp_on: true, published: false
+  };
+  var r = await ME.sb().from('ev_invitations').insert(row).select().maybeSingle();
+  if (r.error) { ME.bad(r.error.message); return; }
+  INV = r.data;
+}
+
+function shell() {
+  var base = location.origin + location.pathname.replace(/[^/]*$/, '') + 'i.html?s=';
+  ME.$('app').innerHTML =
+    '<div class="spread"><div><h1 style="font-size:1.6rem">💌 ციფრული მოსაწვევი</h1>' +
+    '<div class="muted small">აირჩიე შაბლონი, შეავსე ტექსტი და გამოაქვეყნე — ლინკი SMS-ით გაეგზავნება სტუმრებს</div></div>' +
+    '<div class="row"><button class="btn ghost sm" id="bRsvp">📥 პასუხები</button>' +
+    '<button class="btn sm" id="bPub">' + (INV.published ? '✅ გამოქვეყნებულია' : '🚀 გამოქვეყნება') + '</button></div></div>' +
+
+    (INV.published ? '<div class="card tight" style="margin-top:14px;background:#f2faf6;border-color:#bfe3d0">' +
+      '<div class="spread"><div><b>🔗 საჯარო ლინკი</b>' +
+      '<div class="linkbox" style="margin-top:6px"><span id="lnk">' + ME.esc(base + INV.slug) + '</span></div></div>' +
+      '<div class="row"><button class="btn ghost sm" id="bCopy">📋 კოპირება</button>' +
+      '<a class="btn ghost sm" href="i.html?s=' + encodeURIComponent(INV.slug) + '" target="_blank">👁️ ნახვა</a>' +
+      '<button class="btn ghost sm" id="bQr">▦ QR</button></div></div>' +
+      '<div class="small muted" style="margin-top:6px">👁️ ნახვები: ' + (INV.views || 0) + '</div></div>' : '') +
+
+    '<div class="split" style="margin-top:16px">' +
+      '<div class="card">' +
+        '<h2>🎨 შაბლონი</h2>' +
+        '<div class="tpls" style="margin-top:10px" id="tpls"></div>' +
+
+        '<div class="divider"></div>' +
+        '<h2>✍️ ტექსტი</h2>' +
+        '<label class="f">ზედა წარწერა</label><input id="iH" value="' + ME.esc(INV.headline || '') + '">' +
+        '<label class="f">სახელები</label><input id="iN" value="' + ME.esc(INV.names || '') + '">' +
+        '<div class="field-row">' +
+        '<div><label class="f">თარიღი (ტექსტი)</label><input id="iD" value="' + ME.esc(INV.date_text || '') + '"></div>' +
+        '<div><label class="f">დრო</label><input id="iT" value="' + ME.esc(INV.time_text || '') + '"></div></div>' +
+        '<label class="f">ადგილი</label><input id="iP" value="' + ME.esc(INV.place_text || '') + '">' +
+        '<label class="f">მისამართი</label><input id="iA" value="' + ME.esc(INV.address_text || '') + '">' +
+        '<label class="f">რუკის ლინკი</label><input id="iM" value="' + ME.esc(INV.map_url || '') + '" placeholder="https://maps.app.goo.gl/...">' +
+        '<label class="f">მიმართვა სტუმრებს</label><textarea id="iX">' + ME.esc(INV.message || '') + '</textarea>' +
+
+        '<div class="divider"></div>' +
+        '<h2>🖼️ ფოტო და მისამართი</h2>' +
+        '<div class="row" style="margin-top:8px">' +
+          '<button class="btn ghost sm" id="bPhoto">' + (INV.photo_url ? 'ფოტოს შეცვლა' : '+ ფოტოს ატვირთვა') + '</button>' +
+          (INV.photo_url ? '<button class="btn ghost sm" id="bPhotoDel">წაშლა</button>' : '') +
+        '</div>' +
+        '<label class="f">ლინკის მისამართი (slug)</label>' +
+        '<div class="row"><span class="small muted">…/i.html?s=</span>' +
+        '<input id="iS" value="' + ME.esc(INV.slug) + '" style="flex:1;min-width:120px;font-family:monospace"></div>' +
+
+        '<div class="divider"></div>' +
+        '<h2>📥 RSVP</h2>' +
+        '<label class="inline" style="margin-top:8px"><input type="checkbox" id="iR"' + (INV.rsvp_on ? ' checked' : '') + '> ' +
+          'პასუხის ღილაკები ჩართული</label>' +
+        '<label class="f">პასუხის ბოლო ვადა</label><input id="iDl" type="date" value="' + ME.esc(INV.rsvp_deadline || '') + '">' +
+
+        '<div class="row" style="margin-top:18px">' +
+          '<button class="btn" id="bSave">შენახვა</button>' +
+          '<button class="btn ghost" id="bPrev">🔄 გადახედვის განახლება</button></div>' +
+      '</div>' +
+
+      '<div class="prevbox"><div class="card tight"><div class="spread" style="margin-bottom:8px">' +
+        '<b>👁️ გადახედვა</b><span class="small muted">რასაც სტუმარი ნახავს</span></div>' +
+        '<div class="phone" id="prev"></div></div></div>' +
+    '</div>';
+
+  drawTpls(); preview();
+  ME.$('bSave').onclick = save;
+  ME.$('bPrev').onclick = preview;
+  ME.$('bPub').onclick = publish;
+  ME.$('bRsvp').onclick = rsvpList;
+  ME.$('bPhoto').onclick = pickPhoto;
+  var pd = ME.$('bPhotoDel'); if (pd) pd.onclick = function () { setPhoto(null); };
+  var cp = ME.$('bCopy'); if (cp) cp.onclick = function () {
+    var t = ME.$('lnk').textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject())
+      .then(function () { ME.ok('ლინკი დაკოპირდა'); }, function () { ME.toast(t); });
+  };
+  var qr = ME.$('bQr'); if (qr) qr.onclick = showQr;
+  ['iH','iN','iD','iT','iP','iA','iX'].forEach(function (id) {
+    ME.$(id).oninput = function () { clearTimeout(window._pt); window._pt = setTimeout(preview, 350); };
+  });
+}
+
+function drawTpls() {
+  ME.$('tpls').innerHTML = Object.keys(INVITE_TPL).map(function (k) {
+    var t = INVITE_TPL[k];
+    return '<div class="tpl-b' + (INV.template === k ? ' on' : '') + '" data-k="' + k + '">' +
+      '<div class="sw" style="background:' + t.swatch + '"></div>' + ME.esc(t.title) + '</div>';
+  }).join('');
+  ME.$('tpls').querySelectorAll('.tpl-b').forEach(function (b) {
+    b.onclick = function () { INV.template = b.dataset.k; drawTpls(); preview(); };
+  });
+}
+
+function collect() {
+  return {
+    template: INV.template,
+    headline: ME.$('iH').value.trim(), names: ME.$('iN').value.trim(),
+    date_text: ME.$('iD').value.trim(), time_text: ME.$('iT').value.trim(),
+    place_text: ME.$('iP').value.trim(), address_text: ME.$('iA').value.trim(),
+    map_url: ME.$('iM').value.trim(), message: ME.$('iX').value,
+    slug: ME.slugify(ME.$('iS').value) || INV.slug,
+    rsvp_on: ME.$('iR').checked,
+    rsvp_deadline: ME.$('iDl').value || null,
+    event_date: W.event_date || null,
+    photo_url: INV.photo_url || null
+  };
+}
+
+function preview() {
+  var d = Object.assign({}, INV, collect());
+  ME.$('prev').innerHTML = renderInvite(d, { preview: true });
+  startInviteCountdown(ME.$('prev'));
+}
+
+async function save(silent) {
+  var row = collect();
+  var r = await ME.sb().from('ev_invitations').update(row).eq('id', INV.id).select().maybeSingle();
+  if (r.error) {
+    if (/duplicate|unique/i.test(r.error.message)) return ME.bad('ასეთი ლინკი უკვე დაკავებულია — შეცვალე slug');
+    return ME.bad(r.error.message);
+  }
+  INV = r.data;
+  if (silent !== true) ME.ok('შენახულია ✅');
+  preview();
+  return true;
+}
+
+async function publish() {
+  if (INV.published) {
+    if (!(await ME.confirm('მოსაწვევი გამოქვეყნებულია.\nგავაუქმო გამოქვეყნება? (ლინკი შეწყვეტს მუშაობას)', 'გაუქმება'))) return;
+    var r = await ME.sb().from('ev_invitations').update({ published: false }).eq('id', INV.id).select().maybeSingle();
+    if (r.error) return ME.bad(r.error.message);
+    INV = r.data; shell(); return;
+  }
+  if (!(await save(true))) return;
+  var r2 = await ME.sb().from('ev_invitations').update({ published: true }).eq('id', INV.id).select().maybeSingle();
+  if (r2.error) return ME.bad(r2.error.message);
+  INV = r2.data; shell();
+  ME.ok('🚀 გამოქვეყნდა! ლინკი მზადაა SMS-ისთვის');
+}
+
+function pickPhoto() {
+  var inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = async function () {
+    if (!inp.files[0]) return;
+    ME.toast('⏳ ვტვირთავ…');
+    try {
+      var f = await ME.shrink(inp.files[0], 1400);
+      setPhoto(await ME.upload(f, 'invites'));
+    } catch (e) { ME.bad(e.message); }
+  };
+  inp.click();
+}
+async function setPhoto(url) {
+  var r = await ME.sb().from('ev_invitations').update({ photo_url: url }).eq('id', INV.id).select().maybeSingle();
+  if (r.error) return ME.bad(r.error.message);
+  INV = r.data; shell(); ME.ok(url ? 'ფოტო დაემატა' : 'ფოტო წაიშალა');
+}
+
+function showQr() {
+  var url = location.origin + location.pathname.replace(/[^/]*$/, '') + 'i.html?s=' + encodeURIComponent(INV.slug);
+  var src = 'https://api.qrserver.com/v1/create-qr-code/?size=340x340&margin=10&data=' + encodeURIComponent(url);
+  ME.modal('<div class="spread"><h2>▦ QR კოდი</h2><button class="x" data-close>✕</button></div>' +
+    '<div class="center" style="margin-top:14px"><img src="' + src + '" alt="QR" style="margin:0 auto;border-radius:14px"></div>' +
+    '<p class="small muted center" style="margin-top:10px">დაბეჭდე მოსაწვევზე ან გაუზიარე — სკანირებით მოსაწვევი გაიხსნება.</p>' +
+    '<div class="center" style="margin-top:12px"><a class="btn ghost sm" href="' + src + '" target="_blank" rel="noopener">გახსნა ცალკე ფანჯარაში</a></div>');
+}
+
+async function rsvpList() {
+  var m = ME.modal('<div class="spread"><h2>📥 RSVP პასუხები</h2><button class="x" data-close>✕</button></div>' +
+    '<div id="rBody" style="margin-top:10px"><div class="loading"><span class="spin"></span></div></div>', { wide: true });
+  var r = await ME.sb().from('ev_rsvp_log').select('*').eq('wedding_id', W.id)
+            .order('created_at', { ascending: false }).limit(500);
+  var b = m.querySelector('#rBody');
+  if (r.error) { b.innerHTML = '<div class="empty">⚠️ ' + ME.esc(r.error.message) + '</div>'; return; }
+  var rows = r.data || [];
+  if (!rows.length) {
+    b.innerHTML = '<div class="empty"><div class="em">📭</div>პასუხები ჯერ არ მოსულა.<br>' +
+      '<span class="small">გამოაქვეყნე მოსაწვევი და გაუგზავნე ლინკი სტუმრებს.</span></div>';
+    return;
+  }
+  var y = rows.filter(function (x) { return x.answer === 'yes'; });
+  b.innerHTML = '<div class="stats" style="grid-template-columns:repeat(3,1fr)">' +
+    '<div class="stat gold"><b>' + rows.length + '</b><span>პასუხი</span></div>' +
+    '<div class="stat"><b>' + y.length + '</b><span>დადებითი</span></div>' +
+    '<div class="stat"><b>' + y.reduce(function (a, x) { return a + (x.guests_count || 1); }, 0) + '</b><span>ადგილი</span></div></div>' +
+    '<div class="tbl-wrap" style="margin-top:12px"><table class="tbl"><tr><th>სტუმარი</th><th>პასუხი</th>' +
+    '<th>ადგილი</th><th>შეტყობინება</th><th>დრო</th></tr>' +
+    rows.map(function (x) {
+      return '<tr><td><b>' + ME.esc(x.name || '—') + '</b>' + (x.phone ? '<div class="small muted" style="direction:ltr">' + ME.esc(x.phone) + '</div>' : '') + '</td>' +
+        '<td><span class="badge b-' + ME.esc(x.answer) + '">' + ME.esc(ME.RSVP[x.answer] || x.answer) + '</span></td>' +
+        '<td>' + (x.guests_count || 1) + '</td>' +
+        '<td class="small">' + ME.esc(x.message || '') + '</td>' +
+        '<td class="small muted">' + new Date(x.created_at).toLocaleString('ka-GE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</td></tr>';
+    }).join('') + '</table></div>';
+}
+</script>
+</body></html>

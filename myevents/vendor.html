@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ka"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ჩემი ბიზნესი — myevents.ge</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .gal{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));margin-top:10px}
+  .gal .it{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:4/3;background:var(--sand)}
+  .gal .it img{width:100%;height:100%;object-fit:cover}
+  .gal .it button{position:absolute;top:5px;left:5px;background:rgba(255,255,255,.94);border:none;
+    border-radius:8px;padding:3px 7px;cursor:pointer;font-size:.75rem}
+  .gal .it .mk{position:absolute;bottom:5px;right:5px;background:rgba(255,255,255,.94);border:none;
+    border-radius:8px;padding:3px 7px;cursor:pointer;font-size:.68rem;font-weight:700}
+  .gal .add{border:2px dashed var(--line);border-radius:12px;aspect-ratio:4/3;display:flex;
+    align-items:center;justify-content:center;flex-direction:column;gap:4px;cursor:pointer;color:var(--muted);font-size:.78rem}
+  .gal .add:hover{border-color:var(--gold);color:var(--gold-2)}
+  .st-pending{background:#fdf3e0;color:#b47a12}
+  .bk{border:1px solid var(--line);border-radius:var(--r);padding:13px;margin-bottom:10px;background:#fff}
+  .bk.new{border-right:4px solid var(--gold)}
+</style>
+</head>
+<body>
+<div id="me-header"></div>
+<div class="wrap" id="app"><div class="loading"><span class="spin"></span> იტვირთება…</div></div>
+<div id="toasts"></div>
+
+<script src="assets/core.js"></script>
+<script>
+var MY = [], BK = [];
+
+(async function () {
+  if (!(await ME.boot({ auth: true, active: 'vendor.html' }))) return;
+  await load();
+})();
+
+async function load() {
+  var sb = ME.sb();
+  var r = await sb.from('ev_vendors').select('*').eq('user_id', ME.user.id).order('created_at');
+  if (r.error) { ME.$('app').innerHTML = '<div class="empty">⚠️ ' + ME.esc(r.error.message) + '</div>'; return; }
+  MY = r.data || [];
+  if (MY.length) {
+    var b = await sb.from('ev_bookings').select('*').in('vendor_id', MY.map(function (v) { return v.id; }))
+              .order('created_at', { ascending: false }).limit(200);
+    BK = b.data || [];
+  }
+  draw();
+}
+
+var ST = { pending: ['⏳ მოდერაციაში','st-pending'], approved: ['✅ გამოქვეყნებული','b-yes'], rejected: ['❌ უარყოფილი','b-no'] };
+var BST = { new: ['⏳ ახალი','b-pending'], accepted: ['✅ დადასტურებული','b-yes'],
+            declined: ['❌ უარყოფილი','b-no'], cancelled: ['🚫 გაუქმებული','b-no'], done: ['🏁 დასრულებული','b-yes'] };
+
+function draw() {
+  var newCnt = BK.filter(function (b) { return b.status === 'new'; }).length;
+  ME.$('app').innerHTML =
+    '<div class="spread"><div><h1 style="font-size:1.6rem">🏛️ ჩემი ბიზნესი</h1>' +
+    '<div class="muted small">დაარეგისტრირე რესტორანი, ბენდი ან სხვა სერვისი და მიიღე შეკვეთები</div></div>' +
+    '<button class="btn sm" id="bNew">+ ობიექტის დამატება</button></div>' +
+
+    (MY.length ? '<div class="stats" style="margin-top:14px">' +
+      '<div class="stat gold"><b>' + MY.length + '</b><span>ობიექტი</span></div>' +
+      '<div class="stat"><b>' + MY.filter(function (v) { return v.status === 'approved'; }).length + '</b><span>გამოქვეყნებული</span></div>' +
+      '<div class="stat rose"><b>' + newCnt + '</b><span>ახალი შეკვეთა</span></div>' +
+      '<div class="stat"><b>' + BK.length + '</b><span>სულ ჯავშანი</span></div></div>' : '') +
+
+    '<h2 class="sec-title">ჩემი ობიექტები</h2>' +
+    '<div id="vlist"></div>' +
+
+    '<h2 class="sec-title">📩 შემოსული შეკვეთები' + (newCnt ? ' <span class="badge b-gold">' + newCnt + ' ახალი</span>' : '') + '</h2>' +
+    '<div id="blist"></div>';
+
+  ME.$('bNew').onclick = function () { vForm(); };
+  drawVendors(); drawBookings();
+}
+
+function drawVendors() {
+  var box = ME.$('vlist');
+  if (!MY.length) {
+    box.innerHTML = '<div class="empty"><div class="em">🏛️</div>ობიექტი ჯერ არ დაგირეგისტრირებია.<br>' +
+      '<span class="small">დააჭირე „+ ობიექტის დამატება"-ს — 2 წუთში კატალოგში იქნები.</span></div>';
+    return;
+  }
+  box.innerHTML = '<div class="grid g2">' + MY.map(function (v) {
+    var c = ME.CATS[v.category] || { t: v.category, e: '✨' };
+    var st = ST[v.status] || ST.pending;
+    var photos = Array.isArray(v.photos) ? v.photos : [];
+    return '<div class="card">' +
+      '<div class="spread"><div><h2>' + c.e + ' ' + ME.esc(v.name) + '</h2>' +
+      '<div class="small muted">' + ME.esc(c.t) + (v.city ? ' · 📍 ' + ME.esc(v.city) : '') + '</div></div>' +
+      '<span class="badge ' + st[1] + '">' + st[0] + '</span></div>' +
+      (v.status === 'rejected' && v.reject_reason ? '<div class="small" style="color:var(--red);margin-top:6px">მიზეზი: ' + ME.esc(v.reject_reason) + '</div>' : '') +
+      (v.status === 'pending' ? '<div class="small muted" style="margin-top:6px">ადმინი განიხილავს — დადასტურების შემდეგ კატალოგში გამოჩნდები.</div>' : '') +
+      '<div class="row" style="margin-top:10px">' +
+        '<span class="badge b-pending">📷 ' + photos.length + ' ფოტო</span>' +
+        (v.reviews_count ? '<span class="stars">★ ' + v.rating + ' (' + v.reviews_count + ')</span>' : '') +
+        '<span class="badge b-pending">📩 ' + BK.filter(function (b) { return b.vendor_id === v.id; }).length + ' ჯავშანი</span>' +
+      '</div>' +
+      '<div class="row" style="margin-top:12px">' +
+        '<button class="btn ghost sm" onclick="vForm(\'' + v.id + '\')">✎ რედაქტირება</button>' +
+        '<button class="btn ghost sm" onclick="gallery(\'' + v.id + '\')">📷 გალერეა</button>' +
+        (v.status === 'approved' ? '<a class="btn ghost sm" href="vendors.html?v=' + v.id + '" target="_blank">👁️ ნახვა</a>' : '') +
+        '<button class="btn ghost sm" onclick="vDel(\'' + v.id + '\')" style="margin-right:auto">🗑️</button>' +
+      '</div></div>';
+  }).join('') + '</div>';
+}
+
+function drawBookings() {
+  var box = ME.$('blist');
+  if (!BK.length) {
+    box.innerHTML = '<div class="empty"><div class="em">📭</div>შეკვეთები ჯერ არ შემოსულა</div>';
+    return;
+  }
+  box.innerHTML = BK.map(function (b) {
+    var v = MY.find(function (x) { return x.id === b.vendor_id; }) || {};
+    var st = BST[b.status] || BST.new;
+    return '<div class="bk' + (b.status === 'new' ? ' new' : '') + '">' +
+      '<div class="spread"><div><b>' + ME.esc(b.customer_name || '—') + '</b> ' +
+      '<span class="small muted" style="direction:ltr">' + ME.esc(b.phone || '') + '</span>' +
+      '<div class="small muted">' + ME.esc(v.name || '') + '</div></div>' +
+      '<span class="badge ' + st[1] + '">' + st[0] + '</span></div>' +
+      '<div class="small muted" style="margin-top:6px">' +
+        (b.event_date ? '📅 ' + ME.fmtDate(b.event_date) : 'თარიღი მითითებული არ არის') +
+        (b.guests_count ? ' · 👥 ' + b.guests_count + ' სტუმარი' : '') +
+        (b.budget ? ' · 💰 ' + ME.money(b.budget) : '') + '</div>' +
+      (b.message ? '<div style="margin-top:7px;font-size:.88rem">' + ME.esc(b.message) + '</div>' : '') +
+      (b.vendor_reply ? '<div class="card tight" style="margin-top:8px;background:var(--sand);box-shadow:none">' +
+        '<b class="small">ჩემი პასუხი:</b> <span class="small">' + ME.esc(b.vendor_reply) + '</span></div>' : '') +
+      '<div class="row" style="margin-top:10px">' +
+        (b.phone ? '<a class="btn ghost xs" href="tel:' + ME.esc(b.phone) + '">📞 დარეკვა</a>' : '') +
+        (b.status === 'new'
+          ? '<button class="btn xs" onclick="reply(\'' + b.id + '\',\'accepted\')">✅ დადასტურება</button>' +
+            '<button class="btn ghost xs" onclick="reply(\'' + b.id + '\',\'declined\')">❌ უარი</button>'
+          : b.status === 'accepted'
+          ? '<button class="btn ghost xs" onclick="reply(\'' + b.id + '\',\'done\')">🏁 დასრულებულად მონიშვნა</button>' : '') +
+      '</div></div>';
+  }).join('');
+}
+
+// ─── ობიექტის ფორმა ─────────────────────────────────────────────
+window.vForm = function (id) {
+  var v = MY.find(function (x) { return x.id === id; }) || {};
+  var m = ME.modal(
+    '<div class="spread"><h2>' + (v.id ? '✎ ' + ME.esc(v.name) : '+ ახალი ობიექტი') + '</h2><button class="x" data-close>✕</button></div>' +
+    '<div class="field-row" style="margin-top:12px">' +
+    '<div><label class="f">კატეგორია *</label><select id="vC">' +
+      Object.keys(ME.CATS).map(function (k) {
+        return '<option value="' + k + '"' + (v.category === k ? ' selected' : '') + '>' + ME.CATS[k].e + ' ' + ME.CATS[k].t + '</option>';
+      }).join('') + '</select></div>' +
+    '<div><label class="f">დასახელება *</label><input id="vN" value="' + ME.esc(v.name || '') + '"></div></div>' +
+    '<div class="field-row">' +
+    '<div><label class="f">ქალაქი</label><select id="vCity"><option value="">—</option>' +
+      ME.CITIES.map(function (c) { return '<option' + (v.city === c ? ' selected' : '') + '>' + ME.esc(c) + '</option>'; }).join('') + '</select></div>' +
+    '<div><label class="f">მისამართი</label><input id="vA" value="' + ME.esc(v.address || '') + '"></div></div>' +
+    '<label class="f">აღწერა</label><textarea id="vD" placeholder="რას სთავაზობთ სტუმრებს?">' + ME.esc(v.description || '') + '</textarea>' +
+    '<div class="field-row">' +
+    '<div><label class="f">ტელეფონი *</label><input id="vP" value="' + ME.esc(v.phone || '') + '" placeholder="5xx xx xx xx"></div>' +
+    '<div><label class="f">ელფოსტა</label><input id="vE" value="' + ME.esc(v.email || '') + '"></div></div>' +
+    '<div class="field-row">' +
+    '<div><label class="f">ვებგვერდი</label><input id="vW" value="' + ME.esc(v.website || '') + '" placeholder="https://"></div>' +
+    '<div><label class="f">Instagram</label><input id="vI" value="' + ME.esc(v.instagram || '') + '" placeholder="https://instagram.com/..."></div></div>' +
+    '<div class="field-row">' +
+    '<div><label class="f">ფასი დან</label><input id="vPF" type="number" min="0" step="10" value="' + (v.price_from || '') + '"></div>' +
+    '<div><label class="f">ფასი მდე</label><input id="vPT" type="number" min="0" step="10" value="' + (v.price_to || '') + '"></div>' +
+    '<div><label class="f">ერთეული</label><select id="vPU">' +
+      '<option value="per_person"' + (v.price_unit === 'per_person' || !v.price_unit ? ' selected' : '') + '>სტუმარზე</option>' +
+      '<option value="per_event"' + (v.price_unit === 'per_event' ? ' selected' : '') + '>ღონისძიებაზე</option>' +
+      '<option value="per_hour"' + (v.price_unit === 'per_hour' ? ' selected' : '') + '>საათზე</option></select></div></div>' +
+    '<div class="field-row">' +
+    '<div><label class="f">ტევადობა — მინიმუმი</label><input id="vCMin" type="number" min="0" value="' + (v.capacity_min || '') + '"></div>' +
+    '<div><label class="f">ტევადობა — მაქსიმუმი</label><input id="vCMax" type="number" min="0" value="' + (v.capacity_max || '') + '"></div></div>' +
+    '<label class="f">ტეგები / ჟანრები (მძიმით)</label>' +
+    '<input id="vT" value="' + ME.esc((v.tags || []).join(', ')) + '" placeholder="ქართული, ჯაზი, ცოცხალი მუსიკა">' +
+    '<label class="f">მენიუს / პრეზენტაციის ლინკი</label><input id="vMU" value="' + ME.esc(v.menu_url || '') + '" placeholder="https://">' +
+    '<label class="f">ვიდეოს ლინკები (თითო ხაზზე)</label>' +
+    '<textarea id="vV" style="min-height:60px" placeholder="https://youtube.com/...">' + ME.esc((Array.isArray(v.videos) ? v.videos : []).join('\n')) + '</textarea>' +
+    (v.id ? '' : '<div class="hint" style="margin-top:12px">💡 შენახვის შემდეგ ატვირთე ფოტოები — ' +
+      'ობიექტი მოდერაციაზე გადავა და დადასტურების შემდეგ კატალოგში გამოჩნდება.</div>') +
+    '<div class="row" style="margin-top:16px;justify-content:flex-end">' +
+    '<button class="btn ghost" data-close>გაუქმება</button><button class="btn" id="vS">შენახვა</button></div>', { wide: true });
+
+  m.querySelector('#vS').onclick = async function () {
+    var row = {
+      category: m.querySelector('#vC').value,
+      name: m.querySelector('#vN').value.trim(),
+      city: m.querySelector('#vCity').value,
+      address: m.querySelector('#vA').value.trim(),
+      description: m.querySelector('#vD').value.trim(),
+      phone: m.querySelector('#vP').value.trim(),
+      email: m.querySelector('#vE').value.trim(),
+      website: m.querySelector('#vW').value.trim(),
+      instagram: m.querySelector('#vI').value.trim(),
+      price_from: parseFloat(m.querySelector('#vPF').value) || null,
+      price_to: parseFloat(m.querySelector('#vPT').value) || null,
+      price_unit: m.querySelector('#vPU').value,
+      capacity_min: parseInt(m.querySelector('#vCMin').value, 10) || null,
+      capacity_max: parseInt(m.querySelector('#vCMax').value, 10) || null,
+      tags: m.querySelector('#vT').value.split(',').map(function (t) { return t.trim(); }).filter(Boolean),
+      menu_url: m.querySelector('#vMU').value.trim(),
+      videos: m.querySelector('#vV').value.split(/\r?\n/).map(function (t) { return t.trim(); }).filter(Boolean)
+    };
+    if (!row.name) return ME.bad('დასახელება აუცილებელია');
+    if (!row.phone) return ME.bad('ტელეფონი აუცილებელია — მის გარეშე შეკვეთა ვერ მოგივა');
+    var sb = ME.sb(), r;
+    if (v.id) r = await sb.from('ev_vendors').update(row).eq('id', v.id).select().maybeSingle();
+    else { row.user_id = ME.user.id; r = await sb.from('ev_vendors').insert(row).select().maybeSingle(); }
+    if (r.error) return ME.bad(r.error.message);
+    if (v.id) MY = MY.map(function (x) { return x.id === v.id ? r.data : x; }); else MY.push(r.data);
+    // როლის განახლება — რომ ჰედერში „ჩემი ბიზნესი" ლოგიკურად იმუშაოს
+    if (ME.profile && ME.profile.role === 'couple') {
+      sb.from('ev_profiles').update({ role: 'vendor' }).eq('user_id', ME.user.id).then(function () {}, function () {});
+      ME.profile.role = 'vendor';
+    }
+    m.close(); draw();
+    ME.ok(v.id ? 'შენახულია ✅' : 'შეიქმნა — ატვირთე ფოტოები 📷');
+    if (!v.id) gallery(r.data.id);
+  };
+};
+
+window.vDel = async function (id) {
+  var v = MY.find(function (x) { return x.id === id; });
+  if (!(await ME.confirm('„' + (v ? v.name : '') + '" წაიშლება ჯავშნებთან ერთად. გავაგრძელო?', 'წაშლა'))) return;
+  var r = await ME.sb().from('ev_vendors').delete().eq('id', id);
+  if (r.error) return ME.bad(r.error.message);
+  MY = MY.filter(function (x) { return x.id !== id; });
+  BK = BK.filter(function (x) { return x.vendor_id !== id; });
+  draw(); ME.ok('წაიშალა');
+};
+
+// ─── გალერეა ────────────────────────────────────────────────────
+window.gallery = function (id) {
+  var v = MY.find(function (x) { return x.id === id; }); if (!v) return;
+  var m = ME.modal('<div class="spread"><h2>📷 გალერეა — ' + ME.esc(v.name) + '</h2><button class="x" data-close>✕</button></div>' +
+    '<p class="hint" style="margin-top:6px">პირველი ან „ბანერად" მონიშნული ფოტო ჩანს კატალოგში. ' +
+    'რეკომენდებულია 4:3 ან 16:9 ფოტოები.</p><div id="gBox"></div>', { wide: true });
+
+  function paint() {
+    var photos = Array.isArray(v.photos) ? v.photos : [];
+    m.querySelector('#gBox').innerHTML = '<div class="gal">' +
+      photos.map(function (p, i) {
+        return '<div class="it"><img src="' + ME.esc(p) + '" loading="lazy">' +
+          '<button onclick="gDel(\'' + id + '\',' + i + ')">✕</button>' +
+          (v.cover_url === p ? '<span class="mk" style="background:var(--gold);color:#fff">ბანერი</span>'
+                             : '<button class="mk" onclick="gCover(\'' + id + '\',' + i + ')">ბანერად</button>') +
+          '</div>';
+      }).join('') +
+      '<div class="add" id="gAdd"><span style="font-size:1.5rem">＋</span>ფოტოს დამატება</div></div>' +
+      '<div class="small muted" style="margin-top:8px">სულ ' + photos.length + ' ფოტო</div>';
+    m.querySelector('#gAdd').onclick = pick;
+  }
+
+  function pick() {
+    var inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true;
+    inp.onchange = async function () {
+      var files = Array.from(inp.files || []); if (!files.length) return;
+      ME.toast('⏳ ვტვირთავ ' + files.length + ' ფოტოს…');
+      var urls = (Array.isArray(v.photos) ? v.photos : []).slice();
+      for (var i = 0; i < files.length; i++) {
+        try {
+          var f = await ME.shrink(files[i], 1600);
+          urls.push(await ME.upload(f, 'vendors'));
+        } catch (e) { ME.bad(files[i].name + ': ' + e.message); }
+      }
+      await savePhotos(urls, urls[0]);
+    };
+    inp.click();
+  }
+
+  async function savePhotos(urls, cover) {
+    var upd = { photos: urls };
+    if (!v.cover_url || urls.indexOf(v.cover_url) < 0) upd.cover_url = cover || urls[0] || null;
+    var r = await ME.sb().from('ev_vendors').update(upd).eq('id', id).select().maybeSingle();
+    if (r.error) return ME.bad(r.error.message);
+    v = r.data; MY = MY.map(function (x) { return x.id === id ? r.data : x; });
+    paint(); drawVendors(); ME.ok('გალერეა განახლდა');
+  }
+
+  window.gDel = async function (vid, idx) {
+    var urls = (Array.isArray(v.photos) ? v.photos : []).slice();
+    var removed = urls.splice(idx, 1)[0];
+    var upd = { photos: urls };
+    if (v.cover_url === removed) upd.cover_url = urls[0] || null;
+    var r = await ME.sb().from('ev_vendors').update(upd).eq('id', vid).select().maybeSingle();
+    if (r.error) return ME.bad(r.error.message);
+    v = r.data; MY = MY.map(function (x) { return x.id === vid ? r.data : x; });
+    paint(); drawVendors();
+  };
+  window.gCover = async function (vid, idx) {
+    var urls = Array.isArray(v.photos) ? v.photos : [];
+    var r = await ME.sb().from('ev_vendors').update({ cover_url: urls[idx] }).eq('id', vid).select().maybeSingle();
+    if (r.error) return ME.bad(r.error.message);
+    v = r.data; MY = MY.map(function (x) { return x.id === vid ? r.data : x; });
+    paint(); drawVendors(); ME.ok('ბანერი შეიცვალა');
+  };
+
+  paint();
+};
+
+// ─── ჯავშანზე პასუხი ────────────────────────────────────────────
+window.reply = function (id, status) {
+  var b = BK.find(function (x) { return x.id === id; }); if (!b) return;
+  var titles = { accepted: '✅ ჯავშნის დადასტურება', declined: '❌ უარის თქმა', done: '🏁 დასრულება' };
+  var m = ME.modal('<div class="spread"><h2>' + titles[status] + '</h2><button class="x" data-close>✕</button></div>' +
+    '<div class="small muted" style="margin-top:6px">' + ME.esc(b.customer_name || '') + ' · ' +
+      (b.event_date ? ME.fmtDate(b.event_date) : '') + '</div>' +
+    '<label class="f">პასუხი კლიენტს</label><textarea id="rpT" placeholder="' +
+      (status === 'accepted' ? 'თარიღი თავისუფალია, გელოდებით! დეტალებზე დაგირეკავთ.'
+       : status === 'declined' ? 'სამწუხაროდ, ეს თარიღი დაკავებულია.' : 'მადლობა თანამშრომლობისთვის!') +
+      '">' + ME.esc(b.vendor_reply || '') + '</textarea>' +
+    '<label class="inline" style="margin-top:10px"><input type="checkbox" id="rpSms"' +
+      (ME.smsReady() && b.phone ? ' checked' : ' disabled') + '> პასუხი SMS-ითაც გაეგზავნოს' +
+      (ME.smsReady() ? '' : ' <span class="small muted">(SMS არ არის დაკონფიგურირებული)</span>') + '</label>' +
+    '<div class="row" style="margin-top:14px;justify-content:flex-end">' +
+    '<button class="btn ghost" data-close>გაუქმება</button><button class="btn" id="rpS">გაგზავნა</button></div>');
+
+  m.querySelector('#rpS').onclick = async function () {
+    var txt = m.querySelector('#rpT').value.trim();
+    var r = await ME.sb().from('ev_bookings').update({ status: status, vendor_reply: txt }).eq('id', id);
+    if (r.error) return ME.bad(r.error.message);
+    b.status = status; b.vendor_reply = txt;
+    if (m.querySelector('#rpSms').checked && b.phone) {
+      var v = MY.find(function (x) { return x.id === b.vendor_id; }) || {};
+      try {
+        await ME.smsSend(b.phone, (v.name || 'myevents.ge') + ': ' + (txt || (status === 'accepted' ? 'თქვენი ჯავშანი დადასტურდა.' : 'პასუხი თქვენს მოთხოვნაზე.')));
+        ME.smsLog({ guest_name: b.customer_name, phone: b.phone, text: txt, kind: 'custom', status: 'sent' });
+      } catch (e) { ME.bad('SMS: ' + e.message); }
+    }
+    m.close(); draw(); ME.ok('პასუხი გაიგზავნა');
+  };
+};
+</script>
+</body></html>
