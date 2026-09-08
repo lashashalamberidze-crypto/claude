@@ -126,6 +126,13 @@ tr:last-child td{border-bottom:none}
  .hero h1{font-size:27px}
  .loc{flex-direction:column;text-align:center}
 }
+/* product photos */
+.pfoto-sec:not(:has(img)){display:none}
+.pfgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pfgrid .pf{margin:0}
+.pfgrid img{width:100%;height:280px;object-fit:cover;border-radius:14px;border:2px solid var(--line);background:#fff}
+.pfgrid figcaption{margin-top:6px;font-weight:800;font-size:13.5px;color:var(--g);text-align:center}
+@media(max-width:560px){.pfgrid{grid-template-columns:1fr}.pfgrid img{height:300px}}
 /* recommendations + stove */
 .recwrap{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 .recsvg{flex:0 0 280px;max-width:320px;background:linear-gradient(160deg,#241507,#0b0603);border-radius:16px;padding:14px;border:2px solid #e7dcc9}
@@ -336,6 +343,10 @@ function render(lang){
    '<section><h2>'+t.use_h+'</h2><div class="uses">'+uses+'</div></section>'+
    '<section><h2>'+t.spec_h+'</h2><table><tr><th>'+t.spec_th[0]+'</th><th style="text-align:right">'+t.spec_th[1]+'</th></tr>'+spec+'</table></section>'+
    '<section><h2>'+t.cert_h+'</h2><div class="pills"><span class="pill">ISO 9001</span><span class="pill">ISO 14001</span><span class="pill">ISO 45001</span><span class="pill o">ГОСТ Р 57016-2016</span><span class="pill">MSDS</span><span class="pill">COTECNA</span></div></section>'+
+   '<section class="pfoto-sec"><h2>'+({ka:'📸 ასე გამოიყურება',az:'📸 Belə görünür',hy:'📸 Այսպես է տեսքը',ru:'📸 Как выглядит'}[lang]||'📸 ასე გამოიყურება')+'</h2><div class="pfgrid">'+
+     '<figure class="pf"><img src="../files/RAM_IMPEX_briketi_foto1.jpg" alt="ბრიკეტი" onerror="this.closest(\'figure\').remove()"><figcaption>'+({ka:'ბრიკეტი · ~50×50×30 მმ',az:'briket · ~50×50×30 mm',hy:'բրիկետ · ~50×50×30 մմ',ru:'брикет · ~50×50×30 мм'}[lang]||'ბრიკეტი · ~50×50×30 მმ')+'</figcaption></figure>'+
+     '<figure class="pf"><img src="../files/RAM_IMPEX_briketi_foto2.jpg" alt="ბრიკეტი" onerror="this.closest(\'figure\').remove()"></figure>'+
+   '</div></section>'+
    '<section><h2>'+t.price_h+'</h2><div class="cards">'+cards+'</div><div class="pinfo">'+pinfo+'</div></section>'+
    '<section><h2>'+t.rules_h+'</h2><div class="rules">'+rules+'</div></section>'+
    '<section><h2>'+(REC[lang]||REC.ka).h+'</h2><div class="recwrap"><div class="recsvg">'+STOVE_SVG+'</div><ul class="reclist">'+(REC[lang]||REC.ka).pts.map(p=>'<li>'+p+'</li>').join('')+'</ul></div></section>'+
