@@ -325,6 +325,64 @@
   ORIG_DATA.forEach(function(s){s.pages.forEach(function(p){p.groups.forEach(function(g){g.rows.forEach(function(r){if(r.s&&!_origMeta[r.s])_origMeta[r.s]={img:p.img||null,fefco:g.fefco||'',title:p.title||'',n:r.n||'',t:r.t||''};});});});});
   var _profMap={'В':'B','Е':'E','С':'C','СЕ':'CE','ВС':'BC','B':'B','E':'E','C':'C','CE':'CE','BC':'BC'};
   function deriveType(mark){if(!mark)return '';var toks=(''+mark).trim().split(/\s+/);var last=(toks[toks.length-1]||'').toUpperCase();return _profMap[last]||'';}
+  // როცა ადმინში მარკა ცარიელია — გონივრული ტიპი ფორმის/ზომის მიხედვით (ჩემი არჩევით)
+  function guessType(it,kind){
+    if(kind==='corner')return '';                 // კუთხის დამცავი — გოფრის პროფილი არ აქვს
+    if(kind==='tube')return 'C';
+    if(kind==='pizza'||kind==='tray'||kind==='medical'||kind==='wine')return 'B';
+    if(kind==='cake'||kind==='shoe')return 'E';
+    var dims=(''+(it.size||'')).match(/\d+/g);
+    var mx=dims?Math.max.apply(null,dims.map(function(n){return +n;})):0;
+    return (mx&&mx>=300)?'B':'E';                  // ჩვეულებრივი ყუთი: დიდი → B, პატარა → E
+  }
+
+  // —— მუყაოს ფერის ილუსტრაცია ფორმის მიხედვით (იმ პროდუქტებს, ვისაც ფოტო არ აქვს) ——
+  function kindFor(txt){var t=txt||'';
+    function has(){for(var i=0;i<arguments.length;i++)if(t.indexOf(arguments[i])>=0)return true;return false;}
+    if(has('ღვინ'))return 'wine';
+    if(has('კუთხ','დამცავ'))return 'corner';
+    if(has('მილ'))return 'tube';
+    if(has('ტორტ'))return 'cake';
+    if(has('სამედიცინო','ნარჩენ'))return 'medical';
+    if(has('ფეხსაცმ'))return 'shoe';
+    if(has('პიც'))return 'pizza';
+    if(has('გამყოფ','შრე','ფენა','ქვესადგ'))return 'sheet';
+    if(has('ლანგ'))return 'tray';
+    return 'box';
+  }
+  var _shapeCache={};
+  function shapeUri(kind){
+    if(_shapeCache[kind])return _shapeCache[kind];
+    var cT='#eccc9e',cL='#ddb684',cR='#c69a5d',ed='#9c7238',inr='#b78d55';
+    var ux=[26,14],uy=[-26,14],uz=[0,-24];
+    var minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+    function reg(x,y){if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}
+    function P(x,y,z,W,D){var px=(x-W/2)*ux[0]+(y-D/2)*uy[0]+z*uz[0];var py=(x-W/2)*ux[1]+(y-D/2)*uy[1]+z*uz[1];reg(px,py);return px.toFixed(1)+','+py.toFixed(1);}
+    function box(W,D,H){
+      var t='<polygon points="'+P(0,0,H,W,D)+' '+P(W,0,H,W,D)+' '+P(W,D,H,W,D)+' '+P(0,D,H,W,D)+'" fill="'+cT+'"/>';
+      var l='<polygon points="'+P(0,D,0,W,D)+' '+P(W,D,0,W,D)+' '+P(W,D,H,W,D)+' '+P(0,D,H,W,D)+'" fill="'+cL+'"/>';
+      var r='<polygon points="'+P(W,0,0,W,D)+' '+P(W,D,0,W,D)+' '+P(W,D,H,W,D)+' '+P(W,0,H,W,D)+'" fill="'+cR+'"/>';
+      return t+l+r;
+    }
+    var g='',fixedVB=null;
+    switch(kind){
+      case 'wine': g=box(2.2,2.2,4); break;
+      case 'pizza': g=box(5,5,0.55); break;
+      case 'sheet': g=box(6,4.2,0.22); break;
+      case 'tray': {var W=4.4,D=3.2,H=1.1;g=box(W,D,H);var m=0.4;g+='<polygon points="'+P(m,m,H,W,D)+' '+P(W-m,m,H,W,D)+' '+P(W-m,D-m,H,W,D)+' '+P(m,D-m,H,W,D)+'" fill="'+inr+'"/>';break;}
+      case 'cake': {var W=3,D=3,H=2;g=box(W,D,H);g+='<polyline points="'+P(0,D,H*0.7,W,D)+' '+P(W,D,H*0.7,W,D)+' '+P(W,0,H*0.7,W,D)+'" fill="none" stroke="'+ed+'" stroke-width="1.3" opacity=".65"/>';break;}
+      case 'shoe': {var W=4,D=2.4,H=1.5;g=box(W,D,H);var e=0.3;g+='<polygon points="'+P(-e,-e,H,W,D)+' '+P(W+e,-e,H,W,D)+' '+P(W+e,D+e,H,W,D)+' '+P(-e,D+e,H,W,D)+'" fill="'+cT+'" stroke="'+ed+'" stroke-width="1.8"/>';break;}
+      case 'medical': {var W=2.6,D=2.6,H=3;g=box(W,D,H);var tc=P(W/2,D/2,H,W,D).split(',');var tx=parseFloat(tc[0]),ty=parseFloat(tc[1]);g+='<path d="M'+(tx-15)+' '+ty+' C'+(tx-15)+' '+(ty-22)+' '+(tx+15)+' '+(ty-22)+' '+(tx+15)+' '+ty+'" fill="none" stroke="'+ed+'" stroke-width="3"/>';reg(tx-15,ty-24);reg(tx+15,ty);break;}
+      case 'tube': {fixedVB='0 0 120 150';var cx=60,top=26,bot=124,rx=26,ry=9;g='<path d="M'+(cx-rx)+' '+top+' L'+(cx-rx)+' '+bot+' A'+rx+' '+ry+' 0 0 0 '+(cx+rx)+' '+bot+' L'+(cx+rx)+' '+top+'" fill="'+cL+'"/><ellipse cx="'+cx+'" cy="'+top+'" rx="'+rx+'" ry="'+ry+'" fill="'+cT+'"/><ellipse cx="'+cx+'" cy="'+top+'" rx="'+(rx*0.5)+'" ry="'+(ry*0.5)+'" fill="'+inr+'"/>';break;}
+      case 'corner': {fixedVB='0 0 150 130';g='<path d="M20 24 L64 24 L64 40 L36 40 L36 104 L20 104 Z" fill="'+cL+'"/><path d="M20 24 L36 10 L80 10 L64 24 Z" fill="'+cT+'"/><path d="M64 24 L80 10 L80 26 L64 40 Z" fill="'+cR+'"/><path d="M36 40 L52 26 L52 90 L36 104 Z" fill="'+cR+'"/>';break;}
+      default: g=box(3.4,2.6,2.3);
+    }
+    var vb;
+    if(fixedVB){vb=fixedVB;}else{var pad=10;vb=(minX-pad).toFixed(1)+' '+(minY-pad).toFixed(1)+' '+((maxX-minX)+2*pad).toFixed(1)+' '+((maxY-minY)+2*pad).toFixed(1);}
+    var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+vb+'"><g stroke="'+ed+'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">'+g+'</g></svg>';
+    var uri='data:image/svg+xml,'+encodeURIComponent(svg);
+    _shapeCache[kind]=uri;return uri;
+  }
   function rebuildFromAdmin(){
     var dirs=window.CATDIRS||[]; if(!dirs.length)return false;
     var out=[],sid=0;
@@ -337,13 +395,14 @@
         var meta=_origMeta[it.code]||null;
         var pt=(meta&&meta.title)||gr.name||'პროდუქცია';
         var fef=(meta&&meta.fefco)||'';
+        var kd=kindFor(gr.name+' '+pt);
         var key=pt+'||'+fef;
-        if(!pagesMap[key]){pagesMap[key]={title:pt,fefco:fef,img:(meta&&meta.img)||null,rows:[]};order.push(key);}
+        if(!pagesMap[key]){pagesMap[key]={title:pt,fefco:fef,img:(meta&&meta.img)||null,kind:kd,rows:[]};order.push(key);}
         else if(!pagesMap[key].img&&meta&&meta.img){pagesMap[key].img=meta.img;}
-        var t=(meta&&meta.t)||deriveType(it.mark);
+        var t=(meta&&meta.t)||deriveType(it.mark)||guessType(it,kd);
         pagesMap[key].rows.push({s:it.code,d:it.size||'—',t:t,n:(meta&&meta.n)||''});
       });
-      var pages=order.map(function(k){var pg=pagesMap[k];return {title:pg.title,img:pg.img,groups:[{fefco:pg.fefco,rows:pg.rows}]};});
+      var pages=order.map(function(k){var pg=pagesMap[k];return {title:pg.title,img:pg.img||{r:shapeUri(pg.kind)},groups:[{fefco:pg.fefco,rows:pg.rows}]};});
       out.push({id:++sid,title:gr.name||('კატეგორია '+sid),pages:pages});
     });
     if(!out.length)return false;
