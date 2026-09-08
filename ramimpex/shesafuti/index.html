@@ -318,6 +318,38 @@
     window.location.href='mailto:'+EMAIL+'?subject='+encodeURIComponent('შეკვეთა — '+name+' ('+keys.length+' პოზ.)')+'&body='+encodeURIComponent(body);
   });
 
+  // —— ადმინის კატალოგთან სინქრონიზაცია (წყარო: catalog.dirs) ——
+  // საჯარო ჩამონათვალი უნდა ემთხვეოდეს ადმინის კატალოგს მუყაოს ყუთებზე.
+  var ORIG_DATA=JSON.parse(document.getElementById('catalog-data').textContent);
+  var _origMeta={}; // code -> {img,fefco,title,n,t}  (ფოტოებისა და FEFCO-ს შესანარჩუნებლად)
+  ORIG_DATA.forEach(function(s){s.pages.forEach(function(p){p.groups.forEach(function(g){g.rows.forEach(function(r){if(r.s&&!_origMeta[r.s])_origMeta[r.s]={img:p.img||null,fefco:g.fefco||'',title:p.title||'',n:r.n||'',t:r.t||''};});});});});
+  var _profMap={'В':'B','Е':'E','С':'C','СЕ':'CE','ВС':'BC','B':'B','E':'E','C':'C','CE':'CE','BC':'BC'};
+  function deriveType(mark){if(!mark)return '';var toks=(''+mark).trim().split(/\s+/);var last=(toks[toks.length-1]||'').toUpperCase();return _profMap[last]||'';}
+  function rebuildFromAdmin(){
+    var dirs=window.CATDIRS||[]; if(!dirs.length)return false;
+    var out=[],sid=0;
+    dirs.forEach(function(gr){
+      if(!gr||gr.dir==='ანთრაციტის ბრიკეტი')return;               // ანთრაციტი გამოვრიცხოთ
+      var items=(gr.items||[]).filter(function(it){return it&&it.code;});
+      if(!items.length)return;
+      var pagesMap={},order=[];
+      items.forEach(function(it){
+        var meta=_origMeta[it.code]||null;
+        var pt=(meta&&meta.title)||gr.name||'პროდუქცია';
+        var fef=(meta&&meta.fefco)||'';
+        var key=pt+'||'+fef;
+        if(!pagesMap[key]){pagesMap[key]={title:pt,fefco:fef,img:(meta&&meta.img)||null,rows:[]};order.push(key);}
+        else if(!pagesMap[key].img&&meta&&meta.img){pagesMap[key].img=meta.img;}
+        var t=(meta&&meta.t)||deriveType(it.mark);
+        pagesMap[key].rows.push({s:it.code,d:it.size||'—',t:t,n:(meta&&meta.n)||''});
+      });
+      var pages=order.map(function(k){var pg=pagesMap[k];return {title:pg.title,img:pg.img,groups:[{fefco:pg.fefco,rows:pg.rows}]};});
+      out.push({id:++sid,title:gr.name||('კატეგორია '+sid),pages:pages});
+    });
+    if(!out.length)return false;
+    DATA=out; return true;
+  }
+
   // —— საჯარო (ხელით დამატებული) პროდუქცია product_pub-იდან ——
   function mediaUrl(u){return (u&&(u.indexOf('data:')===0||u.indexOf('http')===0))?u:'/'+u;}
   function mergePub(){
@@ -336,14 +368,17 @@
     }
     totalProducts=0;DATA.forEach(function(s){s.pages.forEach(function(p){p.groups.forEach(function(g){totalProducts+=g.rows.length;});});});
   }
-  window.__applyPub=function(){try{mergePub();buildSecSelect();render();}catch(e){}};
-  mergePub();
+  window.__applyPub=function(){try{rebuildFromAdmin();mergePub();buildSecSelect();render();}catch(e){}};
+  rebuildFromAdmin();mergePub();
   buildSecSelect();buildTypeChips();render();updateCart();
 })();
 </script>
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/+esm";
-try{const sb=createClient("https://mhyoqypzacvztwhntsvv.supabase.co","sb_publishable_FXhFmDRboFeOEqxyvwUePg_SgIwnmmM");const {data}=await sb.from('product_pub').select('*').order('sort',{ascending:true});window.PUB=data||[];}catch(e){window.PUB=[];}
+try{const sb=createClient("https://mhyoqypzacvztwhntsvv.supabase.co","sb_publishable_FXhFmDRboFeOEqxyvwUePg_SgIwnmmM");
+  const {data}=await sb.from('product_pub').select('*').order('sort',{ascending:true});window.PUB=data||[];
+  try{const {data:cat}=await sb.from('catalog').select('dirs').eq('id','main').maybeSingle();window.CATDIRS=(cat&&cat.dirs)||[];}catch(e2){window.CATDIRS=[];}
+}catch(e){window.PUB=[];window.CATDIRS=[];}
 if(window.__applyPub)window.__applyPub();
 </script>
 <a href="/shekveta/?d=boxes" class="ram-order-fab" style="position:fixed;right:16px;bottom:16px;z-index:9999;background:#0B6B3C;color:#fff;padding:12px 18px;border-radius:30px;font-weight:800;text-decoration:none;box-shadow:0 8px 20px rgba(0,0,0,.25);font-family:system-ui,'Noto Sans Georgian',sans-serif;font-size:14px">📧 გააგზავნე მოთხოვნა</a>
