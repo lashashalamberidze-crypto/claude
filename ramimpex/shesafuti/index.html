@@ -368,8 +368,10 @@
     }
     totalProducts=0;DATA.forEach(function(s){s.pages.forEach(function(p){p.groups.forEach(function(g){totalProducts+=g.rows.length;});});});
   }
-  window.__applyPub=function(){try{rebuildFromAdmin();mergePub();buildSecSelect();render();}catch(e){}};
-  rebuildFromAdmin();mergePub();
+  // თუ ადმინის კატალოგი ჩაიტვირთა — ის არის ერთადერთი წყარო (product_pub-ს აღარ ვამატებთ,
+  // რომ დუბლიკატები არ გაჩნდეს). თუ ვერ ჩაიტვირთა — ძველ ჩამონათვალს + product_pub-ს ვიყენებთ.
+  window.__applyPub=function(){try{if(!rebuildFromAdmin())mergePub();buildSecSelect();render();}catch(e){}};
+  if(!rebuildFromAdmin())mergePub();
   buildSecSelect();buildTypeChips();render();updateCart();
 })();
 </script>
