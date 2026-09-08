@@ -484,6 +484,13 @@ async function ensureDirs(){
       NEWMK2.forEach(it=>{if(!plain.items.some(x=>x&&x.code===it.code))plain.items.push(it);});
       plain._mkPatch2=true;
     }}catch(e){}
+  // ერთჯერადი 3: კიდევ ერთი ყუთი (400×300×250, 3 შრიანი)
+  try{const plain=result.find(g=>g&&(g.id==='plainbox'||g.name==='სხვა მუყაოს ყუთები'));
+    if(plain&&!plain._mkPatch3){plain.items=plain.items||[];
+      const it={code:'МК-11',name:'გოფროყუთი',size:'400×300×250',mark:'П-32К СЕ',ply:'3',color:'მუყაოს ფერი',rub:48.3,cap:14850,note:'ფურაში 14850 ცალი'};
+      if(!plain.items.some(x=>x&&x.code===it.code))plain.items.push(it);
+      plain._mkPatch3=true;
+    }}catch(e){}
   DIRS=result;
   await sb.from('catalog').upsert({id:'main',dirs:DIRS,updated_at:new Date().toISOString()},{onConflict:'id'});
   return true;
