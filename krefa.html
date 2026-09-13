@@ -133,6 +133,11 @@
         <div><label>საცხოვრებელი</label><input id="fAddr" placeholder="თბილისი"></div>
         <div><label>ბანკი (IBAN)</label><input id="fBank" placeholder="GE00XX..."></div>
       </div>
+      <div class="row2" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:8px 10px">
+        <div><label>👥 ჯგუფი</label><input id="fGroup" placeholder="მაგ. ბრიგადა №2" list="groupList"><datalist id="groupList"></datalist></div>
+        <div><label>👤 ბრიგადირი / ხელმძღვანელი</label><input id="fBrig" placeholder="ჯგუფის უფროსი"></div>
+        <div><label>📞 ბრიგადირის ტელეფონი</label><input id="fBrigPhone" inputmode="numeric" placeholder="555000000"></div>
+      </div>
       <button class="g" onclick="registerPicker()">✅ დამატება</button>
       <div class="row2" style="margin-top:8px">
         <button class="sec" onclick="downloadPickerTemplate()">📥 Excel შაბლონი</button>
@@ -144,7 +149,7 @@
     <div class="card">
       <div class="toolbar">
         <h2 style="margin:0">👥 მკრეფავები: <span id="pkCount" style="color:#0369a1">0</span></h2>
-        <input id="pkSearch" placeholder="🔎 ძებნა — სახელი, ნომერი, პ/ნ, ტელ…" oninput="renderPickers()">
+        <input id="pkSearch" placeholder="🔎 ძებნა — სახელი, ნომერი, პ/ნ, ტელ, ჯგუფი…" oninput="renderPickers()">
         <button class="sec" style="width:auto;padding:8px 12px" onclick="exportPickersExcel()">📊 Excel</button>
       </div>
       <div style="overflow-x:auto">
@@ -311,7 +316,7 @@ async function showApp(email){
   await loadPlantation();
   await loadTgLinks();
   await tgLoadMode();
-  renderDash(); renderPickers(); renderTgCard();
+  fillGroupList(); renderDash(); renderPickers(); renderTgCard();
 }
 function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
 
@@ -395,7 +400,8 @@ function _qrImg(text,size){
 // ── 🏷️ სრული ბარათი-სურათი (QR + პირადი ინფო ჩახატული) → PNG dataURL ──
 async function _qrCardPng(p){
   var qr=await _qrImg(String(p.uid),300);
-  var W=560,H=760, cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  var _lines=2+(p.address?1:0)+(p.group_name?1:0)+(p.brigadier?1:0); // ტელ + პ/ნ + ...
+  var W=560,H=620+34*_lines, cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   var ctx=cv.getContext('2d'); if(!ctx) return '';
   var FF="Sylfaen, 'BPG Nino Mtavruli', system-ui, sans-serif";
   ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
@@ -434,6 +440,8 @@ async function _qrCardPng(p){
   line('ტელეფონი:', p.phone||'—');
   line('პ/ნ:', p.id||p.personal_id||'—');
   if(p.address) line('მისამართი:', p.address);
+  if(p.group_name) line('ჯგუფი:', p.group_name);
+  if(p.brigadier) line('ბრიგადირი:', p.brigadier+(p.brigadier_phone?(' · '+p.brigadier_phone):''));
   return cv.toDataURL('image/png');
 }
 function _rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
@@ -636,36 +644,45 @@ async function registerPicker(){
   var np={ uid:_uid(), user_id:uid, firstName:fn, lastName:ln, name:fn+' '+ln,
     id:document.getElementById('fId').value.trim(), personal_id:document.getElementById('fId').value.trim(),
     phone:document.getElementById('fPhone').value.trim(), address:document.getElementById('fAddr').value.trim(),
-    bank:document.getElementById('fBank').value.trim(), short_code:'', role:document.getElementById('fRole').value };
+    bank:document.getElementById('fBank').value.trim(), short_code:'', role:document.getElementById('fRole').value,
+    group_name:document.getElementById('fGroup').value.trim(), brigadier:document.getElementById('fBrig').value.trim(),
+    brigadier_phone:document.getElementById('fBrigPhone').value.trim() };
   np.short_code=np.uid;
   // ── ატომური ნუმერაცია: num ღრუბლიდან; (user_id,num) უნიკალურ ინდექსზე კონფლიქტისას ხელახლა ──
-  var saved=false, lastErr='';
+  var saved=false, lastErr='', stripped=false;
   for(var attempt=0; attempt<8 && !saved; attempt++){
     np.num=await cloudNextNum();
     var r; try{ r=await sb.from('krepa_pickers').insert(np); }catch(e){ r={error:{message:(e.message||e)}}; }
     if(!r.error){ saved=true; break; }
     lastErr=r.error.message||''; var code=r.error.code||'';
+    // ღრუბელში ჯერ არ არის ჯგუფის სვეტები — ერთხელ ავიღოთ და ხელახლა (SQL გაშვების შემდეგ იმუშავებს)
+    if(!stripped && (code==='PGRST204' || /group_name|brigadier/i.test(lastErr))){ delete np.group_name; delete np.brigadier; delete np.brigadier_phone; stripped=true; attempt--; continue; }
     if((code==='23505' || /duplicate/i.test(lastErr)) && /num/i.test(lastErr)) continue; // ნომერი დაკავდა — შემდეგი
     msg.innerHTML='<span class="warn">❌ '+esc(lastErr)+'</span>'; return;
   }
   if(!saved){ msg.innerHTML='<span class="warn">❌ ნომრის მინიჭება ვერ მოხერხდა — სცადე ხელახლა</span>'; return; }
   PICKERS.push(np);
-  msg.innerHTML='<span class="ok">✅ დაemატა: #'+np.num+' '+esc(pName(np))+'</span>';
-  ['fFirst','fLast','fId','fPhone','fAddr','fBank'].forEach(function(id){ document.getElementById(id).value=''; });
-  renderDash(); renderPickers();
+  msg.innerHTML='<span class="ok">✅ დაemატა: #'+np.num+' '+esc(pName(np))+'</span>'+(stripped?' <span class="warn">(ჯგუფი ვერ შეინახა — გაუშვი sql/picker_group.sql)</span>':'');
+  ['fFirst','fLast','fId','fPhone','fAddr','fBank','fGroup','fBrig','fBrigPhone'].forEach(function(id){ document.getElementById(id).value=''; });
+  fillGroupList(); renderDash(); renderPickers();
 }
 
+function fillGroupList(){
+  var dl=document.getElementById('groupList'); if(!dl) return;
+  var seen={}; PICKERS.forEach(function(p){ var g=(p.group_name||'').trim(); if(g) seen[g]=1; });
+  dl.innerHTML=Object.keys(seen).sort().map(function(g){ return '<option value="'+esc(g)+'">'; }).join('');
+}
 function renderPickers(){
   var q=(document.getElementById('pkSearch').value||'').trim().toLowerCase();
   var list=PICKERS.slice().sort(function(a,b){ return (a.num||9999)-(b.num||9999); });
-  if(q) list=list.filter(function(p){ return (pName(p).toLowerCase().indexOf(q)>=0)||String(p.num||'').indexOf(q)===0||String(p.id||'').indexOf(q)>=0||String(p.phone||'').indexOf(q)>=0; });
+  if(q) list=list.filter(function(p){ return (pName(p).toLowerCase().indexOf(q)>=0)||String(p.num||'').indexOf(q)===0||String(p.id||'').indexOf(q)>=0||String(p.phone||'').indexOf(q)>=0||String(p.group_name||'').toLowerCase().indexOf(q)>=0||String(p.brigadier||'').toLowerCase().indexOf(q)>=0; });
   document.getElementById('pkCount').textContent=PICKERS.length;
   var b=document.getElementById('pkBody');
   if(!list.length){ b.innerHTML='<tr><td colspan="8" class="muted">'+(q?'ვერ მოიძებნა':'ჯერ არავინ')+'</td></tr>'; return; }
   b.innerHTML=list.map(function(p){
     var role=p.role==='carrier'?'<span class="badge b-carry">🚚 გამომტანი</span>':'<span class="badge b-pick">🧺 მკრეფავი</span>';
     return '<tr><td><span class="badge b-num">#'+(p.num!=null?p.num:'—')+'</span></td>'
-      +'<td><strong style="color:#0369a1;cursor:pointer" onclick="openPicker(\''+esc(p.uid)+'\')">'+esc(pName(p))+'</strong> <span style="cursor:pointer" onclick="openPicker(\''+esc(p.uid)+'\')">👁️</span></td>'
+      +'<td><strong style="color:#0369a1;cursor:pointer" onclick="openPicker(\''+esc(p.uid)+'\')">'+esc(pName(p))+'</strong> <span style="cursor:pointer" onclick="openPicker(\''+esc(p.uid)+'\')">👁️</span>'+(p.group_name?('<div class="muted" style="font-size:.68rem">👥 '+esc(p.group_name)+(p.brigadier?(' · '+esc(p.brigadier)):'')+'</div>'):'')+'</td>'
       +'<td>'+role+'</td>'
       +'<td class="muted">'+esc(p.id||p.personal_id||'—')+'</td>'
       +'<td>'+esc(p.phone||'—')+(p.phone&&tgLinked(p.phone)?' <span class="badge" style="background:#e1f0fb;color:#229ED9" title="Telegram დაკავშირებულია">✈️</span>':'')+'</td>'
@@ -681,6 +698,7 @@ function editPicker(u){
   document.getElementById('fFirst').value=p.firstName||''; document.getElementById('fLast').value=p.lastName||'';
   document.getElementById('fId').value=p.id||p.personal_id||''; document.getElementById('fPhone').value=p.phone||'';
   document.getElementById('fAddr').value=p.address||''; document.getElementById('fBank').value=p.bank||'';
+  document.getElementById('fGroup').value=p.group_name||''; document.getElementById('fBrig').value=p.brigadier||''; document.getElementById('fBrigPhone').value=p.brigadier_phone||'';
   editingUid=u;
   var msg=document.getElementById('regMsg'); msg.innerHTML='<span style="color:#0369a1">✏️ რედაქტირება: '+esc(pName(p))+' — შეცვალე და დააჭირე „განახლება"</span>';
   var btn=document.querySelector('#p-pickers .card .g'); if(btn){ btn.textContent='💾 განახლება'; btn.setAttribute('onclick','updatePicker()'); }
@@ -693,16 +711,23 @@ async function updatePicker(){
     name:(document.getElementById('fFirst').value.trim()+' '+document.getElementById('fLast').value.trim()).trim(),
     id:document.getElementById('fId').value.trim(), personal_id:document.getElementById('fId').value.trim(),
     phone:document.getElementById('fPhone').value.trim(), address:document.getElementById('fAddr').value.trim(),
-    bank:document.getElementById('fBank').value.trim(), role:document.getElementById('fRole').value };
-  try{ var r=await sb.from('krepa_pickers').update(upd).eq('user_id',uid).eq('uid',editingUid);
-    if(r.error){ document.getElementById('regMsg').innerHTML='<span class="warn">❌ '+r.error.message+'</span>'; return; } }
-  catch(e){ document.getElementById('regMsg').innerHTML='<span class="warn">❌ '+(e.message||e)+'</span>'; return; }
+    bank:document.getElementById('fBank').value.trim(), role:document.getElementById('fRole').value,
+    group_name:document.getElementById('fGroup').value.trim(), brigadier:document.getElementById('fBrig').value.trim(),
+    brigadier_phone:document.getElementById('fBrigPhone').value.trim() };
+  var r; try{ r=await sb.from('krepa_pickers').update(upd).eq('user_id',uid).eq('uid',editingUid); }catch(e){ r={error:{message:(e.message||e)}}; }
+  if(r.error && (r.error.code==='PGRST204' || /group_name|brigadier/i.test(r.error.message||''))){
+    // ჯგუფის სვეტები ჯერ არ არსებობს — ავიღოთ და ხელახლა
+    delete upd.group_name; delete upd.brigadier; delete upd.brigadier_phone;
+    try{ r=await sb.from('krepa_pickers').update(upd).eq('user_id',uid).eq('uid',editingUid); }catch(e){ r={error:{message:(e.message||e)}}; }
+    document.getElementById('regMsg').innerHTML='<span class="warn">⚠️ ჯგუფი ვერ შეინახა — გაუშვი sql/picker_group.sql</span>';
+  }
+  if(r.error){ document.getElementById('regMsg').innerHTML='<span class="warn">❌ '+r.error.message+'</span>'; return; }
   Object.keys(upd).forEach(function(k){ p[k]=upd[k]; });
-  document.getElementById('regMsg').innerHTML='<span class="ok">✅ განახლდა: '+esc(pName(p))+'</span>';
-  ['fFirst','fLast','fId','fPhone','fAddr','fBank'].forEach(function(id){ document.getElementById(id).value=''; });
+  if(document.getElementById('regMsg').innerHTML.indexOf('⚠️')<0) document.getElementById('regMsg').innerHTML='<span class="ok">✅ განახლდა: '+esc(pName(p))+'</span>';
+  ['fFirst','fLast','fId','fPhone','fAddr','fBank','fGroup','fBrig','fBrigPhone'].forEach(function(id){ document.getElementById(id).value=''; });
   editingUid=null;
   var btn=document.querySelector('#p-pickers .card .g'); if(btn){ btn.textContent='✅ დამატება'; btn.setAttribute('onclick','registerPicker()'); }
-  renderPickers();
+  fillGroupList(); renderPickers();
 }
 async function deletePicker(u){
   var p=PICKERS.find(function(x){ return x.uid===u; }); if(!p) return;
@@ -723,16 +748,16 @@ function exportPickersExcel(){
   var cell={border:bd()};
   function bd(){ var s={style:'thin',color:{rgb:'D9D9D9'}}; return {top:s,bottom:s,left:s,right:s}; }
   var list=PICKERS.slice().sort(function(a,b){ return (a.num||9999)-(b.num||9999); });
-  var aoa=[['🌾 მკრეფავები — '+_today()],['№','სახელი / გვარი','როლი','პ/ნ','ტელეფონი','საცხოვრებელი','ბანკი','სულ კგ','ყუთი']];
+  var aoa=[['🌾 მკრეფავები — '+_today()],['№','სახელი / გვარი','როლი','პ/ნ','ტელეფონი','საცხოვრებელი','👥 ჯგუფი','👤 ბრიგადირი','ბრიგ. ტელ.','ბანკი','სულ კგ','ყუთი']];
   var tKg=0,tBox=0;
-  list.forEach(function(p){ var kg=pkKg(p),bx=pkBox(p); tKg+=kg; tBox+=bx; aoa.push([p.num!=null?p.num:'',pName(p),p.role==='carrier'?'გამომტანი':'მკრეფავი',p.id||p.personal_id||'',p.phone||'',p.address||'',p.bank||'',Math.round(kg*10)/10,bx]); });
-  aoa.push(['','ჯამი — '+list.length+' მკრეფავი','','','','','',Math.round(tKg*10)/10,tBox]);
+  list.forEach(function(p){ var kg=pkKg(p),bx=pkBox(p); tKg+=kg; tBox+=bx; aoa.push([p.num!=null?p.num:'',pName(p),p.role==='carrier'?'გამომტანი':'მკრეფავი',p.id||p.personal_id||'',p.phone||'',p.address||'',p.group_name||'',p.brigadier||'',p.brigadier_phone||'',p.bank||'',Math.round(kg*10)/10,bx]); });
+  aoa.push(['','ჯამი — '+list.length+' მკრეფავი','','','','','','','','',Math.round(tKg*10)/10,tBox]);
   var ws=XLSX.utils.aoa_to_sheet(aoa);
   for(var R=0;R<aoa.length;R++){ for(var C=0;C<aoa[R].length;C++){ var ref=XLSX.utils.encode_cell({r:R,c:C}); if(!ws[ref]) ws[ref]={t:'s',v:''};
     var s=cell; if(R<=1) s=head; else if(R===aoa.length-1) s=tot; else if(C===2){ s=(aoa[R][2]==='გამომტანი')?carry:pick; }
     ws[ref].s=s; } }
-  ws['!cols']=[{wch:5},{wch:22},{wch:11},{wch:13},{wch:12},{wch:16},{wch:22},{wch:9},{wch:7}];
-  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:8}}];
+  ws['!cols']=[{wch:5},{wch:22},{wch:11},{wch:13},{wch:12},{wch:16},{wch:14},{wch:16},{wch:12},{wch:22},{wch:9},{wch:7}];
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:11}}];
   var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'მკრეფავები');
   try{ XLSX.writeFile(wb,'mkrepavebi_'+_today()+'.xlsx'); }catch(e){ alert('❌ '+(e.message||e)); }
 }
@@ -767,7 +792,8 @@ function openPicker(u){
   ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:700px;width:100%;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.25)">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">'
       +'<div><div style="font-size:1.15rem;font-weight:800">'+(p.num!=null?('<span class="badge b-num">#'+p.num+'</span> '):'')+esc(pName(p))+'</div>'
-      +'<div class="muted" style="margin-top:3px">'+role+' · 📞 '+esc(p.phone||'—')+' · პ/ნ '+esc(p.id||p.personal_id||'—')+(p.bank?(' · 🏦 '+esc(p.bank)):'')+'</div></div>'
+      +'<div class="muted" style="margin-top:3px">'+role+' · 📞 '+esc(p.phone||'—')+' · პ/ნ '+esc(p.id||p.personal_id||'—')+(p.bank?(' · 🏦 '+esc(p.bank)):'')+'</div>'
+      +((p.group_name||p.brigadier)?('<div class="muted" style="margin-top:2px">👥 '+esc(p.group_name||'—')+(p.brigadier?(' · 👤 ბრიგადირი: '+esc(p.brigadier)+(p.brigadier_phone?(' ('+esc(p.brigadier_phone)+')'):'')):'')+'</div>'):'')+'</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="sec" style="width:auto;padding:7px 12px" onclick="makeIdCard(\''+esc(p.uid)+'\')">🪪 ID ბარათი</button><button class="sec" style="width:auto;padding:7px 12px" onclick="exportPickerExcel(\''+esc(p.uid)+'\')">📊 Excel</button><button class="sec" style="width:auto;padding:7px 12px" onclick="printPicker(\''+esc(p.uid)+'\')">🖨️ ბეჭდვა</button><button class="sec" style="width:auto;padding:7px 12px" onclick="document.getElementById(\'pkModal\').remove()">✕</button></div>'
     +'</div>'
     +'<div class="stats" style="margin:14px 0">'
@@ -812,7 +838,8 @@ function exportPickerExcel(u){
   var aoa=[
     ['👤 მკრეფავის პროფილი — '+pName(p)+(p.num!=null?(' (#'+p.num+')'):'')],
     ['როლი',p.role==='carrier'?'გამომტანი':'მკრეფავი','ტელეფონი',p.phone||'','პ/ნ',p.id||p.personal_id||''],
-    ['ბანკი (IBAN)',p.bank||'','','','',''],
+    ['ბანკი (IBAN)',p.bank||'','საცხოვრებელი',p.address||'','',''],
+    ['👥 ჯგუფი',p.group_name||'','👤 ბრიგადირი',p.brigadier||'','ბრიგ. ტელ.',p.brigadier_phone||''],
     [],
     ['სულ კგ',Math.round(kg*10)/10,'ყუთი',box,'SMS გაიგზ.',sms.sent],
     ['გამომუშავებული ₾',earn,'ბონუსი ₾',bonus,'SMS მიუვ.',sms.deliv||0],
@@ -829,7 +856,7 @@ function exportPickerExcel(u){
   for(var R=0;R<aoa.length;R++){ for(var C=0;C<(aoa[R]||[]).length;C++){ var ref=XLSX.utils.encode_cell({r:R,c:C}); if(!ws[ref]) ws[ref]={t:'s',v:''};
     var s=cell;
     if(R===0) s=head;
-    else if(R>=1 && R<=6 && (C===0||C===2||C===4)) s=lbl;
+    else if(R>=1 && R<=7 && (C===0||C===2||C===4)) s=lbl;
     else if(R===hStart-1) s=head;               // ისტორიის სათაური სტრიქონი
     else if(R===aoa.length-1) s=tot;            // ჯამი
     else if(R>=hStart && C===6 && aoa[R][6]) s=bon;
@@ -1020,23 +1047,23 @@ function exportReportExcel(){
     function pinfo(puid,name){ return PICKERS.find(function(x){ return (puid&&x.uid===puid)||pName(x)===name; })||{}; }
     var r2=function(n){ return Math.round((+n||0)*100)/100; };
     // ჯგუფის სათაურები (row index 3)
-    var grp=['','','','','','','ჯამური','','','',''];
+    var grp=['','','','','','','','','ჯამური','','','',''];
     days.forEach(function(d){ grp.push(d.slice(5),'','','',''); });
     // ქვე-სათაურები (row index 4)
-    var sub=['#','სახელი / გვარი','პ/ნ','ტელეფონი','ადგილმდებარეობა','ტიპი','ყუთი','სულ კგ','თანხა ₾','ბონუსი ₾','გასაცემი ₾'];
+    var sub=['#','სახელი / გვარი','პ/ნ','ტელეფონი','ადგილმდებარეობა','👥 ჯგუფი','👤 ბრიგადირი','ტიპი','ყუთი','სულ კგ','თანხა ₾','ბონუსი ₾','გასაცემი ₾'];
     days.forEach(function(){ sub.push('ყუთი','კგ','ფასი','ბონუსი','ჯამი ₾'); });
     var ncol=sub.length;
     // ჯამები
     var tB=0,tK=0,tE=0,tBn=0; byP.forEach(function(m){ tB+=m.box; tK+=m.kg; tE+=m.earn; tBn+=(m.bonus||0); });
     var dayTot={}; days.forEach(function(d){ dayTot[d]={box:0,kg:0,bonus:0,tot:0}; });
     byP.forEach(function(m){ days.forEach(function(d){ var dd=m.dmap[d]; if(dd){ dayTot[d].box+=dd.box; dayTot[d].kg+=dd.kg; dayTot[d].bonus+=(dd.bonus||0); dayTot[d].tot+=(dd.earn+(dd.bonus||0)); } }); });
-    var totR=['','ჯამი (ყველა)','','','','',tB,r2(tK),r2(tE),r2(tBn),r2(tE+tBn)];
+    var totR=['','ჯამი (ყველა)','','','','','','',tB,r2(tK),r2(tE),r2(tBn),r2(tE+tBn)];
     days.forEach(function(d){ var t=dayTot[d]; totR.push(t.box||'',r2(t.kg)||'','',r2(t.bonus)||'',r2(t.tot)||''); });
     var aoa=[['AgroInTechSol — მკრეფავების დეტალური'],['თარიღი:',(fromD||'')+' — '+(toD||'')],[],grp,sub,totR];
     byP.forEach(function(m,ix){
       var pi=pinfo(m.puid,m.name);
       var role=roleOf(m.puid,m.name)==='carrier'?'გამომტანი':'მკრეფავი';
-      var row=[ix+1,m.name,pi.id||pi.personal_id||'',pi.phone||'',pi.address||'',role,m.box,r2(m.kg),r2(m.earn),r2(m.bonus||0),r2(m.earn+(m.bonus||0))];
+      var row=[ix+1,m.name,pi.id||pi.personal_id||'',pi.phone||'',pi.address||'',pi.group_name||'',pi.brigadier||'',role,m.box,r2(m.kg),r2(m.earn),r2(m.bonus||0),r2(m.earn+(m.bonus||0))];
       days.forEach(function(d){ var dd=m.dmap[d];
         if(dd){ var pr=_avgPrice(dd.items)||(dd.kg>0?(dd.earn/dd.kg):0); row.push(dd.box,r2(dd.kg),r2(pr),r2(dd.bonus||0),r2(dd.earn+(dd.bonus||0))); }
         else { row.push('','','','',''); }
@@ -1044,8 +1071,8 @@ function exportReportExcel(){
       aoa.push(row);
     });
     var ws0=XLSX.utils.aoa_to_sheet(aoa);
-    var merges=[{s:{r:0,c:0},e:{r:0,c:Math.min(ncol-1,10)}},{s:{r:3,c:6},e:{r:3,c:10}}];
-    days.forEach(function(d,i){ var c=11+i*5; merges.push({s:{r:3,c:c},e:{r:3,c:c+4}}); });
+    var merges=[{s:{r:0,c:0},e:{r:0,c:Math.min(ncol-1,12)}},{s:{r:3,c:8},e:{r:3,c:12}}];
+    days.forEach(function(d,i){ var c=13+i*5; merges.push({s:{r:3,c:c},e:{r:3,c:c+4}}); });
     ws0['!merges']=merges;
     for(var R=0;R<aoa.length;R++){ for(var C=0;C<ncol;C++){ var ref=XLSX.utils.encode_cell({r:R,c:C}); if(!ws0[ref])ws0[ref]={t:'s',v:''};
       if(R===0) ws0[ref].s={font:{bold:true,sz:13,color:{rgb:'0369A1'}}};
@@ -1055,7 +1082,7 @@ function exportReportExcel(){
       else if(R===5) ws0[ref].s={fill:{fgColor:{rgb:'E2E8F0'}},font:{bold:true},border:bd()};
       else ws0[ref].s=cell;
     }}
-    var cols=[{wch:4},{wch:22},{wch:13},{wch:12},{wch:18},{wch:10},{wch:7},{wch:9},{wch:10},{wch:10},{wch:11}];
+    var cols=[{wch:4},{wch:22},{wch:13},{wch:12},{wch:18},{wch:14},{wch:16},{wch:10},{wch:7},{wch:9},{wch:10},{wch:10},{wch:11}];
     days.forEach(function(){ cols.push({wch:6},{wch:7},{wch:6},{wch:7},{wch:8}); });
     ws0['!cols']=cols;
     XLSX.utils.book_append_sheet(wb,ws0,'მკრეფავების დეტალური');
@@ -1506,7 +1533,7 @@ function makeIdCard(u){
         +'<div class="nm">'+esc(pName(p))+'</div>'
         +'<div class="role">'+role+'</div>'
         +'<div class="qr">'+(src?('<img src="'+src+'">'):'QR')+'</div>'
-        +'<div class="info">📞 ტელეფონი: '+esc(p.phone||'—')+'<br>🆔 პ/ნ: '+esc(p.id||p.personal_id||'—')+(p.address?('<br>📍 '+esc(p.address)):'')+'</div>'
+        +'<div class="info">📞 ტელეფონი: '+esc(p.phone||'—')+'<br>🆔 პ/ნ: '+esc(p.id||p.personal_id||'—')+(p.address?('<br>📍 '+esc(p.address)):'')+(p.group_name?('<br>👥 ჯგუფი: '+esc(p.group_name)):'')+(p.brigadier?('<br>👤 ბრიგადირი: '+esc(p.brigadier)+(p.brigadier_phone?(' · '+esc(p.brigadier_phone)):'')):'')+'</div>'
       +'</div></div>'
       +'</body></html>';
     w.document.write(html); w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} },500);
@@ -1539,11 +1566,11 @@ function printPicker(u){
 function downloadPickerTemplate(){
   if(typeof XLSX==='undefined'){ alert('Excel ბიბლიოთეკა ვერ ჩაიტვირთა'); return; }
   var head={fill:{fgColor:{rgb:'0369A1'}},font:{color:{rgb:'FFFFFF'},bold:true}};
-  var aoa=[['სახელი','გვარი','პ/ნ','ტელეფონი','საცხოვრებელი','ბანკი (IBAN)','როლი (picker/carrier)'],
-           ['გიორგი','მელაძე','01001000001','555123456','თბილისი','GE00XX0000000000000000','picker']];
+  var aoa=[['სახელი','გვარი','პ/ნ','ტელეფონი','საცხოვრებელი','ბანკი (IBAN)','როლი (picker/carrier)','ჯგუფი','ბრიგადირი','ბრიგადირის ტელ.'],
+           ['გიორგი','მელაძე','01001000001','555123456','თბილისი','GE00XX0000000000000000','picker','ბრიგადა №1','ლევან ბერიძე','555000000']];
   var ws=XLSX.utils.aoa_to_sheet(aoa);
   for(var C=0;C<aoa[0].length;C++){ var ref=XLSX.utils.encode_cell({r:0,c:C}); if(ws[ref]) ws[ref].s=head; }
-  ws['!cols']=[{wch:14},{wch:14},{wch:14},{wch:13},{wch:18},{wch:24},{wch:20}];
+  ws['!cols']=[{wch:14},{wch:14},{wch:14},{wch:13},{wch:18},{wch:24},{wch:20},{wch:14},{wch:16},{wch:14}];
   var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'შაბლონი');
   try{ XLSX.writeFile(wb,'mkrepavebi_shabloni.xlsx'); }catch(e){ alert('❌ '+(e.message||e)); }
 }
@@ -1565,12 +1592,19 @@ async function importPickersExcel(inp){
       var np={ uid:_uid(), user_id:uid, firstName:fn, lastName:ln, name:(fn+' '+ln).trim(),
         id:String(r[2]||'').trim(), personal_id:String(r[2]||'').trim(), phone:String(r[3]||'').trim(),
         address:String(r[4]||'').trim(), bank:String(r[5]||'').trim(),
-        role:(String(r[6]||'').toLowerCase().indexOf('carr')>=0||String(r[6]||'').indexOf('გამომ')>=0)?'carrier':'picker', num:maxn };
+        role:(String(r[6]||'').toLowerCase().indexOf('carr')>=0||String(r[6]||'').indexOf('გამომ')>=0)?'carrier':'picker', num:maxn,
+        group_name:String(r[7]||'').trim(), brigadier:String(r[8]||'').trim(), brigadier_phone:String(r[9]||'').trim() };
       np.short_code=np.uid; toAdd.push(np);
     }
     if(!toAdd.length){ msg.innerHTML='<span class="warn">ვერ ვიპოვე მკრეფავები ფაილში</span>'; inp.value=''; return; }
+    var stripG=false;
     for(var b=0;b<toAdd.length;b+=200){ var chunk=toAdd.slice(b,b+200);
-      try{ var res=await sb.from('krepa_pickers').insert(chunk); if(!res.error){ added+=chunk.length; PICKERS=PICKERS.concat(chunk); } else { skip+=chunk.length; } }catch(e){ skip+=chunk.length; }
+      if(stripG) chunk.forEach(function(x){ delete x.group_name; delete x.brigadier; delete x.brigadier_phone; });
+      try{ var res=await sb.from('krepa_pickers').insert(chunk);
+        if(!res.error){ added+=chunk.length; PICKERS=PICKERS.concat(chunk); }
+        else if(!stripG && (res.error.code==='PGRST204' || /group_name|brigadier/i.test(res.error.message||''))){ stripG=true; b-=200; }
+        else { skip+=chunk.length; }
+      }catch(e){ skip+=chunk.length; }
     }
     msg.innerHTML='<span class="ok">✅ დაემატა '+added+' მკრეფავი'+(skip?(' · ⚠️ '+skip+' ვერ'):'')+'</span>';
     renderDash(); renderPickers();
