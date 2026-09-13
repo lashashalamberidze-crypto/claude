@@ -111,6 +111,9 @@
             <button class="sec" style="width:auto;padding:8px 12px" onclick="tgPrintQr()">🖨️ QR ბეჭდვა</button>
             <button class="sec" style="width:auto;padding:8px 12px" onclick="loadTgLinks().then(renderPickers)">🔄 სტატუსის განახლება</button>
           </div>
+          <div style="margin-top:8px">
+            <button class="g" style="width:auto;padding:9px 14px;background:#229ED9" onclick="tgSendQrAll()" title="ყველა დაკავშირებულ მკრეფავს გაუგზავნის მის QR ბარათს სურათად">🏷️ QR ბარათების გაგზავნა (დაკავშირებულებს)</button>
+          </div>
           <div id="tgStat" class="muted" style="font-size:.8rem;margin-top:8px"></div>
         </div>
       </div>
@@ -373,6 +376,58 @@ function tgSendDaily(){
   _tgInvoke({daily:true, date:dt||undefined});
 }
 function tgSendTest(){ _tgInvoke({text:'🔔 ტესტი — AgroInTechSol\nTelegram კავშირი მუშაობს ✅'}); }
+// ── 🏷️ QR ბარათის PNG (uid-ით) → base64 ──
+function _qrPng(text,size){
+  return new Promise(function(resolve){
+    if(typeof QRCode==='undefined'){ resolve(''); return; }
+    var tmp=document.createElement('div'); tmp.style.cssText='position:absolute;left:-9999px;top:-9999px'; document.body.appendChild(tmp);
+    try{ new QRCode(tmp,{text:String(text),width:size||320,height:size||320,correctLevel:QRCode.CorrectLevel.M}); }
+    catch(e){ tmp.remove(); resolve(''); return; }
+    setTimeout(function(){
+      var cv=tmp.querySelector('canvas'), img=tmp.querySelector('img');
+      var src=cv?cv.toDataURL('image/png'):(img?img.src:'');
+      tmp.remove(); resolve(src||'');
+    },260);
+  });
+}
+function _tgSetStat(html){ var st=document.getElementById('tgStat'); if(st) st.innerHTML=html; }
+// ერთ დაკავშირებულ მკრეფავს — მისი QR
+async function tgSendQrOne(uidOrPicker){
+  var p=(typeof uidOrPicker==='object')?uidOrPicker:PICKERS.find(function(x){ return x.uid===uidOrPicker; });
+  if(!p){ return; }
+  if(!tgLinked(p.phone)){ alert('ეს მკრეფავი ჯერ არ არის დაკავშირებული Telegram-ზე ('+pName(p)+')'); return; }
+  _tgSetStat('⏳ QR მზადდება — '+esc(pName(p))+'…');
+  var png=await _qrPng(String(p.uid),340);
+  if(!png){ _tgSetStat('<span style="color:#b91c1c">❌ QR ვერ შეიქმნა</span>'); return; }
+  var cap='🏷️ '+pName(p)+(p.num!=null?(' · #'+p.num):'')+'\nQR ბარათი — შეინახე ტელეფონში და ასკანერე კრეფის დროს\n\nAgroInTechSol';
+  try{
+    var r=await sb.functions.invoke('telegram-send',{body:{qr:[{phone:p.phone,b64:png,caption:cap}]}});
+    if(r.error){ _tgSetStat('<span style="color:#b91c1c">❌ '+esc(r.error.message||'')+'</span>'); return; }
+    var d=r.data||{}; _tgSetStat('<span style="color:#059669">✅ QR გაიგზავნა '+esc(pName(p))+'-ს ('+(d.sent||0)+')</span>');
+  }catch(e){ _tgSetStat('<span style="color:#b91c1c">❌ '+esc(e.message||e)+'</span>'); }
+}
+// ყველა დაკავშირებულ მკრეფავს — ერთი დაჭერით
+async function tgSendQrAll(){
+  var linked=PICKERS.filter(function(p){ return tgLinked(p.phone); });
+  if(!linked.length){ alert('ჯერ არავინ არ დაკავშირებულა Telegram-ზე.\n(მკრეფავმა უნდა დაასკანეროს QR → Start → 📱 ნომრის გაზიარება)'); return; }
+  if(!confirm(linked.length+' დაკავშირებულ მკრეფავს გაეგზავნება მისი QR ბარათი Telegram-ზე. გავაგრძელო?')) return;
+  var items=[];
+  for(var i=0;i<linked.length;i++){
+    var p=linked[i];
+    _tgSetStat('⏳ QR-ები მზადდება… ('+(i+1)+'/'+linked.length+')');
+    var png=await _qrPng(String(p.uid),340);
+    if(!png) continue;
+    var cap='🏷️ '+pName(p)+(p.num!=null?(' · #'+p.num):'')+'\nQR ბარათი — შეინახე ტელეფონში და ასკანერე კრეფის დროს\n\nAgroInTechSol';
+    items.push({phone:p.phone,b64:png,caption:cap});
+  }
+  if(!items.length){ _tgSetStat('<span style="color:#b45309">⚠️ QR ვერ შეიქმნა</span>'); return; }
+  _tgSetStat('⏳ იგზავნება '+items.length+' QR ბარათი…');
+  try{
+    var r=await sb.functions.invoke('telegram-send',{body:{qr:items}});
+    if(r.error){ _tgSetStat('<span style="color:#b91c1c">❌ '+esc(r.error.message||'')+'</span>'); return; }
+    var d=r.data||{}; _tgSetStat('<span style="color:#059669">✅ QR გაიგზავნა: '+(d.sent||0)+' · ვერ მოხერხდა: '+(d.failed||0)+'</span>');
+  }catch(e){ _tgSetStat('<span style="color:#b91c1c">❌ '+esc(e.message||e)+'</span>'); }
+}
 
 function switchTab(t){ activeTab=t;
   document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-t')===t); });
@@ -569,7 +624,7 @@ function renderPickers(){
       +'<td>'+esc(p.phone||'—')+(p.phone&&tgLinked(p.phone)?' <span class="badge" style="background:#e1f0fb;color:#229ED9" title="Telegram დაკავშირებულია">✈️</span>':'')+'</td>'
       +'<td><strong>'+fmtKg(pkKg(p))+'</strong></td>'
       +'<td>'+pkBox(p)+'</td>'
-      +'<td style="white-space:nowrap"><span class="x" onclick="deletePicker(\''+esc(p.uid)+'\')">🗑️</span></td></tr>';
+      +'<td style="white-space:nowrap">'+(p.phone&&tgLinked(p.phone)?'<span class="x" title="QR ბარათი Telegram-ზე გაგზავნა" style="cursor:pointer" onclick="tgSendQrOne(\''+esc(p.uid)+'\')">✈️🏷️</span> ':'')+'<span class="x" onclick="deletePicker(\''+esc(p.uid)+'\')">🗑️</span></td></tr>';
   }).join('');
 }
 

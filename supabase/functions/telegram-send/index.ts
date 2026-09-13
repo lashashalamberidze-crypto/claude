@@ -61,6 +61,30 @@ serve(async (req) => {
   let sent = 0, failed = 0;
   const details: any[] = [];
 
+  // ── QR სურათები: [{phone, b64, caption}] → sendPhoto თითო დაკავშირებულს ──
+  if(Array.isArray(body.qr) && body.qr.length){
+    for(const item of body.qr){
+      const ph = norm(item?.phone || "");
+      const link = byPhone[ph];
+      if(!link){ continue; }                       // მხოლოდ დაკავშირებულებს
+      const b64 = String(item?.b64 || "").replace(/^data:image\/\w+;base64,/, "");
+      if(!b64){ failed++; continue; }
+      try{
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+        const form = new FormData();
+        form.append("chat_id", String(link.chat_id));
+        if(item.caption) form.append("caption", String(item.caption));
+        form.append("photo", new Blob([bytes], { type:"image/png" }), "qr.png");
+        const r = await fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, { method:"POST", body: form });
+        const j = await r.json().catch(()=>({}));
+        if(j.ok) sent++; else failed++;
+      }catch(_e){ failed++; }
+    }
+    return json({ ok:true, mode:"qr", linked:Object.keys(byPhone).length, sent, failed });
+  }
+
   if(body.daily){
     // დღის ჯამი — harvest_sessions აგრეგაცია picker_id-ით, ტელეფონი krepa_pickers-იდან
     const today = (typeof body.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.date))
