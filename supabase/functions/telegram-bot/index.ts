@@ -1,14 +1,18 @@
 // ═══════════════════════════════════════════════════════════════════════
 // telegram-bot — Telegram webhook: მკრეფავების დაკავშირება (chat_id შენახვა)
 //
+// ⚡ ავტომატური ჩართვა (ტოკენი URL-ში აღარ საჭიროა):
+//   გახსენი ბრაუზერში ერთხელ:  <fn-url>?setup=1
+//   → ფუნქცია თვითონ აიღებს ტოკენს secret-იდან და ჩართავს webhook-ს.
+//
 // ნაკადი:
 //   1) მკრეფავი ხსნის t.me/<bot>?start=<owner_user_id> → აჭერს Start
 //   2) ბოტი ინახავს pending (chat_id → owner) და სთხოვს ნომრის გაზიარებას
 //   3) მკრეფავი აზიარებს კონტაქტს → ვინახავთ telegram_links (owner, phone, chat_id)
 //
-// Secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET,
-//          SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
-// Webhook: https://api.telegram.org/bot<TOKEN>/setWebhook?url=<fn-url>&secret_token=<SECRET>
+// Secrets: TELEGRAM_BOT_TOKEN, (არასავალდ.) TELEGRAM_WEBHOOK_SECRET,
+//          SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY   (ბოლო ორი ავტომატურია)
+// ⚠️ Deploy: „Verify JWT" გამორთე.
 // ═══════════════════════════════════════════════════════════════════════
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -28,10 +32,29 @@ async function tg(method: string, body: unknown){
     method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(body)
   });
 }
+function json(data: unknown, status = 200){
+  return new Response(JSON.stringify(data), { status, headers:{ "Content-Type":"application/json" } });
+}
 const ok = () => new Response("ok", { status: 200 });
 
 serve(async (req) => {
-  // Telegram-ის secret token header
+  const url = new URL(req.url);
+
+  // ── ⚡ ავტომატური setup: <fn-url>?setup=1 → webhook-ს თვითონ ჩართავს ──
+  if(req.method === "GET" && url.searchParams.has("setup")){
+    if(!TOKEN) return json({ setup:false, error:"TELEGRAM_BOT_TOKEN აკლია secret-ებში" }, 500);
+    const secret = Deno.env.get("TELEGRAM_WEBHOOK_SECRET") || "";
+    const selfUrl = url.origin + url.pathname;   // ამ ფუნქციის საკუთარი URL
+    const body: Record<string,unknown> = { url: selfUrl, drop_pending_updates: true };
+    if(secret) body.secret_token = secret;
+    let tgRes: unknown = null;
+    try { tgRes = await (await tg("setWebhook", body)).json(); }
+    catch(e){ return json({ setup:false, error:(e as Error).message }, 500); }
+    return json({ setup:true, webhook_url:selfUrl, telegram:tgRes,
+      hint:"თუ telegram.ok=true → მზადაა. ახლა ბოტში დაწერე /start" });
+  }
+
+  // ── webhook (POST Telegram-იდან): secret header შემოწმება ──
   const secret = Deno.env.get("TELEGRAM_WEBHOOK_SECRET");
   if(secret){
     const got = req.headers.get("x-telegram-bot-api-secret-token") || "";
@@ -101,7 +124,6 @@ serve(async (req) => {
       });
     }
   } catch(e){
-    // ჩუმად — Telegram თავიდან არ გამოგვიგზავნის თუ 200 დავაბრუნეთ
     console.error("telegram-bot", (e as Error).message);
   }
   return ok();
