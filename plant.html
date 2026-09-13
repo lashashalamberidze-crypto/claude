@@ -82,7 +82,7 @@
       <div id="listItems"><div class="muted" style="padding:16px 0">იტვირთება…</div></div>
     </div>
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
         <h2 style="margin:0">🗺 რუკა</h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="gray" style="width:auto;padding:8px 13px;margin:0" onclick="plantPDF()" title="აქტიური პლანტაცია — ბეჭდვადი PDF კონტურით">🖨 PDF (აქტიური)</button>
@@ -975,12 +975,14 @@ function _plantSVG(plant, blocks, W){
   var xs=all.map(function(c){return proj(c)[0];}), ys=all.map(function(c){return proj(c)[1];});
   var minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs), minY=Math.min.apply(null,ys), maxY=Math.max.apply(null,ys);
   var pad=22, spanX=(maxX-minX)||1e-6, spanY=(maxY-minY)||1e-6;
-  var sc=Math.min((W-2*pad)/spanX,(W-2*pad)/spanY);
-  var H=Math.max(180, Math.round(spanY*sc+2*pad));
+  var maxH=400; // სიმაღლის ზღვარი — რომ ერთ გვერდზე დაეტიოს
+  var sc=Math.min((W-2*pad)/spanX,(maxH-2*pad)/spanY);
+  var Wc=Math.max(160, Math.round(spanX*sc+2*pad));
+  var H=Math.max(150, Math.round(spanY*sc+2*pad));
   function P(c){ var p=proj(c); return [ (pad+(p[0]-minX)*sc).toFixed(1), (pad+(maxY-p[1])*sc).toFixed(1) ]; }
   function ptsStr(cs){ return cs.map(function(c){ var xy=P(c); return xy[0]+','+xy[1]; }).join(' '); }
   function centroid(cs){ var la=0,lo=0; cs.forEach(function(c){ la+=c[0]; lo+=c[1]; }); return [la/cs.length, lo/cs.length]; }
-  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">';
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+Wc+'" height="'+H+'" viewBox="0 0 '+Wc+' '+H+'" style="max-width:100%;height:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">';
   if(contour.length>=3) svg+='<polygon points="'+ptsStr(contour)+'" fill="#10b981" fill-opacity="0.10" stroke="#0f766e" stroke-width="2.5"/>';
   bpolys.forEach(function(bp){
     svg+='<polygon points="'+ptsStr(bp.coords)+'" fill="'+bp.color+'" fill-opacity="0.30" stroke="'+bp.color+'" stroke-width="2"/>';
@@ -1009,24 +1011,25 @@ async function plantPDF(){
     ['შენიშვნა',p.note||'—']
   ];
   var w=window.open('','_blank'); if(!w){ alert('ბლოკერმა შეაფერხა ფანჯარა'); return; }
-  var css='body{font-family:\'Segoe UI\',system-ui,sans-serif;color:#0f172a;margin:0;padding:26px}h1{margin:0 0 2px;font-size:22px;color:#0f766e}.sub{color:#64748b;font-size:13px;margin-bottom:14px}table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}td,th{border:1px solid #e2e8f0;padding:6px 9px;text-align:left}th{background:#0f766e;color:#fff}.k{background:#f1f5f9;font-weight:600;width:200px}h2{font-size:15px;color:#0f766e;margin:18px 0 4px;border-bottom:2px solid #ccfbf1;padding-bottom:3px}.leg{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:middle}@media print{body{padding:0}}';
+  var css='body{font-family:\'Segoe UI\',system-ui,sans-serif;color:#0f172a;margin:0;padding:22px}h1{margin:0 0 2px;font-size:21px;color:#0f766e}.sub{color:#64748b;font-size:12px;margin-bottom:10px}table{border-collapse:collapse;width:100%;margin:8px 0;font-size:12.5px}td,th{border:1px solid #e2e8f0;padding:5px 9px;text-align:left}th{background:#0f766e;color:#fff}.k{background:#f1f5f9;font-weight:600;width:190px}h2{font-size:14px;color:#0f766e;margin:14px 0 4px;border-bottom:2px solid #ccfbf1;padding-bottom:3px;break-after:avoid;page-break-after:avoid}.sec{break-inside:avoid;page-break-inside:avoid}svg{max-width:100%;height:auto}.leg{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:middle}.noprint{margin-top:18px;text-align:center}@media print{body{padding:0}.noprint{display:none}}';
   var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(p.name||'პლანტაცია')+'</title><style>'+css+'</style></head><body>';
   html+='<h1>'+esc(p.cultureIcon||'🌱')+' '+esc(p.name||'პლანტაცია')+'</h1>';
   html+='<div class="sub">AgroInTechSol · პლანტაციის უწყისი · '+new Date().toLocaleDateString('ka-GE')+'</div>';
   html+='<table>'+infoRows.map(function(r){ return '<tr><td class="k">'+esc(r[0])+'</td><td>'+esc(String(r[1]))+'</td></tr>'; }).join('')+'</table>';
   if(drawn){
-    html+='<h2>🗺 კონტური და ბლოკები</h2>'+drawn.svg;
+    html+='<div class="sec"><h2>🗺 კონტური და ბლოკები</h2>'+drawn.svg;
     if(drawn.blocks.length) html+='<div style="margin-top:8px;font-size:12px">'+drawn.blocks.map(function(b){ return '<span style="margin-right:14px"><span class="leg" style="background:'+b.color+'"></span>'+esc(b.name)+'</span>'; }).join('')+'</div>';
+    html+='</div>';
   } else {
     html+='<h2>🗺 კონტური</h2><div class="sub">კონტური ჯერ არ არის დახაზული (რედაქტირებაში დახაზე რუკაზე).</div>';
   }
   if(st.blocks.length){
-    html+='<h2>🧱 ბლოკები / სექტორები</h2><table><tr><th>ბლოკი</th><th>ჯიში</th><th>რიგები</th><th>მცენარეები</th><th>შენიშვნა</th></tr>';
+    html+='<div class="sec"><h2>🧱 ბლოკები / სექტორები</h2><table><tr><th>ბლოკი</th><th>ჯიში</th><th>რიგები</th><th>მცენარეები</th><th>შენიშვნა</th></tr>';
     st.blocks.forEach(function(b){ var rs=rowsByBlock[b.id]||[]; var pc=rs.reduce(function(s,r){return s+(+r.plant_count||0);},0);
       html+='<tr><td>'+esc(b.name||'—')+'</td><td>'+esc(b.variety||'—')+'</td><td>'+rs.length+'</td><td>'+(pc||'—')+'</td><td>'+esc(b.note||'—')+'</td></tr>'; });
-    html+='</table>';
+    html+='</table></div>';
   }
-  html+='<div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 22px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">🖨 ბეჭდვა / PDF</button></div>';
+  html+='<div class="noprint"><button onclick="window.print()" style="padding:10px 22px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">🖨 ბეჭდვა / PDF</button></div>';
   html+='</body></html>';
   w.document.write(html); w.document.close();
   setTimeout(function(){ try{ w.print(); }catch(e){} }, 600);
