@@ -225,7 +225,7 @@
         <div><label style="margin:0 0 3px">მდე</label><input type="date" id="rTo" style="width:auto"></div>
         <div><label style="margin:0 0 3px">როლი</label><select id="rRole" style="width:auto" onchange="renderReport()"><option value="">ყველა</option><option value="picker">🧺 მკრეფავი</option><option value="carrier">🚚 გამომტანი</option></select></div>
         <div style="flex:1;min-width:150px"><label style="margin:0 0 3px">მკრეფავი</label><input id="rPicker" placeholder="🔎 სახელი…" oninput="renderReport()"></div>
-        <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end" onclick="renderReport()">🔄 ჩვენება</button>
+        <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end" onclick="refreshReport()">🔄 ჩვენება</button>
         <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end" onclick="exportReportExcel()">📊 Excel</button>
         <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end" onclick="printReport()">🖨️ ბეჭდვა</button>
         <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end;border-color:#f59e0b;color:#b45309" onclick="fixPriceForFilter()" title="არჩეული ფილტრის ყველა ჩაწონვას ფასი გადაუყენებს და თანხას ხელახლა დაითვლის">🛠️ ფასის კორექცია</button>
@@ -378,7 +378,7 @@ function switchTab(t){ activeTab=t;
   document.querySelectorAll('.panel').forEach(function(p){ p.classList.toggle('active', p.id==='p-'+t); });
   if(t==='report'){ var f=document.getElementById('rFrom'), to=document.getElementById('rTo');
     if(f && !f.value){ var ds=SESSIONS.map(function(s){return s.date||'';}).filter(Boolean).sort(); if(ds.length){ f.value=ds[0]; if(to)to.value=ds[ds.length-1]; } }
-    renderReport();
+    refreshReport();   // ბაზიდან ხელახლა — ახალი აწონვები რომ გამოჩნდეს
   }
   if(t==='reg'){ renderAttendance(); var inp=document.getElementById('attScan'); if(inp) setTimeout(function(){inp.focus();},100); }
   if(t==='qr'){ var dl=document.getElementById('qbList'); if(dl) dl.innerHTML=PICKERS.map(function(p){ return '<option value="'+esc(pName(p))+'">'; }).join(''); }
@@ -844,6 +844,13 @@ function toggleRp(ix){ document.querySelectorAll('.rp'+ix).forEach(function(e){ 
 function _reportSectors(rows){
   var m={}; rows.forEach(function(s){ var k=(''+(s.quarter||'—')).trim()||'—'; if(!m[k])m[k]={sec:k,kg:0,n:0,earn:0,pal:{}}; var x=m[k]; x.kg+=(+s.weight||0); x.n++; x.earn+=(+s.earned||0); if(s.pallet_code)x.pal[s.pallet_code]=1; });
   return Object.keys(m).map(function(k){ var x=m[k]; x.palCount=Object.keys(x.pal).length; return x; }).sort(function(a,b){ return b.kg-a.kg; });
+}
+// ── ბაზიდან ხელახლა წამოღება + ჩვენება (ახალი აწონვები რომ გამოჩნდეს) ──
+async function refreshReport(){
+  var body=document.getElementById('reportBody');
+  if(body) body.innerHTML='<div class="muted">⏳ ბაზიდან იტვირთება…</div>';
+  try{ await loadSessions(); await loadBonuses(); await loadPayroll(); }catch(e){}
+  renderDash(); renderPickers(); renderReport();
 }
 function renderReport(){
   var body=document.getElementById('reportBody'); if(!body) return;
