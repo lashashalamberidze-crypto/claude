@@ -129,10 +129,6 @@
       </div>
       <div id="hZoneNote" class="muted" style="margin-top:4px"></div>
 
-      <label style="margin-top:12px">📦 პალეტი (არასავალდებულო)</label>
-      <input id="hPal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="PAL-XXXXXX-XXXX — სკანი ან ხელით" oninput="hValPal()">
-      <div id="hPalVal" style="font-size:.8rem;margin-top:3px"></div>
-
       <label style="margin-top:12px">წონა (კგ)</label>
       <input id="hWeight" type="number" step="0.01" placeholder="მაგ. 5.4" oninput="prevHand()">
       <div id="hPrev" class="muted" style="margin-top:6px">სუფთა: — · — ₾</div>
@@ -405,7 +401,7 @@ function hValPal(){ var v=document.getElementById('hPal').value.trim(), el=docum
 function handScan(){
   var raw=document.getElementById('hScan').value.trim(), msg=document.getElementById('hScanMsg');
   if(!raw) return; document.getElementById('hScan').value='';
-  if(/^PAL-\d{6}-\d{4}$/i.test(raw)){ document.getElementById('hPal').value=raw.toUpperCase(); hValPal(); msg.innerHTML='<span class="ok">📦 პალეტი: '+esc(raw.toUpperCase())+'</span>'; return; }
+  if(/^PAL-\d{6}-\d{4}$/i.test(raw)){ msg.innerHTML='<span class="warn">📦 პალეტი მხოლოდ „პალეტით" რეჟიმშია — გადადი იმ ტაბზე</span>'; return; }
   if(/^ROW:/i.test(raw)){ var rid=raw.slice(4); var rw=ROWS.find(function(x){ return String(x.id)===String(rid); });
     if(rw){ document.getElementById('hZone').value=rw.block_id; fillRows(); document.getElementById('hRow').value=rw.name;
       var bn=(BLOCKS.find(function(b){return String(b.id)===String(rw.block_id);})||{}).name||'';
@@ -449,8 +445,7 @@ function handAdd(){
   if(!hChosen){ msg.innerHTML='<span class="warn">ჯერ აირჩიე მკრეფავი</span>'; return; }
   var w=parseFloat(document.getElementById('hWeight').value)||0;
   if(w<=0){ msg.innerHTML='<span class="warn">ჩაწერე წონა</span>'; return; }
-  var pal=document.getElementById('hPal').value.trim();
-  if(pal && !palOk(pal)){ msg.innerHTML='<span class="warn">❌ პალეტი არასწორია (PAL-XXXXXX-XXXX) — ან დატოვე ცარიელი</span>'; return; }
+  var pal=''; // #3: პალეტი მხოლოდ „პალეტით" რეჟიმში — ხელით აწონვას პალეტი აღარ ერთვის
   var zid=document.getElementById('hZone').value, row=document.getElementById('hRow').value;
   var zb=BLOCKS.find(function(b){ return String(b.id)===String(zid); }), zone=zb?zb.name:'';
   var c=genCode();
