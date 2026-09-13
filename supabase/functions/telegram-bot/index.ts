@@ -44,7 +44,9 @@ serve(async (req) => {
   if(req.method === "GET" && url.searchParams.has("setup")){
     if(!TOKEN) return json({ setup:false, error:"TELEGRAM_BOT_TOKEN აკლია secret-ებში" }, 500);
     const secret = Deno.env.get("TELEGRAM_WEBHOOK_SECRET") || "";
-    const selfUrl = url.origin + url.pathname;   // ამ ფუნქციის საკუთარი URL
+    // საჯარო URL: SUPABASE_URL + /functions/v1/telegram-bot (req.url შიდა/http-ია)
+    const base = (Deno.env.get("SUPABASE_URL") || url.origin).replace(/\/+$/,"");
+    const selfUrl = base + "/functions/v1/telegram-bot";
     const body: Record<string,unknown> = { url: selfUrl, drop_pending_updates: true };
     if(secret) body.secret_token = secret;
     let tgRes: unknown = null;
