@@ -815,6 +815,7 @@ function openPicker(u){
       +'<div class="row2" style="margin-top:8px"><div><label>სახელი</label><input id="ep_fn" value="'+esc(p.firstName||'')+'"></div><div><label>გვარი</label><input id="ep_ln" value="'+esc(p.lastName||'')+'"></div></div>'
       +'<div class="row2"><div><label>პირადი №</label><input id="ep_id" value="'+esc(p.id||p.personal_id||'')+'"></div><div><label>ტელეფონი</label><input id="ep_ph" value="'+esc(p.phone||'')+'"></div></div>'
       +'<div class="row2"><div><label>საცხოვრებელი</label><input id="ep_addr" value="'+esc(p.address||'')+'"></div><div><label>ბანკი (IBAN)</label><input id="ep_bank" value="'+esc(p.bank||'')+'"></div></div>'
+      +'<div class="row2" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:8px 10px"><div><label>👥 ჯგუფი</label><input id="ep_group" value="'+esc(p.group_name||'')+'"></div><div><label>👤 ბრიგადირი</label><input id="ep_brig" value="'+esc(p.brigadier||'')+'"></div><div><label>📞 ბრიგ. ტელ.</label><input id="ep_brigph" value="'+esc(p.brigadier_phone||'')+'"></div></div>'
       +'<div><label>როლი</label><select id="ep_role"><option value="picker"'+(p.role!=='carrier'?' selected':'')+'>🧺 მკრეფავი</option><option value="carrier"'+(p.role==='carrier'?' selected':'')+'>🚚 გამომტანი</option></select></div>'
       +'<button class="g" style="margin-top:10px" onclick="savePickerInline(\''+esc(p.uid)+'\')">💾 შენახვა</button>'
       +'<div id="ep_msg" style="font-size:.82rem;margin-top:6px"></div>'
@@ -871,12 +872,18 @@ async function savePickerInline(u){
   var msg=document.getElementById('ep_msg'); if(msg) msg.innerHTML='<span class="muted">ინახება…</span>';
   var g=function(id){ var el=document.getElementById(id); return el?el.value.trim():''; };
   var upd={ firstName:g('ep_fn'), lastName:g('ep_ln'), name:(g('ep_fn')+' '+g('ep_ln')).trim(),
-    id:g('ep_id'), personal_id:g('ep_id'), phone:g('ep_ph'), address:g('ep_addr'), bank:g('ep_bank'), role:g('ep_role')||'picker' };
-  try{ var r=await sb.from('krepa_pickers').update(upd).eq('user_id',uid).eq('uid',u); if(r.error){ if(msg) msg.innerHTML='<span class="warn">❌ '+r.error.message+'</span>'; return; } }
-  catch(e){ if(msg) msg.innerHTML='<span class="warn">❌ '+(e.message||e)+'</span>'; return; }
+    id:g('ep_id'), personal_id:g('ep_id'), phone:g('ep_ph'), address:g('ep_addr'), bank:g('ep_bank'), role:g('ep_role')||'picker',
+    group_name:g('ep_group'), brigadier:g('ep_brig'), brigadier_phone:g('ep_brigph') };
+  var r; try{ r=await sb.from('krepa_pickers').update(upd).eq('user_id',uid).eq('uid',u); }catch(e){ r={error:{message:(e.message||e)}}; }
+  var warnG=false;
+  if(r.error && (r.error.code==='PGRST204' || /group_name|brigadier/i.test(r.error.message||''))){
+    delete upd.group_name; delete upd.brigadier; delete upd.brigadier_phone; warnG=true;
+    try{ r=await sb.from('krepa_pickers').update(upd).eq('user_id',uid).eq('uid',u); }catch(e){ r={error:{message:(e.message||e)}}; }
+  }
+  if(r.error){ if(msg) msg.innerHTML='<span class="warn">❌ '+r.error.message+'</span>'; return; }
   Object.keys(upd).forEach(function(k){ p[k]=upd[k]; });
-  if(msg) msg.innerHTML='<span class="ok">✅ შენახულია</span>';
-  renderPickers();
+  if(msg) msg.innerHTML=warnG?'<span class="warn">⚠️ შენახულია, ჯგუფის გარეშე — გაუშვი sql/picker_group.sql</span>':'<span class="ok">✅ შენახულია</span>';
+  fillGroupList(); renderPickers();
   setTimeout(function(){ openPicker(u); },500); // პროფილის განახლება ახალი მონაცემებით
 }
 async function editSession(id,pu){
