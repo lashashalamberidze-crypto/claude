@@ -255,7 +255,7 @@
 
 <script>
 const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
-let sb=null, uid=null, PICKERS=[], NUMMAP={}, activeTab='num';
+let sb=null, uid=null, PICKERS=[], NUMMAP={}, activeTab='num', TG_MODE='off';
 let boxes=[], lastW=[], queue=[], syncing=false, feed=[], numSeq={}, dedup={}, BLOCKS=[], ROWS=[], committedPallets={}, palCommitting=false;
 let smsSentBoxes={}, SMSCFG=null;
 let palPend={picker:null,quarter:'',row:'',_label:'',_isScan:false,_raw:''};
@@ -340,8 +340,8 @@ async function loadSettings(){
   // წყარო = ღრუბელი (user_settings). localStorage მხოლოდ offline-fallback ქეშია,
   // და მხოლოდ მაშინ იკითხება, თუ ღრუბელი მიუწვდომელია.
   var cloud={};
-  try{ var r=await sb.from('user_settings').select('skey,sval').eq('user_id',uid).in('skey',['its_price','its_box_w','its_sms_config']);
-    if(!r.error && r.data){ r.data.forEach(function(x){ cloud[x.skey]=x.sval; try{ localStorage.setItem(x.skey,x.sval); }catch(e){} }); }
+  try{ var r=await sb.from('user_settings').select('skey,sval').eq('user_id',uid).in('skey',['its_price','its_box_w','its_sms_config','tg_notify_mode']);
+    if(!r.error && r.data){ r.data.forEach(function(x){ if(x.skey==='tg_notify_mode'){ TG_MODE=x.sval||'off'; return; } cloud[x.skey]=x.sval; try{ localStorage.setItem(x.skey,x.sval); }catch(e){} }); }
     else if(r.error){ console.warn('[loadSettings]', r.error); }
   }catch(e){ console.warn('[loadSettings]', e); }
   // SMS კონფიგი ღრუბლიდან — awonva აღარაა დამოკიდებული imაზე, index.html-მა ჩაწერა თუ არა localStorage-ში
@@ -481,13 +481,14 @@ function numAdd(){
 function pushRecord(o){
   var p=o.picker, pr=price(), t=tare();
   var net=Math.max(0, Math.round((o.weight - t)*100)/100); // ტარა გამოკლებული — სუფთა (2 ნიშანი)
-  queue.push({ id:_uuid(), code:o.code, short_code:o.short_code, picker_name:pName(p), picker_id:p.uid||'', phone:p.phone||'',
+  var _rec={ id:_uuid(), code:o.code, short_code:o.short_code, picker_name:pName(p), picker_id:p.uid||'', phone:p.phone||'',
     pallet_code:o.pallet||'', weight:net, kg:net, price:pr, date:_today(), time:_time(),
     row_num:o.row_num||'', quarter:o.quarter||'', earned:Math.round(net*pr*100)/100,
-    sms:document.getElementById('smsToggle').checked && !!p.phone, entry_mode:o.entry_mode });
+    sms:document.getElementById('smsToggle').checked && !!p.phone, entry_mode:o.entry_mode };
+  queue.push(_rec);
   feed.unshift({ code:o.short_code, name:pName(p), w:net, mode:o.entry_mode });
   saveQueue(); renderQueue(); renderFeed(); renderDayTotal();
-  if(navigator.onLine) syncQueue();
+  if(navigator.onLine){ syncQueue(); tgSendWeigh(_rec); }
 }
 function renderFeed(){
   document.getElementById('feedCount').textContent=feed.length;
@@ -724,6 +725,18 @@ async function smsSend(phone,text,reference){
   return json||{};
 }
 function smsMsgId(res){ if(!res) return ''; return String(res.msgId||res.MessageId||res.messageId||res.Output||res.output||res.id||res.ID||''); }
+// ── ✈️ Telegram — ყოველ აწონვაზე (მხოლოდ დაკავშირებულ მკრეფავს; server-side ფილტრავს) ──
+async function tgSendWeigh(rec){
+  try{
+    if(TG_MODE!=='each') return;               // მხოლოდ „ყოველ აწონვაზე" რეჟიმში
+    if(!sb||!uid||!navigator.onLine) return;
+    var phone=rec.phone||''; if(!phone) return;
+    var net=(+rec.weight||0), earn=(+rec.earned||0);
+    var text='⚖️ აწონვა — '+(rec.picker_name||'')+'\nსუფთა: '+net.toFixed(2)+' კგ\n💰 '+earn.toFixed(2)+' ₾\n\nAgroInTechSol';
+    // telegram-send თვითონ ამოწმებს ვინ არის დაკავშირებული — თუ არა, ჩუმად გამოტოვდება
+    await sb.functions.invoke('telegram-send',{ body:{ text:text, phones:[phone] } });
+  }catch(e){ console.warn('[tgSendWeigh]', e); }
+}
 function smsLog(rec){
   if(!sb||!uid) return;
   try{ sb.from('sms_log').insert({ user_id:uid, picker_name:rec.name||'', picker_id:rec.pid||'', phone:rec.phone||'', text:rec.text||'', kg:rec.kg||0, gel:rec.gel||0, box_code:rec.code||'', pallet_code:rec.pallet||'', status:rec.status||'', error:rec.error||'', msg_id:rec.msg_id||'', date:_today() }).then(function(){},function(){}); }catch(e){}
