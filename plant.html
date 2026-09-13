@@ -789,8 +789,14 @@ function initMap(){
   if(!window.L) return;
   var el=document.getElementById('plMap');
   if(!el||el.offsetWidth===0||el.offsetHeight===0){ setTimeout(initMap,200); return; }
-  var sc=(Array.isArray(plData.mapCenter)&&plData.mapCenter.length===2)?plData.mapCenter:[41.8,44.8];
-  plMap=L.map('plMap').setView(sc,(Array.isArray(plData.mapCenter)&&plData.mapCenter.length===2)?14:9);
+  // საწყისი ხედი: არსებული კონტური → მასზე; თუ არა — ბაღის მუნიციპ./რეგიონზე; ბოლოს default
+  var sc, z;
+  if(Array.isArray(plData.mapCenter)&&plData.mapCenter.length===2){ sc=plData.mapCenter; z=14; }
+  else {
+    var base=(plData.munic&&GEO_MUNIC_CENTERS[plData.munic])||(plData.region&&GEO_REGION_CENTERS[plData.region])||null;
+    if(base){ sc=base; z=plData.munic?12:10; } else { sc=[41.8,44.8]; z=9; }
+  }
+  plMap=L.map('plMap').setView(sc,z);
   baseTiles(plMap);
 
   var pts=[],poly=null,markers=[];
