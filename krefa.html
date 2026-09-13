@@ -92,6 +92,7 @@
     <button class="tab" data-t="qr" onclick="switchTab('qr')">🏷️ QR კოდები</button>
     <button class="tab" data-t="report" onclick="switchTab('report')">📊 ანგარიში</button>
     <button class="tab" data-t="reg" onclick="switchTab('reg')">📋 რეგისტრაცია</button>
+    <button class="tab" data-t="notify" onclick="switchTab('notify')">📨 შეტყობინებები</button>
   </div>
 
   <div class="panel active" id="p-pickers">
@@ -277,6 +278,27 @@
       <div style="overflow-x:auto;margin-top:6px"><table><thead><tr><th>#</th><th>სახელი</th><th>როლი</th><th>🟢 მოსვ.</th><th>🔴 წასვ.</th><th></th></tr></thead><tbody id="attBody"><tr><td colspan="6" class="muted">ჯერ არავინ დარეგისტრირდა</td></tr></tbody></table></div>
     </div>
   </div>
+
+  <div class="panel" id="p-notify">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <h2 style="margin:0">📨 შეტყობინებების ანალიტიკა</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="sec" style="width:auto;padding:8px 12px" onclick="loadNotifyLog()">🔄 განახლება</button>
+          <button class="sec" style="width:auto;padding:8px 12px" onclick="exportNotifyExcel()">📊 Excel</button>
+        </div>
+      </div>
+      <div class="muted" style="font-size:.82rem;margin:6px 0 10px">ვის, რა არხით (Telegram / SMS), რა ტექსტი გაეგზავნა — ერთ ადგილას.</div>
+      <div id="notifyStats" class="stats" style="margin-bottom:12px"></div>
+      <div class="toolbar" style="margin-bottom:10px">
+        <div><label style="margin:0 0 3px">დან</label><input type="date" id="nlFrom" style="width:auto" onchange="renderNotifyLog()"></div>
+        <div><label style="margin:0 0 3px">მდე</label><input type="date" id="nlTo" style="width:auto" onchange="renderNotifyLog()"></div>
+        <div><label style="margin:0 0 3px">არხი</label><select id="nlChan" style="width:auto" onchange="renderNotifyLog()"><option value="">ყველა</option><option value="telegram">✈️ Telegram</option><option value="sms">📱 SMS</option></select></div>
+        <div style="flex:1;min-width:150px"><label style="margin:0 0 3px">ძებნა</label><input id="nlSearch" placeholder="🔎 სახელი / ტელ / ტექსტი…" oninput="renderNotifyLog()"></div>
+      </div>
+      <div id="notifyBody"><div class="muted">⏳ იტვირთება…</div></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -375,12 +397,18 @@ async function _tgInvoke(payload){
     return d;
   }catch(e){ if(st) st.innerHTML='<span style="color:#b91c1c">❌ '+esc(e.message||e)+'</span>'; return null; }
 }
-function tgSendDaily(){
+function _linkedRecips(){ return PICKERS.filter(function(p){ return tgLinked(p.phone); }).map(function(p){ return {name:pName(p),phone:p.phone,pid:p.uid}; }); }
+async function tgSendDaily(){
   if(!Object.keys(TG_LINKS).length){ alert('ჯერ არავინ არ დაკავშირებულა Telegram-ზე.'); return; }
   var dt=(document.getElementById('tgDailyDate')||{}).value||'';
-  _tgInvoke({daily:true, date:dt||undefined});
+  var d=await _tgInvoke({daily:true, date:dt||undefined});
+  if(d&&d.sent){ logTgNotify(_linkedRecips().slice(0,d.sent), '📊 დღის ჯამი'+(dt?(' — '+dt):''), 'sent'); }
 }
-function tgSendTest(){ _tgInvoke({text:'🔔 ტესტი — AgroInTechSol\nTelegram კავშირი მუშაობს ✅'}); }
+async function tgSendTest(){
+  var txt='🔔 ტესტი — AgroInTechSol\nTelegram კავშირი მუშაობს ✅';
+  var d=await _tgInvoke({text:txt});
+  if(d&&d.sent){ logTgNotify(_linkedRecips(), txt, 'sent'); }
+}
 // ── QR → Image ობიექტი ──
 function _qrImg(text,size){
   return new Promise(function(resolve){
@@ -458,7 +486,8 @@ async function tgSendQrOne(uidOrPicker){
   try{
     var r=await sb.functions.invoke('telegram-send',{body:{qr:[{phone:p.phone,b64:png,caption:cap}]}});
     if(r.error){ _tgSetStat('<span style="color:#b91c1c">❌ '+esc(r.error.message||'')+'</span>'); return; }
-    var d=r.data||{}; _tgSetStat('<span style="color:#059669">✅ QR გაიგზავნა '+esc(pName(p))+'-ს ('+(d.sent||0)+')</span>');
+    var d=r.data||{}; if(d.sent) logTgNotify([{name:pName(p),phone:p.phone,pid:p.uid}], '🏷️ QR ბარათი', 'sent');
+    _tgSetStat('<span style="color:#059669">✅ QR გაიგზავნა '+esc(pName(p))+'-ს ('+(d.sent||0)+')</span>');
   }catch(e){ _tgSetStat('<span style="color:#b91c1c">❌ '+esc(e.message||e)+'</span>'); }
 }
 // ყველა დაკავშირებულ მკრეფავს — ერთი დაჭერით
@@ -480,7 +509,9 @@ async function tgSendQrAll(){
   try{
     var r=await sb.functions.invoke('telegram-send',{body:{qr:items}});
     if(r.error){ _tgSetStat('<span style="color:#b91c1c">❌ '+esc(r.error.message||'')+'</span>'); return; }
-    var d=r.data||{}; _tgSetStat('<span style="color:#059669">✅ QR გაიგზავნა: '+(d.sent||0)+' · ვერ მოხერხდა: '+(d.failed||0)+'</span>');
+    var d=r.data||{};
+    if(d.sent){ logTgNotify(linked.map(function(p){ return {name:pName(p),phone:p.phone,pid:p.uid}; }), '🏷️ QR ბარათი', 'sent'); }
+    _tgSetStat('<span style="color:#059669">✅ QR გაიგზავნა: '+(d.sent||0)+' · ვერ მოხერხდა: '+(d.failed||0)+'</span>');
   }catch(e){ _tgSetStat('<span style="color:#b91c1c">❌ '+esc(e.message||e)+'</span>'); }
 }
 
@@ -493,6 +524,82 @@ function switchTab(t){ activeTab=t;
   }
   if(t==='reg'){ renderAttendance(); var inp=document.getElementById('attScan'); if(inp) setTimeout(function(){inp.focus();},100); }
   if(t==='qr'){ var dl=document.getElementById('qbList'); if(dl) dl.innerHTML=PICKERS.map(function(p){ return '<option value="'+esc(pName(p))+'">'; }).join(''); }
+  if(t==='notify'){ loadNotifyLog(); }
+}
+
+// ══ 📨 შეტყობინებების ანალიტიკა (sms_log — SMS + Telegram, channel-ით) ══
+var NOTIFY_LOG=[];
+async function loadNotifyLog(){
+  var body=document.getElementById('notifyBody'); if(body) body.innerHTML='<div class="muted">⏳ იტვირთება…</div>';
+  NOTIFY_LOG=[];
+  try{
+    var from=0,STEP=1000;
+    while(true){
+      var r=await sb.from('sms_log').select('date,picker_name,phone,text,status,kg,gel,channel').eq('user_id',uid).order('date',{ascending:false}).range(from,from+STEP-1);
+      if(r.error) break; var d=r.data||[]; NOTIFY_LOG=NOTIFY_LOG.concat(d);
+      if(d.length<STEP) break; from+=STEP; if(from>50000) break;
+    }
+  }catch(e){ console.warn('loadNotifyLog',e); }
+  renderNotifyLog();
+}
+function _nlChan(x){ return (x.channel||'sms'); }
+function renderNotifyLog(){
+  var body=document.getElementById('notifyBody'); if(!body) return;
+  var from=(document.getElementById('nlFrom')||{}).value||'', to=(document.getElementById('nlTo')||{}).value||'';
+  var chan=(document.getElementById('nlChan')||{}).value||'', q=((document.getElementById('nlSearch')||{}).value||'').trim().toLowerCase();
+  var list=NOTIFY_LOG.filter(function(x){
+    if(from && (x.date||'')<from) return false;
+    if(to && (x.date||'')>to) return false;
+    if(chan && _nlChan(x)!==chan) return false;
+    if(q){ var hay=((x.picker_name||'')+' '+(x.phone||'')+' '+(x.text||'')).toLowerCase(); if(hay.indexOf(q)<0) return false; }
+    return true;
+  });
+  // სტატისტიკა
+  var tg=NOTIFY_LOG.filter(function(x){return _nlChan(x)==='telegram';}).length;
+  var sms=NOTIFY_LOG.filter(function(x){return _nlChan(x)==='sms';}).length;
+  var fail=NOTIFY_LOG.filter(function(x){return String(x.status||'').indexOf('fail')>=0;}).length;
+  var st=document.getElementById('notifyStats');
+  if(st) st.innerHTML=stat('s-blue','📨 სულ',NOTIFY_LOG.length,'შეტყობინება')
+    +stat('s-green','✈️ Telegram',tg,'უფასო')
+    +stat('s-purple','📱 SMS',sms,'ფასიანი')
+    +stat(fail?'s-orange':'s-green',''+(fail?'⚠️':'✅')+' ვერ მივიდა',fail,'შეცდომა');
+  if(!list.length){ body.innerHTML='<div class="muted" style="padding:16px 0;text-align:center">ჩანაწერი არ არის.<br><span style="font-size:.8rem">გაგზავნილი Telegram/SMS აქ დაფიქსირდება.</span></div>'; return; }
+  var h='<div style="overflow-x:auto"><table><thead><tr><th>თარიღი</th><th>არხი</th><th>მკრეფავი</th><th>ტელეფონი</th><th>ტექსტი</th><th>სტატუსი</th></tr></thead><tbody>';
+  list.slice(0,2000).forEach(function(x){
+    var ch=_nlChan(x)==='telegram'?'<span class="badge" style="background:#e1f0fb;color:#229ED9">✈️ TG</span>':'<span class="badge" style="background:#f3e8ff;color:#7c3aed">📱 SMS</span>';
+    var ss=String(x.status||''); var scol=ss.indexOf('fail')>=0?'#dc2626':(ss.indexOf('deliver')>=0?'#16a34a':'#0369a1');
+    var sicon=ss.indexOf('fail')>=0?'❌ ვერ':(ss.indexOf('deliver')>=0?'✅ მიუვიდა':'📤 გაიგზ.');
+    h+='<tr><td class="muted" style="white-space:nowrap">'+esc(x.date||'—')+'</td><td>'+ch+'</td><td>'+esc(x.picker_name||'—')+'</td><td class="muted">'+esc(x.phone||'—')+'</td>'
+      +'<td style="max-width:340px;font-size:.8rem">'+esc(String(x.text||'').slice(0,160))+'</td><td style="color:'+scol+';white-space:nowrap">'+sicon+'</td></tr>';
+  });
+  h+='</tbody></table></div>'+(list.length>2000?'<div class="muted" style="font-size:.75rem;margin-top:6px">ნაჩვენებია პირველი 2000</div>':'');
+  body.innerHTML=h;
+}
+function exportNotifyExcel(){
+  if(typeof XLSX==='undefined'){ alert('Excel ვერ ჩაიტვირთა'); return; }
+  var from=(document.getElementById('nlFrom')||{}).value||'', to=(document.getElementById('nlTo')||{}).value||'';
+  var chan=(document.getElementById('nlChan')||{}).value||'', q=((document.getElementById('nlSearch')||{}).value||'').trim().toLowerCase();
+  var list=NOTIFY_LOG.filter(function(x){
+    if(from && (x.date||'')<from) return false; if(to && (x.date||'')>to) return false;
+    if(chan && _nlChan(x)!==chan) return false;
+    if(q){ var hay=((x.picker_name||'')+' '+(x.phone||'')+' '+(x.text||'')).toLowerCase(); if(hay.indexOf(q)<0) return false; } return true;
+  });
+  if(!list.length){ alert('ჩანაწერი არ არის'); return; }
+  function bd(){ var s={style:'thin',color:{rgb:'D9D9D9'}}; return {top:s,bottom:s,left:s,right:s}; }
+  var head={fill:{fgColor:{rgb:'0369A1'}},font:{color:{rgb:'FFFFFF'},bold:true},border:bd()}, cell={border:bd()};
+  var aoa=[['თარიღი','არხი','მკრეფავი','ტელეფონი','ტექსტი','სტატუსი']];
+  list.forEach(function(x){ aoa.push([x.date||'',_nlChan(x)==='telegram'?'Telegram':'SMS',x.picker_name||'',x.phone||'',String(x.text||''),x.status||'']); });
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  for(var R=0;R<aoa.length;R++)for(var C=0;C<aoa[R].length;C++){ var rf=XLSX.utils.encode_cell({r:R,c:C}); if(!ws[rf])ws[rf]={t:'s',v:''}; ws[rf].s=(R===0?head:cell); }
+  ws['!cols']=[{wch:12},{wch:10},{wch:22},{wch:13},{wch:50},{wch:12}];
+  var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'შეტყობინებები');
+  try{ XLSX.writeFile(wb,'shetyobinebebi_'+_today()+'.xlsx'); }catch(e){ alert('❌ '+(e.message||e)); }
+}
+// Telegram გაგზავნის ლოგირება sms_log-ში (channel='telegram')
+function logTgNotify(recips, text, status){
+  if(!sb||!uid||!recips||!recips.length) return;
+  var rows=recips.map(function(rc){ return { user_id:uid, picker_name:rc.name||'', picker_id:rc.pid||'', phone:rc.phone||'', text:String(text||'').slice(0,500), status:status||'sent', channel:'telegram', date:_today() }; });
+  try{ sb.from('sms_log').insert(rows).then(function(r){ if(r&&r.error){ /* channel სვეტი ჯერ არ არის — ავიღოთ */ if(r.error.code==='PGRST204'||/channel/i.test(r.error.message||'')){ rows.forEach(function(x){ delete x.channel; }); sb.from('sms_log').insert(rows).then(function(){},function(){}); } } },function(){}); }catch(e){}
 }
 
 // ── მკრეფავები + num ──
@@ -803,7 +910,6 @@ function openPicker(u){
       +stat('s-orange','✅ ჩაერიცხა',paid+' ₾','გადახდილი')
       +stat(remain>0?'s-purple':'s-green','⏳ დარჩა',remain+' ₾',remain>0?'გადასახდელი':'სრულად')
     +'</div>'
-    +'<div style="background:#f8fafc;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:.84rem">📲 SMS: <b class="ok">'+sms.sent+' გაიგზავნა</b>'+(sms.deliv?(' · <b class="ok">'+sms.deliv+' მიუვიდა</b>'):'')+(sms.fail?(' · <b class="warn">'+sms.fail+' ვერ</b>'):'')+'</div>'
     +'<details style="margin-bottom:12px;border:1px solid #ddd6fe;border-radius:10px;padding:10px 12px"><summary style="cursor:pointer;font-weight:700;color:#7c3aed">🎁 ბონუსის მინიჭება (სულ: '+bonus+' ₾)</summary>'
       +'<div class="row2" style="margin-top:8px"><div><label>თარიღი</label><input type="date" id="bn_date" value="'+_today()+'"></div><div><label>ბონუსი ₾</label><input id="bn_amt" inputmode="decimal" placeholder="მაგ. 20"></div></div>'
       +'<button class="g" style="margin-top:8px;background:#7c3aed" onclick="addBonus(\''+esc(p.uid)+'\')">🎁 მიანიჭე ბონუსი</button>'
@@ -842,8 +948,8 @@ function exportPickerExcel(u){
     ['ბანკი (IBAN)',p.bank||'','საცხოვრებელი',p.address||'','',''],
     ['👥 ჯგუფი',p.group_name||'','👤 ბრიგადირი',p.brigadier||'','ბრიგ. ტელ.',p.brigadier_phone||''],
     [],
-    ['სულ კგ',Math.round(kg*10)/10,'ყუთი',box,'SMS გაიგზ.',sms.sent],
-    ['გამომუშავებული ₾',earn,'ბონუსი ₾',bonus,'SMS მიუვ.',sms.deliv||0],
+    ['სულ კგ',Math.round(kg*10)/10,'ყუთი',box,'',''],
+    ['გამომუშავებული ₾',earn,'ბონუსი ₾',bonus,'',''],
     ['ჩაერიცხა ₾',paid,'დარჩა ₾',remain,'',''],
     [],
     ['📅 ისტორია დღეების მიხედვით'],
@@ -1561,7 +1667,6 @@ function printPicker(u){
     +'<div class="b"><div class="l">ბონუსი</div><div class="v">'+bonus+' ₾</div></div>'
     +'<div class="b"><div class="l">ჩაერიცხა</div><div class="v">'+paid+' ₾</div></div>'
     +'<div class="b"><div class="l">დარჩა</div><div class="v">'+remain+' ₾</div></div></div>';
-  h+='<div style="font-size:.85rem">📲 SMS: '+sms.sent+' გაიგზავნა'+(sms.deliv?(' · '+sms.deliv+' მიუვიდა'):'')+(sms.fail?(' · '+sms.fail+' ვერ'):'')+'</div>';
   h+='<h2>ისტორია დღეების მიხედვით</h2><table><thead><tr><th>თარიღი</th><th>ყუთი</th><th>პალეტი</th><th>კგ</th><th>₾/კგ</th><th>თანხა ₾</th><th>ბონუსი</th></tr></thead><tbody>';
   var tB=0,tBon=0; H.dord.forEach(function(d){ var b=H.byDate[d]; tB+=b.earn; tBon+=b.bonus; h+='<tr><td>'+esc(d)+'</td><td>'+b.box+'</td><td>'+Object.keys(b.pallets).length+'</td><td>'+fmtKg(b.kg)+'</td><td>'+(b.price?b.price.toFixed(2):'—')+'</td><td>'+(Math.round(b.earn*100)/100)+'</td><td>'+(b.bonus?('+'+(Math.round(b.bonus*100)/100)):'—')+'</td></tr>'; });
   h+='<tr style="font-weight:800;background:#f1f5f9"><td>ჯამი</td><td>'+box+'</td><td></td><td>'+fmtKg(kg)+'</td><td></td><td>'+(Math.round(tB*100)/100)+'</td><td>'+(tBon?('+'+(Math.round(tBon*100)/100)):'—')+'</td></tr>';

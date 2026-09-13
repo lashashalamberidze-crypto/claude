@@ -734,7 +734,12 @@ async function tgSendWeigh(rec){
     var net=(+rec.weight||0), earn=(+rec.earned||0);
     var text='⚖️ აწონვა — '+(rec.picker_name||'')+'\nსუფთა: '+net.toFixed(2)+' კგ\n💰 '+earn.toFixed(2)+' ₾\n\nAgroInTechSol';
     // telegram-send თვითონ ამოწმებს ვინ არის დაკავშირებული — თუ არა, ჩუმად გამოტოვდება
-    await sb.functions.invoke('telegram-send',{ body:{ text:text, phones:[phone] } });
+    var r=await sb.functions.invoke('telegram-send',{ body:{ text:text, phones:[phone] } });
+    if(r&&r.data&&r.data.sent){
+      // ლოგი შეტყობინებების ანალიტიკისთვის (channel='telegram')
+      var row={ user_id:uid, picker_name:rec.picker_name||'', picker_id:rec.picker_id||'', phone:phone, text:text.slice(0,500), kg:net, gel:earn, status:'sent', channel:'telegram', date:_today() };
+      sb.from('sms_log').insert(row).then(function(x){ if(x&&x.error&&(x.error.code==='PGRST204'||/channel/i.test(x.error.message||''))){ delete row.channel; sb.from('sms_log').insert(row).then(function(){},function(){}); } },function(){});
+    }
   }catch(e){ console.warn('[tgSendWeigh]', e); }
 }
 function smsLog(rec){
