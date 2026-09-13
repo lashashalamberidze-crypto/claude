@@ -195,6 +195,30 @@
   </div>
 
   <div class="panel" id="p-report">
+    <div class="card" style="border:1.5px solid #229ED9;background:#f5fbff">
+      <h2 style="color:#229ED9;margin-top:0">✈️ Telegram — ანგარიშის გაგზავნა</h2>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+        <div>
+          <label style="margin:0 0 3px">შეტყობინების რეჟიმი</label>
+          <select id="tgMode" style="width:auto" onchange="tgSaveMode()">
+            <option value="daily">📊 დღის ჯამი (რეკომ.)</option>
+            <option value="each">⚖️ ყოველ აწონვაზე</option>
+            <option value="off">🔕 გამორთული</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:160px">
+          <label style="margin:0 0 3px">კონკ. თარიღი (ცარიელი = დღეს)</label>
+          <input type="date" id="tgDailyDate" style="width:auto">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="g" style="width:auto;padding:9px 15px;background:#229ED9" onclick="tgSendDaily()">📊 დღის ჯამი — ყველა დაკავშირებულს</button>
+        <button class="sec" style="width:auto;padding:9px 13px" onclick="tgSendTest()">🔔 ტესტი (ჩემთვის)</button>
+        <button class="sec" style="width:auto;padding:9px 13px" onclick="loadTgLinks().then(tgRenderLinks)">🔄 სტატუსი</button>
+      </div>
+      <div id="tgSendStat" class="muted" style="font-size:.82rem;margin-top:9px"></div>
+      <div id="tgLinkedList" style="font-size:.82rem;margin-top:6px"></div>
+    </div>
     <div class="card">
       <div class="toolbar">
         <div><label style="margin:0 0 3px">დან</label><input type="date" id="rFrom" style="width:auto"></div>
@@ -282,6 +306,7 @@ async function showApp(email){
   await loadAttendance();
   await loadPlantation();
   await loadTgLinks();
+  await tgLoadMode();
   renderDash(); renderPickers(); renderTgCard();
 }
 function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
@@ -297,6 +322,7 @@ async function loadTgLinks(){
     if(!r.error&&r.data){ r.data.forEach(function(x){ TG_LINKS[_tgNorm(x.phone)]={chat_id:x.chat_id,name:x.name}; }); }
   }catch(e){ console.warn('loadTgLinks',e); }
   var st=document.getElementById('tgStat'); if(st) st.textContent='✅ დაკავშირებული: '+Object.keys(TG_LINKS).length+' მკრეფავი';
+  tgRenderLinks();
 }
 function _tgLink(){ return 'https://t.me/'+TG_BOT+'?start='+encodeURIComponent(uid||''); }
 function renderTgCard(){
@@ -311,6 +337,41 @@ function tgPrintQr(){ var link=_tgLink(); var w=window.open('','_blank'); if(!w)
     '<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></scr'+'ipt>'+
     '<scr'+'ipt>setTimeout(function(){new QRCode(document.getElementById("pq"),{text:'+JSON.stringify(link)+',width:260,height:260});setTimeout(function(){window.print()},500)},300)</scr'+'ipt>');
   w.document.close(); }
+// ── დაკავშირებულთა სია (ვინ იღებს Telegram-ს) ──
+function tgRenderLinks(){
+  var el=document.getElementById('tgLinkedList'); if(!el) return;
+  var ks=Object.keys(TG_LINKS);
+  if(!ks.length){ el.innerHTML='<span style="color:#b45309">⚠️ ჯერ არავინ არ დაკავშირებულა. მკრეფავმა უნდა დაასკანეროს QR (👤 მკრეფავები ტაბზე) → Start → 📱 ნომრის გაზიარება.</span>'; return; }
+  el.innerHTML='<b style="color:#229ED9">✈️ დაკავშირებული ('+ks.length+'):</b> '+ks.map(function(k){ var l=TG_LINKS[k]; return '<span class="badge" style="background:#e1f0fb;color:#229ED9;margin:2px">'+esc(l.name||'')+' · '+esc(k)+'</span>'; }).join(' ');
+}
+// ── რეჟიმის შენახვა/წაკითხვა (user_settings) ──
+async function tgSaveMode(){
+  var m=(document.getElementById('tgMode')||{}).value||'daily';
+  try{ if(sb&&uid) await sb.from('user_settings').upsert({user_id:uid,skey:'tg_notify_mode',sval:m,updated_at:new Date().toISOString()},{onConflict:'user_id,skey'}); }catch(e){}
+  var st=document.getElementById('tgSendStat'); if(st) st.textContent='✅ რეჟიმი შენახულია: '+(m==='daily'?'დღის ჯამი':m==='each'?'ყოველ აწონვაზე':'გამორთული');
+}
+async function tgLoadMode(){
+  try{ if(!sb||!uid) return; var r=await sb.from('user_settings').select('sval').eq('user_id',uid).eq('skey','tg_notify_mode').maybeSingle();
+    var m=(r.data&&r.data.sval)||'daily'; var el=document.getElementById('tgMode'); if(el) el.value=m;
+  }catch(e){}
+}
+// ── გაგზავნა (telegram-send edge function; მომხმ. JWT) ──
+async function _tgInvoke(payload){
+  var st=document.getElementById('tgSendStat'); if(st) st.textContent='⏳ იგზავნება…';
+  try{
+    var r=await sb.functions.invoke('telegram-send',{body:payload});
+    if(r.error){ if(st) st.innerHTML='<span style="color:#b91c1c">❌ '+esc(r.error.message||'შეცდომა')+'</span>'; return null; }
+    var d=r.data||{};
+    if(st) st.innerHTML='<span style="color:#059669">✅ გაიგზავნა: '+(d.sent||0)+' · ვერ მოხერხდა: '+(d.failed||0)+' · დაკავშირებული: '+(d.linked||0)+'</span>';
+    return d;
+  }catch(e){ if(st) st.innerHTML='<span style="color:#b91c1c">❌ '+esc(e.message||e)+'</span>'; return null; }
+}
+function tgSendDaily(){
+  if(!Object.keys(TG_LINKS).length){ alert('ჯერ არავინ არ დაკავშირებულა Telegram-ზე.'); return; }
+  var dt=(document.getElementById('tgDailyDate')||{}).value||'';
+  _tgInvoke({daily:true, date:dt||undefined});
+}
+function tgSendTest(){ _tgInvoke({text:'🔔 ტესტი — AgroInTechSol\nTelegram კავშირი მუშაობს ✅'}); }
 
 function switchTab(t){ activeTab=t;
   document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-t')===t); });
