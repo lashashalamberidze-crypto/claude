@@ -1035,10 +1035,10 @@ async function brigadeExcel(){
       sNet+=net; sSum+=sum; gNet+=net; gSum+=sum;
       aoa.push([n, g.name, r2(net+tare), r2(tare), r2(net), r2(sum), '']);
     });
-    aoa.push([n, g.name+' — ჯამი', '', '', r2(sNet), r2(sSum), r2(sSum)]);
+    aoa.push([n, g.name+' — ჯამი ('+g.items.length+' ყუთი)', '', '', r2(sNet), r2(sSum), r2(sSum)]);
     subRows.push(aoa.length-1);
   });
-  aoa.push(['','ჯამი (ყველა)','','', r2(gNet), r2(gSum), r2(gSum)]);
+  aoa.push(['','ჯამი (ყველა) — '+num.length+' ყუთი','','', r2(gNet), r2(gSum), r2(gSum)]);
   var GTOT_R=aoa.length-1;
 
   var ws=XLSX.utils.aoa_to_sheet(aoa);
