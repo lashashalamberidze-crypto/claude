@@ -712,7 +712,11 @@ function prevAll(){ prevHand(); prevNum(); var ts=document.getElementById('tareS
 
 function saveQueue(){ return idbSet('queue',queue).catch(function(){}); }
 function renderQueue(){ var bar=document.getElementById('qbar'); if(!bar)return; if(queue.length){ bar.style.display='block'; bar.innerHTML='⏳ '+queue.length+' ჩანაწერი რიგშია'+(navigator.onLine?' — ვასინქრონებ...':' (ოფლაინ)'); } else bar.style.display='none'; }
+/* ⚠️ ტესტ-რეჟიმი — ვერავის მიდის SMS/შეტყობინება (ახალი წლისთვის მზადება).
+   გასაშვებად: შეცვალე true → false. */
+window.__NOTIFY_OFF = true;
 async function smsSend(phone,text,reference){
+  if(window.__NOTIFY_OFF){ console.warn('[TEST MODE] SMS დაბლოკილია:', phone); return {testMode:true}; }
   var cfg=smsCfg();
   if(!cfg.proxyUrl) throw new Error('SMS კონფიგი არ არის');
   var to=normPhone(phone); if(!to||to.length<11) throw new Error('არასწორი ნომერი');

@@ -283,7 +283,9 @@ window.normalizePhone = function(raw){
 };
 
 // Low-level: POST to proxy, returns Promise<{Success, Message, ErrorCode?}>
+window.__NOTIFY_OFF = true; /* ⚠️ ტესტ-რეჟიმი — SMS გამორთულია (true→false გასაშვებად) */
 window.smsSendViaApi = async function(phone, text, senderOverride){
+  if(window.__NOTIFY_OFF){ console.warn('[TEST MODE] SMS დაბლოკილია:', phone); return {Success:true, testMode:true}; }
   const cfg = window.sms_config;
   const to = window.normalizePhone(phone);
   if (!to || to.length < 11) throw new Error('არასწორი ან არა-მობილური ნომერი: ' + (phone || '—'));

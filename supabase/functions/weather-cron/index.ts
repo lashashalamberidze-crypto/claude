@@ -119,6 +119,11 @@ function json(data: unknown, status = 200){
 }
 
 serve(async (req) => {
+  // ⚠️ ტესტ-რეჟიმი — ვერავის მიდის SMS (ახალი წლისთვის მზადება).
+  // გასაშვებად: Supabase Edge Function secret-ში NOTIFY_OFF=0, ან წაშალე ეს ცვლადი.
+  if((Deno.env.get("NOTIFY_OFF") ?? "1") !== "0"){
+    return json({ success:true, disabled:true, reason:"NOTIFY_OFF (ტესტ-რეჟიმი)" });
+  }
   // cron-secret დაცვა (მხოლოდ დამგეგმავს შეუძლია გამოძახება)
   const secret = Deno.env.get("CRON_SECRET");
   if(secret){
