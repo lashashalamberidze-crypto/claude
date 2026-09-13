@@ -867,30 +867,35 @@ function plMapToggleFull(){
 function renderListMap(){
   var el=document.getElementById('listMap'); if(!el||!window.L) return;
   if(listMap){ try{ listMap.remove(); }catch(e){} listMap=null; }
+  var activeId=window._activePl||(PLANTS[0]&&PLANTS[0].id);
   setTimeout(function(){
     if(el.offsetWidth===0){ return; }
     listMap=L.map('listMap').setView([41.8,44.8],7);
     baseTiles(listMap);
     var fg=L.featureGroup().addTo(listMap);
-    function pin(color){ return L.divIcon({html:'<div style="background:'+color+';width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>',iconSize:[26,26],iconAnchor:[13,26],className:''}); }
-    var fallbacks=[];
+    function pin(color,big){ var s=big?36:26; return L.divIcon({html:'<div style="background:'+color+';width:'+s+'px;height:'+s+'px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:'+(big?3:2)+'px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)"></div>',iconSize:[s,s],iconAnchor:[s/2,s],className:''}); }
+    function centroid(cs){ var la=0,lo=0; cs.forEach(function(c){ la+=c[0]; lo+=c[1]; }); return [la/cs.length, lo/cs.length]; }
+    var fallbacks=[], activePos=null, activeLayer=null;
     PLANTS.forEach(function(p){
+      var isA=(p.id===activeId);
       if(Array.isArray(p.mapCoords)&&p.mapCoords.length>=3){
         try{
-          var pg=L.polygon(p.mapCoords,{color:'#10b981',fillOpacity:.18,weight:2}).addTo(listMap);
-          pg.bindPopup('<b>'+esc(p.name||'პლანტაცია')+'</b><br>'+esc(p.culture||'')+(p.area>0?' · '+(+p.area).toFixed(2)+' ha':''));
+          var pg=L.polygon(p.mapCoords,{color:isA?'#ef4444':'#10b981',fillColor:isA?'#ef4444':'#10b981',fillOpacity:isA?.30:.15,weight:isA?3:2}).addTo(listMap);
+          pg.bindPopup('<b>'+esc(p.name||'პლანტაცია')+'</b>'+(isA?' <span style="color:#ef4444">✓ აქტიური</span>':'')+'<br>'+esc(p.culture||'')+(p.area>0?' · '+(+p.area).toFixed(2)+' ha':''));
           fg.addLayer(pg);
+          if(isA){ activePos=centroid(p.mapCoords); activeLayer=pg; }
         }catch(e){}
       } else if(Array.isArray(p.mapCenter)&&p.mapCenter.length===2){
         try{
-          var mk=L.marker(p.mapCenter,{icon:pin('#0ea5e9')}).addTo(listMap);
-          mk.bindPopup('<b>'+esc(p.name||'პლანტაცია')+'</b><br>'+esc(p.culture||''));
+          var mk=L.marker(p.mapCenter,{icon:pin(isA?'#ef4444':'#0ea5e9',isA),zIndexOffset:isA?1000:0}).addTo(listMap);
+          mk.bindPopup('<b>'+esc(p.name||'პლანტაცია')+'</b>'+(isA?' <span style="color:#ef4444">✓ აქტიური</span>':'')+'<br>'+esc(p.culture||''));
           fg.addLayer(mk);
+          if(isA){ activePos=p.mapCenter; activeLayer=mk; }
         }catch(e){}
       } else {
-        // კონტური/GPS არ არის — ვიმახსოვრებთ, რომ მუნიციპალიტეტის/რეგიონის ცენტრზე დავდოთ
+        // კონტური/GPS არ არის — მუნიციპალიტეტის/რეგიონის ცენტრზე მიახლ. პინი
         var base=(p.munic&&GEO_MUNIC_CENTERS[p.munic])||(p.region&&GEO_REGION_CENTERS[p.region])||null;
-        if(base) fallbacks.push({p:p,base:base,approx:(p.munic&&GEO_MUNIC_CENTERS[p.munic])?p.munic:p.region});
+        if(base) fallbacks.push({p:p,base:base,approx:(p.munic&&GEO_MUNIC_CENTERS[p.munic])?p.munic:p.region,isA:isA});
       }
     });
     // ერთ წერტილში მოხვედრილი ბაღები წრიულად გავფანტოთ, რომ ერთმანეთს არ დაეფაროს
@@ -902,15 +907,25 @@ function renderListMap(){
         var pos=f.base;
         if(n>1){ var ang=i/n*2*Math.PI, R=0.06; pos=[f.base[0]+R*Math.cos(ang), f.base[1]+R*Math.sin(ang)]; }
         try{
-          var mk2=L.marker(pos,{icon:pin('#f59e0b')}).addTo(listMap);
-          mk2.bindPopup('<b>'+esc(f.p.name||'პლანტაცია')+'</b><br>'+esc(f.p.culture||'')+(f.p.area>0?' · '+(+f.p.area).toFixed(2)+' ha':'')+
+          var mk2=L.marker(pos,{icon:pin(f.isA?'#ef4444':'#f59e0b',f.isA),zIndexOffset:f.isA?1000:0}).addTo(listMap);
+          mk2.bindPopup('<b>'+esc(f.p.name||'პლანტაცია')+'</b>'+(f.isA?' <span style="color:#ef4444">✓ აქტიური</span>':'')+'<br>'+esc(f.p.culture||'')+(f.p.area>0?' · '+(+f.p.area).toFixed(2)+' ha':'')+
             '<br><span style="color:#b45309">📍 '+esc(f.approx)+' (მიახლოებითი)</span><br><span style="font-size:.8em;color:#64748b">ზუსტი მდებარეობისთვის დახაზეთ ბაღის კონტური რედაქტირებაში</span>');
           fg.addLayer(mk2);
+          if(f.isA){ activePos=pos; activeLayer=mk2; }
         }catch(e){}
       });
     });
     setTimeout(function(){
-      try{ listMap.invalidateSize(false); var b=fg.getBounds(); if(b&&b.isValid&&b.isValid()) listMap.fitBounds(b,{padding:[40,40],maxZoom:13,animate:false}); }catch(e){}
+      try{
+        listMap.invalidateSize(false);
+        if(activePos){
+          // აქტიურ პლანტაციაზე დაფოკუსება (მის რეგიონზე გადადის)
+          listMap.setView(activePos, 11, {animate:false});
+          if(activeLayer&&activeLayer.openPopup){ try{ activeLayer.openPopup(); }catch(e){} }
+        } else {
+          var b=fg.getBounds(); if(b&&b.isValid&&b.isValid()) listMap.fitBounds(b,{padding:[40,40],maxZoom:13,animate:false});
+        }
+      }catch(e){}
     },250);
   },160);
 }
