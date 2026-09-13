@@ -95,6 +95,26 @@
   </div>
 
   <div class="panel active" id="p-pickers">
+    <div class="card" id="tgConnectCard" style="border:1.5px solid #229ED9">
+      <h2 style="color:#229ED9">🔗 Telegram-ის დაკავშირება (მკრეფავებისთვის)</h2>
+      <div class="muted" style="font-size:.85rem;line-height:1.55;margin-bottom:10px">
+        მკრეფავმა დაასკანეროს ქვემოთ QR (ან გახსნას ბმული) → დააჭიროს <b>Start</b> → <b>„📱 ნომრის გაზიარება"</b>.
+        ამის შემდეგ შეტყობინებები (აწონვა, დღის ჯამი) <b>უფასოდ Telegram-ზე</b> მიუვა — SMS-ის გარეშე.
+      </div>
+      <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center">
+        <div id="tgQr" style="background:#fff;padding:8px;border-radius:10px;border:1px solid #e2e8f0"></div>
+        <div style="flex:1;min-width:220px">
+          <label>ბმული (გაუზიარე მკრეფავებს):</label>
+          <input id="tgLink" readonly onclick="this.select()" style="font-size:.78rem">
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <button class="sec" style="width:auto;padding:8px 12px" onclick="tgCopyLink()">📋 ბმულის კოპირება</button>
+            <button class="sec" style="width:auto;padding:8px 12px" onclick="tgPrintQr()">🖨️ QR ბეჭდვა</button>
+            <button class="sec" style="width:auto;padding:8px 12px" onclick="loadTgLinks().then(renderPickers)">🔄 სტატუსის განახლება</button>
+          </div>
+          <div id="tgStat" class="muted" style="font-size:.8rem;margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
     <div class="card">
       <h2>➕ მკრეფავის დამატება</h2>
       <div class="row2">
@@ -261,9 +281,36 @@ async function showApp(email){
   await loadSmsMap();
   await loadAttendance();
   await loadPlantation();
-  renderDash(); renderPickers();
+  await loadTgLinks();
+  renderDash(); renderPickers(); renderTgCard();
 }
 function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
+
+// ── 🔗 Telegram დაკავშირება ──
+const TG_BOT='AgroInTechSolBot';
+let TG_LINKS={};
+function _tgNorm(p){ var s=String(p||'').replace(/\D+/g,''); if(s.length===9&&s[0]==='5')s='995'+s; else if(s.length===9)s='995'+s; return s; }
+function tgLinked(phone){ return !!TG_LINKS[_tgNorm(phone)]; }
+async function loadTgLinks(){
+  TG_LINKS={};
+  try{ if(!sb||!uid) return; var r=await sb.from('telegram_links').select('phone,chat_id,name').eq('user_id',uid);
+    if(!r.error&&r.data){ r.data.forEach(function(x){ TG_LINKS[_tgNorm(x.phone)]={chat_id:x.chat_id,name:x.name}; }); }
+  }catch(e){ console.warn('loadTgLinks',e); }
+  var st=document.getElementById('tgStat'); if(st) st.textContent='✅ დაკავშირებული: '+Object.keys(TG_LINKS).length+' მკრეფავი';
+}
+function _tgLink(){ return 'https://t.me/'+TG_BOT+'?start='+encodeURIComponent(uid||''); }
+function renderTgCard(){
+  var inp=document.getElementById('tgLink'); if(inp) inp.value=_tgLink();
+  var q=document.getElementById('tgQr'); if(q&&window.QRCode){ q.innerHTML=''; try{ new QRCode(q,{text:_tgLink(),width:132,height:132,correctLevel:QRCode.CorrectLevel.M}); }catch(e){} }
+}
+function tgCopyLink(){ var inp=document.getElementById('tgLink'); if(!inp)return; inp.select();
+  try{ navigator.clipboard.writeText(inp.value); }catch(e){ try{ document.execCommand('copy'); }catch(_e){} }
+  var st=document.getElementById('tgStat'); if(st) st.textContent='📋 ბმული დაკოპირდა'; }
+function tgPrintQr(){ var link=_tgLink(); var w=window.open('','_blank'); if(!w)return;
+  w.document.write('<div style="text-align:center;font-family:sans-serif;padding:30px"><h2>AgroInTechSol — Telegram</h2><p>დაასკანერე → Start → 📱 ნომრის გაზიარება</p><div id="pq" style="display:inline-block"></div><p style="font-size:11px;color:#555;word-break:break-all">'+link+'</p></div>'+
+    '<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></scr'+'ipt>'+
+    '<scr'+'ipt>setTimeout(function(){new QRCode(document.getElementById("pq"),{text:'+JSON.stringify(link)+',width:260,height:260});setTimeout(function(){window.print()},500)},300)</scr'+'ipt>');
+  w.document.close(); }
 
 function switchTab(t){ activeTab=t;
   document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-t')===t); });
@@ -457,7 +504,7 @@ function renderPickers(){
       +'<td><strong style="color:#0369a1;cursor:pointer" onclick="openPicker(\''+esc(p.uid)+'\')">'+esc(pName(p))+'</strong> <span style="cursor:pointer" onclick="openPicker(\''+esc(p.uid)+'\')">👁️</span></td>'
       +'<td>'+role+'</td>'
       +'<td class="muted">'+esc(p.id||p.personal_id||'—')+'</td>'
-      +'<td>'+esc(p.phone||'—')+'</td>'
+      +'<td>'+esc(p.phone||'—')+(p.phone&&tgLinked(p.phone)?' <span class="badge" style="background:#e1f0fb;color:#229ED9" title="Telegram დაკავშირებულია">✈️</span>':'')+'</td>'
       +'<td><strong>'+fmtKg(pkKg(p))+'</strong></td>'
       +'<td>'+pkBox(p)+'</td>'
       +'<td style="white-space:nowrap"><span class="x" onclick="deletePicker(\''+esc(p.uid)+'\')">🗑️</span></td></tr>';
