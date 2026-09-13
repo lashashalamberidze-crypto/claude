@@ -64,21 +64,41 @@
   .h1 .acc-b{color:var(--blue)} .h1 .acc-g{color:var(--green-d)}
   .sub{text-align:center;font-size:.86rem;color:var(--muted);margin:0 auto 24px;max-width:56ch;line-height:1.55}
 
-  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+  .tabs{display:flex;gap:8px;justify-content:center;margin:24px auto 18px;flex-wrap:wrap}
+  .tabbtn{background:var(--panel);border:1.5px solid var(--line);border-radius:999px;padding:10px 22px;
+    font-family:inherit;font-size:.9rem;font-weight:800;color:var(--muted);cursor:pointer;transition:all .15s;
+    display:inline-flex;align-items:center;gap:7px}
+  .tabbtn.on{background:var(--green-d);border-color:var(--green-d);color:#fff;box-shadow:0 6px 16px rgba(22,163,74,.22)}
+  .tabbtn:hover:not(.on){border-color:var(--green);color:var(--green-d)}
+  .tabview[hidden]{display:none}
+
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
   @media(max-width:820px){.grid{grid-template-columns:repeat(3,1fr)}}
   @media(max-width:560px){.grid{grid-template-columns:repeat(2,1fr)}}
-  .m{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:14px 13px;
+  .m{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 11px;
     box-shadow:var(--shadow);transition:transform .14s,box-shadow .14s,border-color .14s;cursor:pointer;
     text-align:left;font-family:inherit;color:inherit;position:relative}
   .m:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(22,163,74,.14);border-color:rgba(22,163,74,.35)}
   .m:focus-visible{outline:2px solid var(--green);outline-offset:2px}
-  .m .ic{width:40px;height:40px;border-radius:11px;background:var(--green-soft);
-    display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:9px}
-  .m .nm{font-size:.82rem;font-weight:700;line-height:1.25;margin-bottom:3px}
-  .m .ds{font-size:.7rem;color:var(--muted);line-height:1.35}
-  .m .more{margin-top:8px;font-size:.66rem;font-weight:700;color:var(--green-d);display:inline-flex;align-items:center;gap:3px}
+  .m .ic{width:34px;height:34px;border-radius:9px;background:var(--green-soft);
+    display:flex;align-items:center;justify-content:center;font-size:1.05rem;margin-bottom:7px}
+  .m .nm{font-size:.78rem;font-weight:700;line-height:1.22;margin-bottom:2px}
+  .m .ds{font-size:.66rem;color:var(--muted);line-height:1.3}
+  .m .more{margin-top:6px;font-size:.62rem;font-weight:700;color:var(--green-d);display:inline-flex;align-items:center;gap:3px}
   .m .more .ar{transition:transform .14s}
   .m:hover .more .ar{transform:translateX(3px)}
+  .m .price{position:absolute;top:9px;right:9px;font-size:.6rem;font-weight:800;color:#fff;
+    background:var(--green-d);border-radius:8px;padding:2px 7px;letter-spacing:.2px}
+  .m.soon{cursor:default;opacity:.72;filter:grayscale(.25)}
+  .m.soon:hover{transform:none;box-shadow:var(--shadow);border-color:var(--line)}
+  .m .price.soon{background:#94a3b8}
+
+  .svc-note{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:16px 18px;text-align:center;box-shadow:var(--shadow)}
+  .svc-note p{margin:0 auto 12px;font-size:.86rem;color:var(--muted);line-height:1.6;max-width:64ch}
+  .svc-note .cta{display:inline-flex;align-items:center;gap:8px;background:var(--green-d);color:#fff;border:none;
+    border-radius:11px;padding:11px 22px;font-family:inherit;font-size:.9rem;font-weight:800;cursor:pointer;text-decoration:none}
+  .svc-note .cta:hover{background:#0b3d2e}
 
   .plans{margin-top:30px;background:var(--panel);border:1px solid var(--line);border-radius:14px;
     padding:15px 16px;box-shadow:var(--shadow)}
@@ -279,15 +299,61 @@
     </div>
   </div>
 
-  <div class="lead">🌾 InTechSol — სასოფლო-სამეურნეო პლატფორმა</div>
-  <h1 class="h1"><span class="acc-b">სასოფლო-სამეურნეო</span><br>კულტურების <span class="acc-g">მართვის სისტემა</span></h1>
-  <p class="sub">ერთი პლატფორმა — კრეფიდან გაყიდვამდე. მართეთ პლანტაცია, კრეფა, საწყობი, ამინდი და გაყიდვები ერთი ადგილიდან.</p>
+  <div class="tabs">
+    <button class="tabbtn on" id="tabbtn-agro" onclick="showTab('agro')">🌿 აგრო სისტემა</button>
+    <button class="tabbtn" id="tabbtn-sites" onclick="showTab('sites')">💻 საიტები & სისტემები</button>
+  </div>
 
-  <div class="grid" id="grid"></div>
+  <div class="tabview" id="tab-agro">
+    <div class="lead">🌾 InTechSol — სასოფლო-სამეურნეო პლატფორმა</div>
+    <h1 class="h1"><span class="acc-b">სასოფლო-სამეურნეო</span><br>კულტურების <span class="acc-g">მართვის სისტემა</span></h1>
+    <p class="sub">ერთი პლატფორმა — კრეფიდან გაყიდვამდე. მართეთ პლანტაცია, კრეფა, საწყობი, ამინდი და გაყიდვები ერთი ადგილიდან.</p>
 
-  <div class="plans">
-    <div class="plans-h">ტარიფები · დააჭირე — ნახავ რა მოდულები შედის</div>
-    <div class="plans-row" id="plansRow"></div>
+    <div class="grid" id="grid"></div>
+
+    <div class="plans">
+      <div class="plans-h">ტარიფები · დააჭირე — ნახავ რა მოდულები შედის</div>
+      <div class="plans-row" id="plansRow"></div>
+    </div>
+  </div>
+
+  <div class="tabview" id="tab-sites" hidden>
+    <div class="lead">💻 InTechSol · ls.com.ge — ვები & მართვის სისტემები</div>
+    <h1 class="h1">უნიკალური <span class="acc-b">მართვის სისტემები</span> <span class="acc-g">და საიტები</span></h1>
+    <p class="sub">არა უბრალოდ საიტი — სრული ფუნქციური სისტემა. ls.com.ge-ის გუნდის გამოცდილებით, თქვენს ბიზნესზე მორგებული უნიკალური მოდულებით, ავტომატიზაციითა და საკუთარი რეგულაციით.</p>
+
+    <div class="plans-h" style="margin:6px 0 10px">ჩვენი სისტემები</div>
+    <div class="grid">
+      <a class="m" href="https://agrointechsol.ge" target="_blank" rel="noopener" style="text-decoration:none">
+        <span class="price">✓ მუშაობს</span>
+        <div class="ic">🌿</div><div class="nm">AgroInTechSol</div>
+        <div class="ds">სასოფლო-სამეურნეო კულტურების მართვა · agrointechsol.ge</div>
+        <div class="more">გახსნა <span class="ar">→</span></div></a>
+      <a class="m" href="https://pestintechsol.ge" target="_blank" rel="noopener" style="text-decoration:none">
+        <span class="price">✓ მუშაობს</span>
+        <div class="ic">🐛</div><div class="nm">PestInTechSol</div>
+        <div class="ds">მავნებელ-კონტროლი / დეზინფექციის მართვა · pestintechsol.ge</div>
+        <div class="more">გახსნა <span class="ar">→</span></div></a>
+      <div class="m soon">
+        <span class="price soon">🔜 მალე</span>
+        <div class="ic">🏢</div><div class="nm">ქონების მართვის სისტემა</div>
+        <div class="ds">უძრავი ქონების / აქტივების მართვა — უახლოეს მომავალში</div></div>
+    </div>
+
+    <div class="plans-h" style="margin:22px 0 10px">შენთვის შევქმნით — 150 ₾-დან</div>
+    <div class="grid">
+      <div class="m" onclick="_goContact()"><span class="price">150₾-დან</span><div class="ic">🌐</div><div class="nm">ვიზიტ-საიტი / ლენდინგი</div><div class="ds">პრეზენტაცია, კონტაქტი, ფორმები, მრავალენოვანი</div><div class="more">დაწვრილებით <span class="ar">→</span></div></div>
+      <div class="m" onclick="_goContact()"><div class="ic">🛒</div><div class="nm">ონლაინ მაღაზია</div><div class="ds">კატალოგი, კალათა, გადახდა, მართვის პანელი</div><div class="more">დაწვრილებით <span class="ar">→</span></div></div>
+      <div class="m" onclick="_goContact()"><div class="ic">📊</div><div class="nm">მართვის სისტემა / CRM</div><div class="ds">კლიენტები, გაყიდვები, ანგარიშები, ავტომატიზაცია</div><div class="more">დაწვრილებით <span class="ar">→</span></div></div>
+      <div class="m" onclick="_goContact()"><div class="ic">🏢</div><div class="nm">კორპორატიული საიტი</div><div class="ds">მრავალგვერდიანი, ბლოგი, ინტეგრაციები</div><div class="more">დაწვრილებით <span class="ar">→</span></div></div>
+      <div class="m" onclick="_goContact()"><div class="ic">⚙️</div><div class="nm">უნიკალური სისტემა</div><div class="ds">თქვენს პროცესზე მორგებული, თავისი რეგულაციით</div><div class="more">დაწვრილებით <span class="ar">→</span></div></div>
+      <div class="m" onclick="_goContact()"><div class="ic">📱</div><div class="nm">ვებ-აპლიკაცია (PWA)</div><div class="ds">მობილურზე მორგებული, ღრუბელში, ოფლაინ</div><div class="more">დაწვრილებით <span class="ar">→</span></div></div>
+    </div>
+
+    <div class="svc-note">
+      <p>თითოეული პროექტი ინდივიდუალურია — ფასი დამოკიდებულია ფუნქციონალზე. ჩვენი გუნდი (ls.com.ge) ჩემი ხელმძღვანელობით შექმნის და აააწყობს სრულ ფუნქციურ სისტემას — უნიკალური მართვით, სხვადასხვა მიმართულებით, კლიენტზე მორგებული.</p>
+      <a class="cta" href="tel:+995595533500">📞 უფასო კონსულტაცია — 595 53 35 00</a>
+    </div>
   </div>
 
   <div class="contact">
@@ -660,5 +726,16 @@ function __go(kind){
 document.addEventListener('keydown', function(e){
   if(e.ctrlKey && e.shiftKey && (e.key==='Z' || e.key==='z')){ e.preventDefault(); __go('admin'); }
 });
+// ── ტაბები: აგრო / საიტები & სისტემები ──
+function showTab(t){
+  ['agro','sites'].forEach(function(k){
+    var v=document.getElementById('tab-'+k), b=document.getElementById('tabbtn-'+k);
+    if(v) v.hidden = (k!==t);
+    if(b) b.classList.toggle('on', k===t);
+  });
+  try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){ window.scrollTo(0,0); }
+}
+function _goContact(){ var c=document.querySelector('.contact'); if(c) c.scrollIntoView({behavior:'smooth',block:'center'}); }
+window.showTab=showTab; window._goContact=_goContact;
 </script>
 </body></html>
