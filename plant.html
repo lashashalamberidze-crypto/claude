@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
   *{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
   body{margin:0;background:#f1f5f9;color:#0f172a;padding:14px;max-width:760px;margin:0 auto}
@@ -81,7 +82,13 @@
       <div id="listItems"><div class="muted" style="padding:16px 0">იტვირთება…</div></div>
     </div>
     <div class="card">
-      <h2>🗺 რუკა</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <h2 style="margin:0">🗺 რუკა</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="gray" style="width:auto;padding:8px 13px;margin:0" onclick="plantPDF()" title="აქტიური პლანტაცია — ბეჭდვადი PDF კონტურით">🖨 PDF (აქტიური)</button>
+          <button class="teal" style="width:auto;padding:8px 13px;margin:0" onclick="plantExcel()" title="აქტიური პლანტაცია — Excel">📊 Excel (აქტიური)</button>
+        </div>
+      </div>
       <div id="listMap" style="height:clamp(420px,62vh,760px);border-radius:12px;overflow:hidden;border:1px solid #0f2845;background:#e2e8f0"></div>
     </div>
   </div>
@@ -934,6 +941,135 @@ function renderListMap(){
       }catch(e){}
     },250);
   },160);
+}
+
+// ══ არჩეული პლანტაციის ექსპორტი (PDF ბეჭდვა + Excel) ══
+function _activePlant(){
+  var id=window._activePl||(PLANTS[0]&&PLANTS[0].id);
+  return PLANTS.find(function(p){ return p.id===id; })||PLANTS[0]||null;
+}
+async function _loadPlantStruct(plId){
+  var blocks=[], rows=[];
+  try{ var rb=await sb.from('agro_blocks').select('*').eq('user_id',uid).eq('plantation_id',plId); if(!rb.error&&rb.data) blocks=rb.data; }catch(e){}
+  if(blocks.length){
+    try{ var ids=blocks.map(function(b){return b.id;}); var rr=await sb.from('agro_rows').select('*').eq('user_id',uid).in('block_id',ids).range(0,9999); if(!rr.error&&rr.data) rows=rr.data; }catch(e){}
+  }
+  return {blocks:blocks, rows:rows};
+}
+var _PL_COLORS=['#10b981','#0ea5e9','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#ef4444','#6366f1','#84cc16','#f97316'];
+// კონტურის + ბლოკების SVG (თვითმყოფადი — რუკის ფილების გარეშე, სუფთად იბეჭდება)
+function _plantSVG(plant, blocks, W){
+  W=W||660;
+  var contour=_normCoords(plant.mapCoords);
+  var bpolys=[];
+  (blocks||[]).forEach(function(b,i){
+    var g=b.geojson; if(typeof g==='string'){ try{ g=JSON.parse(g); }catch(e){ g=null; } }
+    var cs=g&&Array.isArray(g.coords)?_normCoords(g.coords):(Array.isArray(g)?_normCoords(g):[]);
+    if(cs.length>=3) bpolys.push({name:b.name||('ბლოკი '+(i+1)), variety:b.variety||'', coords:cs, color:_PL_COLORS[i%_PL_COLORS.length]});
+  });
+  var all=[]; contour.forEach(function(c){ all.push(c); }); bpolys.forEach(function(bp){ bp.coords.forEach(function(c){ all.push(c); }); });
+  if(all.length<3) return null;
+  var midLat=all.reduce(function(s,c){return s+c[0];},0)/all.length;
+  var k=Math.cos(midLat*Math.PI/180)||0.75;
+  function proj(c){ return [c[1]*k, c[0]]; } // [x=lng*cos, y=lat]
+  var xs=all.map(function(c){return proj(c)[0];}), ys=all.map(function(c){return proj(c)[1];});
+  var minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs), minY=Math.min.apply(null,ys), maxY=Math.max.apply(null,ys);
+  var pad=22, spanX=(maxX-minX)||1e-6, spanY=(maxY-minY)||1e-6;
+  var sc=Math.min((W-2*pad)/spanX,(W-2*pad)/spanY);
+  var H=Math.max(180, Math.round(spanY*sc+2*pad));
+  function P(c){ var p=proj(c); return [ (pad+(p[0]-minX)*sc).toFixed(1), (pad+(maxY-p[1])*sc).toFixed(1) ]; }
+  function ptsStr(cs){ return cs.map(function(c){ var xy=P(c); return xy[0]+','+xy[1]; }).join(' '); }
+  function centroid(cs){ var la=0,lo=0; cs.forEach(function(c){ la+=c[0]; lo+=c[1]; }); return [la/cs.length, lo/cs.length]; }
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">';
+  if(contour.length>=3) svg+='<polygon points="'+ptsStr(contour)+'" fill="#10b981" fill-opacity="0.10" stroke="#0f766e" stroke-width="2.5"/>';
+  bpolys.forEach(function(bp){
+    svg+='<polygon points="'+ptsStr(bp.coords)+'" fill="'+bp.color+'" fill-opacity="0.30" stroke="'+bp.color+'" stroke-width="2"/>';
+    var ct=P(centroid(bp.coords));
+    svg+='<text x="'+ct[0]+'" y="'+ct[1]+'" font-size="12" font-weight="700" text-anchor="middle" fill="#0f172a" paint-order="stroke" stroke="#fff" stroke-width="3">'+esc(bp.name)+'</text>';
+  });
+  svg+='</svg>';
+  return {svg:svg, blocks:bpolys, hasContour:contour.length>=3};
+}
+async function plantPDF(){
+  var p=_activePlant(); if(!p){ alert('ჯერ დაამატე/აირჩიე პლანტაცია'); return; }
+  var st=await _loadPlantStruct(p.id);
+  var drawn=_plantSVG(p, st.blocks, 660);
+  var rowsByBlock={}; st.rows.forEach(function(r){ (rowsByBlock[r.block_id]=rowsByBlock[r.block_id]||[]).push(r); });
+  function num(v){ return (v||v===0)?v:'—'; }
+  var addr=[p.village,p.munic,p.region].filter(Boolean).join(', ')||p.address||'—';
+  var totalPlants=st.rows.reduce(function(s,r){ return s+(+r.plant_count||0); },0)||(+p.plants||0);
+  var infoRows=[
+    ['კულტურა',(p.cultureIcon||'')+' '+(p.culture||'—')],
+    ['რეგიონი / მისამართი',addr],
+    ['ფართობი',(p.area>0?(+p.area).toFixed(2)+' ha':'—')],
+    ['მფლობელი',p.owner||'—'],
+    ['დარგვის წელი',num(p.year)],
+    ['მცენარეები',num(totalPlants)],
+    ['ბლოკები',String(st.blocks.length)],
+    ['შენიშვნა',p.note||'—']
+  ];
+  var w=window.open('','_blank'); if(!w){ alert('ბლოკერმა შეაფერხა ფანჯარა'); return; }
+  var css='body{font-family:\'Segoe UI\',system-ui,sans-serif;color:#0f172a;margin:0;padding:26px}h1{margin:0 0 2px;font-size:22px;color:#0f766e}.sub{color:#64748b;font-size:13px;margin-bottom:14px}table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}td,th{border:1px solid #e2e8f0;padding:6px 9px;text-align:left}th{background:#0f766e;color:#fff}.k{background:#f1f5f9;font-weight:600;width:200px}h2{font-size:15px;color:#0f766e;margin:18px 0 4px;border-bottom:2px solid #ccfbf1;padding-bottom:3px}.leg{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:middle}@media print{body{padding:0}}';
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(p.name||'პლანტაცია')+'</title><style>'+css+'</style></head><body>';
+  html+='<h1>'+esc(p.cultureIcon||'🌱')+' '+esc(p.name||'პლანტაცია')+'</h1>';
+  html+='<div class="sub">AgroInTechSol · პლანტაციის უწყისი · '+new Date().toLocaleDateString('ka-GE')+'</div>';
+  html+='<table>'+infoRows.map(function(r){ return '<tr><td class="k">'+esc(r[0])+'</td><td>'+esc(String(r[1]))+'</td></tr>'; }).join('')+'</table>';
+  if(drawn){
+    html+='<h2>🗺 კონტური და ბლოკები</h2>'+drawn.svg;
+    if(drawn.blocks.length) html+='<div style="margin-top:8px;font-size:12px">'+drawn.blocks.map(function(b){ return '<span style="margin-right:14px"><span class="leg" style="background:'+b.color+'"></span>'+esc(b.name)+'</span>'; }).join('')+'</div>';
+  } else {
+    html+='<h2>🗺 კონტური</h2><div class="sub">კონტური ჯერ არ არის დახაზული (რედაქტირებაში დახაზე რუკაზე).</div>';
+  }
+  if(st.blocks.length){
+    html+='<h2>🧱 ბლოკები / სექტორები</h2><table><tr><th>ბლოკი</th><th>ჯიში</th><th>რიგები</th><th>მცენარეები</th><th>შენიშვნა</th></tr>';
+    st.blocks.forEach(function(b){ var rs=rowsByBlock[b.id]||[]; var pc=rs.reduce(function(s,r){return s+(+r.plant_count||0);},0);
+      html+='<tr><td>'+esc(b.name||'—')+'</td><td>'+esc(b.variety||'—')+'</td><td>'+rs.length+'</td><td>'+(pc||'—')+'</td><td>'+esc(b.note||'—')+'</td></tr>'; });
+    html+='</table>';
+  }
+  html+='<div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 22px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">🖨 ბეჭდვა / PDF</button></div>';
+  html+='</body></html>';
+  w.document.write(html); w.document.close();
+  setTimeout(function(){ try{ w.print(); }catch(e){} }, 600);
+}
+async function plantExcel(){
+  if(typeof XLSX==='undefined'){ alert('Excel ვერ ჩაიტვირთა'); return; }
+  var p=_activePlant(); if(!p){ alert('ჯერ დაამატე/აირჩიე პლანტაცია'); return; }
+  var st=await _loadPlantStruct(p.id);
+  var rowsByBlock={}; st.rows.forEach(function(r){ (rowsByBlock[r.block_id]=rowsByBlock[r.block_id]||[]).push(r); });
+  var totalPlants=st.rows.reduce(function(s,r){ return s+(+r.plant_count||0); },0)||(+p.plants||0);
+  var addr=[p.village,p.munic,p.region].filter(Boolean).join(', ')||p.address||'';
+  function bd(){ var s={style:'thin',color:{rgb:'D9D9D9'}}; return {top:s,bottom:s,left:s,right:s}; }
+  var head={fill:{fgColor:{rgb:'0F766E'}},font:{color:{rgb:'FFFFFF'},bold:true},border:bd()};
+  var kcell={fill:{fgColor:{rgb:'F1F5F9'}},font:{bold:true},border:bd()}, cell={border:bd()}, tot={fill:{fgColor:{rgb:'CBD5E1'}},font:{bold:true},border:bd()};
+  var wb=XLSX.utils.book_new();
+  // ფურცელი 1 — მიმოხილვა
+  var a1=[['პლანტაცია',p.name||''],['კულტურა',(p.cultureIcon||'')+' '+(p.culture||'')],['რეგიონი/მისამართი',addr],
+    ['ფართობი (ha)',p.area>0?(+p.area).toFixed(2):''],['მფლობელი',p.owner||''],['დარგვის წელი',p.year||''],
+    ['მცენარეები',totalPlants||''],['ბლოკები',st.blocks.length],['შენიშვნა',p.note||'']];
+  var ws1=XLSX.utils.aoa_to_sheet(a1);
+  for(var R=0;R<a1.length;R++){ var kr=XLSX.utils.encode_cell({r:R,c:0}); if(ws1[kr])ws1[kr].s=kcell; var vr=XLSX.utils.encode_cell({r:R,c:1}); if(ws1[vr])ws1[vr].s=cell; }
+  ws1['!cols']=[{wch:22},{wch:40}];
+  XLSX.utils.book_append_sheet(wb,ws1,'მიმოხილვა');
+  // ფურცელი 2 — ბლოკები
+  var a2=[['ბლოკი','ჯიში','რიგები','მცენარეები','შენიშვნა']]; var tR=0,tP=0;
+  st.blocks.forEach(function(b){ var rs=rowsByBlock[b.id]||[]; var pc=rs.reduce(function(s,r){return s+(+r.plant_count||0);},0); tR+=rs.length; tP+=pc;
+    a2.push([b.name||'',b.variety||'',rs.length,pc,b.note||'']); });
+  a2.push(['ჯამი','',tR,tP,'']);
+  var ws2=XLSX.utils.aoa_to_sheet(a2);
+  for(var R2=0;R2<a2.length;R2++)for(var C2=0;C2<a2[R2].length;C2++){ var rf=XLSX.utils.encode_cell({r:R2,c:C2}); if(!ws2[rf])ws2[rf]={t:'s',v:''}; ws2[rf].s=(R2===0?head:(R2===a2.length-1?tot:cell)); }
+  ws2['!cols']=[{wch:20},{wch:16},{wch:9},{wch:12},{wch:24}];
+  XLSX.utils.book_append_sheet(wb,ws2,'ბლოკები');
+  // ფურცელი 3 — რიგები
+  var blkName={}; st.blocks.forEach(function(b){ blkName[b.id]=b.name||''; });
+  var a3=[['ბლოკი','რიგი','ჯიში','მცენარეები']];
+  st.rows.forEach(function(r){ a3.push([blkName[r.block_id]||'',r.name||'',r.variety||'',+r.plant_count||0]); });
+  if(st.rows.length){
+    var ws3=XLSX.utils.aoa_to_sheet(a3);
+    for(var R3=0;R3<a3.length;R3++)for(var C3=0;C3<a3[R3].length;C3++){ var rf3=XLSX.utils.encode_cell({r:R3,c:C3}); if(!ws3[rf3])ws3[rf3]={t:'s',v:''}; ws3[rf3].s=(R3===0?head:cell); }
+    ws3['!cols']=[{wch:20},{wch:14},{wch:16},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,ws3,'რიგები');
+  }
+  try{ XLSX.writeFile(wb,'plantacia_'+String(p.name||'').replace(/\s+/g,'_')+'.xlsx'); }catch(e){ alert('❌ '+(e.message||e)); }
 }
 
 // ══ session resume on load ══
