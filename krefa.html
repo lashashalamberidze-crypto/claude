@@ -227,6 +227,7 @@
         <div style="flex:1;min-width:150px"><label style="margin:0 0 3px">მკრეფავი</label><input id="rPicker" placeholder="🔎 სახელი…" oninput="renderReport()"></div>
         <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end" onclick="refreshReport()">🔄 ჩვენება</button>
         <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end" onclick="exportReportExcel()">📊 Excel</button>
+        <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end;border-color:#0d9488;color:#0f766e" onclick="brigadeExcel()" title="ნუმერაციით კრეფის უწყისი — № · ბრუტო · ტარა · ნეტო · თანხა">🧾 ბრიგადირის უწყისი</button>
         <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end" onclick="printReport()">🖨️ ბეჭდვა</button>
         <button class="sec" style="width:auto;padding:9px 13px;align-self:flex-end;border-color:#f59e0b;color:#b45309" onclick="fixPriceForFilter()" title="არჩეული ფილტრის ყველა ჩაწონვას ფასი გადაუყენებს და თანხას ხელახლა დაითვლის">🛠️ ფასის კორექცია</button>
       </div>
@@ -992,6 +993,70 @@ function exportReportExcel(){
   ws3['!cols']=[{wch:12},{wch:9},{wch:22},{wch:8},{wch:7},{wch:14},{wch:14},{wch:8},{wch:8},{wch:10}];
   XLSX.utils.book_append_sheet(wb,ws3,'ყუთ-ყუთობით');
   try{ XLSX.writeFile(wb,'krefa_angarishi_'+_today()+'.xlsx'); }catch(e){ alert('❌ '+(e.message||e)); }
+}
+// ── 🧾 ბრიგადირის უწყისი (Лист бригадира) — ნუმერაციით კრეფა ──
+// № | ბრუტო | ტარა | ნეტო | თანხა | ჯამ(Итог)  — თარიღი/ფასი თავში, დაჯგუფება №-ით
+async function brigadeExcel(){
+  if(typeof XLSX==='undefined'){ alert('Excel ვერ ჩაიტვირთა'); return; }
+  var rows=_reportRows();
+  var num=rows.filter(function(s){ return (s.entry_mode||'').indexOf('ნუმერაცია')>=0; });
+  if(!num.length){ alert('არჩეულ პერიოდში ნუმერაციით კრეფა არ არის.\n(ბრიგადირის უწყისი მხოლოდ ნუმერაციით აწონვებზეა)'); return; }
+  // ტარა (ყუთის წონა) ღრუბლიდან
+  var tare=0;
+  try{ var tr=await sb.from('user_settings').select('sval').eq('user_id',uid).eq('skey','its_box_w').maybeSingle(); if(tr.data&&tr.data.sval!=null) tare=parseFloat(tr.data.sval)||0; }catch(e){}
+  var r2=function(n){ return Math.round((+n||0)*100)/100; };
+  // № = მკრეფავის ნომერი: short_code პრეფიქსი, ან PICKERS.num
+  function numOf(s){
+    var m=String(s.short_code||'').match(/^(\d+)-/); if(m) return m[1];
+    var p=PICKERS.find(function(x){ return x.uid===s.picker_id; }); if(p&&p.num) return String(p.num);
+    return String(s.short_code||'—');
+  }
+  var groups={}, order=[];
+  num.forEach(function(s){ var n=numOf(s); if(!groups[n]){ groups[n]={n:n,name:s.picker_name||'',items:[]}; order.push(n); } if(!groups[n].name&&s.picker_name) groups[n].name=s.picker_name; groups[n].items.push(s); });
+  order.sort(function(a,b){ var na=parseInt(a,10),nb=parseInt(b,10); if(!isNaN(na)&&!isNaN(nb)) return na-nb; return String(a).localeCompare(String(b)); });
+  var dset={}; num.forEach(function(s){ if(s.date) dset[s.date]=1; }); var days=Object.keys(dset).sort();
+  var fromD=(document.getElementById('rFrom')||{}).value||(days[0]||'');
+  var toD=(document.getElementById('rTo')||{}).value||(days[days.length-1]||'');
+  var prices={}; num.forEach(function(s){ prices[r2(s.price)]=1; }); var pk=Object.keys(prices);
+  var priceStr=pk.length===1?(pk[0]+' ₾/კგ'):'ცვალებადი';
+
+  var aoa=[
+    ['ბრიგადირის უწყისი (ნუმერაცია)'],
+    ['თარიღი:', (fromD||'')+(toD&&toD!==fromD?(' — '+toD):''), '', 'ფასი:', priceStr, '', 'ტარა:', tare+' კგ'],
+    [],
+    ['№','მკრეფავი','ბრუტო','ტარა','ნეტო','თანხა ₾','ჯამი ₾']
+  ];
+  var HEAD_R=3, subRows=[], gNet=0,gSum=0;
+  order.forEach(function(n){
+    var g=groups[n], sNet=0,sSum=0;
+    g.items.sort(function(a,b){ return String(a.time||'').localeCompare(String(b.time||'')); });
+    g.items.forEach(function(s){
+      var net=+s.weight||0, sum=+s.earned||0;
+      sNet+=net; sSum+=sum; gNet+=net; gSum+=sum;
+      aoa.push([n, g.name, r2(net+tare), r2(tare), r2(net), r2(sum), '']);
+    });
+    aoa.push([n, g.name+' — ჯამი', '', '', r2(sNet), r2(sSum), r2(sSum)]);
+    subRows.push(aoa.length-1);
+  });
+  aoa.push(['','ჯამი (ყველა)','','', r2(gNet), r2(gSum), r2(gSum)]);
+  var GTOT_R=aoa.length-1;
+
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:6}}];
+  var bd=function(){ var s={style:'thin',color:{rgb:'D9D9D9'}}; return {top:s,bottom:s,left:s,right:s}; };
+  var cell={border:bd()}, NC=7;
+  for(var R=0;R<aoa.length;R++){ for(var C=0;C<NC;C++){ var ref=XLSX.utils.encode_cell({r:R,c:C}); if(!ws[ref])ws[ref]={t:'s',v:''};
+    if(R===0) ws[ref].s={font:{bold:true,sz:14,color:{rgb:'0F766E'}},alignment:{horizontal:'center'}};
+    else if(R===1) ws[ref].s={font:{bold:true,color:{rgb:'334155'}}};
+    else if(R===HEAD_R) ws[ref].s={fill:{fgColor:{rgb:'0D9488'}},font:{color:{rgb:'FFFFFF'},bold:true},alignment:{horizontal:'center'},border:bd()};
+    else if(R===GTOT_R) ws[ref].s={fill:{fgColor:{rgb:'CBD5E1'}},font:{bold:true},border:bd()};
+    else if(subRows.indexOf(R)>=0) ws[ref].s={fill:{fgColor:{rgb:'CCFBF1'}},font:{bold:true},border:bd()};
+    else ws[ref].s=cell;
+  }}
+  ws['!cols']=[{wch:6},{wch:22},{wch:10},{wch:8},{wch:10},{wch:11},{wch:11}];
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'ბრიგადირის უწყისი');
+  try{ XLSX.writeFile(wb,'brigadiri_'+(fromD||_today())+'.xlsx'); }catch(e){ alert('❌ '+(e.message||e)); }
 }
 function printReport(){
   var rows=_reportRows(); if(!rows.length){ alert('ჩანაწერი არ არის'); return; }
