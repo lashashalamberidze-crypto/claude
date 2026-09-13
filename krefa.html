@@ -376,30 +376,77 @@ function tgSendDaily(){
   _tgInvoke({daily:true, date:dt||undefined});
 }
 function tgSendTest(){ _tgInvoke({text:'🔔 ტესტი — AgroInTechSol\nTelegram კავშირი მუშაობს ✅'}); }
-// ── 🏷️ QR ბარათის PNG (uid-ით) → base64 ──
-function _qrPng(text,size){
+// ── QR → Image ობიექტი ──
+function _qrImg(text,size){
   return new Promise(function(resolve){
-    if(typeof QRCode==='undefined'){ resolve(''); return; }
+    if(typeof QRCode==='undefined'){ resolve(null); return; }
     var tmp=document.createElement('div'); tmp.style.cssText='position:absolute;left:-9999px;top:-9999px'; document.body.appendChild(tmp);
-    try{ new QRCode(tmp,{text:String(text),width:size||320,height:size||320,correctLevel:QRCode.CorrectLevel.M}); }
-    catch(e){ tmp.remove(); resolve(''); return; }
+    try{ new QRCode(tmp,{text:String(text),width:size||300,height:size||300,correctLevel:QRCode.CorrectLevel.M}); }
+    catch(e){ tmp.remove(); resolve(null); return; }
     setTimeout(function(){
       var cv=tmp.querySelector('canvas'), img=tmp.querySelector('img');
       var src=cv?cv.toDataURL('image/png'):(img?img.src:'');
-      tmp.remove(); resolve(src||'');
+      tmp.remove();
+      if(!src){ resolve(null); return; }
+      var im=new Image(); im.onload=function(){ resolve(im); }; im.onerror=function(){ resolve(null); }; im.src=src;
     },260);
   });
 }
+// ── 🏷️ სრული ბარათი-სურათი (QR + პირადი ინფო ჩახატული) → PNG dataURL ──
+async function _qrCardPng(p){
+  var qr=await _qrImg(String(p.uid),300);
+  var W=560,H=760, cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  var ctx=cv.getContext('2d'); if(!ctx) return '';
+  var FF="Sylfaen, 'BPG Nino Mtavruli', system-ui, sans-serif";
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
+  // ჩარჩო
+  ctx.strokeStyle='#0369a1'; ctx.lineWidth=4; ctx.strokeRect(6,6,W-12,H-12);
+  // ჰედერი
+  var g=ctx.createLinearGradient(0,0,W,0); g.addColorStop(0,'#0ea5e9'); g.addColorStop(1,'#0369a1');
+  ctx.fillStyle=g; ctx.fillRect(8,8,W-16,104);
+  ctx.fillStyle='#fff'; ctx.textBaseline='middle'; ctx.textAlign='left';
+  ctx.font='700 32px '+FF; ctx.fillText('AgroInTechSol',32,50);
+  ctx.font='400 18px '+FF; ctx.fillText('კრეფის ID ბარათი',32,84);
+  var role=(p.role==='carrier')?'გამომტანი':'მკრეფავი';
+  ctx.textAlign='center';
+  var y=150;
+  // #ნომერი
+  if(p.num!=null){
+    var badge='#'+p.num; ctx.font='700 26px '+FF;
+    var bw=ctx.measureText(badge).width+34;
+    ctx.fillStyle='#dbeafe'; _rr(ctx,(W-bw)/2,y-22,bw,44,12); ctx.fill();
+    ctx.fillStyle='#1d4ed8'; ctx.fillText(badge,W/2,y);
+    y+=54;
+  }
+  // სახელი + როლი
+  ctx.fillStyle='#0f172a'; ctx.font='800 36px '+FF; ctx.fillText(pName(p),W/2,y); y+=40;
+  ctx.fillStyle='#64748b'; ctx.font='400 20px '+FF; ctx.fillText(role,W/2,y); y+=30;
+  // QR
+  var qs=300, qx=(W-qs)/2, qy=y;
+  if(qr){ ctx.drawImage(qr,qx,qy,qs,qs); ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=2; ctx.strokeRect(qx,qy,qs,qs); }
+  else { ctx.fillStyle='#94a3b8'; ctx.fillText('QR ვერ შეიქმნა',W/2,qy+150); }
+  var iy=qy+qs+34;
+  // საინფორმაციო ბლოკი (მარცხნივ)
+  ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=1; ctx.setLineDash([5,4]); ctx.beginPath(); ctx.moveTo(40,iy-18); ctx.lineTo(W-40,iy-18); ctx.stroke(); ctx.setLineDash([]);
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  function line(lbl,val){ ctx.fillStyle='#64748b'; ctx.font='600 19px '+FF; ctx.fillText(lbl,44,iy);
+    ctx.fillStyle='#0f172a'; ctx.font='700 20px '+FF; ctx.fillText(String(val||'—'),190,iy); iy+=34; }
+  line('ტელეფონი:', p.phone||'—');
+  line('პ/ნ:', p.id||p.personal_id||'—');
+  if(p.address) line('მისამართი:', p.address);
+  return cv.toDataURL('image/png');
+}
+function _rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 function _tgSetStat(html){ var st=document.getElementById('tgStat'); if(st) st.innerHTML=html; }
 // ერთ დაკავშირებულ მკრეფავს — მისი QR
 async function tgSendQrOne(uidOrPicker){
   var p=(typeof uidOrPicker==='object')?uidOrPicker:PICKERS.find(function(x){ return x.uid===uidOrPicker; });
   if(!p){ return; }
   if(!tgLinked(p.phone)){ alert('ეს მკრეფავი ჯერ არ არის დაკავშირებული Telegram-ზე ('+pName(p)+')'); return; }
-  _tgSetStat('⏳ QR მზადდება — '+esc(pName(p))+'…');
-  var png=await _qrPng(String(p.uid),340);
-  if(!png){ _tgSetStat('<span style="color:#b91c1c">❌ QR ვერ შეიქმნა</span>'); return; }
-  var cap='🏷️ '+pName(p)+(p.num!=null?(' · #'+p.num):'')+'\nQR ბარათი — შეინახე ტელეფონში და ასკანერე კრეფის დროს\n\nAgroInTechSol';
+  _tgSetStat('⏳ ბარათი მზადდება — '+esc(pName(p))+'…');
+  var png=await _qrCardPng(p);
+  if(!png){ _tgSetStat('<span style="color:#b91c1c">❌ ბარათი ვერ შეიქმნა</span>'); return; }
+  var cap='🏷️ '+pName(p)+(p.num!=null?(' · #'+p.num):'')+'\nშეინახე ტელეფონში და ასკანერე კრეფის დროს\n\nAgroInTechSol';
   try{
     var r=await sb.functions.invoke('telegram-send',{body:{qr:[{phone:p.phone,b64:png,caption:cap}]}});
     if(r.error){ _tgSetStat('<span style="color:#b91c1c">❌ '+esc(r.error.message||'')+'</span>'); return; }
@@ -410,18 +457,18 @@ async function tgSendQrOne(uidOrPicker){
 async function tgSendQrAll(){
   var linked=PICKERS.filter(function(p){ return tgLinked(p.phone); });
   if(!linked.length){ alert('ჯერ არავინ არ დაკავშირებულა Telegram-ზე.\n(მკრეფავმა უნდა დაასკანეროს QR → Start → 📱 ნომრის გაზიარება)'); return; }
-  if(!confirm(linked.length+' დაკავშირებულ მკრეფავს გაეგზავნება მისი QR ბარათი Telegram-ზე. გავაგრძელო?')) return;
+  if(!confirm(linked.length+' დაკავშირებულ მკრეფავს გაეგზავნება მისი ID ბარათი Telegram-ზე. გავაგრძელო?')) return;
   var items=[];
   for(var i=0;i<linked.length;i++){
     var p=linked[i];
-    _tgSetStat('⏳ QR-ები მზადდება… ('+(i+1)+'/'+linked.length+')');
-    var png=await _qrPng(String(p.uid),340);
+    _tgSetStat('⏳ ბარათები მზადდება… ('+(i+1)+'/'+linked.length+')');
+    var png=await _qrCardPng(p);
     if(!png) continue;
-    var cap='🏷️ '+pName(p)+(p.num!=null?(' · #'+p.num):'')+'\nQR ბარათი — შეინახე ტელეფონში და ასკანერე კრეფის დროს\n\nAgroInTechSol';
+    var cap='🏷️ '+pName(p)+(p.num!=null?(' · #'+p.num):'')+'\nშეინახე ტელეფონში და ასკანერე კრეფის დროს\n\nAgroInTechSol';
     items.push({phone:p.phone,b64:png,caption:cap});
   }
-  if(!items.length){ _tgSetStat('<span style="color:#b45309">⚠️ QR ვერ შეიქმნა</span>'); return; }
-  _tgSetStat('⏳ იგზავნება '+items.length+' QR ბარათი…');
+  if(!items.length){ _tgSetStat('<span style="color:#b45309">⚠️ ბარათი ვერ შეიქმნა</span>'); return; }
+  _tgSetStat('⏳ იგზავნება '+items.length+' ID ბარათი…');
   try{
     var r=await sb.functions.invoke('telegram-send',{body:{qr:items}});
     if(r.error){ _tgSetStat('<span style="color:#b91c1c">❌ '+esc(r.error.message||'')+'</span>'); return; }
