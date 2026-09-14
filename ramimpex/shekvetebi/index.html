@@ -1268,10 +1268,11 @@ function renderInvList(){ // ledger refresh (KPIs + rows)
       '<td class="right">'+(due>0.001?'<b style="color:#b00020">'+money(due)+'</b>':'0.00')+'</td>'+
       '<td>'+salStatusTag(stv)+'</td>'+
       '<td><div class="docrow">'+dochtml+'</div></td>'+
-      '<td class="right" style="white-space:nowrap"><button class="smini" data-idisp="'+esc(inv.id)+'" title="'+((inv.extra||{}).dispensed?'საწყობიდან გატანილია — დააჭირე დასაბრუნებლად':'მონიშნე საწყობიდან გატანა (მარაგს დააკლდება)')+'"'+((inv.extra||{}).dispensed?' style="background:#0B6B3C;color:#fff"':'')+'>📦</button> <button class="smini" data-idlv="'+esc(inv.id)+'" title="'+((inv.extra||{}).delivered?'მიწოდებულია — დააჭირე მოსახსნელად':'მონიშნე „მიწოდებულია"')+'"'+((inv.extra||{}).delivered?' style="background:#0B6B3C;color:#fff"':'')+'>🚚</button> <button class="smini" data-ipay="'+esc(inv.id)+'" title="გადახდის განახლება">💵</button> <button class="smini" data-idoc="'+esc(inv.id)+'" title="დოკუმენტების ატვირთვა">📎</button> <button class="smini" data-ed="'+esc(inv.id)+'" title="რედაქტ.">✏</button> <button class="smini" data-rp="'+esc(inv.id)+'" title="PDF ჩამოტვირთვა">📄</button> <button class="smini danger" data-del="'+esc(inv.id)+'" title="წაშლა">🗑</button></td></tr>';
+      '<td class="right" style="white-space:nowrap"><button class="smini" data-idisp="'+esc(inv.id)+'" title="'+((inv.extra||{}).dispensed?'საწყობიდან გატანილია — დააჭირე დასაბრუნებლად':'მონიშნე საწყობიდან გატანა (მარაგს დააკლდება)')+'"'+((inv.extra||{}).dispensed?' style="background:#0B6B3C;color:#fff"':'')+'>📦</button> <button class="smini" data-idlv="'+esc(inv.id)+'" title="'+((inv.extra||{}).delivered?'მიწოდებულია — დააჭირე მოსახსნელად':'მონიშნე „მიწოდებულია"')+'"'+((inv.extra||{}).delivered?' style="background:#0B6B3C;color:#fff"':'')+'>🚚</button> <button class="smini" data-ipay="'+esc(inv.id)+'" title="გადახდის განახლება">💵</button> <button class="smini" data-idoc="'+esc(inv.id)+'" title="დოკუმენტების ატვირთვა">📎</button> <button class="smini" data-ed="'+esc(inv.id)+'" title="რედაქტ.">✏</button> <button class="smini" data-rp="'+esc(inv.id)+'" title="PDF ჩამოტვირთვა">📄</button> <button class="smini" data-wa="'+esc(inv.id)+'" title="ინვოისის გაგზავნა WhatsApp-ზე" style="background:#25D366;color:#fff">📱</button> <button class="smini danger" data-del="'+esc(inv.id)+'" title="წაშლა">🗑</button></td></tr>';
   }).join('');
   if($('ilEmpty'))$('ilEmpty').style.display=list.length?'none':'';
   tb.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{const inv=INVOICES.find(x=>String(x.id)===b.dataset.rp);if(inv)downloadInvoicePDF(inv);});
+  tb.querySelectorAll('[data-wa]').forEach(b=>b.onclick=async()=>{const inv=INVOICES.find(x=>String(x.id)===b.dataset.wa);if(!inv)return;const o=b.textContent;b.textContent='⏳';b.disabled=true;try{await shareInvoiceWA(inv);}finally{b.textContent=o;b.disabled=false;}});
   tb.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>{const inv=INVOICES.find(x=>String(x.id)===b.dataset.ed);if(inv)editInvoice(inv);});
   tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteInvoice(b.dataset.del));
   tb.querySelectorAll('[data-ipay]').forEach(b=>b.onclick=()=>invQuickPay(b.dataset.ipay));
@@ -1655,9 +1656,9 @@ function printInvoice(inv){
   window.print();
 }
 /* ინვოისის PDF — ჩამოტვირთვა (მუშაობს ტელეფონზეც; force-dark არ ამრუდებს) */
-async function downloadInvoicePDF(inv){
+async function buildInvoicePdf(inv){ // returns {pdf,fname} or null
   const fname=((inv&&inv.no)?(''+inv.no):'ინვოისი').replace(/[\\/:*?"<>|]/g,'-').trim();
-  if(!window.html2canvas||!(window.jspdf&&window.jspdf.jsPDF)){printInvoice(inv);return;}
+  if(!window.html2canvas||!(window.jspdf&&window.jspdf.jsPDF))return null;
   const holder=document.createElement('div');
   holder.style.cssText='position:fixed;left:-99999px;top:0;width:760px;background:#fff;color-scheme:light;z-index:-1';
   holder.innerHTML=invoiceHTML(inv);
@@ -1671,9 +1672,34 @@ async function downloadInvoicePDF(inv){
     const perPagePx=Math.floor(canvas.width*ph/pw);
     if(canvas.height<=perPagePx){pdf.addImage(canvas,'JPEG',0,0,pw,canvas.height*pw/canvas.width);}
     else{let y=0;while(y<canvas.height){const hh=Math.min(perPagePx,canvas.height-y);const slice=document.createElement('canvas');slice.width=canvas.width;slice.height=hh;const cx=slice.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,slice.width,slice.height);cx.drawImage(canvas,0,y,canvas.width,hh,0,0,canvas.width,hh);if(y>0)pdf.addPage();pdf.addImage(slice,'JPEG',0,0,pw,hh*pw/canvas.width);y+=hh;}}
-    pdf.save(fname+'.pdf');
-  }catch(e){alert('PDF ვერ შეიქმნა: '+(e.message||e)+'\\nვცდი ბეჭდვას…');printInvoice(inv);}
+    return {pdf,fname};
+  }catch(e){return null;}
   finally{holder.remove();}
+}
+async function downloadInvoicePDF(inv){
+  const r=await buildInvoicePdf(inv);
+  if(!r){printInvoice(inv);return;}
+  try{r.pdf.save(r.fname+'.pdf');}catch(e){alert('PDF ვერ შეიქმნა: '+(e.message||e));printInvoice(inv);}
+}
+function waPhone(p){let d=(''+(p||'')).replace(/\D/g,'');if(!d)return '';if(d.indexOf('995')===0)return d;if(d.length===9)return '995'+d;return d;}
+async function shareInvoiceWA(inv){
+  const ph=waPhone(inv.phone);
+  const msg='გამარჯობა'+(inv.cust?' '+inv.cust:'')+'! 🧾 გიგზავნით ინვოისს'+(inv.no?' № '+inv.no:'')+' — RAM IMPEX.\nსულ: '+money(inv.grand||0)+' ₾'+((+inv.grand||0)-(+inv.paid||0)>0?' · დარჩენილი: '+money((inv.grand||0)-(inv.paid||0))+' ₾':'')+'\n📞 595 533 500 · ramimpex.com.ge';
+  const r=await buildInvoicePdf(inv);
+  if(r){
+    try{
+      const blob=r.pdf.output('blob');
+      const file=new File([blob],r.fname+'.pdf',{type:'application/pdf'});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:'ინვოისი '+(inv.no||''),text:msg});
+        return; // გაიგზავნა პირდაპირ (მომხმარებელი აირჩევს WhatsApp-ს)
+      }
+    }catch(e){if(e&&e.name==='AbortError')return;}
+    // fallback (დესკტოპი): ჩამოვტვირთოთ + გავხსნათ WhatsApp ჩატი ტექსტით
+    try{r.pdf.save(r.fname+'.pdf');}catch(e){}
+  }
+  window.open('https://wa.me/'+ph+'?text='+encodeURIComponent(msg),'_blank');
+  if(!(navigator.canShare)) alert('ამ მოწყობილობაზე ფაილის პირდაპირ მიმაგრება WhatsApp-ს არ აქვს.\nPDF ჩამოიტვირთა და WhatsApp ჩატი გაიხსნა — მიამაგრე ფაილი ხელით.\n(მობილურ ტელეფონზე პირდაპირ გაიგზავნება — ღილაკი იქ სრულად მუშაობს.)');
 }
 /* ===== ფასების შეთავაზება → JPG (ჯამის გარეშე, ერთეული ფასები + მინ. რაოდ.) ===== */
 function _loadImg(src){return new Promise(res=>{if(!src){res(null);return;}const im=new Image();im.onload=()=>res(im);im.onerror=()=>res(null);im.src=src;});}
