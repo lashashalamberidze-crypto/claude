@@ -214,43 +214,8 @@
     <tbody id="feedBody"><tr><td colspan="4" class="muted">ჯერ არცერთი</td></tr></tbody></table>
   </div>
 
-  <div class="card" id="archiveCard">
-    <h2>📊 პალეტების არქივი (ღრუბელში)</h2>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-      <span style="font-weight:600">📅</span>
-      <input type="date" id="archiveDate" style="width:auto;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px">
-      <button class="sec" style="width:auto;padding:8px 12px" onclick="loadArchive()">🔄 ჩვენება</button>
-      <button class="sec" style="width:auto;padding:8px 12px" onclick="var a=document.getElementById('archiveDate');if(a)a.value=_today();loadArchive()">დღეს</button>
-      <button class="sec" style="width:auto;padding:8px 12px;background:#fef2f2;color:#dc2626;border-color:#fecaca" onclick="deletePallet()">🗑️ პალეტის წაშლა</button>
-    </div>
-    <div id="archiveBody" style="margin-top:10px"><div class="muted">აირჩიე თარიღი და დააჭირე „🔄 ჩვენება".</div></div>
-  </div>
-
-  <div class="card" id="dsmsCard">
-    <h2>📲 დღის შეჯამების SMS</h2>
-    <div class="muted" style="margin-bottom:8px">აირჩიე დღე → ჩატვირთე → მონიშნე ვის გაეგზავნოს → გაუგზავნე. თითო მკრეფავს <b>ერთი</b> შემაჯამებელი SMS (მთელი დღის კგ + ₾).</div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-      <input type="date" id="dsmsDate" style="width:auto;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px">
-      <button class="sec" style="width:auto;padding:8px 12px" onclick="dsmsLoad()">🔄 ჩატვირთე მკრეფავები</button>
-      <button class="sec" style="width:auto;padding:8px 12px" onclick="var a=document.getElementById('dsmsDate');if(a)a.value=_today();dsmsLoad()">დღეს</button>
-    </div>
-    <div id="dsmsTools" style="display:none;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px">
-      <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="dsmsAll" onclick="dsmsToggleAll(this)" style="width:auto"> მონიშნე ყველა</label>
-      <span class="muted" id="dsmsCountLbl" style="font-size:.8rem">0 არჩეული</span>
-      <button class="g" style="width:auto;padding:9px 16px" onclick="dsmsSend()">📲 არჩეულებს დღის შეჯამება</button>
-    </div>
-    <div id="dsmsBody"><div class="muted">აირჩიე დღე და დააჭირე „🔄 ჩატვირთე მკრეფავები".</div></div>
-  </div>
-
-  <div class="card" id="smsCard">
-    <h2>📲 SMS ისტორია (გაგზავნის დამტკიცება)</h2>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-      <input type="date" id="smsDate" style="width:auto;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px">
-      <button class="sec" style="width:auto;padding:8px 12px" onclick="loadSmsLog()">🔄 ჩვენება</button>
-      <button class="sec" style="width:auto;padding:8px 12px" onclick="var a=document.getElementById('smsDate');if(a)a.value=_today();loadSmsLog()">დღეს</button>
-    </div>
-    <div id="smsBody"><div class="muted">აირჩიე თარიღი და დააჭირე „🔄 ჩვენება".</div></div>
-  </div>
+  <!-- პალეტების არქივი / დღის SMS / SMS ისტორია — ამოღებულია.
+       ანგარიში კრეფის მოდულშია, შეტყობინებების ანალიტიკა კი „📨 შეტყობინებები" ტაბში. -->
 </div>
 
 <script>
@@ -993,8 +958,9 @@ async function exportSmsExcel(){
 // ── დღის შეჯამების SMS (არჩევითი) ──
 var dsmsList=[];
 async function dsmsLoad(){
-  var _d=(document.getElementById('dsmsDate').value)||_today();
-  var body=document.getElementById('dsmsBody'), tools=document.getElementById('dsmsTools');
+  var dEl=document.getElementById('dsmsDate'), body=document.getElementById('dsmsBody'), tools=document.getElementById('dsmsTools');
+  if(!dEl||!body) return;   // სექცია ამოღებულია
+  var _d=dEl.value||_today();
   body.innerHTML='<div class="muted">იტვირთება…</div>'; if(tools) tools.style.display='none';
   if(!sb||!uid){ body.innerHTML='<div class="muted">ჯერ შედი.</div>'; return; }
   var rows=[], from=0, STEP=1000;
@@ -1074,7 +1040,9 @@ async function dsmsDoSend(){
   try{ if(document.getElementById('smsDate')){ document.getElementById('smsDate').value=_d; loadSmsLog(); } }catch(e){}
 }
 async function loadSmsLog(){
-  var _d=(document.getElementById('smsDate').value)||_today(), body=document.getElementById('smsBody');
+  var dEl=document.getElementById('smsDate'), body=document.getElementById('smsBody');
+  if(!dEl||!body) return;   // სექცია ამოღებულია
+  var _d=dEl.value||_today();
   body.innerHTML='<div class="muted">იტვირთება…</div>';
   if(!sb||!uid){ body.innerHTML='<div class="muted">ჯერ შედი.</div>'; return; }
   try{
@@ -1164,7 +1132,9 @@ function printSmsLog(){
   w.document.write(html); w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} }, 400);
 }
 async function loadArchive(){
-  var _d=document.getElementById('archiveDate').value||_today(), body=document.getElementById('archiveBody');
+  var dEl=document.getElementById('archiveDate'), body=document.getElementById('archiveBody');
+  if(!dEl||!body) return;   // სექცია ამოღებულია
+  var _d=dEl.value||_today();
   body.innerHTML='<div class="muted">იტვირთება…</div>';
   if(!sb||!uid){ body.innerHTML='<div class="muted">ჯერ შედი.</div>'; return; }
   try{
