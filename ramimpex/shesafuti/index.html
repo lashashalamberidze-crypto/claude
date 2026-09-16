@@ -387,7 +387,7 @@
     var dirs=window.CATDIRS||[]; if(!dirs.length)return false;
     var out=[],sid=0;
     dirs.forEach(function(gr){
-      if(!gr||gr.dir==='ანთრაციტის ბრიკეტი')return;               // ანთრაციტი გამოვრიცხოთ
+      if(!gr||gr.dir!=='მუყაოს ყუთები')return;               // მხოლოდ მუყაოს ყუთები (ანთრაციტი/კუთხოვანი ცალკე გვერდებია)
       var items=(gr.items||[]).filter(function(it){return it&&it.code;});
       if(!items.length)return;
       var pagesMap={},order=[];
