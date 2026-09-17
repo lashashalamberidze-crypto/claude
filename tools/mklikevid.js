@@ -9,8 +9,8 @@ const F="'Noto Sans Georgian','Segoe UI',system-ui,sans-serif";
 const SC=[
  ['🔥',true,'სად იყიდი ანთრაციტს?','ბრიკეტი შენს რეგიონში',3.0],
  ['INFO',false,'','',4.4],
- ['📍',false,'იმერეთი · სამტრედია','ირაკლი · 📞 579 21 99 01',3.8],
- ['🆕',false,'სხვა რეგიონები','ეტაპობრივად ემატება',2.8],
+ ['📍',false,'სად იყიდი შენს რეგიონში?','ნახე დისტრიბუტორები ბმულზე 👇',3.6],
+ ['🆕',false,'ახალი წერტილები','ემატება ეტაპობრივად',2.8],
  ['👍',false,'დაალაიქე ჩვენი გვერდი','რომ არ გამოგრჩეს ახლოს გახსნილი წერტილი',3.2],
  ['CTA',false,'','',3.4]
 ];
@@ -28,7 +28,7 @@ function slide(sc){
   .ph{margin-top:30px;font-size:58px;font-weight:900}</style>
   <div class="p"><div class="l"><img src="${logo}"><b>RAM IMPEX</b></div>
   <div class="big">👍</div><h1>Like & Follow</h1>
-  <div class="u">🌐 ramimpex.com.ge/start</div>
+  <div class="u">🌐 ramimpex.com.ge/contact</div>
   <div class="ph">📞 595 533 500</div></div>`;
  }
  if(emoji==='INFO'){

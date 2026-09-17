@@ -37,7 +37,7 @@ const post=`<!doctype html><meta charset="utf-8"><style>
   <div class="bi">🆕 ახალი წერტილები — ეტაპობრივად</div>
   <div class="bi">🔔 დაალაიქე, რომ არ გამოგრჩეს</div>
  </div>
- <div class="cta"><div class="c">👍 Like & Follow — RAM IMPEX</div><div class="u">🌐 ramimpex.com.ge/start</div>
+ <div class="cta"><div class="c">👍 Like & Follow — RAM IMPEX</div><div class="u">🌐 ramimpex.com.ge/contact</div>
   <div class="r"><div class="ph">📞 595 533 500</div><div style="font-size:21px;font-weight:700;color:#dcebff">📍 საწყობი — ნატახტარი</div></div></div>
 </div>`;
 
@@ -64,7 +64,7 @@ h1{margin-top:12px;font-size:62px;line-height:.98;font-weight:900;background:lin
  <h1>სად იყიდი ანთრაციტს?</h1>
  <div class="hk">გაიგე, სად შეიძენ <b>ბრიკეტს შენს რეგიონში</b> — დისტრიბუტორები ეტაპობრივად 📍</div>
  <div class="cta"><span class="u">👍 Like & Follow</span></div>
- <div class="row">📞 595 533 500 · 🌐 ramimpex.com.ge/start</div>
+ <div class="row">📞 595 533 500 · 🌐 ramimpex.com.ge/contact</div>
 </div><div class="right"><img src="${foto}"></div></div>`;
 
 (async()=>{
