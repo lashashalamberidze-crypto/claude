@@ -875,31 +875,15 @@ function renderDist(){
     DISTRIBUTORS.forEach(d=>{const a=distAgg(d.id);h+='<tr><td><b>'+esc(d.name||d.shop_name||'—')+'</b>'+(d.approved?'':' <span class="dtag wait">⏳</span>')+'</td><td>'+esc(d.region||'—')+(d.municipality?' <span class="muted" style="font-size:10px">'+esc(d.municipality)+'</span>':'')+'</td>'+
       '<td class="right">'+fmtKg(a.pickedKg)+'</td><td class="right">'+fmtKg(a.soldKg)+'</td><td class="right"><b>'+fmtKg(a.remKg)+'</b></td>'+
       '<td class="right">'+(a.debt>0.01?'<b style="color:#b00020">'+money(a.debt)+'</b>':'0.00')+'</td>'+
-      '<td class="right" style="white-space:nowrap"><button class="smini" data-drep="'+esc(d.id)+'" title="გაყიდვის რეპორტი">📊</button> <button class="smini" data-dpay="'+esc(d.id)+'" title="გადახდის ჩაწერა">💰</button> <button class="smini" data-dedit="'+esc(d.id)+'" title="რედაქტ./დამტკიცება">✏</button></td></tr>';});
+      '<td class="right" style="white-space:nowrap"><button class="smini" data-drep="'+esc(d.id)+'" title="გატანა & ვალი">📦</button> <button class="smini" data-dpay="'+esc(d.id)+'" title="გადახდის ჩაწერა">💰</button> <button class="smini" data-dedit="'+esc(d.id)+'" title="რედაქტ./დამტკიცება">✏</button></td></tr>';});
     h+='</tbody></table></div>';
   }
   h+='</div>';
   // 3) რეპორტ-პანელი
   if(distReportFor){const d=DISTRIBUTORS.find(x=>String(x.id)===String(distReportFor));if(d){const a=distAgg(d.id);
-    h+='<div class="card" style="border:2px solid #6d3ad6"><h2 style="color:#6d3ad6">📊 გაყიდვის რეპორტი — '+esc(d.name||d.shop_name||'—')+' <span class="dtag ok" style="font-weight:800">დარჩა '+fmtKg(a.remKg)+'</span></h2>'+
-       '<div style="display:flex;justify-content:space-between;align-items:center"><p class="muted" style="font-size:12px">დისტრიბუტორი წერს რამდენი და ვის მიჰყიდა — რაოდენობა მასთან მცირდება.</p><button class="smini" id="drepClose">✕ დახურვა</button></div>'+
-       (function(){const sl0=DIST_SALES.filter(s=>String(s.distributor_id)===String(d.id));let rev=0,pdc=0;sl0.forEach(s=>{rev+=(+s.amount)||((+s.qty||0)*(+s.price||0));pdc+=+s.paid||0;});return '<div class="salkpi" style="margin:8px 0"><div class="skpi"><div class="l">გატანილი / დარჩა</div><div class="v" style="font-size:18px">'+fmtKg(a.pickedKg)+' / '+fmtKg(a.remKg)+'</div></div><div class="skpi blue"><div class="l">გაყიდა ₾</div><div class="v" style="font-size:18px;color:#2b6cb0">'+money(rev)+'</div></div><div class="skpi green"><div class="l">გადახდილი ₾</div><div class="v" style="font-size:18px;color:#0B6B3C">'+money(pdc)+'</div></div><div class="skpi red"><div class="l">ვალი მყიდვ. ₾</div><div class="v" style="font-size:18px;color:#b00020">'+money(rev-pdc)+'</div></div></div>';})()+
-       '<div class="dnote" style="background:#faf7ff;border-color:#d9c8f5;color:#4a2b8a"><div class="drow">'+
-         '<div style="flex:0 0 100px"><label>რაოდ.</label><input id="dsQty" type="number" step="any" placeholder="0"></div>'+
-         '<div style="flex:2"><label>ვის მიჰყიდა</label><input id="dsBuyer" placeholder="მაღაზია / კლიენტი"></div>'+
-         '<div style="flex:0 0 110px"><label>ფასი ₾/ერთ.</label><input id="dsPrice" type="number" step="0.01" placeholder="0.00"></div>'+
-         '<div style="flex:0 0 110px"><label>გადახდილი ₾</label><input id="dsPaid" type="number" step="0.01" placeholder="0.00"></div>'+
-         '<div style="flex:0 0 140px"><label>თარიღი</label><input id="dsDate" type="date" value="'+todayStr()+'"></div>'+
-         '<div style="flex:0 0 auto;align-self:flex-end"><button class="dbtn v" id="dsGo">💾 ჩაწერა</button></div>'+
-       '</div><div class="drow" style="margin-top:8px"><div style="flex:1"><label>📍 შენიშვნა — ვის/სად მიდის (არჩ.)</label><input id="dsNote" placeholder="მაგ. სოფელი X · მაღაზია Y · ობიექტი / დანიშნულება"></div></div>'+
-       '<div style="margin-top:6px;font-size:11.5px;color:#6d3ad6">💡 ჩაწერის შემდეგ თითო გაყიდვას შეუძლია ჰქონდეს გადახდის სტატუსი (💵) და დოკუმენტები — ზედნადები/გადარიცხვა (📎), როგორც საცალოში.</div><div id="dsMsg" style="margin-top:4px;font-size:12.5px"></div></div>';
-    const sl=DIST_SALES.filter(s=>String(s.distributor_id)===String(d.id));
-    h+='<div class="scroll" style="margin-top:12px"><table><thead><tr><th>თარიღი</th><th>ვის მიჰყიდა</th><th class="right">რაოდ.</th><th class="right">₾/ერთ.</th><th class="right">ჯამი ₾</th><th class="right">გადახდ.</th><th>სტატუსი</th><th>დოკ.</th><th></th></tr></thead><tbody>';
-    if(!sl.length)h+='<tr><td colspan="9" class="muted" style="padding:12px">ჯერ რეპორტი არ არის.</td></tr>';
-    sl.forEach(s=>{const amt=(+s.amount)||((+s.qty||0)*(+s.price||0));const pd=+s.paid||0;const stv=s.status||distSaleStatus(s);const docs=s.docs||{};
-      const dochtml=DIST_DOCS.map(dc=>{const u=docs[dc[0]];return '<a class="dchip'+(u?' ok':'')+'"'+(u?(' href="'+esc(u)+'" target="_blank"'):'')+' title="'+dc[1]+'">'+dc[2]+'</a>';}).join('');
-      h+='<tr><td>'+esc(s.date||'')+'</td><td>'+esc(s.buyer||'—')+(s.note?'<div class="muted" style="font-size:10px">'+esc(s.note)+'</div>':'')+'</td><td class="right">'+fmtKg(s.qty)+'</td><td class="right">'+money(s.price)+'</td><td class="right"><b>'+money(amt)+'</b></td><td class="right">'+money(pd)+'</td><td>'+salStatusTag(stv)+'</td><td><div class="docrow">'+dochtml+'</div></td><td class="right" style="white-space:nowrap"><button class="smini" data-dspay="'+esc(s.id)+'" title="გადახდა">💵</button> <button class="smini" data-dsdoc="'+esc(s.id)+'" title="დოკუმენტები">📎</button> <button class="smini" data-dsedit="'+esc(s.id)+'" title="რედაქტირება">✏</button> <button class="smini danger" data-dsdel="'+esc(s.id)+'" title="წაშლა">🗑</button></td></tr>';});
-    h+='</tbody></table></div>';
+    h+='<div class="card" style="border:2px solid #6d3ad6"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2 style="color:#6d3ad6">📦 გატანა & ვალი — '+esc(d.name||d.shop_name||'—')+'</h2><button class="smini" id="drepClose">✕ დახურვა</button></div>'+
+       '<div class="salkpi" style="margin:8px 0"><div class="skpi"><div class="l">გატანილი სულ</div><div class="v" style="font-size:18px">'+fmtKg(a.pickedKg)+' კგ</div></div><div class="skpi blue"><div class="l">ღირებულება ₾</div><div class="v" style="font-size:18px;color:#2b6cb0">'+money(a.takenVal)+'</div></div><div class="skpi green"><div class="l">გადახდილი ₾</div><div class="v" style="font-size:18px;color:#0B6B3C">'+money(a.paid)+'</div></div><div class="skpi red"><div class="l">ვალი ₾</div><div class="v" style="font-size:18px;color:#b00020">'+money(a.debt)+'</div></div></div>'+
+       '<div style="margin:6px 0 2px"><button class="dbtn" id="drepPay" style="background:#0B6B3C">💰 გადახდის ჩაწერა</button> <span class="muted" style="font-size:11.5px">გატანა ემატება ზემოთ „დისტრიბუტორზე გატანა" ფორმიდან.</span></div>';
     // pickup history
     const pk=DIST_PICKUPS.filter(p=>String(p.distributor_id)===String(d.id));
     h+='<h2 style="font-size:14px;margin-top:14px">📦 გატანების ისტორია</h2><div class="scroll"><table><thead><tr><th>თარიღი</th><th>პროდუქტი</th><th class="right">რაოდ.</th><th class="right">₾/ერთ.</th><th>დოკ.</th><th></th></tr></thead><tbody>';
@@ -926,6 +910,7 @@ function wireDist(){
   if(q('dpGo'))q('dpGo').onclick=distPickup;
   if(q('dsGo'))q('dsGo').onclick=distAddSale;
   if(q('drepClose'))q('drepClose').onclick=()=>{distReportFor='';renderDist();};
+  if(q('drepPay'))q('drepPay').onclick=()=>distPayment(distReportFor);
   salesEl.querySelectorAll('[data-drep]').forEach(b=>b.onclick=()=>{distReportFor=b.dataset.drep;renderDist();window.scrollTo(0,document.body.scrollHeight);});
   salesEl.querySelectorAll('[data-dpay]').forEach(b=>b.onclick=()=>distPayment(b.dataset.dpay));
   salesEl.querySelectorAll('[data-dedit]').forEach(b=>b.onclick=()=>distEdit(b.dataset.dedit));
