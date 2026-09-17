@@ -397,7 +397,7 @@ window.RIfillDist=async function(lang){
   if(!list.length){h+='<div class="dist-empty">'+esc(t.none)+' <a href="../distribution/" style="color:var(--o);font-weight:800">'+esc(t.become)+'</a></div>';sec.innerHTML=h;return;}
   // group by region -> municipality (ჩამონათვალი)
   const byReg={};
-  list.forEach(d=>{const r=d.region||'—';const m=d.municipality||'';(byReg[r]=byReg[r]||{})[m]=(byReg[r][m]||[]);byReg[r][m].push(d);});
+  list.forEach(d=>{const r=d.region||'—';const ms=(d.municipalities&&d.municipalities.length)?d.municipalities:[d.municipality||''];ms.forEach(m=>{(byReg[r]=byReg[r]||{})[m]=(byReg[r][m]||[]);byReg[r][m].push(d);});});
   Object.keys(byReg).sort().forEach(r=>{
     h+='<div class="reg-grp"><div class="rh">📍 '+esc(r)+'</div>';
     Object.keys(byReg[r]).sort().forEach(m=>{
