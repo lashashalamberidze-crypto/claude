@@ -888,13 +888,14 @@ function renderDist(){
          '<div style="flex:0 0 110px"><label>გადახდილი ₾</label><input id="dsPaid" type="number" step="0.01" placeholder="0.00"></div>'+
          '<div style="flex:0 0 140px"><label>თარიღი</label><input id="dsDate" type="date" value="'+todayStr()+'"></div>'+
          '<div style="flex:0 0 auto;align-self:flex-end"><button class="dbtn v" id="dsGo">💾 ჩაწერა</button></div>'+
-       '</div><div style="margin-top:6px;font-size:11.5px;color:#6d3ad6">💡 ჩაწერის შემდეგ თითო გაყიდვას შეუძლია ჰქონდეს გადახდის სტატუსი (💵) და დოკუმენტები — ზედნადები/გადარიცხვა (📎), როგორც საცალოში.</div><div id="dsMsg" style="margin-top:4px;font-size:12.5px"></div></div>';
+       '</div><div class="drow" style="margin-top:8px"><div style="flex:1"><label>📍 შენიშვნა — ვის/სად მიდის (არჩ.)</label><input id="dsNote" placeholder="მაგ. სოფელი X · მაღაზია Y · ობიექტი / დანიშნულება"></div></div>'+
+       '<div style="margin-top:6px;font-size:11.5px;color:#6d3ad6">💡 ჩაწერის შემდეგ თითო გაყიდვას შეუძლია ჰქონდეს გადახდის სტატუსი (💵) და დოკუმენტები — ზედნადები/გადარიცხვა (📎), როგორც საცალოში.</div><div id="dsMsg" style="margin-top:4px;font-size:12.5px"></div></div>';
     const sl=DIST_SALES.filter(s=>String(s.distributor_id)===String(d.id));
     h+='<div class="scroll" style="margin-top:12px"><table><thead><tr><th>თარიღი</th><th>ვის მიჰყიდა</th><th class="right">რაოდ.</th><th class="right">₾/ერთ.</th><th class="right">ჯამი ₾</th><th class="right">გადახდ.</th><th>სტატუსი</th><th>დოკ.</th><th></th></tr></thead><tbody>';
     if(!sl.length)h+='<tr><td colspan="9" class="muted" style="padding:12px">ჯერ რეპორტი არ არის.</td></tr>';
     sl.forEach(s=>{const amt=(+s.amount)||((+s.qty||0)*(+s.price||0));const pd=+s.paid||0;const stv=s.status||distSaleStatus(s);const docs=s.docs||{};
       const dochtml=DIST_DOCS.map(dc=>{const u=docs[dc[0]];return '<a class="dchip'+(u?' ok':'')+'"'+(u?(' href="'+esc(u)+'" target="_blank"'):'')+' title="'+dc[1]+'">'+dc[2]+'</a>';}).join('');
-      h+='<tr><td>'+esc(s.date||'')+'</td><td>'+esc(s.buyer||'—')+(s.note?'<div class="muted" style="font-size:10px">'+esc(s.note)+'</div>':'')+'</td><td class="right">'+fmtKg(s.qty)+'</td><td class="right">'+money(s.price)+'</td><td class="right"><b>'+money(amt)+'</b></td><td class="right">'+money(pd)+'</td><td>'+salStatusTag(stv)+'</td><td><div class="docrow">'+dochtml+'</div></td><td class="right" style="white-space:nowrap"><button class="smini" data-dspay="'+esc(s.id)+'" title="გადახდა">💵</button> <button class="smini" data-dsdoc="'+esc(s.id)+'" title="დოკუმენტები">📎</button> <button class="smini danger" data-dsdel="'+esc(s.id)+'" title="წაშლა">🗑</button></td></tr>';});
+      h+='<tr><td>'+esc(s.date||'')+'</td><td>'+esc(s.buyer||'—')+(s.note?'<div class="muted" style="font-size:10px">'+esc(s.note)+'</div>':'')+'</td><td class="right">'+fmtKg(s.qty)+'</td><td class="right">'+money(s.price)+'</td><td class="right"><b>'+money(amt)+'</b></td><td class="right">'+money(pd)+'</td><td>'+salStatusTag(stv)+'</td><td><div class="docrow">'+dochtml+'</div></td><td class="right" style="white-space:nowrap"><button class="smini" data-dspay="'+esc(s.id)+'" title="გადახდა">💵</button> <button class="smini" data-dsdoc="'+esc(s.id)+'" title="დოკუმენტები">📎</button> <button class="smini" data-dsedit="'+esc(s.id)+'" title="რედაქტირება">✏</button> <button class="smini danger" data-dsdel="'+esc(s.id)+'" title="წაშლა">🗑</button></td></tr>';});
     h+='</tbody></table></div>';
     // pickup history
     const pk=DIST_PICKUPS.filter(p=>String(p.distributor_id)===String(d.id));
@@ -929,6 +930,7 @@ function wireDist(){
   salesEl.querySelectorAll('[data-dsdel]').forEach(b=>b.onclick=()=>distDelSale(b.dataset.dsdel));
   salesEl.querySelectorAll('[data-dpdel]').forEach(b=>b.onclick=()=>distDelPickup(b.dataset.dpdel));
   salesEl.querySelectorAll('[data-dspay]').forEach(b=>b.onclick=()=>distSalePay(b.dataset.dspay));
+  salesEl.querySelectorAll('[data-dsedit]').forEach(b=>b.onclick=()=>distEditSale(b.dataset.dsedit));
   salesEl.querySelectorAll('[data-dsdoc]').forEach(b=>b.onclick=()=>distDocsPanel('dist_sales',b.dataset.dsdoc,'distsale'));
   salesEl.querySelectorAll('[data-dpdoc]').forEach(b=>b.onclick=()=>distDocsPanel('dist_pickups',b.dataset.dpdoc,'distpick'));
 }
@@ -1088,15 +1090,34 @@ async function distPickup(){
     try{sb.functions.invoke('telegram-notify',{body:{text:'🚚 დისტრიბუციაზე გატანა\n👤 '+distName(did)+'\n📦 '+(ruCode(code))+' · '+(p.name||'')+'\n⚖️ '+fmtKg(qty)+' '+unitOf(code)+(price?('\n💰 '+money(price)+' ₾/ერთ.'):'')+'\n🏬 საწყობში დარჩა: '+fmtKg(nv)+' '+unitOf(code)}});}catch(te){}
   }catch(e){msg.innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='＋ გატანა';}
 }
+let distEditingSale=null;
+function distEditSale(id){const s=distFindSale(id);if(!s)return;distEditingSale=id;
+  if($('dsQty'))$('dsQty').value=s.qty||'';
+  if($('dsBuyer'))$('dsBuyer').value=s.buyer||'';
+  if($('dsPrice'))$('dsPrice').value=s.price||'';
+  if($('dsPaid'))$('dsPaid').value=s.paid||'';
+  if($('dsDate'))$('dsDate').value=s.date||todayStr();
+  if($('dsNote'))$('dsNote').value=s.note||'';
+  const btn=$('dsGo');if(btn)btn.textContent='✏ განახლება';
+  const msg=$('dsMsg');if(msg)msg.innerHTML='<span style="color:#6d3ad6">✏ რედაქტირების რეჟიმი — შეცვალე და დააჭირე „განახლება"</span>';
+  if($('dsQty'))$('dsQty').scrollIntoView({behavior:'smooth',block:'center'});
+}
 async function distAddSale(){
-  const did=distReportFor;const qty=parseFloat($('dsQty').value);const buyer=($('dsBuyer').value||'').trim();const price=parseFloat($('dsPrice').value)||0;const paid=parseFloat($('dsPaid').value)||0;const date=$('dsDate').value||todayStr();
+  const did=distReportFor;const qty=parseFloat($('dsQty').value);const buyer=($('dsBuyer').value||'').trim();const price=parseFloat($('dsPrice').value)||0;const paid=parseFloat($('dsPaid').value)||0;const date=$('dsDate').value||todayStr();const note=($('dsNote')?$('dsNote').value:'').trim();
   const msg=$('dsMsg');
   if(!qty||qty<=0){msg.innerHTML='<span style="color:#b00020">ჩაწერე რაოდენობა</span>';return;}
-  const a=distAgg(did);if(qty>a.remKg+0.001){if(!confirm('რაოდენობა ('+fmtKg(qty)+') აღემატება მასთან დარჩენილს ('+fmtKg(a.remKg)+'). გავაგრძელო?'))return;}
   const amount=qty*price;const status=(amount>0&&paid>=amount-0.001)?'paid':(paid>0?'part':'due');
   const btn=$('dsGo');btn.disabled=true;btn.textContent='⏳…';
+  if(distEditingSale){
+    const editId=distEditingSale;
+    try{const r=await sbUpdateSafe('dist_sales',{qty,buyer,price,amount,paid,status,date,note},editId,['paid','status','note']);if(r.error)throw r.error;
+      distEditingSale=null;await loadDistrib();renderDist();window.scrollTo(0,document.body.scrollHeight);}
+    catch(e){msg.innerHTML='<span style="color:#b00020">ვერ განახლდა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='✏ განახლება';}
+    return;
+  }
+  const a=distAgg(did);if(qty>a.remKg+0.001){if(!confirm('რაოდენობა ('+fmtKg(qty)+') აღემატება მასთან დარჩენილს ('+fmtKg(a.remKg)+'). გავაგრძელო?')){btn.disabled=false;btn.textContent='💾 ჩაწერა';return;}}
   const id='ds'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-  try{const r=await sbInsertSafe('dist_sales',{id,distributor_id:did,distributor_name:distName(did),qty,buyer,price,amount,paid,status,date},['paid','status']);if(r.error)throw r.error;
+  try{const r=await sbInsertSafe('dist_sales',{id,distributor_id:did,distributor_name:distName(did),qty,buyer,price,amount,paid,status,date,note},['paid','status','note']);if(r.error)throw r.error;
     await loadDistrib();renderDist();window.scrollTo(0,document.body.scrollHeight);}
   catch(e){msg.innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='💾 ჩაწერა';}
 }
