@@ -391,7 +391,7 @@ window.RIfillDist=async function(lang){
   const sec=document.getElementById('distSec'); if(!sec)return;
   const t=DTX[lang]||DTX.ka;
   await ensure();
-  const list=cache||[];
+  const list=(cache||[]).filter(d=>{const p=d.product||'ანთრაციტის ბრიკეტი';return p.indexOf('ანთრაცი')>=0||p.indexOf('ორივე')>=0;}); // მხოლოდ ანთრაციტის დისტრიბუტორები
   let h='<h2>🚚 '+esc(t.h)+'</h2><p style="color:var(--mut);font-weight:600;font-size:14.5px;margin:-6px 0 12px">'+esc(t.sub)+'</p>';
   h+='<a class="dist-become" href="../distribution/">'+esc(t.become)+'</a>';
   if(!list.length){h+='<div class="dist-empty">'+esc(t.none)+' <a href="../distribution/" style="color:var(--o);font-weight:800">'+esc(t.become)+'</a></div>';sec.innerHTML=h;return;}

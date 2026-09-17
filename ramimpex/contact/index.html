@@ -110,6 +110,7 @@ function card(d){const nm=d.shop_name||d.name||'—';const sub=(d.shop_name&&d.n
 (async()=>{
  const sec=document.getElementById('distSec');
  let list=[];try{const {data,error}=await sb.from('distributors').select('*').eq('approved',true).order('region',{ascending:true});if(error)throw error;list=data||[];}catch(e){list=[];}
+ list=list.filter(d=>{const p=d.product||'ანთრაციტის ბრიკეტი';return p.indexOf('ანთრაცი')>=0||p.indexOf('ორივე')>=0;}); // მხოლოდ ანთრაციტის დისტრიბუტორები
  let h='<h2>🚚 ჩვენი დისტრიბუტორები</h2><p style="color:var(--mut);font-weight:600;font-size:13.5px;margin:-4px 0 12px">სად შეიძლია ბრიკეტის შეძენა — რეგიონებისა და მუნიციპალიტეტების მიხედვით</p>';
  if(!list.length){h+='<div class="dist-empty">დისტრიბუტორები მალე დაემატება. დაინტერესებული ხარ? <a href="../distribution/" style="color:var(--o);font-weight:800">🚚 გახდი დისტრიბუტორი</a></div>';sec.innerHTML=h;return;}
  const byReg={};list.forEach(d=>{const r=d.region||'—';const ms=(d.municipalities&&d.municipalities.length)?d.municipalities:[d.municipality||''];ms.forEach(m=>{(byReg[r]=byReg[r]||{})[m]=(byReg[r][m]||[]);byReg[r][m].push(d);});});
