@@ -31,6 +31,7 @@ alter table public.distributors add column if not exists paid      numeric defau
 alter table public.distributors add column if not exists channel   text;   -- როგორ ყიდის (მაღაზიაში / თვითონ / ორივე)
 alter table public.distributors add column if not exists transport text;   -- ტრანსპორტი (ჩემი / საწყობიდან / მიწოდება)
 alter table public.distributors add column if not exists municipalities jsonb; -- რამდენიმე მუნიციპალიტეტი (ფარავს რამდენს)
+alter table public.distributors add column if not exists payments     jsonb; -- ჩარიცხვების ისტორია [{id,amount,date,doc}]
 
 create index if not exists distributors_approved_idx on public.distributors (approved);
 

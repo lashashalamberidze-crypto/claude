@@ -837,7 +837,7 @@ function distAgg(id){
   const avgW=pickedKg>0?takenVal/pickedKg:0;
   const owedSold=takenVal; // შენარჩუნებულია თავსებადობისთვის
   const revenue=sl.reduce((a,s)=>a+((+s.amount)|| ((+s.qty||0)*(+s.price||0)) ),0);
-  const paid=+dd.paid||0;
+  const paid=(Array.isArray(dd.payments)&&dd.payments.length)?dd.payments.reduce((s,p)=>s+(+p.amount||0),0):(+dd.paid||0);
   return {pickedKg,soldKg,remKg:pickedKg-soldKg,takenVal,avgW,owedSold,revenue,paid,debt:Math.max(0,takenVal-paid)};
 }
 function fmtKg(n){return (Math.round((+n||0)*100)/100).toLocaleString('ka-GE');}
@@ -1115,11 +1115,25 @@ async function distDelPickup(id){const p=DIST_PICKUPS.find(x=>String(x.id)===Str
     if(p.code){const nv=(+STOCK[p.code]||0)+(+p.qty||0);try{await sb.from('stock').upsert([{code:p.code,qty:nv,updated_at:new Date().toISOString()}],{onConflict:'code'});STOCK[p.code]=nv;}catch(se){}}
     await loadDistrib();renderDist();}
   catch(e){alert('ვერ წაიშალა: '+(e.message||e));}}
-async function distPayment(id){const a=distAgg(id);const cur=(DISTRIBUTORS.find(x=>String(x.id)===String(id))||{}).paid||0;
-  const v=prompt('გადახდის ჩაწერა — '+distName(id)+'\nვალი ამჟამად: '+money(a.debt)+' ₾\n\nჩაწერე ჯამური გადახდილი თანხა ₾ (მიმდინარე: '+money(cur)+'):',money(cur));
-  if(v==null)return;const paid=parseFloat(v);if(isNaN(paid)){alert('არასწორი რიცხვი');return;}
-  try{const {error}=await sb.from('distributors').update({paid}).eq('id',id);if(error)throw error;await loadDistrib();renderDist();}
-  catch(e){alert('ვერ შეინახა (გაუშვი sql/distribution.sql — paid სვეტი): '+(e.message||e));}}
+async function distPayment(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));if(!d)return;const a=distAgg(id);
+  const pays=Array.isArray(d.payments)?d.payments.slice():[];
+  const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
+  const listHtml=()=>pays.length?pays.slice().reverse().map(p=>'<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px dashed #eef1ef;font-size:13px"><span style="flex:0 0 92px;color:#5c6b62">'+esc(p.date||'')+'</span><b style="flex:0 0 96px;color:#0B6B3C">'+money(p.amount)+' ₾</b>'+(p.doc?'<a href="'+esc(p.doc)+'" target="_blank" class="dchip ok" title="ჩარიცხვის დოკ.">📎</a>':'<span class="muted" style="font-size:11px">დოკ. არ არის</span>')+'<button class="smini danger" data-pdel="'+esc(p.id)+'" style="margin-left:auto">🗑</button></div>').join(''):'<div class="muted" style="font-size:12px;padding:8px 0">ჯერ ჩარიცხვა არ არის.</div>';
+  ov.innerHTML='<div class="card" style="max-width:520px;width:100%;max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between"><h2>💰 ჩარიცხვები — '+esc(d.name||'—')+'</h2><button class="smini" id="dpayClose">✕</button></div>'+
+    '<div class="salkpi" style="margin:8px 0"><div class="skpi blue"><div class="l">ღირებულება ₾</div><div class="v" style="font-size:17px;color:#2b6cb0">'+money(a.takenVal)+'</div></div><div class="skpi green"><div class="l">ჩარიცხული ₾</div><div class="v" style="font-size:17px;color:#0B6B3C">'+money(a.paid)+'</div></div><div class="skpi red"><div class="l">დარჩა ჩასარიცხი ₾</div><div class="v" style="font-size:17px;color:#b00020">'+money(a.debt)+'</div></div></div>'+
+    '<div class="dnote" style="background:#f3faf5;border-color:#cfe6d8"><div class="drow"><div style="flex:0 0 130px"><label>თანხა ₾</label><input id="dpAmt" type="number" step="0.01" placeholder="0.00"></div><div style="flex:0 0 150px"><label>თარიღი</label><input id="dpDate" type="date" value="'+todayStr()+'"></div><div style="flex:1;min-width:180px"><label>📎 ჩარიცხვის დოკ. (არჩ.)</label><input id="dpDoc" type="file" accept="image/*,application/pdf"></div><div style="flex:0 0 auto;align-self:flex-end"><button class="dbtn v" id="dpAdd">➕ ჩაწერა</button></div></div><div id="dpMsg" style="margin-top:6px;font-size:12.5px"></div></div>'+
+    '<h2 style="font-size:14px;margin-top:12px">ისტორია</h2><div id="dpList">'+listHtml()+'</div></div>';
+  document.body.appendChild(ov);const q=s=>ov.querySelector(s);
+  const close=()=>ov.remove();q('#dpayClose').onclick=close;ov.onclick=e=>{if(e.target===ov)close();};
+  const save=async(np)=>{const r=await sbUpdateSafe('distributors',{payments:np,paid:np.reduce((s,p)=>s+(+p.amount||0),0)},id,['payments']);if(r.error)throw r.error;};
+  q('#dpAdd').onclick=async()=>{const amt=parseFloat(q('#dpAmt').value);if(isNaN(amt)||amt<=0){q('#dpMsg').innerHTML='<span style="color:#b00020">ჩაწერე თანხა</span>';return;}
+    const btn=q('#dpAdd');btn.disabled=true;btn.textContent='⏳…';
+    try{let doc='';const f=q('#dpDoc').files&&q('#dpDoc').files[0];
+      if(f){const path='distpay/'+id+'/'+Date.now()+'-'+f.name.replace(/[^\w.\-]/g,'_');const up=await sb.storage.from('sale-docs').upload(path,f,{upsert:true});if(up.error)throw up.error;doc=sb.storage.from('sale-docs').getPublicUrl(path).data.publicUrl;}
+      pays.push({id:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),amount:amt,date:q('#dpDate').value||todayStr(),doc});
+      await save(pays);await loadDistrib();close();renderDist();
+    }catch(e){q('#dpMsg').innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='➕ ჩაწერა';}};
+  ov.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=async()=>{if(!confirm('წავშალო ეს ჩარიცხვა?'))return;const np=pays.filter(p=>String(p.id)!==b.dataset.pdel);try{await save(np);await loadDistrib();close();renderDist();}catch(e){alert('ვერ წაიშალა: '+(e.message||e));}});}
 function parseLatLng(s){if(!s)return null;s=''+s;
   let m=s.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
   if(!m)m=s.match(/[?&](?:q|ll|daddr|destination|center)=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
