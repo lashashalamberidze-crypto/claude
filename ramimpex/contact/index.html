@@ -57,19 +57,14 @@ img{max-width:100%;display:block}
 .foot{text-align:center;color:var(--mut);font-size:13px;margin-top:18px;line-height:1.7}
 .foot a{color:var(--g);font-weight:800;text-decoration:none}
 /* --- რუკა --- */
-.map{position:relative;width:100%;padding-top:56%;border:1.5px solid #cfe3d6;border-radius:14px;overflow:visible;
- background:radial-gradient(120% 90% at 6% 20%,#daeaf5,#eaf3ee 45%,#dfeee5)}
-.map .layer{position:absolute;inset:0}
-.map .sea{position:absolute;left:1.5%;bottom:3%;font-size:11px;font-weight:800;color:#3f86ad}
-.rg{position:absolute;border:1.5px solid #d2ddd6;background:#f1f5f2;color:#8a978d;border-radius:10px;
- font-weight:800;font-size:clamp(8px,2.15vw,12.5px);display:flex;align-items:center;justify-content:center;
- text-align:center;padding:3px;line-height:1.12;overflow:visible;cursor:default;transition:filter .15s,transform .15s}
-.rg.on{background:linear-gradient(160deg,#12a05a,#0B6B3C);color:#fff;border-color:#0a5c34;cursor:pointer;
- box-shadow:0 4px 12px rgba(11,107,60,.28)}
-.rg.on:hover,.rg.on.sel{filter:brightness(1.09);transform:translateY(-1px)}
-.rg .cnt{position:absolute;top:-8px;right:-8px;min-width:21px;height:21px;background:var(--gold);color:#3a2a00;
- border-radius:999px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;
- border:2px solid #fff;padding:0 5px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.map{position:relative;width:100%;border:1.5px solid #cfe3d6;border-radius:14px;overflow:hidden;padding:6px;
+ background:radial-gradient(120% 90% at 8% 12%,#daeaf5,#eaf3ee 45%,#dfeee5)}
+.map svg{width:100%;height:auto;display:block}
+.map .sea{position:absolute;left:10px;bottom:8px;font-size:11px;font-weight:800;color:#3f86ad}
+.rgp{fill:#e3ebe5;stroke:#fff;stroke-width:1.4;transition:filter .15s}
+.rgp.on{fill:url(#gon);cursor:pointer}
+.rgp.on:hover,.rgp.on.sel{filter:brightness(1.1)}
+.rglbl{pointer-events:none}
 .maphint{font-size:12px;color:var(--mut);font-weight:600;margin:8px 2px 0;text-align:center}
 .mappop{margin-top:12px;background:#fff;border:1.5px solid #bfe3ce;border-radius:12px;padding:12px 14px;display:none}
 .mappop.show{display:block}
@@ -93,7 +88,7 @@ img{max-width:100%;display:block}
  <div class="card" id="mapCard" style="display:none">
   <h2>🗺 სად ვიყიდი — რუკა</h2>
   <p style="color:var(--mut);font-weight:600;font-size:13px;margin:-4px 0 12px">მწვანედ მონიშნულია რეგიონები, სადაც უკვე გვყავს დისტრიბუტორი — დააჭირე რეგიონს და ნახე ნომრები.</p>
-  <div class="map"><div class="layer" id="mapLayer"></div><span class="sea">🌊 შავი ზღვა</span></div>
+  <div class="map"><div id="mapLayer"></div><span class="sea">🌊 შავი ზღვა</span></div>
   <div class="maphint">👆 დააჭირე მწვანე რეგიონს — გამოჩნდება დისტრიბუტორის ნომერი</div>
   <div class="mappop" id="mapPop"></div>
  </div>
@@ -132,44 +127,51 @@ img{max-width:100%;display:block}
    🌐 <a href="https://ramimpex.com.ge/info" target="_blank">ramimpex.com.ge</a>
  </div>
 </div>
+<script src="geo.js"></script>
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/+esm";
 const sb=createClient("https://mhyoqypzacvztwhntsvv.supabase.co","sb_publishable_FXhFmDRboFeOEqxyvwUePg_SgIwnmmM");
 const esc=s=>(s==null?'':(''+s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function card(d){const nm=d.shop_name||d.name||'—';const sub=(d.shop_name&&d.name&&d.shop_name!==d.name)?('<div class="dsub">'+esc(d.name)+'</div>'):'';const addr=d.address?('<div class="dd">📍 '+esc(d.address)+'</div>'):'';const ph=d.phone?('<div class="dd"><a href="tel:'+esc((''+d.phone).replace(/\s/g,''))+'">📞 '+esc(d.phone)+'</a></div>'):'';return '<div class="dcard"><span class="di">🏬</span><div style="flex:1"><div class="dt">'+esc(nm)+'</div>'+sub+addr+ph+'</div></div>';}
-// საქართველოს რეგიონები — სქემატური რუკა (მდებარეობა %-ში, დას.→აღმ.). al = შესატყვისი სახელები.
-const REGIONS=[
- {k:'აფხაზეთი',        x:1, y:4, w:17,h:17, al:['აფხაზ']},
- {k:'სამეგრელო-ზ.სვან.',x:1, y:23,w:19,h:17, al:['სამეგრელო','სვანეთ','ზუგდიდ','მარტვილ','სენაკ','ფოთ','ჩხოროწყ','წალენჯიხ','ხობ','მესტ']},
- {k:'გურია',           x:1, y:42,w:13,h:14, al:['გურია','ოზურგეთ','ლანჩხუთ','ჩოხატაურ']},
- {k:'აჭარა',           x:1, y:58,w:15,h:17, al:['აჭარა','ბათუმ','ქობულეთ','ხელვაჩაურ','ქედა','შუახევ','ხულო']},
- {k:'რაჭა-ლეჩხუმი',    x:34,y:6, w:22,h:16, al:['რაჭა','ლეჩხუმ','ამბროლაურ','ონი','ცაგერ']},
- {k:'იმერეთი',         x:21,y:30,w:19,h:18, al:['იმერეთ','ქუთაის','სამტრედ','ზესტაფონ','ჭიათურ','ხონ','ტყიბულ','საჩხერ','ბაღდათ','ვანი','ხარაგაულ','წყალტუბ','თერჯოლ']},
- {k:'სამცხე-ჯავახეთი', x:22,y:58,w:24,h:17, al:['სამცხე','ჯავახეთ','ახალციხ','ბორჯომ','ახალქალაქ','ასპინძ','ადიგენ','ნინოწმინდ']},
- {k:'შიდა ქართლი',     x:42,y:28,w:17,h:16, al:['შიდა ქართლ','გორი','ქარელ','კასპ','ხაშურ']},
- {k:'მცხეთა-მთიანეთი', x:58,y:6, w:22,h:18, al:['მცხეთა','მთიანეთ','დუშეთ','თიანეთ','ყაზბეგ','ახალგორ','სტეფანწმინდ']},
- {k:'თბილისი',         x:61,y:28,w:13,h:11, al:['თბილის']},
- {k:'ქვემო ქართლი',    x:48,y:58,w:22,h:17, al:['ქვემო ქართლ','რუსთავ','მარნეულ','გარდაბან','ბოლნის','დმანის','თეთრიწყარ','წალკ']},
- {k:'კახეთი',          x:77,y:26,w:21,h:26, al:['კახეთ','თელავ','გურჯაან','საგარეჯ','ლაგოდეხ','ყვარელ','დედოფლისწყარ','სიღნაღ','ახმეტ']},
-];
-function tileIndexFor(region){const r=(region||'').toLowerCase();for(let i=0;i<REGIONS.length;i++){if(REGIONS[i].al.some(a=>r.indexOf(a.toLowerCase())>=0))return i;}return -1;}
+// საქართველოს რეგიონები — რეალური რუკა (window.RAM_GEO). id → ქართული სახელი + შესატყვისები.
+const RMETA={
+ 'GE-AB':{ka:'აფხაზეთი',al:['აფხაზ']},
+ 'GE-SZ':{ka:'სამეგრელო-ზ.სვანეთი',al:['სამეგრელო','სვანეთ','ზუგდიდ','მარტვილ','სენაკ','ფოთ','ჩხოროწყ','წალენჯიხ','ხობ','მესტ']},
+ 'GE-GU':{ka:'გურია',al:['გურია','ოზურგეთ','ლანჩხუთ','ჩოხატაურ']},
+ 'GE-AJ':{ka:'აჭარა',al:['აჭარა','ბათუმ','ქობულეთ','ხელვაჩაურ','ქედა','შუახევ','ხულო']},
+ 'GE-RL':{ka:'რაჭა-ლეჩხუმი',al:['რაჭა','ლეჩხუმ','ამბროლაურ','ონი','ცაგერ']},
+ 'GE-IM':{ka:'იმერეთი',al:['იმერეთ','ქუთაის','სამტრედ','ზესტაფონ','ჭიათურ','ხონ','ტყიბულ','საჩხერ','ბაღდათ','ვანი','ხარაგაულ','წყალტუბ','თერჯოლ']},
+ 'GE-SJ':{ka:'სამცხე-ჯავახეთი',al:['სამცხე','ჯავახეთ','ახალციხ','ბორჯომ','ახალქალაქ','ასპინძ','ადიგენ','ნინოწმინდ']},
+ 'GE-SK':{ka:'შიდა ქართლი',al:['შიდა ქართლ','გორი','ქარელ','კასპ','ხაშურ']},
+ 'GE-MM':{ka:'მცხეთა-მთიანეთი',al:['მცხეთა','მთიანეთ','დუშეთ','თიანეთ','ყაზბეგ','ახალგორ','სტეფანწმინდ']},
+ 'GE-TB':{ka:'თბილისი',al:['თბილის']},
+ 'GE-KK':{ka:'ქვემო ქართლი',al:['ქვემო ქართლ','რუსთავ','მარნეულ','გარდაბან','ბოლნის','დმანის','თეთრიწყარ','წალკ']},
+ 'GE-KA':{ka:'კახეთი',al:['კახეთ','თელავ','გურჯაან','საგარეჯ','ლაგოდეხ','ყვარელ','დედოფლისწყარ','სიღნაღ','ახმეტ']},
+};
+function regionIdFor(region){const r=(region||'').toLowerCase();for(const id in RMETA){if(RMETA[id].al.some(a=>r.indexOf(a.toLowerCase())>=0))return id;}return '';}
 let MAPDATA=null;
-function showPop(i){const pop=document.getElementById('mapPop');const ds=(MAPDATA&&MAPDATA[i])||[];if(!ds.length){pop.className='mappop';return;}
- document.querySelectorAll('.rg').forEach(el=>el.classList.toggle('sel',+el.dataset.i===i));
- let h='<h3>📍 '+esc(REGIONS[i].k)+' — '+ds.length+' დისტრიბუტორი</h3>';
- ds.forEach(d=>{const nm=d.shop_name||d.name||'—';const tel=(''+(d.phone||'')).replace(/\s/g,'');
-  h+='<a class="ph" '+(tel?'href="tel:'+esc(tel)+'"':'')+'><span style="font-size:20px">🏬</span><div style="flex:1"><b>'+esc(nm)+'</b>'+((d.municipalities&&d.municipalities.length)?'<div style="font-size:12px;color:var(--mut);font-weight:700">🏛 '+esc(d.municipalities.join(', '))+'</div>':(d.municipality?'<div style="font-size:12px;color:var(--mut);font-weight:700">🏛 '+esc(d.municipality)+'</div>':''))+'</div>'+(tel?'<span class="num">📞 '+esc(d.phone)+'</span>':'')+'</a>';});
- h+='<span class="goli" data-scroll="'+i+'">📋 სრული სია ↓</span>';
+function showPop(id){const pop=document.getElementById('mapPop');const ds=(MAPDATA&&MAPDATA[id])||[];if(!ds.length){pop.className='mappop';return;}
+ document.querySelectorAll('.rgp').forEach(el=>el.classList.toggle('sel',el.dataset.id===id));
+ const nm=(RMETA[id]||{}).ka||id;
+ let h='<h3>📍 '+esc(nm)+' — '+ds.length+' დისტრიბუტორი</h3>';
+ ds.forEach(d=>{const t=d.shop_name||d.name||'—';const tel=(''+(d.phone||'')).replace(/\s/g,'');
+  h+='<a class="ph" '+(tel?'href="tel:'+esc(tel)+'"':'')+'><span style="font-size:20px">🏬</span><div style="flex:1"><b>'+esc(t)+'</b>'+((d.municipalities&&d.municipalities.length)?'<div style="font-size:12px;color:var(--mut);font-weight:700">🏛 '+esc(d.municipalities.join(', '))+'</div>':(d.municipality?'<div style="font-size:12px;color:var(--mut);font-weight:700">🏛 '+esc(d.municipality)+'</div>':''))+'</div>'+(tel?'<span class="num">📞 '+esc(d.phone)+'</span>':'')+'</a>';});
+ h+='<span class="goli" data-scroll="'+esc(id)+'">📋 სრული სია ↓</span>';
  pop.innerHTML=h;pop.className='mappop show';
- pop.querySelector('[data-scroll]').onclick=()=>{const t=document.getElementById('rgt'+i);if(t)t.scrollIntoView({behavior:'smooth',block:'start'});};
+ pop.querySelector('[data-scroll]').onclick=()=>{const t=document.getElementById('rgt'+id);if(t)t.scrollIntoView({behavior:'smooth',block:'start'});};
 }
 function buildMap(list){
- const layer=document.getElementById('mapLayer');const buckets=REGIONS.map(()=>[]);
- list.forEach(d=>{const idx=tileIndexFor(d.region);if(idx>=0)buckets[idx].push(d);});
- MAPDATA=buckets;
- layer.innerHTML=REGIONS.map((rg,i)=>{const n=buckets[i].length;const on=n>0;
-  return '<div class="rg'+(on?' on':'')+'" data-i="'+i+'" style="left:'+rg.x+'%;top:'+rg.y+'%;width:'+rg.w+'%;height:'+rg.h+'%">'+esc(rg.k)+(on?'<span class="cnt">'+n+'</span>':'')+'</div>';}).join('');
- layer.querySelectorAll('.rg.on').forEach(el=>{const i=+el.dataset.i;el.onclick=()=>showPop(i);el.onmouseenter=()=>{if(window.matchMedia('(hover:hover)').matches)showPop(i);};});
+ const G=window.RAM_GEO,layer=document.getElementById('mapLayer');if(!G||!layer)return;
+ const buckets={};list.forEach(d=>{const id=regionIdFor(d.region);if(id)(buckets[id]=buckets[id]||[]).push(d);});
+ MAPDATA=buckets;const hover=window.matchMedia('(hover:hover)').matches;
+ let paths='',labels='';
+ G.regions.forEach(r=>{const n=(buckets[r.id]||[]).length,on=n>0,nm=(RMETA[r.id]||{ka:r.name}).ka;
+  paths+='<path class="rgp'+(on?' on':'')+'" data-id="'+r.id+'" d="'+r.d+'"><title>'+esc(nm)+(on?' — '+n+' დისტრიბუტორი':'')+'</title></path>';
+  labels+='<text class="rglbl" x="'+r.cx+'" y="'+(r.cy+4)+'" text-anchor="middle" font-size="'+(on?15:12)+'" font-weight="'+(on?800:700)+'" fill="'+(on?'#fff':'#93a09a')+'" style="paint-order:stroke" stroke="'+(on?'rgba(0,0,0,.22)':'transparent')+'" stroke-width="'+(on?0.7:0)+'">'+esc(nm)+'</text>';
+  if(on)labels+='<g class="rglbl"><circle cx="'+r.cx+'" cy="'+(r.cy-16)+'" r="11" fill="#F2B807" stroke="#fff" stroke-width="2"/><text x="'+r.cx+'" y="'+(r.cy-11.5)+'" text-anchor="middle" font-size="13.5" font-weight="900" fill="#3a2a00">'+n+'</text></g>';
+ });
+ layer.innerHTML='<svg viewBox="0 0 '+G.W+' '+G.H+'" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gon" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#12a05a"/><stop offset="1" stop-color="#0B6B3C"/></linearGradient></defs>'+paths+labels+'</svg>';
+ layer.querySelectorAll('.rgp.on').forEach(el=>{const id=el.dataset.id;el.onclick=()=>showPop(id);if(hover)el.onmouseenter=()=>showPop(id);});
  document.getElementById('mapCard').style.display='';
 }
 (async()=>{
@@ -180,7 +182,7 @@ function buildMap(list){
  if(!list.length){h+='<div class="dist-empty">დისტრიბუტორები მალე დაემატება. დაინტერესებული ხარ? <a href="../distribution/" style="color:var(--o);font-weight:800">🚚 გახდი დისტრიბუტორი</a></div>';sec.innerHTML=h;return;}
  buildMap(list);
  const byReg={};list.forEach(d=>{const r=d.region||'—';const ms=(d.municipalities&&d.municipalities.length)?d.municipalities:[d.municipality||''];ms.forEach(m=>{(byReg[r]=byReg[r]||{})[m]=(byReg[r][m]||[]);byReg[r][m].push(d);});});
- Object.keys(byReg).sort().forEach(r=>{const ti=tileIndexFor(r);h+='<div class="reg-grp"'+(ti>=0?' id="rgt'+ti+'"':'')+'><div class="rh">📍 '+esc(r)+'</div>';Object.keys(byReg[r]).sort().forEach(m=>{if(m)h+='<div class="muni-grp"><div class="mh">🏛 '+esc(m)+'</div>'+byReg[r][m].map(card).join('')+'</div>';else h+=byReg[r][m].map(card).join('');});h+='</div>';});
+ Object.keys(byReg).sort().forEach(r=>{const ti=regionIdFor(r);h+='<div class="reg-grp"'+(ti?' id="rgt'+ti+'"':'')+'><div class="rh">📍 '+esc(r)+'</div>';Object.keys(byReg[r]).sort().forEach(m=>{if(m)h+='<div class="muni-grp"><div class="mh">🏛 '+esc(m)+'</div>'+byReg[r][m].map(card).join('')+'</div>';else h+=byReg[r][m].map(card).join('');});h+='</div>';});
  sec.innerHTML=h;
 })();
 </script>

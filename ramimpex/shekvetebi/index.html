@@ -714,7 +714,7 @@ function invPickerOptions(){let h='<option value="">— აირჩიე პ�
   DIRS.forEach(d=>{let inner='';d.items.forEach(it=>{const pr=effective(d,it);inner+='<option value="'+esc(it.code)+'">'+esc(ruCode(it.code))+' · '+esc(it.name||'')+(it.size?' · '+esc(it.size):'')+(it.mark?' · '+esc(it.mark):'')+(it.ply?' · '+esc(it.ply)+' შრე':'')+(it.color?' · '+esc(it.color):'')+' — '+money(pr)+' ₾</option>';});
     if(inner)h+='<optgroup label="'+esc(d.name)+'">'+inner+'</optgroup>';});
   return h;}
-function fillMuni(region,selected){const sel=$('iMuni');if(!sel)return;const list=REGIONS[region]||[];sel.innerHTML='<option value="">'+(list.length?'— აირჩიე —':'— ჯერ რეგიონი —')+'</option>'+list.map(m=>'<option'+(m===selected?' selected':'')+'>'+esc(m)+'</option>').join('');}
+function fillMuni(region,selected,customList){const sel=$('iMuni');if(!sel)return;const list=(customList&&customList.length)?customList:(REGIONS[region]||[]);sel.innerHTML='<option value="">'+(list.length?'— აირჩიე —':'— ჯერ რეგიონი —')+'</option>'+list.map(m=>'<option'+(m===selected?' selected':'')+'>'+esc(m)+'</option>').join('');}
 function invTotals(){let sub=0;invDraft.forEach(l=>sub+=l.price*l.qty);const vat=invVatIncl?(sub-sub/1.18):0;
   const bAmt=parseFloat(($('brandAmt')||{}).value)||0, tAmt=parseFloat(($('transAmt')||{}).value)||0;
   return {sub,vat,brandAmt:bAmt,transAmt:tAmt,grand:sub+bAmt+tAmt};}
@@ -753,7 +753,7 @@ function renderInvoice(){
   const ctToggle=()=>{const isD=$('iCTdist')&&$('iCTdist').checked;if($('iDistWrap'))$('iDistWrap').style.display=isD?'':'none';};
   if($('iCTretail'))$('iCTretail').onchange=ctToggle;
   if($('iCTdist'))$('iCTdist').onchange=ctToggle;
-  if($('iDistSel'))$('iDistSel').onchange=()=>{const d=DISTRIBUTORS.find(x=>String(x.id)===$('iDistSel').value);if(!d)return;if($('iCust'))$('iCust').value=d.name||d.shop_name||'';if($('iId'))$('iId').value=d.idc||'';if($('iPhone'))$('iPhone').value=d.phone||'';if($('iAddr')&&d.address)$('iAddr').value=d.address;if($('iRegion')&&d.region){$('iRegion').value=d.region;fillMuni(d.region,d.municipality||'');}if(d.idc&&$('iLegalT'))$('iLegalT').checked=true;};
+  if($('iDistSel'))$('iDistSel').onchange=()=>{const d=DISTRIBUTORS.find(x=>String(x.id)===$('iDistSel').value);if(!d)return;if($('iCust'))$('iCust').value=d.name||d.shop_name||'';if($('iId'))$('iId').value=d.idc||'';if($('iPhone'))$('iPhone').value=d.phone||'';if($('iAddr')&&d.address)$('iAddr').value=d.address;const munis=(d.municipalities&&d.municipalities.length)?d.municipalities:(d.municipality?[d.municipality]:[]);if($('iRegion')&&d.region){$('iRegion').value=d.region;}fillMuni(d.region||'',munis.length===1?munis[0]:'',munis);if(d.idc&&$('iLegalT'))$('iLegalT').checked=true;};
   $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}downloadInvoicePDF(currentInv());};
   $('iOffer').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}makeOfferJPG();};
   $('iToOrders').onclick=addDraftToOrders;
