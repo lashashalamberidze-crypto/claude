@@ -866,9 +866,9 @@ function renderDist(){
   if(DIST_ERR){body.innerHTML='<div class="card"><h2>🚚 დისტრიბუცია</h2><p style="color:#c62828;font-weight:700">ცხრილი „'+esc(DIST_ERR)+'" ვერ მოიძებნა.</p><p class="muted" style="font-size:13px">გაუშვი <b>sql/distribution.sql</b> Supabase → SQL Editor-ში, შემდეგ განაახლე გვერდი.</p></div>';return;}
   // მიმართულების ფილტრი (დაშბორდის ჩიპებიდან)
   const DL=DISTRIBUTORS.filter(d=>(!IL_DIR||IL_DIR==='all')||((d.product||'ანთრაციტის ბრიკეტი')===IL_DIR));
-  // KPIs (ჯამური)
-  let tPick=0,tSold=0,tRem=0,tDebt=0;
-  DL.forEach(d=>{const a=distAgg(d.id);tPick+=a.pickedKg;tSold+=a.soldKg;tRem+=a.remKg;tDebt+=a.debt;});
+  // KPIs (ჯამური) — გატანილი კგ + ღირებულება/გადახდილი/ვალი (გაყიდვის რეპორტი აღარ)
+  let tPick=0,tVal=0,tPaid=0,tDebt=0;
+  DL.forEach(d=>{const a=distAgg(d.id);tPick+=a.pickedKg;tVal+=a.takenVal;tPaid+=a.paid;tDebt+=a.debt;});
   let h='';
   // 0) დისტრიბუტორებზე გამოწერილი ინვოისები (ზედნადებით)
   h+=ledgerCardHTML(true);
@@ -890,14 +890,14 @@ function renderDist(){
   // 2) დაშბორდი
   h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2>📊 დისტრიბუციის დაშბორდი</h2><div style="display:flex;gap:8px"><button class="dbtn a" id="distXls">📊 Excel</button><button class="dbtn line" id="distPdf">📄 PDF</button></div></div>'+
      '<div class="salkpi" style="margin-top:12px"><div class="skpi green"><div class="l">სულ გატანილი</div><div class="v">'+fmtKg(tPick)+'</div></div>'+
-       '<div class="skpi blue"><div class="l">გაყიდა (რეპორტი)</div><div class="v">'+fmtKg(tSold)+'</div></div>'+
-       '<div class="skpi amber"><div class="l">დარჩა დისტრიბ.</div><div class="v">'+fmtKg(tRem)+'</div></div>'+
+       '<div class="skpi blue"><div class="l">ღირებულება ₾</div><div class="v" style="color:#2b6cb0">'+money(tVal)+'</div></div>'+
+       '<div class="skpi amber"><div class="l">გადახდილი ₾</div><div class="v" style="color:#0B6B3C">'+money(tPaid)+'</div></div>'+
        '<div class="skpi red"><div class="l">ვალი სულ ₾</div><div class="v">'+money(tDebt)+'</div></div></div>';
   if(!DISTRIBUTORS.length){h+='<div class="empty">ჯერ დისტრიბუტორი არ არის. დაამატე „➕ ახალი" ან განაცხადი მოვა /distribution გვერდიდან.</div>';}
   else{
-    h+='<div class="scroll"><table><thead><tr><th>დისტრიბუტორი</th><th>რეგიონი</th><th class="right">გატანილი</th><th class="right">გაყიდა</th><th class="right">დარჩა</th><th class="right">ვალი ₾</th><th></th></tr></thead><tbody>';
+    h+='<div class="scroll"><table><thead><tr><th>დისტრიბუტორი</th><th>რეგიონი</th><th class="right">გატანილი</th><th class="right">ღირებ. ₾</th><th class="right">გადახდ. ₾</th><th class="right">ვალი ₾</th><th></th></tr></thead><tbody>';
     DL.forEach(d=>{const a=distAgg(d.id);h+='<tr><td><b>'+esc(d.name||d.shop_name||'—')+'</b>'+(d.approved?'':' <span class="dtag wait">⏳</span>')+'</td><td>'+esc(d.region||'—')+(d.municipality?' <span class="muted" style="font-size:10px">'+esc(d.municipality)+'</span>':'')+'</td>'+
-      '<td class="right">'+fmtKg(a.pickedKg)+'</td><td class="right">'+fmtKg(a.soldKg)+'</td><td class="right"><b>'+fmtKg(a.remKg)+'</b></td>'+
+      '<td class="right">'+fmtKg(a.pickedKg)+'</td><td class="right">'+money(a.takenVal)+'</td><td class="right">'+money(a.paid)+'</td>'+
       '<td class="right">'+(a.debt>0.01?'<b style="color:#b00020">'+money(a.debt)+'</b>':'0.00')+'</td>'+
       '<td class="right" style="white-space:nowrap"><button class="smini" data-drep="'+esc(d.id)+'" title="გატანა & ვალი">📦</button> <button class="smini" data-dpay="'+esc(d.id)+'" title="გადახდის ჩაწერა">💰</button> <button class="smini" data-dedit="'+esc(d.id)+'" title="რედაქტ./დამტკიცება">✏</button></td></tr>';});
     h+='</tbody></table></div>';
@@ -992,10 +992,8 @@ function xlsSheet(XLSX,wbk,name,title,header,rows,numCols){
 }
 function addDistSheets(XLSX,wbk){
   const stl=st=>({paid:'გადახდილი',part:'ნაწილობრივ',due:'გადასახდელი'}[st]||'');
-  const sumR=DISTRIBUTORS.map((d,i)=>{const a=distAgg(d.id);return [i+1,d.name||d.shop_name||'',d.region||'',d.municipality||'',a.pickedKg,a.soldKg,a.remKg,a.debt];});
-  xlsSheet(XLSX,wbk,'დისტრიბუტორები','RAM IMPEX — დისტრიბუტორები',['#','დისტრიბუტორი','რეგიონი','მუნიციპ.','გატანილი','გაყიდა','დარჩა','ვალი ₾'],sumR,[4,5,6,7]);
-  const slR=DIST_SALES.map((s,i)=>{const amt=(+s.amount)||((+s.qty||0)*(+s.price||0));return [i+1,s.date||'',s.distributor_name||distName(s.distributor_id),s.buyer||'',+s.qty||0,+s.price||0,amt,+s.paid||0,stl(s.status||distSaleStatus(s))];});
-  xlsSheet(XLSX,wbk,'დისტრ. გაყიდვები','RAM IMPEX — დისტრიბუციის გაყიდვები',['#','თარიღი','დისტრიბუტორი','ვის მიჰყიდა','რაოდ.','₾/ერთ.','ჯამი ₾','გადახდ. ₾','სტატუსი'],slR,[4,5,6,7]);
+  const sumR=DISTRIBUTORS.map((d,i)=>{const a=distAgg(d.id);return [i+1,d.name||d.shop_name||'',d.region||'',((d.municipalities&&d.municipalities.length)?d.municipalities.join(', '):(d.municipality||'')),a.pickedKg,a.takenVal,a.paid,a.debt];});
+  xlsSheet(XLSX,wbk,'დისტრიბუტორები','RAM IMPEX — დისტრიბუტორები',['#','დისტრიბუტორი','რეგიონი','მუნიციპ.','გატანილი','ღირებ. ₾','გადახდ. ₾','ვალი ₾'],sumR,[4,5,6,7]);
   const pkR=DIST_PICKUPS.map((p,i)=>[i+1,p.date||'',p.distributor_name||distName(p.distributor_id),(ruCode(p.code)||'')+' '+(p.product||''),+p.qty||0,+p.price||0]);
   xlsSheet(XLSX,wbk,'გატანები','RAM IMPEX — გატანები',['#','თარიღი','დისტრიბუტორი','პროდუქტი','რაოდ.','₾/ერთ.'],pkR,[4,5]);
 }
@@ -1018,15 +1016,12 @@ async function htmlToPDF(html,fname,orient,holderW){orient=orient||'l';holderW=h
 function distReportHTML(){
   const dt=distTotals();
   const kpi=(l,v,c)=>'<div style="flex:1;background:#f3faf5;border-radius:8px;padding:8px 12px"><div style="font-size:11px;color:#556">'+l+'</div><div style="font-size:16px;font-weight:800;color:'+(c||'#0B6B3C')+'">'+v+'</div></div>';
-  const sumRows=DISTRIBUTORS.map((d,i)=>{const a=distAgg(d.id);return '<tr><td style="padding:5px">'+(i+1)+'</td><td style="padding:5px"><b>'+esc(d.name||d.shop_name||'')+'</b></td><td style="padding:5px">'+esc(d.region||'')+(d.municipality?' · '+esc(d.municipality):'')+'</td><td style="padding:5px;text-align:right">'+fmtKg(a.pickedKg)+'</td><td style="padding:5px;text-align:right">'+fmtKg(a.soldKg)+'</td><td style="padding:5px;text-align:right;font-weight:700">'+fmtKg(a.remKg)+'</td><td style="padding:5px;text-align:right;color:#b00020;font-weight:700">'+money(a.debt)+'</td></tr>';}).join('');
-  const saleRows=DIST_SALES.map((s,i)=>{const amt=(+s.amount)||((+s.qty||0)*(+s.price||0));const stl={paid:'გადახდილი',part:'ნაწილობრივ',due:'გადასახდელი'}[s.status||distSaleStatus(s)]||'';return '<tr><td style="padding:5px">'+(i+1)+'</td><td style="padding:5px">'+esc(s.date||'')+'</td><td style="padding:5px">'+esc(s.distributor_name||distName(s.distributor_id))+'</td><td style="padding:5px">'+esc(s.buyer||'')+'</td><td style="padding:5px;text-align:right">'+fmtKg(s.qty)+'</td><td style="padding:5px;text-align:right">'+money(s.price)+'</td><td style="padding:5px;text-align:right;font-weight:700">'+money(amt)+'</td><td style="padding:5px;text-align:right">'+money(+s.paid||0)+'</td><td style="padding:5px">'+stl+'</td></tr>';}).join('');
+  const sumRows=DISTRIBUTORS.map((d,i)=>{const a=distAgg(d.id);const mun=(d.municipalities&&d.municipalities.length)?d.municipalities.join(', '):(d.municipality||'');return '<tr><td style="padding:5px">'+(i+1)+'</td><td style="padding:5px"><b>'+esc(d.name||d.shop_name||'')+'</b></td><td style="padding:5px">'+esc(d.region||'')+(mun?' · '+esc(mun):'')+'</td><td style="padding:5px;text-align:right">'+fmtKg(a.pickedKg)+'</td><td style="padding:5px;text-align:right">'+money(a.takenVal)+'</td><td style="padding:5px;text-align:right">'+money(a.paid)+'</td><td style="padding:5px;text-align:right;color:#b00020;font-weight:700">'+money(a.debt)+'</td></tr>';}).join('');
   return '<div style="font-family:\'Noto Sans Georgian\',sans-serif;padding:22px;color:#14261C;background:#fff;width:940px">'+
     '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #0F8A4D;padding-bottom:8px;margin-bottom:12px"><div><div style="font-size:22px;font-weight:800;color:#0B6B3C">RAM IMPEX</div><div style="font-size:12px;color:#5C6B62">დისტრიბუცია</div></div><div style="text-align:right;font-size:12px;color:#5C6B62">დაბეჭდილია: '+todayStr()+'</div></div>'+
-    '<div style="display:flex;gap:10px;margin-bottom:12px">'+kpi('სულ გატანილი',fmtKg(dt.picked))+kpi('გაყიდა',fmtKg(dt.sold),'#2b6cb0')+kpi('გაყიდა ₾',money(dt.soldAmt),'#2b6cb0')+kpi('ვალი სულ ₾',money(dt.debt),'#b00020')+'</div>'+
+    '<div style="display:flex;gap:10px;margin-bottom:12px">'+kpi('სულ გატანილი',fmtKg(dt.picked))+kpi('ღირებულება ₾',money(dt.taken),'#2b6cb0')+kpi('გადახდილი ₾',money(dt.paid),'#0B6B3C')+kpi('ვალი სულ ₾',money(dt.debt),'#b00020')+'</div>'+
     '<div style="font-size:14px;font-weight:800;color:#0B6B3C;margin:6px 0">დისტრიბუტორები</div>'+
-    '<table style="width:100%;border-collapse:collapse;font-size:12px" border="1"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:6px">#</th><th style="padding:6px">დისტრიბუტორი</th><th style="padding:6px">რეგ./მუნიც.</th><th style="padding:6px">გატანილი</th><th style="padding:6px">გაყიდა</th><th style="padding:6px">დარჩა</th><th style="padding:6px">ვალი ₾</th></tr></thead><tbody>'+(sumRows||'<tr><td colspan="7" style="padding:8px">—</td></tr>')+'</tbody></table>'+
-    '<div style="font-size:14px;font-weight:800;color:#0B6B3C;margin:14px 0 6px">გაყიდვის რეპორტები</div>'+
-    '<table style="width:100%;border-collapse:collapse;font-size:12px" border="1"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:6px">#</th><th style="padding:6px">თარიღი</th><th style="padding:6px">დისტრიბუტორი</th><th style="padding:6px">ვის მიჰყიდა</th><th style="padding:6px">რაოდ.</th><th style="padding:6px">₾/ერთ.</th><th style="padding:6px">ჯამი ₾</th><th style="padding:6px">გადახდ.</th><th style="padding:6px">სტატ.</th></tr></thead><tbody>'+(saleRows||'<tr><td colspan="9" style="padding:8px">—</td></tr>')+'</tbody></table>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:12px" border="1"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:6px">#</th><th style="padding:6px">დისტრიბუტორი</th><th style="padding:6px">რეგ./მუნიც.</th><th style="padding:6px">გატანილი</th><th style="padding:6px">ღირებ. ₾</th><th style="padding:6px">გადახდ. ₾</th><th style="padding:6px">ვალი ₾</th></tr></thead><tbody>'+(sumRows||'<tr><td colspan="7" style="padding:8px">—</td></tr>')+'</tbody></table>'+
     '<div style="margin-top:10px;font-size:11px;color:#5C6B62">RAM IMPEX · 📞 595 533 500 · 🌐 ramimpex.com.ge</div></div>';
 }
 function downloadDistPDF(){htmlToPDF(distReportHTML(),'RAM_IMPEX_distribucia_'+todayStr());}
