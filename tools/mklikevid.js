@@ -7,12 +7,14 @@ const W=1080,H=1920;
 const F="'Noto Sans Georgian','Segoe UI',system-ui,sans-serif";
 // [emoji, useFoto, title, sub, dur]
 const SC=[
- ['🔥',true,'სად იყიდი ანთრაციტს?','ბრიკეტი შენს რეგიონში',3.2],
- ['📍',false,'დისტრიბუტორები','რეგიონებსა და მუნიციპალიტეტებში',3.0],
- ['🆕',false,'ახალი წერტილები','ეტაპობრივად ემატება',3.0],
- ['👍',false,'დაალაიქე ჩვენი გვერდი','რომ არ გამოგრჩეს ახლოს გახსნილი წერტილი',3.4],
- ['CTA',false,'','',3.6]
+ ['🔥',true,'სად იყიდი ანთრაციტს?','ბრიკეტი შენს რეგიონში',3.0],
+ ['INFO',false,'','',4.4],
+ ['📍',false,'დისტრიბუტორები','რეგიონებსა და მუნიციპალიტეტებში',2.9],
+ ['🆕',false,'ახალი წერტილები','ეტაპობრივად ემატება',2.8],
+ ['👍',false,'დაალაიქე ჩვენი გვერდი','რომ არ გამოგრჩეს ახლოს გახსნილი წერტილი',3.2],
+ ['CTA',false,'','',3.4]
 ];
+const INFO_FACTS=['🌡 ~7 951 კკალ/კგ — 2× მეტი სითბო','⏱ 8–12 საათი ერთ ჩაყრაზე','💨 უკვამლო · ცოტა ნაცარი','💰 ეკონომიური — 1 კგ = ~10 კგ შეშა'];
 function slide(sc){
  const [emoji,useFoto,title,sub]=sc;
  if(emoji==='CTA'){
@@ -28,6 +30,18 @@ function slide(sc){
   <div class="big">👍</div><h1>Like & Follow</h1>
   <div class="u">🌐 ramimpex.com.ge/start</div>
   <div class="ph">📞 595 533 500</div></div>`;
+ }
+ if(emoji==='INFO'){
+  return `<!doctype html><meta charset="utf-8"><style>*{margin:0;box-sizing:border-box;font-family:${F}}
+  .p{width:${W}px;height:${H}px;color:#fff;overflow:hidden;position:relative;display:flex;flex-direction:column;justify-content:center;
+   background:radial-gradient(900px 560px at 78% 6%,rgba(201,112,26,.5),transparent 60%),radial-gradient(760px 560px at 8% 82%,rgba(180,70,10,.34),transparent 60%),linear-gradient(160deg,#241507,#160c04 58%,#0b0603)}
+  .hd{display:flex;align-items:center;gap:16px;padding:0 60px}.hd img{width:66px;height:66px}.hd b{font-size:40px;font-weight:900}
+  h1{margin:26px 60px 0;font-size:82px;line-height:1.02;font-weight:900;background:linear-gradient(180deg,#ffcf7a,#ff8c1a);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .bl{margin:40px 60px 0;display:flex;flex-direction:column;gap:22px}
+  .bi{background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.18);border-radius:20px;padding:30px 34px;font-size:46px;font-weight:800;line-height:1.2}</style>
+  <div class="p"><div class="hd"><img src="${logo}"><b>RAM IMPEX</b></div>
+  <h1>🔥 ანთრაციტის ბრიკეტი</h1>
+  <div class="bl">${INFO_FACTS.map(f=>'<div class="bi">'+f+'</div>').join('')}</div></div>`;
  }
  const art=useFoto?`<div class="art"><img src="${foto}"></div>`:`<div class="art emoji">${emoji}</div>`;
  return `<!doctype html><meta charset="utf-8"><style>*{margin:0;box-sizing:border-box;font-family:${F}}
