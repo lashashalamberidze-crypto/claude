@@ -660,6 +660,7 @@ function editInvoice(inv){
   if($('iLegalT'))$('iLegalT').checked=!!ex.legal;
   if($('iLegalF'))$('iLegalF').checked=!ex.legal;
   if($('iNeedWaybill'))$('iNeedWaybill').checked=!!ex.needWaybill;
+  if(ex.custType==='dist'){if($('iCTdist'))$('iCTdist').checked=true;if($('iDistWrap'))$('iDistWrap').style.display='';if($('iDistSel')&&ex.distributor_id)$('iDistSel').value=ex.distributor_id;}else{if($('iCTretail'))$('iCTretail').checked=true;}
   if($('brandAmt'))$('brandAmt').value=ex.brandAmt||'';
   if($('transAmt'))$('transAmt').value=ex.transAmt||'';
   if($('iMinQty'))$('iMinQty').value=ex.minQty||'';
@@ -729,6 +730,7 @@ function renderInvoice(){
    '<div class="card"><h2>🧾 ინვოისი / 💰 ფასების შეთავაზება</h2>'+
    '<div id="editBanner" style="display:'+(editingInvId?'':'none')+';background:#FFF0CC;color:#8a6a00;font-weight:700;border-radius:8px;padding:7px 12px;margin-bottom:8px;font-size:13px">✏ რედაქტირდება</div>'+
    '<div class="row"><div><label>ინვოისის № (ავტომატური)</label><input id="iNo" value="'+(editingInvId?'':nextInvNo())+'" placeholder="ავტომ."></div><div><label>თარიღი</label><input id="iDate" type="date" value="'+todayStr()+'"></div></div>'+
+   '<div class="row" style="margin-top:8px"><div><label>ტიპი</label><div style="display:flex;gap:14px;padding-top:6px;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:6px;margin:0;font-weight:700;cursor:pointer"><input type="radio" name="iCT" id="iCTretail" value="retail" checked style="width:16px;height:16px"> 🛒 საცალო</label><label style="display:flex;align-items:center;gap:6px;margin:0;font-weight:700;cursor:pointer"><input type="radio" name="iCT" id="iCTdist" value="dist" style="width:16px;height:16px"> 🚚 დისტრიბუტორი</label></div></div><div id="iDistWrap" style="display:none"><label>აირჩიე დისტრიბუტორი</label><select id="iDistSel"><option value="">— აირჩიე —</option>'+(DISTRIBUTORS||[]).map(d=>'<option value="'+esc(d.id)+'">'+esc(d.name||d.shop_name||'—')+(d.region?' — '+esc(d.region):'')+'</option>').join('')+'</select></div></div>'+
    '<div class="row"><div><label>მყიდველი</label><input id="iCust" placeholder="შპს ..."></div><div><label>ს/კ (არჩ.)</label><input id="iId" placeholder="საიდ. კოდი"></div><div><label>ტელეფონი (არჩ.)</label><input id="iPhone" placeholder="5xx xx xx xx"></div></div>'+
    '<div class="row" style="margin-top:8px"><div><label>მისამართი (არჩ.)</label><input id="iAddr" placeholder="ქალაქი, ქუჩა, №"></div><div><label>ელ-ფოსტა (არჩ.)</label><input id="iEmail" type="email" placeholder="mail@example.com"></div></div>'+
    '<div class="row" style="margin-top:8px"><div><label>რეგიონი (არჩ.)</label><select id="iRegion"><option value="">— აირჩიე რეგიონი —</option>'+Object.keys(REGIONS).map(r=>'<option>'+esc(r)+'</option>').join('')+'</select></div><div><label>მუნიციპალიტეტი (არჩ.)</label><select id="iMuni"><option value="">— ჯერ რეგიონი —</option></select></div></div>'+
@@ -748,11 +750,15 @@ function renderInvoice(){
    '<div class="row" style="margin-top:8px;font-size:12px;color:var(--muted)">💾 შენახვის შემდეგ ინვოისი გამოჩნდება ტაბში <b>📊 გაყიდვები → 🛒 საცალო</b>.</div></div>';
   $('iAdd').onclick=()=>{const raw=$('iPick').value;if(!raw)return;const sp=splitTier(raw);const code=sp.code;const p=byCode(code);if(!p)return;const qty=parseInt($('iQty').value)||1;const ply=itmBox({code:code})?((($('iPlyAdd')&&$('iPlyAdd').value)||p.ply||'')):'';const ex=invDraft.find(l=>l.code===code&&(l.tier||0)===(sp.tier||0));if(ex){ex.qty+=qty;if(ply)ex.ply=ply;}else{const line={code:code,price:sp.tier?briketTierPrice(sp.tier):(isBriket(code)?briketPrice(qty):p.price),qty:qty,ply:ply,min:'3000'};if(sp.tier){line.tier=sp.tier;line.pack=briketTierPack(sp.tier);line.packSet=true;}invDraft.push(line);}if($('iPlyAdd'))$('iPlyAdd').value='';renderInvLines();};
   if($('iPickDir'))$('iPickDir').onchange=()=>{$('iPick').innerHTML=invProdOptions($('iPickDir').value);};
+  const ctToggle=()=>{const isD=$('iCTdist')&&$('iCTdist').checked;if($('iDistWrap'))$('iDistWrap').style.display=isD?'':'none';};
+  if($('iCTretail'))$('iCTretail').onchange=ctToggle;
+  if($('iCTdist'))$('iCTdist').onchange=ctToggle;
+  if($('iDistSel'))$('iDistSel').onchange=()=>{const d=DISTRIBUTORS.find(x=>String(x.id)===$('iDistSel').value);if(!d)return;if($('iCust'))$('iCust').value=d.name||d.shop_name||'';if($('iId'))$('iId').value=d.idc||'';if($('iPhone'))$('iPhone').value=d.phone||'';if($('iAddr')&&d.address)$('iAddr').value=d.address;if($('iRegion')&&d.region){$('iRegion').value=d.region;fillMuni(d.region,d.municipality||'');}if(d.idc&&$('iLegalT'))$('iLegalT').checked=true;};
   $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}downloadInvoicePDF(currentInv());};
   $('iOffer').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}makeOfferJPG();};
   $('iToOrders').onclick=addDraftToOrders;
   $('iSave').onclick=saveInvoice;
-  $('iClear').onclick=()=>{invDraft=[];editingInvId=null;invVatIncl=false;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iPhone','iAddr','iEmail','iNo','brandAmt','transAmt','iMinQty','iNote','iTranspNo'].forEach(id=>{if($(id))$(id).value='';});if($('iTransp'))$('iTransp').checked=false;if($('iNeedWaybill'))$('iNeedWaybill').checked=false;if($('iLegalF'))$('iLegalF').checked=true;if($('iLegalT'))$('iLegalT').checked=false;if($('iRegion'))$('iRegion').value='';fillMuni('','');renderInvLines();};
+  $('iClear').onclick=()=>{invDraft=[];editingInvId=null;invVatIncl=false;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iPhone','iAddr','iEmail','iNo','brandAmt','transAmt','iMinQty','iNote','iTranspNo'].forEach(id=>{if($(id))$(id).value='';});if($('iTransp'))$('iTransp').checked=false;if($('iNeedWaybill'))$('iNeedWaybill').checked=false;if($('iLegalF'))$('iLegalF').checked=true;if($('iLegalT'))$('iLegalT').checked=false;if($('iCTretail'))$('iCTretail').checked=true;if($('iDistWrap'))$('iDistWrap').style.display='none';if($('iDistSel'))$('iDistSel').value='';if($('iRegion'))$('iRegion').value='';fillMuni('','');renderInvLines();};
   ['brandAmt','transAmt'].forEach(id=>$(id).oninput=renderInvLines);
   if($('iVat'))$('iVat').onchange=()=>{invVatIncl=$('iVat').checked;updInvTotals();};
   if($('iRegion'))$('iRegion').onchange=()=>fillMuni($('iRegion').value,'');
@@ -786,9 +792,11 @@ async function openSales(){
   await loadDistrib();
   renderSales();
 }
-function retailTotals(dir){let T=0,P=0,n=0;(INVOICES||[]).forEach(v=>{if(dir&&dir!=='all'&&invDirBucket(v)!==dir)return;T+=(+v.grand||0);P+=(+v.paid||0);n++;});return {T,P,due:T-P,n};}
+function invTotalsBy(dir,wantDist){let T=0,P=0,n=0;(INVOICES||[]).forEach(v=>{if((((v.extra||{}).custType==='dist'))!==wantDist)return;if(dir&&dir!=='all'&&invDirBucket(v)!==dir)return;T+=(+v.grand||0);P+=(+v.paid||0);n++;});return {T,P,due:T-P,n};}
+function retailTotals(dir){return invTotalsBy(dir,false);}       // საცალო ინვოისები
+function distInvTotals(dir){return invTotalsBy(dir,true);}       // დისტრიბუტორზე გამოწერილი ინვოისები
 function distTotals(dir){let picked=0,sold=0,taken=0,paid=0,debt=0;(DISTRIBUTORS||[]).forEach(d=>{if(dir&&dir!=='all'&&(d.product||'ანთრაციტის ბრიკეტი')!==dir)return;const a=distAgg(d.id);picked+=a.pickedKg;sold+=a.soldKg;taken+=a.takenVal;paid+=a.paid;debt+=a.debt;});return {picked,sold,soldAmt:taken,taken,paid,due:debt,debt};}
-function comboDashHTML(){const dir=IL_DIR;const rt=retailTotals(dir),dt=distTotals(dir);const total=rt.T+dt.taken;const debts=rt.due+dt.debt;
+function comboDashHTML(){const dir=IL_DIR;const rt=retailTotals(dir),dt=distTotals(dir),di=distInvTotals(dir);const distSum=dt.taken+di.T;const total=rt.T+distSum;const debts=rt.due+dt.debt+di.due;
   const isBrik=(!dir||dir==='all'||dir==='ანთრაციტის ბრიკეტი');const dd=SAL_DIRS.find(x=>x[0]===dir);
   const dlabel=(dir&&dir!=='all'&&dd)?(dd[2]+' '+dd[1]):'ყველა მიმართულება';
   const card5=isBrik
@@ -796,7 +804,7 @@ function comboDashHTML(){const dir=IL_DIR;const rt=retailTotals(dir),dt=distTota
     :'<div class="skpi" style="border-color:#c9701a"><div class="l">'+(dd?dd[2]+' '+dd[1]:'')+' — დისტრ. გატ.</div><div class="v" style="font-size:20px;color:#c9701a">'+fmtNum(dt.picked)+'</div><div class="muted" style="font-size:10.5px">გატანილი (ცალი)</div></div>';
   return '<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2>💼 საერთო დაშბორდი <span class="muted" style="font-weight:600;font-size:12px">· '+esc(dlabel)+'</span></h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="dbtn v" id="cmbReport">📈 ანგარიში (PDF)</button><button class="dbtn a" id="cmbXls">📊 საერთო Excel</button><button class="dbtn line" id="cmbPdf">📄 საერთო PDF</button></div></div>'+
     '<div class="salkpi" style="margin-top:12px;grid-template-columns:repeat(5,1fr)"><div class="skpi"><div class="l">🛒 საცალო ₾</div><div class="v" style="font-size:20px">'+money(rt.T)+'</div><div class="muted" style="font-size:10.5px">გადახდ. '+money(rt.P)+'</div></div>'+
-    '<div class="skpi blue"><div class="l">🚚 დისტრიბუცია ₾</div><div class="v" style="font-size:20px;color:#2b6cb0">'+money(dt.taken)+'</div><div class="muted" style="font-size:10.5px">გატანილი '+fmtNum(dt.picked)+'</div></div>'+
+    '<div class="skpi blue"><div class="l">🚚 დისტრიბუცია ₾</div><div class="v" style="font-size:20px;color:#2b6cb0">'+money(distSum)+'</div><div class="muted" style="font-size:10.5px">ინვოისი '+di.n+' · კონსიგ. '+fmtNum(dt.picked)+'</div></div>'+
     '<div class="skpi green"><div class="l">💰 სულ გაყიდვები ₾</div><div class="v" style="font-size:20px;color:#0B6B3C">'+money(total)+'</div></div>'+
     '<div class="skpi red"><div class="l">❗ ვალები სულ ₾</div><div class="v" style="font-size:20px;color:#b00020">'+money(debts)+'</div></div>'+
     card5+'</div></div>';
@@ -816,15 +824,17 @@ function renderSales(){
   if($('cmbReport'))$('cmbReport').onclick=reportModal;
   if(SALES_SUB==='retail')renderRetail();else renderDist();
 }
-function renderRetail(){
-  $('salesBody').innerHTML=
-   '<div class="card"><h2>📊 ინვოისები / გაყიდვები (საცალო)</h2><p class="muted" style="font-size:12px">ყოველი შენახული ინვოისი აქ ჩნდება როგორც გაყიდვა — გადახდისა და დოკუმენტების სტატუსით.</p>'+
-   '<div style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap;background:#f6f2fd;border:1px solid #e0d4f7;border-radius:10px;padding:8px 12px"><button class="btn" id="ilStock" style="background:#6d3ad6;margin-top:0">📦 მარაგი / შევსება</button><span id="ilStockSum" class="muted" style="font-size:12px"></span></div>'+
+function ledgerCardHTML(isDist){
+  return '<div class="card"><h2>'+(isDist?'🚚 ინვოისები — დისტრიბუტორები':'📊 ინვოისები / გაყიდვები (საცალო)')+'</h2><p class="muted" style="font-size:12px">'+(isDist?'დისტრიბუტორზე გამოწერილი ინვოისები — გადახდისა და დოკუმენტების სტატუსით.':'ყოველი შენახული ინვოისი აქ ჩნდება როგორც გაყიდვა — გადახდისა და დოკუმენტების სტატუსით.')+'</p>'+
+   (isDist?'':'<div style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap;background:#f6f2fd;border:1px solid #e0d4f7;border-radius:10px;padding:8px 12px"><button class="btn" id="ilStock" style="background:#6d3ad6;margin-top:0">📦 მარაგი / შევსება</button><span id="ilStockSum" class="muted" style="font-size:12px"></span></div>')+
    '<div class="salkpi" style="margin-top:12px;grid-template-columns:repeat(5,1fr)"><div class="skpi blue"><div class="l">სულ</div><div class="v" id="ilK1">—</div></div><div class="skpi green"><div class="l">გადახდილი</div><div class="v" id="ilK2">—</div></div><div class="skpi red"><div class="l">დარჩენილი (ვალი)</div><div class="v" id="ilK3">—</div></div><div class="skpi amber"><div class="l">რაოდ.</div><div class="v" id="ilK4">—</div></div><div class="skpi" style="border-color:#c9701a"><div class="l">⚖️ კგ (გატანილი)</div><div class="v" id="ilK5" style="color:#c9701a">—</div></div></div>'+
-   '<div class="salflt"><div><label>ძებნა</label><input id="ilQ" placeholder="🔍 მყიდველი / №"></div><div><label>დან</label><input id="ilFrom" type="date"></div><div><label>მდე</label><input id="ilTo" type="date"></div><div><label>სტატუსი</label><select id="ilStatus"><option value="">ყველა</option><option value="paid">გადახდილი</option><option value="part">ნაწილობრივ</option><option value="due">გადასახდელი</option><option value="todeliver">🚚 მისატანი (გატანილია, არ მიტანილი)</option><option value="delivered">✅ მიტანილი</option><option value="warehouse">📦 საწყობში (ჯერ არ გატანილი)</option><option value="dispensed">📤 გატანილი (სულ)</option></select></div><div style="align-self:flex-end;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="ilDeliv" style="background:#2b6cb0">🚚 მიტანის ფურცელი</button><button class="btn a" id="ilXls">📊 Excel</button><button class="btn line" id="ilPrint">📄 PDF ჩამოტვირთვა</button><button class="btn" id="ilAddDist" style="background:#6d3ad6">👥 + დისტრიბუტორი</button></div></div>'+
+   '<div class="salflt"><div><label>ძებნა</label><input id="ilQ" placeholder="🔍 მყიდველი / №"></div><div><label>დან</label><input id="ilFrom" type="date"></div><div><label>მდე</label><input id="ilTo" type="date"></div><div><label>სტატუსი</label><select id="ilStatus"><option value="">ყველა</option><option value="paid">გადახდილი</option><option value="part">ნაწილობრივ</option><option value="due">გადასახდელი</option><option value="todeliver">🚚 მისატანი (გატანილია, არ მიტანილი)</option><option value="delivered">✅ მიტანილი</option><option value="warehouse">📦 საწყობში (ჯერ არ გატანილი)</option><option value="dispensed">📤 გატანილი (სულ)</option></select></div><div style="align-self:flex-end;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="ilDeliv" style="background:#2b6cb0">🚚 მიტანის ფურცელი</button><button class="btn a" id="ilXls">📊 Excel</button><button class="btn line" id="ilPrint">📄 PDF ჩამოტვირთვა</button></div></div>'+
    '<div class="scroll"><table><thead><tr><th>თარიღი</th><th>№</th><th>მყიდველი / მდებარეობა</th><th>პროდუქცია</th><th class="right">წონა</th><th class="right">სულ ₾</th><th class="right">გადახდ.</th><th class="right">ნაშთი</th><th>სტატუსი</th><th>დოკ.</th><th></th></tr></thead><tbody id="ilRows"></tbody></table></div>'+
    '<div id="ilEmpty" class="empty" style="display:none">ჯერ ინვოისი არ არის.</div>'+
    '<div style="margin-top:10px;font-size:11.5px;color:#5c6b62">🚚 ზედნადები · 💳 გადარიცხვის დოკ. — <b style="color:#0B6B3C">მწვანე=ატვირთულია</b> · 💵 გადახდის განახლება · 📎 დოკ. ატვირთვა · ✏ რედაქტ. · 🖨 ბეჭდვა · 🗑 წაშლა</div></div>';
+}
+function renderRetail(){
+  $('salesBody').innerHTML=ledgerCardHTML(false);
   wireLedgerControls();renderInvList();
 }
 /* ---------- დისტრიბუცია ---------- */
@@ -856,6 +866,8 @@ function renderDist(){
   let tPick=0,tSold=0,tRem=0,tDebt=0;
   DL.forEach(d=>{const a=distAgg(d.id);tPick+=a.pickedKg;tSold+=a.soldKg;tRem+=a.remKg;tDebt+=a.debt;});
   let h='';
+  // 0) დისტრიბუტორებზე გამოწერილი ინვოისები (ზედნადებით)
+  h+=ledgerCardHTML(true);
   // 1) გატანის ფორმა
   h+='<div class="card"><h2>📦 დისტრიბუტორზე გატანა (კონსიგნაცია)</h2>'+
      '<div class="drow">'+
@@ -908,6 +920,7 @@ function renderDist(){
     h+='</tbody></table></div>';}
   h+='</div>';
   body.innerHTML=h;
+  wireLedgerControls();renderInvList();
   wireDist();
 }
 function wireDist(){
@@ -1252,7 +1265,7 @@ function updInvTotals(){const t=invTotals();$('tSub').textContent=money(t.sub)+'
 function updInvRow(i,inp){const l=invDraft[i];const tr=inp.closest('tr');if(tr){const s=tr.querySelector('.sum');if(s)s.textContent=money(l.price*l.qty);}updInvTotals();}
 function currentInv(){const t=invTotals();return {no:$('iNo').value,date:$('iDate').value||todayStr(),cust:$('iCust').value,idc:$('iId').value,phone:($('iPhone')?$('iPhone').value:''),
   lines:invDraft.map(l=>{const p=byCode(l.code)||{};return {code:l.code,name:l.name||p.name,size:l.size||p.size,ply:l.ply||'',brand:l.brand||'',pack:l.pack||'',tier:l.tier||null,color:p.color,price:l.price,priceEdited:!!l.priceEdited,qty:l.qty,min:(l.min!=null?l.min:''),img:pubImg(l.code)};}),
-  sub:t.sub,vat:t.vat,extra:{brandAmt:t.brandAmt,transAmt:t.transAmt,note:($('iNote')?$('iNote').value:''),minQty:($('iMinQty')?$('iMinQty').value:''),vatIncl:invVatIncl,transp:($('iTransp')?$('iTransp').checked:false),transpNo:($('iTranspNo')?$('iTranspNo').value:''),legal:!!($('iLegalT')&&$('iLegalT').checked),needWaybill:($('iNeedWaybill')?$('iNeedWaybill').checked:false),addr:($('iAddr')?$('iAddr').value:''),email:($('iEmail')?$('iEmail').value:''),region:($('iRegion')?$('iRegion').value:''),municipality:($('iMuni')?$('iMuni').value:'')},grand:t.grand};}
+  sub:t.sub,vat:t.vat,extra:{brandAmt:t.brandAmt,transAmt:t.transAmt,note:($('iNote')?$('iNote').value:''),minQty:($('iMinQty')?$('iMinQty').value:''),vatIncl:invVatIncl,transp:($('iTransp')?$('iTransp').checked:false),transpNo:($('iTranspNo')?$('iTranspNo').value:''),legal:!!($('iLegalT')&&$('iLegalT').checked),needWaybill:($('iNeedWaybill')?$('iNeedWaybill').checked:false),custType:(($('iCTdist')&&$('iCTdist').checked)?'dist':'retail'),distributor_id:($('iDistSel')?$('iDistSel').value:''),addr:($('iAddr')?$('iAddr').value:''),email:($('iEmail')?$('iEmail').value:''),region:($('iRegion')?$('iRegion').value:''),municipality:($('iMuni')?$('iMuni').value:'')},grand:t.grand};}
 async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}const inv=currentInv();
   const isEdit=!!editingInvId; inv.id=editingInvId||String(Date.now());
   const prev=isEdit?(INVOICES.find(x=>String(x.id)===String(inv.id))||{}):{};
@@ -1264,7 +1277,7 @@ async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამ�
     INVOICES.unshift(Object.assign({created_at:new Date().toISOString()},inv));
     alert((isEdit?'განახლდა ✔':'შენახულია ✔ — დაემატა გაყიდვებში')+'  სულ: '+money(inv.grand)+' ₾');
     invDraft=[];editingInvId=null;invVatIncl=false;const eb=$('editBanner');if(eb)eb.style.display='none';
-    ['iCust','iId','iPhone','iAddr','iEmail','iNo','brandAmt','transAmt','iMinQty','iNote','iTranspNo'].forEach(id=>{if($(id))$(id).value='';});if($('iTransp'))$('iTransp').checked=false;if($('iNeedWaybill'))$('iNeedWaybill').checked=false;if($('iLegalF'))$('iLegalF').checked=true;if($('iLegalT'))$('iLegalT').checked=false;if($('iRegion'))$('iRegion').value='';fillMuni('','');renderInvLines();renderInvList();}
+    ['iCust','iId','iPhone','iAddr','iEmail','iNo','brandAmt','transAmt','iMinQty','iNote','iTranspNo'].forEach(id=>{if($(id))$(id).value='';});if($('iTransp'))$('iTransp').checked=false;if($('iNeedWaybill'))$('iNeedWaybill').checked=false;if($('iLegalF'))$('iLegalF').checked=true;if($('iLegalT'))$('iLegalT').checked=false;if($('iCTretail'))$('iCTretail').checked=true;if($('iDistWrap'))$('iDistWrap').style.display='none';if($('iDistSel'))$('iDistSel').value='';if($('iRegion'))$('iRegion').value='';fillMuni('','');renderInvLines();renderInvList();}
   catch(e){alert('ვერ შეინახა: '+(e.message||e)+'\n(თუ paid/status/docs სვეტების შეცდომაა — გაუშვი sql/invoices_upgrade.sql)');}
 }
 function invStatus(inv){const g=+inv.grand||0,p=+inv.paid||0;return (g>0&&p>=g)?'paid':(p>0?'part':'due');}
@@ -1272,8 +1285,8 @@ function invWeightKg(inv){let kg=0;(inv.lines||[]).forEach(l=>{if(isBriket(l.cod
 function invLoc(inv){const ex=inv.extra||{};const p=[ex.region,ex.municipality,ex.addr||inv.addr].filter(Boolean);return p.join(' · ');}
 function invProdSummary(inv){const ls=inv.lines||[];if(!ls.length)return '—';const l0=ls[0];const n0=l0.name||l0.code||'';const up=(l0.price!=null&&l0.price!=='')?(' <span class="muted">· '+money(l0.price)+' ₾/ერთ.</span>'):'';return ls.length>1?(esc(n0)+up+' <span class="muted">+'+(ls.length-1)+'</span>'):(esc(n0)+up);}
 function invDirBucket(inv){const c=(inv.lines&&inv.lines[0]&&inv.lines[0].code)||'';return saleDirOf(c,(byCode(c)||{}).dir||'');}
-function invLedgerList(){const q=(($('ilQ')||{}).value||'').toLowerCase().trim(),df=($('ilFrom')||{}).value,dt=($('ilTo')||{}).value,st=($('ilStatus')||{}).value||'';
-  return INVOICES.filter(inv=>{if(IL_DIR!=='all'&&invDirBucket(inv)!==IL_DIR)return false;if(q){const hay=((inv.cust||'')+' '+(inv.idc||'')+' '+(inv.no||'')).toLowerCase();if(hay.indexOf(q)<0)return false;}if(df&&(inv.date||'')<df)return false;if(dt&&(inv.date||'')>dt)return false;
+function invLedgerList(){const q=(($('ilQ')||{}).value||'').toLowerCase().trim(),df=($('ilFrom')||{}).value,dt=($('ilTo')||{}).value,st=($('ilStatus')||{}).value||'';const wantDist=(SALES_SUB==='dist');
+  return INVOICES.filter(inv=>{if((((inv.extra||{}).custType==='dist'))!==wantDist)return false;if(IL_DIR!=='all'&&invDirBucket(inv)!==IL_DIR)return false;if(q){const hay=((inv.cust||'')+' '+(inv.idc||'')+' '+(inv.no||'')).toLowerCase();if(hay.indexOf(q)<0)return false;}if(df&&(inv.date||'')<df)return false;if(dt&&(inv.date||'')>dt)return false;
     if(st){const ex=inv.extra||{};
       if(st==='delivered'){if(!ex.delivered)return false;}
       else if(st==='warehouse'){if(ex.dispensed)return false;}
@@ -1290,6 +1303,7 @@ function renderInvList(){ // ledger refresh (KPIs + rows)
     const dochtml=SAL_DOCS.map(dc=>{const u=docs[dc[0]];return '<a class="dchip'+(u?' ok':'')+'"'+(u?(' href="'+esc(u)+'" target="_blank"'):'')+' title="'+dc[1]+'">'+dc[2]+'</a>';}).join('');
     const pill=(bg,fg,t)=>'<span style="display:inline-block;font-size:10px;font-weight:800;background:'+bg+';color:'+fg+';border-radius:5px;padding:2px 7px">'+t+'</span>';
     const badges='<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">'+
+      (ex.custType==='dist'?pill('#e6f0ff','#2b6cb0','🚚 დისტრიბუტორი'):'')+
       (ex.legal?pill('#e2ecfb','#1e5bb8','🏢 იურიდიული'):pill('#eef0f2','#4a5560','👤 ფიზიკური'))+
       (ex.needWaybill?pill('#fff0c8','#8a6a00','📋 ზედნადები ✓'):pill('#f1f2f4','#8a939c','📋 ზედნადები ✕'))+
       (ex.dispensed?pill('#dff3e6','#0B6B3C','📦 გატანილია'):'')+
