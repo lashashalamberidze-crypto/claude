@@ -725,12 +725,15 @@ function dirPrefix(dir){if(dir==='ანთრაციტის ბრიკე
 function invPrefix(){if(!invDraft.length)return 'RI';const uniq=[];invDraft.forEach(l=>{const p=dirPrefix((byCode(l.code)||{}).dir||'');if(uniq.indexOf(p)<0)uniq.push(p);});return uniq.length===1?uniq[0]:'RI';}
 function makeInvNo(prefix,seq){return (prefix||'RI')+'-'+('000'+seq).slice(-4);}
 function nextInvNo(){return makeInvNo(invPrefix(),nextInvSeq());}
+function invDistOptions(sel){return '<option value="">— აირჩიე —</option>'+(DISTRIBUTORS||[]).map(d=>'<option value="'+esc(d.id)+'"'+(String(sel)===String(d.id)?' selected':'')+'>'+esc(d.name||d.shop_name||'—')+(d.region?' — '+esc(d.region):'')+'</option>').join('');}
+function applyDistToInvoice(d){if(!d)return;if($('iCust'))$('iCust').value=d.name||d.shop_name||'';if($('iId'))$('iId').value=d.idc||'';if($('iPhone'))$('iPhone').value=d.phone||'';if($('iAddr')&&d.address)$('iAddr').value=d.address;const munis=(d.municipalities&&d.municipalities.length)?d.municipalities:(d.municipality?[d.municipality]:[]);if($('iRegion')&&d.region){$('iRegion').value=d.region;}fillMuni(d.region||'',munis.length===1?munis[0]:'',munis);if(d.idc&&$('iLegalT'))$('iLegalT').checked=true;}
+function refreshIDistSelect(selId){if(!$('iDistSel'))return;$('iDistSel').innerHTML=invDistOptions(selId||'');if(selId){$('iDistSel').value=String(selId);applyDistToInvoice(DISTRIBUTORS.find(x=>String(x.id)===String(selId)));}}
 function renderInvoice(){
   invEl.innerHTML=
    '<div class="card"><h2>🧾 ინვოისი / 💰 ფასების შეთავაზება</h2>'+
    '<div id="editBanner" style="display:'+(editingInvId?'':'none')+';background:#FFF0CC;color:#8a6a00;font-weight:700;border-radius:8px;padding:7px 12px;margin-bottom:8px;font-size:13px">✏ რედაქტირდება</div>'+
    '<div class="row"><div><label>ინვოისის № (ავტომატური)</label><input id="iNo" value="'+(editingInvId?'':nextInvNo())+'" placeholder="ავტომ."></div><div><label>თარიღი</label><input id="iDate" type="date" value="'+todayStr()+'"></div></div>'+
-   '<div class="row" style="margin-top:8px"><div><label>ტიპი</label><div style="display:flex;gap:14px;padding-top:6px;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:6px;margin:0;font-weight:700;cursor:pointer"><input type="radio" name="iCT" id="iCTretail" value="retail" checked style="width:16px;height:16px"> 🛒 საცალო</label><label style="display:flex;align-items:center;gap:6px;margin:0;font-weight:700;cursor:pointer"><input type="radio" name="iCT" id="iCTdist" value="dist" style="width:16px;height:16px"> 🚚 დისტრიბუტორი</label></div></div><div id="iDistWrap" style="display:none"><label>აირჩიე დისტრიბუტორი</label><select id="iDistSel"><option value="">— აირჩიე —</option>'+(DISTRIBUTORS||[]).map(d=>'<option value="'+esc(d.id)+'">'+esc(d.name||d.shop_name||'—')+(d.region?' — '+esc(d.region):'')+'</option>').join('')+'</select></div></div>'+
+   '<div class="row" style="margin-top:8px"><div><label>ტიპი</label><div style="display:flex;gap:14px;padding-top:6px;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:6px;margin:0;font-weight:700;cursor:pointer"><input type="radio" name="iCT" id="iCTretail" value="retail" checked style="width:16px;height:16px"> 🛒 საცალო</label><label style="display:flex;align-items:center;gap:6px;margin:0;font-weight:700;cursor:pointer"><input type="radio" name="iCT" id="iCTdist" value="dist" style="width:16px;height:16px"> 🚚 დისტრიბუტორი</label></div></div><div id="iDistWrap" style="display:none"><label>აირჩიე დისტრიბუტორი</label><div style="display:flex;gap:6px"><select id="iDistSel" style="flex:1">'+invDistOptions('')+'</select><button class="btn" id="iDistNew" type="button" style="margin-top:0;flex:0 0 auto;background:#6d3ad6;padding:0 12px;white-space:nowrap" title="ახალი დისტრიბუტორის დამატება — მუნიციპალიტეტებით">➕ ახალი</button></div></div></div>'+
    '<div class="row"><div><label>მყიდველი</label><input id="iCust" placeholder="შპს ..."></div><div><label>ს/კ (არჩ.)</label><input id="iId" placeholder="საიდ. კოდი"></div><div><label>ტელეფონი (არჩ.)</label><input id="iPhone" placeholder="5xx xx xx xx"></div></div>'+
    '<div class="row" style="margin-top:8px"><div><label>მისამართი (არჩ.)</label><input id="iAddr" placeholder="ქალაქი, ქუჩა, №"></div><div><label>ელ-ფოსტა (არჩ.)</label><input id="iEmail" type="email" placeholder="mail@example.com"></div></div>'+
    '<div class="row" style="margin-top:8px"><div><label>რეგიონი (არჩ.)</label><select id="iRegion"><option value="">— აირჩიე რეგიონი —</option>'+Object.keys(REGIONS).map(r=>'<option>'+esc(r)+'</option>').join('')+'</select></div><div><label>მუნიციპალიტეტი (არჩ.)</label><select id="iMuni"><option value="">— ჯერ რეგიონი —</option></select></div></div>'+
@@ -753,7 +756,8 @@ function renderInvoice(){
   const ctToggle=()=>{const isD=$('iCTdist')&&$('iCTdist').checked;if($('iDistWrap'))$('iDistWrap').style.display=isD?'':'none';};
   if($('iCTretail'))$('iCTretail').onchange=ctToggle;
   if($('iCTdist'))$('iCTdist').onchange=ctToggle;
-  if($('iDistSel'))$('iDistSel').onchange=()=>{const d=DISTRIBUTORS.find(x=>String(x.id)===$('iDistSel').value);if(!d)return;if($('iCust'))$('iCust').value=d.name||d.shop_name||'';if($('iId'))$('iId').value=d.idc||'';if($('iPhone'))$('iPhone').value=d.phone||'';if($('iAddr')&&d.address)$('iAddr').value=d.address;const munis=(d.municipalities&&d.municipalities.length)?d.municipalities:(d.municipality?[d.municipality]:[]);if($('iRegion')&&d.region){$('iRegion').value=d.region;}fillMuni(d.region||'',munis.length===1?munis[0]:'',munis);if(d.idc&&$('iLegalT'))$('iLegalT').checked=true;};
+  if($('iDistSel'))$('iDistSel').onchange=()=>applyDistToInvoice(DISTRIBUTORS.find(x=>String(x.id)===$('iDistSel').value));
+  if($('iDistNew'))$('iDistNew').onclick=()=>distForm(null,(newId)=>{if($('iCTdist')){$('iCTdist').checked=true;ctToggle();}refreshIDistSelect(newId);});
   $('iPrint').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}downloadInvoicePDF(currentInv());};
   $('iOffer').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}makeOfferJPG();};
   $('iToOrders').onclick=addDraftToOrders;
@@ -1184,7 +1188,7 @@ const CTYPES=['ფიზიკური პირი','ინდ. მეწა�
 const CHANNELS=['მაღაზიაში','თვითონ ვავრცელებ','ორივე'];
 const TRANSPORTS=['ჩემი ტრანსპორტი','საწყობიდან','მიწოდება'];
 // ერთი ფორმა — ახალიც და რედაქტირებაც (id=null → ახალი). სრული ინფო.
-function distForm(id){const d=(id?DISTRIBUTORS.find(x=>String(x.id)===String(id)):null)||{};const isNew=!id;
+function distForm(id,onSaved){const d=(id?DISTRIBUTORS.find(x=>String(x.id)===String(id)):null)||{};const isNew=!id;
   const selOpts=(arr,cur)=>'<option value="">—</option>'+arr.map(o=>'<option'+(o===cur?' selected':'')+'>'+esc(o)+'</option>').join('');
   const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
   ov.innerHTML='<div class="card salform" style="max-width:600px;width:100%"><h2>'+(isNew?'➕ ახალი დისტრიბუტორი':('✏ '+esc(d.name||'—')))+'</h2>'+
@@ -1196,8 +1200,8 @@ function distForm(id){const d=(id?DISTRIBUTORS.find(x=>String(x.id)===String(id)
    '<div><label>მაღაზიის სახელი (რუკაზე)</label><input id="edShop" value="'+esc(d.shop_name||'')+'"></div>'+
    '<div><label>ტელეფონი</label><input id="edPhone" value="'+esc(d.phone||'')+'"></div>'+
    (function(){var cur=d.product||'ანთრაციტის ბრიკეტი';var o=function(v,t){return '<option value="'+v+'"'+(cur===v?' selected':'')+'>'+t+'</option>';};return '<div style="grid-column:span 2"><label>🏷 მიმართულება (რას ავრცელებს)</label><select id="edProduct">'+o('ანთრაციტის ბრიკეტი','🔥 ბრიკეტები')+o('მუყაოს ყუთები','📦 ყუთები')+o('კუთხოვანი დამცავები','📐 კუთხოვანი')+'</select></div>';})()+
-   '<div><label>რეგიონი</label><select id="edRegion"><option value="">—</option>'+Object.keys(REGIONS).map(r=>'<option'+(r===d.region?' selected':'')+'>'+esc(r)+'</option>').join('')+'</select></div>'+
-   '<div style="grid-column:span 2"><label>მუნიციპალიტეტ(ებ)ი — მონიშნე რამდენიც ფარავს</label><div id="edMunis" style="display:flex;flex-wrap:wrap;gap:6px;max-height:150px;overflow:auto;border:1px solid #e5ece7;border-radius:10px;padding:8px;background:#fff"><span class="muted" style="font-size:12px">ჯერ აირჩიე რეგიონი</span></div></div>'+
+   '<div><label>რეგიონი *</label><select id="edRegion"><option value="">— აირჩიე ჯერ რეგიონი —</option>'+Object.keys(REGIONS).map(r=>'<option'+(r===d.region?' selected':'')+'>'+esc(r)+'</option>').join('')+'</select></div>'+
+   '<div style="grid-column:span 2;background:#fff7e4;border:1.5px solid #f0d98a;border-radius:12px;padding:10px 12px"><label style="font-size:14px;color:#8a6a00">🏛 რომელ მუნიციპალიტეტებს ფარავს — <b>მონიშნე ყველა</b> <span id="edMuniCount" style="color:#0B6B3C;font-weight:900"></span></label><div style="font-size:11.5px;color:#8a6a00;margin:2px 0 7px">↑ ჯერ აირჩიე რეგიონი, მერე მონიშნე ერთი ან რამდენიმე მუნიციპალიტეტი — ესენი გამოჩნდება /contact-ის რუკაზე.</div><div id="edMunis" style="display:flex;flex-wrap:wrap;gap:6px;max-height:170px;overflow:auto;border:1px solid #e5ece7;border-radius:10px;padding:8px;background:#fff"><span class="muted" style="font-size:12px">ჯერ აირჩიე რეგიონი ⬆</span></div></div>'+
    '<div style="grid-column:span 2"><label>მისამართი</label><input id="edAddr" value="'+esc(d.address||'')+'"></div>'+
    '<div><label>გაყიდვის არხი</label><select id="edChannel">'+selOpts(CHANNELS,d.channel)+'</select></div>'+
    '<div><label>ტრანსპორტი</label><select id="edTransport">'+selOpts(TRANSPORTS,d.transport)+'</select></div>'+
@@ -1212,9 +1216,11 @@ function distForm(id){const d=(id?DISTRIBUTORS.find(x=>String(x.id)===String(id)
    '<div id="edMsg" style="margin-top:8px;font-size:12.5px"></div></div>';
   document.body.appendChild(ov);
   const qq=s=>ov.querySelector(s);
+  const updMuniCount=()=>{const c=ov.querySelectorAll('#edMunis input:checked').length;const el=qq('#edMuniCount');if(el)el.textContent=c?('— მონიშნულია '+c):'';};
   const fillM=(reg,selArr)=>{const box=qq('#edMunis');const list=REGIONS[reg]||[];selArr=selArr||[];
-    if(!list.length){box.innerHTML='<span class="muted" style="font-size:12px">ჯერ აირჩიე რეგიონი</span>';return;}
-    box.innerHTML=list.map(m=>'<label style="display:inline-flex;align-items:center;gap:6px;background:#f3faf5;border:1px solid #cfe6d8;border-radius:8px;padding:5px 10px;font-size:12.5px;font-weight:700;cursor:pointer"><input type="checkbox" value="'+esc(m)+'"'+(selArr.indexOf(m)>=0?' checked':'')+' style="width:15px;height:15px"> '+esc(m)+'</label>').join('');};
+    if(!list.length){box.innerHTML='<span class="muted" style="font-size:12px">ჯერ აირჩიე რეგიონი ⬆</span>';updMuniCount();return;}
+    box.innerHTML=list.map(m=>'<label style="display:inline-flex;align-items:center;gap:6px;background:#f3faf5;border:1px solid #cfe6d8;border-radius:8px;padding:5px 10px;font-size:12.5px;font-weight:700;cursor:pointer"><input type="checkbox" value="'+esc(m)+'"'+(selArr.indexOf(m)>=0?' checked':'')+' style="width:15px;height:15px"> '+esc(m)+'</label>').join('');
+    box.querySelectorAll('input').forEach(c=>c.onchange=updMuniCount);updMuniCount();};
   const preMunis=(d.municipalities&&d.municipalities.length)?d.municipalities:(d.municipality?[d.municipality]:[]);
   fillM(d.region||'',preMunis);
   qq('#edRegion').onchange=()=>fillM(qq('#edRegion').value,[]);
@@ -1233,7 +1239,7 @@ function distForm(id){const d=(id?DISTRIBUTORS.find(x=>String(x.id)===String(id)
       }else{r=await sb.from('distributors').update(rec).eq('id',id);
         if(r.error&&/column|schema|cache/i.test(r.error.message||'')){const base=Object.assign({},rec);OPT.forEach(k=>delete base[k]);r=await sb.from('distributors').update(base).eq('id',id);}
       }
-      if(r.error)throw r.error;ov.remove();await loadDistrib();renderDist();}
+      if(r.error)throw r.error;const savedId=isNew?rec.id:id;ov.remove();await loadDistrib();if(typeof onSaved==='function')onSaved(savedId);else renderDist();}
     catch(e){qq('#edMsg').innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+'</span>';b.disabled=false;b.textContent='💾 შენახვა';}};
   if(qq('#edDel'))qq('#edDel').onclick=async()=>{if(!confirm('წავშალო დისტრიბუტორი? (გატანები/რეპორტები დარჩება ბაზაში)'))return;try{const {error}=await sb.from('distributors').delete().eq('id',id);if(error)throw error;ov.remove();await loadDistrib();renderDist();}catch(e){alert('ვერ წაიშალა: '+(e.message||e));}};
 }
