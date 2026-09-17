@@ -787,13 +787,14 @@ async function openSales(){
   renderSales();
 }
 function retailTotals(){let T=0,P=0;(INVOICES||[]).forEach(v=>{T+=(+v.grand||0);P+=(+v.paid||0);});return {T,P,due:T-P,n:(INVOICES||[]).length};}
-function distTotals(){let picked=0,sold=0,soldAmt=0,paid=0,debt=0;(DISTRIBUTORS||[]).forEach(d=>{const a=distAgg(d.id);picked+=a.pickedKg;sold+=a.soldKg;debt+=a.debt;});(DIST_SALES||[]).forEach(s=>{soldAmt+=(+s.amount)||((+s.qty||0)*(+s.price||0));paid+=+s.paid||0;});return {picked,sold,soldAmt,paid,due:soldAmt-paid,debt};}
+function distTotals(){let picked=0,sold=0,taken=0,paid=0,debt=0;(DISTRIBUTORS||[]).forEach(d=>{const a=distAgg(d.id);picked+=a.pickedKg;sold+=a.soldKg;taken+=a.takenVal;paid+=a.paid;debt+=a.debt;});return {picked,sold,soldAmt:taken,taken,paid,due:debt,debt};}
 function comboDashHTML(){const rt=retailTotals(),dt=distTotals();const total=rt.T+dt.soldAmt;const debts=rt.due+dt.debt;
   return '<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2>💼 საერთო დაშბორდი <span class="muted" style="font-weight:600;font-size:12px">· საცალო + დისტრიბუცია</span></h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="dbtn v" id="cmbReport">📈 ანგარიში (PDF)</button><button class="dbtn a" id="cmbXls">📊 საერთო Excel</button><button class="dbtn line" id="cmbPdf">📄 საერთო PDF</button></div></div>'+
-    '<div class="salkpi" style="margin-top:12px"><div class="skpi"><div class="l">🛒 საცალო ₾</div><div class="v" style="font-size:20px">'+money(rt.T)+'</div><div class="muted" style="font-size:10.5px">გადახდ. '+money(rt.P)+'</div></div>'+
-    '<div class="skpi blue"><div class="l">🚚 დისტრიბუცია ₾</div><div class="v" style="font-size:20px;color:#2b6cb0">'+money(dt.soldAmt)+'</div><div class="muted" style="font-size:10.5px">გატანილი '+fmtKg(dt.picked)+'</div></div>'+
+    '<div class="salkpi" style="margin-top:12px;grid-template-columns:repeat(5,1fr)"><div class="skpi"><div class="l">🛒 საცალო ₾</div><div class="v" style="font-size:20px">'+money(rt.T)+'</div><div class="muted" style="font-size:10.5px">გადახდ. '+money(rt.P)+'</div></div>'+
+    '<div class="skpi blue"><div class="l">🚚 დისტრიბუცია ₾</div><div class="v" style="font-size:20px;color:#2b6cb0">'+money(dt.taken)+'</div><div class="muted" style="font-size:10.5px">გატანილი '+fmtKg(dt.picked)+' კგ</div></div>'+
     '<div class="skpi green"><div class="l">💰 სულ გაყიდვები ₾</div><div class="v" style="font-size:20px;color:#0B6B3C">'+money(total)+'</div></div>'+
-    '<div class="skpi red"><div class="l">❗ ვალები სულ ₾</div><div class="v" style="font-size:20px;color:#b00020">'+money(debts)+'</div></div></div></div>';
+    '<div class="skpi red"><div class="l">❗ ვალები სულ ₾</div><div class="v" style="font-size:20px;color:#b00020">'+money(debts)+'</div></div>'+
+    '<div class="skpi" style="border-color:#c9701a"><div class="l">🔥 ანთრაციტი — სულ კგ</div><div class="v" style="font-size:20px;color:#c9701a">'+fmtNum(retailKg()+dt.picked)+'</div><div class="muted" style="font-size:10.5px">საცალო + დისტრიბ.</div></div></div></div>';
 }
 function renderSales(){
   salesEl.innerHTML=
@@ -827,15 +828,17 @@ function distSelectOptions(){return DISTRIBUTORS.map(d=>'<option value="'+esc(d.
 function distAgg(id){
   const pk=DIST_PICKUPS.filter(p=>String(p.distributor_id)===String(id));
   const sl=DIST_SALES.filter(s=>String(s.distributor_id)===String(id));
+  const dd=DISTRIBUTORS.find(d=>String(d.id)===String(id))||{};
+  const dprice=+dd.price||0;
   const pickedKg=pk.reduce((a,p)=>a+(+p.qty||0),0);
   const soldKg=sl.reduce((a,s)=>a+(+s.qty||0),0);
-  const takenVal=pk.reduce((a,p)=>a+((+p.qty||0)*(+p.price||0)),0);
+  // ვალი = გატანილის ღირებულება − გადახდილი (გაყიდვის რეპორტი აღარ არის სავალდებულო)
+  const takenVal=pk.reduce((a,p)=>a+((+p.qty||0)*((+p.price||0)||dprice)),0);
   const avgW=pickedKg>0?takenVal/pickedKg:0;
-  const owedSold=soldKg*avgW;
+  const owedSold=takenVal; // შენარჩუნებულია თავსებადობისთვის
   const revenue=sl.reduce((a,s)=>a+((+s.amount)|| ((+s.qty||0)*(+s.price||0)) ),0);
-  const dd=DISTRIBUTORS.find(d=>String(d.id)===String(id))||{};
   const paid=+dd.paid||0;
-  return {pickedKg,soldKg,remKg:pickedKg-soldKg,takenVal,avgW,owedSold,revenue,paid,debt:Math.max(0,owedSold-paid)};
+  return {pickedKg,soldKg,remKg:pickedKg-soldKg,takenVal,avgW,owedSold,revenue,paid,debt:Math.max(0,takenVal-paid)};
 }
 function fmtKg(n){return (Math.round((+n||0)*100)/100).toLocaleString('ka-GE');}
 function renderDist(){
