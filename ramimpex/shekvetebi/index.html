@@ -1741,13 +1741,14 @@ function printInvoice(inv){
 async function buildInvoicePdf(inv){ // returns {pdf,fname} or null
   const fname=((inv&&inv.no)?(''+inv.no):'ინვოისი').replace(/[\\/:*?"<>|]/g,'-').trim();
   if(!window.html2canvas||!(window.jspdf&&window.jspdf.jsPDF))return null;
+  let illMap={};try{illMap=await invBoxIllPNGs(inv);}catch(e){illMap={};}
   const holder=document.createElement('div');
   holder.style.cssText='position:fixed;left:-99999px;top:0;width:760px;background:#fff;color-scheme:light;z-index:-1';
-  holder.innerHTML=invoiceHTML(inv);
+  holder.innerHTML=invoiceHTML(Object.assign({},inv,{__illMap:illMap}));
   document.body.appendChild(holder);
   const node=holder.firstElementChild||holder;
   try{
-    await new Promise(r=>setTimeout(r,60));
+    await new Promise(r=>setTimeout(r,120));
     const canvas=await window.html2canvas(node,{scale:2,backgroundColor:'#ffffff',useCORS:true,windowWidth:760,logging:false});
     const {jsPDF}=window.jspdf;const pdf=new jsPDF('p','mm','a4');
     const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
@@ -1905,24 +1906,33 @@ async function addDraftToOrders(){
   finally{if(btn){btn.disabled=false;btn.textContent=ob;}}
 }
 // ინვოისის ბოლოს — ყუთის ფორმის ილუსტრაციები ზომებით (რომ კლიენტმა ფორმა გაიგოს)
-function invBoxIllSection(inv){
+// illMap: {key: pngDataURL} — PDF-ისთვის წინასწარ დარენდერებული PNG (html2canvas SVG-ს ვერ ხატავს)
+function invBoxIllSection(inv,illMap){
   if(!window.RAM_boxIllURI)return '';
   const seen={};let cards='';
   (inv.lines||[]).forEach(l=>{const k=boxKind(l);if(!k)return;const key=(l.code||'')+'|'+(l.size||'');if(seen[key])return;seen[key]=1;
-    let uri='';try{uri=window.RAM_boxIllURI({size:l.size,ply:l.ply,kind:k,dims:true,caption:true});}catch(e){return;}
-    if(!uri)return;
-    cards+='<div style="width:232px;border:1px solid #e5ece7;border-radius:10px;padding:8px;background:#fff;text-align:center"><img src="'+uri+'" style="width:100%;height:190px;object-fit:contain"><div style="font-size:12.5px;font-weight:800;color:#0B6B3C;margin-top:3px">'+esc(ruCode(l.code))+'</div>'+(l.name?'<div style="font-size:11px;color:#5C6B62">'+esc(l.name)+'</div>':'')+'</div>';
+    let src=(illMap&&illMap[key])||'';
+    if(!src){try{src=window.RAM_boxIllURI({size:l.size,ply:l.ply,kind:k,dims:true,caption:true});}catch(e){return;}}
+    if(!src)return;
+    cards+='<div style="width:232px;border:1px solid #e5ece7;border-radius:10px;padding:8px;background:#fff;text-align:center"><img src="'+src+'" style="width:216px;height:190px;object-fit:contain"><div style="font-size:12.5px;font-weight:800;color:#0B6B3C;margin-top:3px">'+esc(ruCode(l.code))+'</div>'+(l.name?'<div style="font-size:11px;color:#5C6B62">'+esc(l.name)+'</div>':'')+'</div>';
   });
   if(!cards)return '';
   return '<div style="margin-top:16px"><div style="font-size:14px;font-weight:800;color:#0B6B3C;margin-bottom:8px">📦 ფორმები და ზომები</div><div style="display:flex;flex-wrap:wrap;gap:10px">'+cards+'</div></div>';
 }
+// წინასწარ PNG-ები ინვოისის ყუთებისთვის (PDF-ისთვის)
+function invBoxIllPNGs(inv){return new Promise(resolve=>{
+  if(!window.RAM_boxPNG){resolve({});return;}
+  const seen={},jobs=[];(inv.lines||[]).forEach(l=>{const k=boxKind(l);if(!k)return;const key=(l.code||'')+'|'+(l.size||'');if(seen[key])return;seen[key]=1;jobs.push({key:key,opts:{size:l.size,ply:l.ply,kind:k,dims:true,caption:true}});});
+  if(!jobs.length){resolve({});return;}
+  const map={};let done=0;jobs.forEach(j=>{try{window.RAM_boxPNG(j.opts,2,function(url){map[j.key]=url||'';if(++done===jobs.length)resolve(map);});}catch(e){if(++done===jobs.length)resolve(map);}});
+});}
 function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map((l,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+esc(l.name||'')+((pizzaShapeWord(l.code,l.name))?' · '+esc(pizzaShapeWord(l.code,l.name)):'')+(l.color?' · '+esc(l.color):'')+'</td><td>'+(isBriket(l.code)?'':esc(l.size||''))+(l.tier?(isBriket(l.code)?'':' · ')+esc(briketTierLabel(l.tier)):'')+(l.pack?' · 📦 '+esc(l.pack):'')+(l.ply?' · '+esc(l.ply)+' შრე':'')+(l.brand?' · '+(l.brand==='კი'?'ბრენდირებით':'ბრენდირების გარეშე'):'')+'</td><td style="text-align:right">'+l.qty+'</td><td style="text-align:right">'+money(l.price)+'</td><td style="text-align:right">'+money(l.price*l.qty)+'</td></tr>').join('');
   return '<div style="max-width:720px;margin:0 auto;color:#14261C;padding:20px;font-family:system-ui,\'Noto Sans Georgian\',sans-serif">'+
    '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #0F8A4D;padding-bottom:10px;margin-bottom:14px"><div><div style="font-size:26px;font-weight:800;color:#0B6B3C">RAM IMPEX</div><div style="font-size:12px;color:#5C6B62">შპს „რამ იმპექს" · <b style="color:#0B6B3C">ს/კ: 405565794</b><br>იმპორტი · დისტრიბუცია · 📞 595 533 500 · ✉ info@ramimpex.com.ge · 🌐 ramimpex.com.ge</div></div>'+
    '<div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#0B6B3C">ინვოისი</div><div>№ <b>'+esc(inv.no||"—")+'</b></div><div>თარიღი: '+esc(inv.date||"")+'</div></div></div>'+
    '<div style="margin-bottom:12px;font-size:13px">მყიდველი: <b>'+esc(inv.cust||"—")+'</b>'+(inv.idc?' · ს/კ: '+esc(inv.idc):'')+(inv.phone?' · 📞 '+esc(inv.phone):'')+((ex.email||inv.email)?' · ✉ '+esc(ex.email||inv.email):'')+((ex.addr||inv.addr)?'<br>მისამართი: '+esc(ex.addr||inv.addr):'')+((ex.region||ex.municipality)?'<br>რეგიონი: '+esc([ex.region,ex.municipality].filter(Boolean).join(' · ')):'')+'</div>'+
    '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0F8A4D;color:#fff"><th style="padding:7px">№</th><th style="padding:7px;text-align:left">კოდი</th><th style="padding:7px;text-align:left">დასახელება</th><th style="padding:7px;text-align:left">ზომა</th><th style="padding:7px;text-align:right">რაოდ.</th><th style="padding:7px;text-align:right">ფასი</th><th style="padding:7px;text-align:right">ჯამი</th></tr></thead><tbody>'+rows+'</tbody></table>'+
-   invBoxIllSection(inv)+
+   invBoxIllSection(inv,inv.__illMap)+
    '<div style="max-width:300px;margin-left:auto;margin-top:14px;font-size:14px">'+
    '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>ქვეჯამი'+(ex.vatIncl?' (დღგ-ით)':'')+'</span><b>'+money(inv.sub)+' ₾</b></div>'+
    (ex.vatIncl?'<div style="display:flex;justify-content:space-between;padding:4px 0;color:#5C6B62;font-size:12px"><span>მ.შ. დღგ 18%</span><span>'+money(inv.vat)+' ₾</span></div>':'<div style="display:flex;justify-content:space-between;padding:4px 0;color:#5C6B62;font-size:12px"><span>დღგ</span><span>დღგ-ს გარეშე</span></div>')+
