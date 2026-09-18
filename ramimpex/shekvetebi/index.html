@@ -408,6 +408,8 @@ function calcRow(d,it){
 }
 function effective(d,it){if(it.pfinal!=null&&it.pfinal!==''&&!isNaN(+it.pfinal))return Math.round((+it.pfinal)*100)/100;return calcRow(d,it).price;}
 function byCode(c){for(const d of DIRS){for(const it of d.items){if(it.code===c)return {code:c,name:it.name,size:it.size,color:it.color,mark:it.mark,ply:it.ply||'',dir:d.dir,group:d.name,price:effective(d,it)};}}return null;}
+// ზომის რიცხვითი მნიშვნელობა დასალაგებლად (მოცულობა LxWxH; ცარიელი → ბოლოში)
+function boxSizeVal(s){if(!s)return Infinity;const m=(''+s).match(/\d+(?:[.,]\d+)?/g);if(!m||!m.length)return Infinity;const v=m.map(n=>parseFloat(n.replace(',','.'))).filter(n=>!isNaN(n));if(!v.length)return Infinity;if(v.length>=3)return v[0]*v[1]*v[2];if(v.length===2)return v[0]*v[1];return v[0];}
 /* ანთრაციტის ბრიკეტი — კგ-ის საფეხურებრივი ფასი ინვოისში/შეკვეთაში */
 function isBriket(code){const p=byCode(code);return !!(p&&p.dir==='ანთრაციტის ბრიკეტი');}
 function briketDefaults(){return {t1:1000,t2:21000,p1:2.0,p2:1.8,p3:1.3};}
@@ -541,17 +543,24 @@ function renderCat(){
   function paintRows(){
     const q=($('cq').value||'').toLowerCase().trim();
     let rh='';
-    d.items.forEach((it,idx)=>{
+    let order=d.items.map((_,i)=>i);
+    if(d.dir==='მუყაოს ყუთები')order=order.slice().sort((a,b)=>boxSizeVal(d.items[a].size)-boxSizeVal(d.items[b].size));
+    let pos=0;
+    order.forEach((idx)=>{
+      const it=d.items[idx];
       if(q && ((it.code||'')+' '+(it.size||'')+' '+(it.name||'')).toLowerCase().indexOf(q)<0) return;
+      pos++;
       const c=calcRow(d,it);
       const pre=c.totUsd-c.profit, preGel=pre*(d.params.usdGel||0);
+      const priceKnown=((it.pfinal!=null&&it.pfinal!==''&&+it.pfinal>0)||(+it.rub>0)); // ფასი იდენტიფიცირებულია
+      const trStyle=priceKnown?' style="background:#eefaf1"':''; // ღია მწვანე — ძალიან მკრთალი
       const _brikRow=(d.dir==='ანთრაციტის ბრიკეტი');
       const _addCell=_brikRow?((function(){const b=brikTiers();return '<div style="display:flex;flex-direction:column;gap:3px">'+
         '<button class="btn sm" data-inv="'+idx+'" data-tier="1" title="დაამატე ფიქს. ფასით — '+briketTierLabel(1)+'" style="background:#0B6B3C;color:#fff;font-weight:800;font-size:11px;padding:4px 7px;white-space:nowrap">＋ '+briketTierLabel(1)+' · '+(+b.p1)+'₾</button>'+
         '<button class="btn sm" data-inv="'+idx+'" data-tier="2" title="დაამატე ფიქს. ფასით — '+briketTierLabel(2)+'" style="background:#0B6B3C;color:#fff;font-weight:800;font-size:11px;padding:4px 7px;white-space:nowrap">＋ '+briketTierLabel(2)+' · '+(+b.p2)+'₾</button>'+
         '<button class="btn sm" data-inv="'+idx+'" data-tier="3" title="დაამატე ფიქს. ფასით — '+briketTierLabel(3)+' (ბიგ-ბეგი)" style="background:#7a3b00;color:#fff;font-weight:800;font-size:11px;padding:4px 7px;white-space:nowrap">＋ '+briketTierLabel(3)+' · '+(+b.p3)+'₾</button>'+
         '</div>';})()):('<button class="btn sm" data-inv="'+idx+'" title="დაამატე არჩეულებში — მერე ზემოთ დააჭირე შეკვეთა/შეთავაზება" style="background:#0B6B3C;color:#fff;font-weight:800">＋ დამატება</button>');
-      rh+='<tr><td style="white-space:nowrap">'+_addCell+'</td><td>'+(idx+1)+'</td><td><input value="'+esc(ruCode(it.code))+'" style="width:64px" data-f="code" data-i="'+idx+'"></td>'+
+      rh+='<tr'+trStyle+'><td style="white-space:nowrap">'+_addCell+'</td><td>'+pos+'</td><td><input value="'+esc(ruCode(it.code))+'" style="width:64px" data-f="code" data-i="'+idx+'"></td>'+
         '<td><input value="'+esc(it.name||'')+'" style="min-width:120px" data-f="name" data-i="'+idx+'">'+(it.pack?'<div class="muted" style="font-size:9px;margin-top:1px">📦 '+esc(it.pack)+'</div>':'')+'<input value="'+esc(it.note||'')+'" placeholder="📝 შენიშვნა (მხოლოდ აქ)" title="შიდა შენიშვნა — ჩანს მხოლოდ კატალოგში, ინვოისში არა" style="display:block;min-width:120px;margin-top:3px;background:#FFFDF0;border:1px dashed #E6C200;border-radius:6px;font-size:11px;padding:3px 6px" data-f="note" data-i="'+idx+'"></td>'+
         '<td><input value="'+esc(it.size||'')+'" style="width:82px" data-f="size" data-i="'+idx+'"></td>'+
         '<td><input value="'+esc(it.mark||'')+'" style="width:50px" data-f="mark" data-i="'+idx+'"></td>'+
