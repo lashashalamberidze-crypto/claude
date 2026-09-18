@@ -1794,9 +1794,7 @@ async function makeOfferJPG(){
   const btn=$('iOffer');const ob=btn?btn.textContent:'';if(btn){btn.textContent='⏳ იქმნება…';btn.disabled=true;}
   try{
     try{await document.fonts.ready;}catch(e){}
-    // row thumb: ფოტო თუ აქვს, თუ არა — ავტ. ფორმა (ლეიბლების გარეშე)
-    const imgs=await Promise.all(lines.map(l=>{const ph=pubImg(l.code);return ph?_loadImg(ph):_boxIllImg(l,{dims:false,caption:false});}));
-    // ქვევით — დიდი ფორმები ზომებით (მხოლოდ ყუთებზე, უნიკ. კოდ+ზომა)
+    // ქვევით — დიდი ფორმები ზომებით (მხოლოდ ყუთებზე, უნიკ. კოდ+ზომა) — რიგებში სურათი აღარ
     const illList=[],_seenIll={};lines.forEach(l=>{if(!boxKind(l))return;const key=(l.code||'')+'|'+(l.size||'');if(_seenIll[key])return;_seenIll[key]=1;illList.push(l);});
     const illBig=await Promise.all(illList.map(l=>_boxIllImg(l,{dims:true,caption:true})));
     const cust=($('iCust')&&$('iCust').value.trim())||'';
@@ -1836,22 +1834,21 @@ async function makeOfferJPG(){
       // table header band
       ctx.fillStyle='#0F8A4D';ctx.fillRect(padX,headH,innerW,thH);
       ctx.fillStyle='#ffffff';ctx.font='700 17px '+GEO;
-      ctx.textAlign='left';ctx.fillText('პროდუქტი',148,headH+32);
+      const nameX=padX+8;
+      ctx.textAlign='left';ctx.fillText('პროდუქტი',nameX,headH+32);
       ctx.textAlign='right';ctx.fillText('ერთ. ფასი ₾',priceR,headH+32);ctx.fillText('მინ. რაოდ.',minR,headH+32);
       // rows
-      const nameMax=priceR-148-130;              // სახელის მაქს. სიგანე ფასამდე
+      const nameMax=priceR-nameX-130;              // სახელის მაქს. სიგანე ფასამდე
       lines.forEach((l,i)=>{const y=rowsY+i*rowH;const p=byCode(l.code)||{};
         if(i%2)ctx.fillStyle='#F5F7F6',ctx.fillRect(padX,y,innerW,rowH);
-        // thumb (მხოლოდ თუ სურათი აქვს)
-        if(useImgs&&imgs[i]){ctx.strokeStyle='#E4EBE7';ctx.lineWidth=1;ctx.strokeRect(padX+8,y+(rowH-88)/2,88,88);_contain(ctx,imgs[i],padX+8,y+(rowH-88)/2,88,88);}
-        // name + code + size
+        // name + code + size (რიგში სურათი აღარ — ფორმები ქვევითაა)
         const nm=l.name||p.name||'';const code=ruCode(l.code);
         const sub=[pizzaShapeWord(l.code,nm),(isBriket(l.code)?'':(l.size||p.size||'')),(isBriket(l.code)&&l.tier?briketTierLabel(l.tier):''),(isBriket(l.code)&&l.pack?l.pack:''),(l.ply?l.ply+' შრე':''),(p.color||''),(l.brand?(l.brand==='კი'?'ბრენდირებით':'ბრენდ. გარეშე'):'')].filter(Boolean).join(' · ');
         ctx.textAlign='left';ctx.fillStyle='#14261C';ctx.font='700 21px '+GEO;
         let nmT=nm;while(ctx.measureText(nmT).width>nameMax&&nmT.length>4)nmT=nmT.slice(0,-2);
-        ctx.fillText(nmT+(nmT!==nm?'…':''),148,y+48);
-        ctx.fillStyle='#0B6B3C';ctx.font='700 15px '+GEO;ctx.fillText(code,148,y+74);const codeW=ctx.measureText(code).width;
-        if(sub){const sx=148+codeW+16;const sMax=(148+nameMax)-sx;ctx.fillStyle='#5C6B62';ctx.font='400 15px '+GEO;let sT=sub;while(ctx.measureText(sT).width>sMax&&sT.length>4)sT=sT.slice(0,-2);ctx.fillText(sT+(sT!==sub?'…':''),sx,y+74);}
+        ctx.fillText(nmT+(nmT!==nm?'…':''),nameX,y+48);
+        ctx.fillStyle='#0B6B3C';ctx.font='700 15px '+GEO;ctx.fillText(code,nameX,y+74);const codeW=ctx.measureText(code).width;
+        if(sub){const sx=nameX+codeW+16;const sMax=(nameX+nameMax)-sx;ctx.fillStyle='#5C6B62';ctx.font='400 15px '+GEO;let sT=sub;while(ctx.measureText(sT).width>sMax&&sT.length>4)sT=sT.slice(0,-2);ctx.fillText(sT+(sT!==sub?'…':''),sx,y+74);}
         // price
         ctx.textAlign='right';ctx.fillStyle='#0B6B3C';ctx.font='800 26px '+GEO;ctx.fillText(money(l.price)+' ₾',priceR,y+62);
         // min
@@ -1919,7 +1916,7 @@ function invBoxIllSection(inv){
   if(!cards)return '';
   return '<div style="margin-top:16px"><div style="font-size:14px;font-weight:800;color:#0B6B3C;margin-bottom:8px">📦 ფორმები და ზომები</div><div style="display:flex;flex-wrap:wrap;gap:10px">'+cards+'</div></div>';
 }
-function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map((l,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+((l.img||pubImg(l.code))?'<img src="'+(l.img||pubImg(l.code))+'" style="width:60px;height:60px;object-fit:contain;background:#fff;border:1px solid #eee;border-radius:6px;vertical-align:middle;margin-right:7px">':'')+esc(l.name||'')+((pizzaShapeWord(l.code,l.name))?' · '+esc(pizzaShapeWord(l.code,l.name)):'')+(l.color?' · '+esc(l.color):'')+'</td><td>'+(isBriket(l.code)?'':esc(l.size||''))+(l.tier?(isBriket(l.code)?'':' · ')+esc(briketTierLabel(l.tier)):'')+(l.pack?' · 📦 '+esc(l.pack):'')+(l.ply?' · '+esc(l.ply)+' შრე':'')+(l.brand?' · '+(l.brand==='კი'?'ბრენდირებით':'ბრენდირების გარეშე'):'')+'</td><td style="text-align:right">'+l.qty+'</td><td style="text-align:right">'+money(l.price)+'</td><td style="text-align:right">'+money(l.price*l.qty)+'</td></tr>').join('');
+function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map((l,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+esc(l.name||'')+((pizzaShapeWord(l.code,l.name))?' · '+esc(pizzaShapeWord(l.code,l.name)):'')+(l.color?' · '+esc(l.color):'')+'</td><td>'+(isBriket(l.code)?'':esc(l.size||''))+(l.tier?(isBriket(l.code)?'':' · ')+esc(briketTierLabel(l.tier)):'')+(l.pack?' · 📦 '+esc(l.pack):'')+(l.ply?' · '+esc(l.ply)+' შრე':'')+(l.brand?' · '+(l.brand==='კი'?'ბრენდირებით':'ბრენდირების გარეშე'):'')+'</td><td style="text-align:right">'+l.qty+'</td><td style="text-align:right">'+money(l.price)+'</td><td style="text-align:right">'+money(l.price*l.qty)+'</td></tr>').join('');
   return '<div style="max-width:720px;margin:0 auto;color:#14261C;padding:20px;font-family:system-ui,\'Noto Sans Georgian\',sans-serif">'+
    '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #0F8A4D;padding-bottom:10px;margin-bottom:14px"><div><div style="font-size:26px;font-weight:800;color:#0B6B3C">RAM IMPEX</div><div style="font-size:12px;color:#5C6B62">შპს „რამ იმპექს" · <b style="color:#0B6B3C">ს/კ: 405565794</b><br>იმპორტი · დისტრიბუცია · 📞 595 533 500 · ✉ info@ramimpex.com.ge · 🌐 ramimpex.com.ge</div></div>'+
    '<div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#0B6B3C">ინვოისი</div><div>№ <b>'+esc(inv.no||"—")+'</b></div><div>თარიღი: '+esc(inv.date||"")+'</div></div></div>'+
