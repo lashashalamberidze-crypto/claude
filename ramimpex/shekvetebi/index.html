@@ -95,6 +95,7 @@ td.right,th.right{text-align:right}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="/files/boxill.js"></script>
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/+esm";
 const sb=createClient("https://mhyoqypzacvztwhntsvv.supabase.co","sb_publishable_FXhFmDRboFeOEqxyvwUePg_SgIwnmmM",{auth:{persistSession:true,autoRefreshToken:true}});
@@ -408,6 +409,22 @@ function calcRow(d,it){
 }
 function effective(d,it){if(it.pfinal!=null&&it.pfinal!==''&&!isNaN(+it.pfinal))return Math.round((+it.pfinal)*100)/100;return calcRow(d,it).price;}
 function byCode(c){for(const d of DIRS){for(const it of d.items){if(it.code===c)return {code:c,name:it.name,size:it.size,color:it.color,mark:it.mark,ply:it.ply||'',dir:d.dir,group:d.name,price:effective(d,it)};}}return null;}
+// ყუთის ტიპი ილუსტრაციისთვის (მუყაოს ყუთები/კუთხოვანი; ბრიკეტი → null)
+function boxKind(l){const p=byCode(l&&l.code)||{};const dir=p.dir||l.dir||'';
+  if(dir==='ანთრაციტის ბრიკეტი'||isBriket(l&&l.code))return null;
+  if(dir==='კუთხოვანი დამცავები')return 'corner';
+  const t=(((p.group||'')+' '+(l&&l.name||p.name||''))||'').toLowerCase();
+  const has=function(){for(var i=0;i<arguments.length;i++)if(t.indexOf(arguments[i])>=0)return true;return false;};
+  if(has('ღვინ'))return 'wine';
+  if(has('მილ'))return 'tube';
+  if(has('ტორტ'))return 'cake';
+  if(has('სამედიცინო','ნარჩენ'))return 'medical';
+  if(has('ფეხსაცმ'))return 'shoe';
+  if(has('პიც'))return 'pizza';
+  if(has('გამყოფ','ქვესადგ','ფენა'))return 'sheet';
+  if(has('ლანგ','უჯრ'))return 'tray';
+  return 'box';
+}
 // ზომის რიცხვითი მნიშვნელობა დასალაგებლად (მოცულობა LxWxH; ცარიელი → ბოლოში)
 function boxSizeVal(s){if(!s)return Infinity;const m=(''+s).match(/\d+(?:[.,]\d+)?/g);if(!m||!m.length)return Infinity;const v=m.map(n=>parseFloat(n.replace(',','.'))).filter(n=>!isNaN(n));if(!v.length)return Infinity;if(v.length>=3)return v[0]*v[1]*v[2];if(v.length===2)return v[0]*v[1];return v[0];}
 /* ანთრაციტის ბრიკეტი — კგ-ის საფეხურებრივი ფასი ინვოისში/შეკვეთაში */
@@ -616,6 +633,7 @@ function openProdMedia(d,it,after){
       '<div class="muted" style="font-size:12.5px;margin-bottom:10px">'+esc(it.name||'')+' · '+esc(it.size||'')+'</div>'+
       '<label style="display:flex;gap:8px;align-items:center;font-weight:700;margin-bottom:10px"><input type="checkbox" id="pmVis" '+(published?'checked':'')+' style="width:auto"> 🌐 გამოჩნდეს მომხმარებლის საიტზე (შესაკვეთ ფორმაში)</label>'+
       '<div id="pmGal" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>'+
+      (function(){var k=boxKind(it);if(!k||!window.RAM_boxIll)return '';var svg='';try{svg=window.RAM_boxIll({size:it.size,ply:it.ply,kind:k,dims:true,caption:true});}catch(e){return '';}return '<div style="border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:12px;background:#fdfbf6"><div style="font-size:12.5px;font-weight:800;color:#0B6B3C;margin-bottom:6px">📐 ავტომატური ფორმა ზომებით — ფოტოს ნაცვლად</div><div style="max-width:360px;margin:0 auto">'+svg+'</div><div style="text-align:center;margin-top:8px"><button class="btn sm" id="pmDl" style="background:#0B6B3C;color:#fff">📥 PNG ჩამოტვირთვა</button> <button class="btn sm line" id="pmShare">📤 გაზიარება</button></div></div>';})()+
       '<div class="row" style="display:flex;gap:8px;align-items:center"><button class="btn" id="pmSave">💾 შენახვა</button><button class="btn line" id="pmCancel">დახურვა</button>'+(published?'<button class="btn danger" id="pmUnpub" style="margin-left:auto">საიტიდან მოხსნა</button>':'')+'</div>'+
     '</div>';
     const gal=ovl.querySelector('#pmGal');
@@ -626,6 +644,9 @@ function openProdMedia(d,it,after){
       const fi=document.createElement('input');fi.type='file';fi.accept='image/*';fi.style.display='none';lb.appendChild(fi);
       fi.onchange=()=>{const f=fi.files&&fi.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const mx=1000,sc=Math.min(1,mx/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=im.width*sc;c.height=im.height*sc;c.getContext('2d').drawImage(im,0,0,c.width,c.height);imgs.push(c.toDataURL('image/jpeg',0.72));draw();};im.src=r.result;};r.readAsDataURL(f);};
       gal.appendChild(lb);}
+    const _illOpts=()=>({size:it.size,ply:it.ply,kind:boxKind(it),dims:true,caption:true});
+    const _dl=ovl.querySelector('#pmDl');if(_dl)_dl.onclick=()=>{window.RAM_boxPNG(_illOpts(),2,function(url){if(!url){alert('ვერ შეიქმნა');return;}const a=document.createElement('a');a.href=url;a.download='RAM_'+ruCode(code)+'.png';document.body.appendChild(a);a.click();a.remove();});};
+    const _sh=ovl.querySelector('#pmShare');if(_sh)_sh.onclick=()=>{window.RAM_boxPNG(_illOpts(),2,async function(url){if(!url){alert('ვერ შეიქმნა');return;}try{const blob=await(await fetch(url)).blob();const file=new File([blob],'RAM_'+ruCode(code)+'.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:ruCode(code)});return;}}catch(e){if(e&&e.name==='AbortError')return;}const a=document.createElement('a');a.href=url;a.download='RAM_'+ruCode(code)+'.png';document.body.appendChild(a);a.click();a.remove();});};
     ovl.querySelector('#pmCancel').onclick=()=>ovl.remove();
     ovl.querySelector('#pmSave').onclick=async()=>{const vis=ovl.querySelector('#pmVis').checked;
       try{
@@ -1865,12 +1886,25 @@ async function addDraftToOrders(){
   }catch(e){alert('ვერ დაემატა: '+(e.message||e));}
   finally{if(btn){btn.disabled=false;btn.textContent=ob;}}
 }
+// ინვოისის ბოლოს — ყუთის ფორმის ილუსტრაციები ზომებით (რომ კლიენტმა ფორმა გაიგოს)
+function invBoxIllSection(inv){
+  if(!window.RAM_boxIllURI)return '';
+  const seen={};let cards='';
+  (inv.lines||[]).forEach(l=>{const k=boxKind(l);if(!k)return;const key=(l.code||'')+'|'+(l.size||'');if(seen[key])return;seen[key]=1;
+    let uri='';try{uri=window.RAM_boxIllURI({size:l.size,ply:l.ply,kind:k,dims:true,caption:true});}catch(e){return;}
+    if(!uri)return;
+    cards+='<div style="width:232px;border:1px solid #e5ece7;border-radius:10px;padding:8px;background:#fff;text-align:center"><img src="'+uri+'" style="width:100%;height:190px;object-fit:contain"><div style="font-size:12.5px;font-weight:800;color:#0B6B3C;margin-top:3px">'+esc(ruCode(l.code))+'</div>'+(l.name?'<div style="font-size:11px;color:#5C6B62">'+esc(l.name)+'</div>':'')+'</div>';
+  });
+  if(!cards)return '';
+  return '<div style="margin-top:16px"><div style="font-size:14px;font-weight:800;color:#0B6B3C;margin-bottom:8px">📦 ფორმები და ზომები</div><div style="display:flex;flex-wrap:wrap;gap:10px">'+cards+'</div></div>';
+}
 function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map((l,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(ruCode(l.code))+'</b></td><td>'+((l.img||pubImg(l.code))?'<img src="'+(l.img||pubImg(l.code))+'" style="width:60px;height:60px;object-fit:contain;background:#fff;border:1px solid #eee;border-radius:6px;vertical-align:middle;margin-right:7px">':'')+esc(l.name||'')+((pizzaShapeWord(l.code,l.name))?' · '+esc(pizzaShapeWord(l.code,l.name)):'')+(l.color?' · '+esc(l.color):'')+'</td><td>'+(isBriket(l.code)?'':esc(l.size||''))+(l.tier?(isBriket(l.code)?'':' · ')+esc(briketTierLabel(l.tier)):'')+(l.pack?' · 📦 '+esc(l.pack):'')+(l.ply?' · '+esc(l.ply)+' შრე':'')+(l.brand?' · '+(l.brand==='კი'?'ბრენდირებით':'ბრენდირების გარეშე'):'')+'</td><td style="text-align:right">'+l.qty+'</td><td style="text-align:right">'+money(l.price)+'</td><td style="text-align:right">'+money(l.price*l.qty)+'</td></tr>').join('');
   return '<div style="max-width:720px;margin:0 auto;color:#14261C;padding:20px;font-family:system-ui,\'Noto Sans Georgian\',sans-serif">'+
    '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #0F8A4D;padding-bottom:10px;margin-bottom:14px"><div><div style="font-size:26px;font-weight:800;color:#0B6B3C">RAM IMPEX</div><div style="font-size:12px;color:#5C6B62">შპს „რამ იმპექს" · <b style="color:#0B6B3C">ს/კ: 405565794</b><br>იმპორტი · დისტრიბუცია · 📞 595 533 500 · ✉ info@ramimpex.com.ge · 🌐 ramimpex.com.ge</div></div>'+
    '<div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#0B6B3C">ინვოისი</div><div>№ <b>'+esc(inv.no||"—")+'</b></div><div>თარიღი: '+esc(inv.date||"")+'</div></div></div>'+
    '<div style="margin-bottom:12px;font-size:13px">მყიდველი: <b>'+esc(inv.cust||"—")+'</b>'+(inv.idc?' · ს/კ: '+esc(inv.idc):'')+(inv.phone?' · 📞 '+esc(inv.phone):'')+((ex.email||inv.email)?' · ✉ '+esc(ex.email||inv.email):'')+((ex.addr||inv.addr)?'<br>მისამართი: '+esc(ex.addr||inv.addr):'')+((ex.region||ex.municipality)?'<br>რეგიონი: '+esc([ex.region,ex.municipality].filter(Boolean).join(' · ')):'')+'</div>'+
    '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0F8A4D;color:#fff"><th style="padding:7px">№</th><th style="padding:7px;text-align:left">კოდი</th><th style="padding:7px;text-align:left">დასახელება</th><th style="padding:7px;text-align:left">ზომა</th><th style="padding:7px;text-align:right">რაოდ.</th><th style="padding:7px;text-align:right">ფასი</th><th style="padding:7px;text-align:right">ჯამი</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+   invBoxIllSection(inv)+
    '<div style="max-width:300px;margin-left:auto;margin-top:14px;font-size:14px">'+
    '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>ქვეჯამი'+(ex.vatIncl?' (დღგ-ით)':'')+'</span><b>'+money(inv.sub)+' ₾</b></div>'+
    (ex.vatIncl?'<div style="display:flex;justify-content:space-between;padding:4px 0;color:#5C6B62;font-size:12px"><span>მ.შ. დღგ 18%</span><span>'+money(inv.vat)+' ₾</span></div>':'<div style="display:flex;justify-content:space-between;padding:4px 0;color:#5C6B62;font-size:12px"><span>დღგ</span><span>დღგ-ს გარეშე</span></div>')+

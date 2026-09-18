@@ -402,7 +402,7 @@
         var t=(meta&&meta.t)||deriveType(it.mark)||guessType(it,kd);
         pagesMap[key].rows.push({s:it.code,d:it.size||'—',t:t,n:(meta&&meta.n)||''});
       });
-      var pages=order.map(function(k){var pg=pagesMap[k];return {title:pg.title,img:pg.img||{r:shapeUri(pg.kind)},groups:[{fefco:pg.fefco,rows:pg.rows}]};});
+      var pages=order.map(function(k){var pg=pagesMap[k];var repSize=(pg.rows&&pg.rows[0]&&pg.rows[0].d)||'';var shp=(window.RAM_boxIllURI?window.RAM_boxIllURI({size:repSize,kind:pg.kind,dims:false,caption:false}):shapeUri(pg.kind));return {title:pg.title,img:pg.img||{r:shp},groups:[{fefco:pg.fefco,rows:pg.rows}]};});
       out.push({id:++sid,title:gr.name||('კატეგორია '+sid),pages:pages});
     });
     if(!out.length)return false;
@@ -434,6 +434,7 @@
   buildSecSelect();buildTypeChips();render();updateCart();
 })();
 </script>
+<script src="/files/boxill.js"></script>
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.74.0/+esm";
 try{const sb=createClient("https://mhyoqypzacvztwhntsvv.supabase.co","sb_publishable_FXhFmDRboFeOEqxyvwUePg_SgIwnmmM");
