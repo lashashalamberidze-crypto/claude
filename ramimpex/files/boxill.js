@@ -77,7 +77,7 @@
     var vbx=(minX-pad),vby=(minY-pad),vbw=(maxX-minX+2*pad),vbh=(maxY-minY+2*pad);
     var defs='<defs><marker id="ra" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto"><path d="M1 4.5 L8 1.5 L8 7.5 Z" fill="'+C.dim+'"/></marker></defs>';
     var bgRect=opts.bg===false?'':'<rect x="'+vbx.toFixed(1)+'" y="'+vby.toFixed(1)+'" width="'+vbw.toFixed(1)+'" height="'+vbh.toFixed(1)+'" fill="'+C.bg+'"/>';
-    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+vbx.toFixed(1)+' '+vby.toFixed(1)+' '+vbw.toFixed(1)+' '+vbh.toFixed(1)+'" font-family="Arial,\'Noto Sans Georgian\',sans-serif" style="display:block;width:100%;height:auto">'+defs+bgRect+body+head+'</svg>';
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+vbx.toFixed(1)+' '+vby.toFixed(1)+' '+vbw.toFixed(1)+' '+vbh.toFixed(1)+'" width="'+Math.round(vbw)+'" height="'+Math.round(vbh)+'" font-family="Arial,\'Noto Sans Georgian\',sans-serif" style="display:block;max-width:100%;height:auto">'+defs+bgRect+body+head+'</svg>';
   };
 
   window.RAM_boxIllURI=function(opts){return 'data:image/svg+xml,'+encodeURIComponent(window.RAM_boxIll(opts));};

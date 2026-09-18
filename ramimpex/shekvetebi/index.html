@@ -1785,6 +1785,8 @@ async function shareInvoiceWA(inv){
 }
 /* ===== ფასების შეთავაზება → JPG (ჯამის გარეშე, ერთეული ფასები + მინ. რაოდ.) ===== */
 function _loadImg(src){return new Promise(res=>{if(!src){res(null);return;}const im=new Image();im.onload=()=>res(im);im.onerror=()=>res(null);im.src=src;});}
+function _loadSvgImg(svg){return new Promise(res=>{if(!svg){res(null);return;}const im=new Image();im.onload=()=>res(im);im.onerror=()=>res(null);im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);});}
+function _boxIllImg(l,opts){if(!window.RAM_boxIll)return Promise.resolve(null);const k=boxKind(l);if(!k)return Promise.resolve(null);let svg='';try{svg=window.RAM_boxIll(Object.assign({size:l.size,ply:l.ply,kind:k,bg:false},opts||{}));}catch(e){return Promise.resolve(null);}return _loadSvgImg(svg);}
 function _wrap(ctx,text,maxW){const words=(''+(text||'')).split(/\s+/);const out=[];let cur='';for(const w of words){const t=cur?cur+' '+w:w;if(ctx.measureText(t).width>maxW&&cur){out.push(cur);cur=w;}else cur=t;}if(cur)out.push(cur);return out.length?out:[''];}
 function _contain(ctx,img,x,y,bw,bh){if(!img||!img.width)return;const r=Math.min(bw/img.width,bh/img.height);const w=img.width*r,h=img.height*r;ctx.drawImage(img,x+(bw-w)/2,y+(bh-h)/2,w,h);}
 async function makeOfferJPG(){
@@ -1792,7 +1794,11 @@ async function makeOfferJPG(){
   const btn=$('iOffer');const ob=btn?btn.textContent:'';if(btn){btn.textContent='⏳ იქმნება…';btn.disabled=true;}
   try{
     try{await document.fonts.ready;}catch(e){}
-    const imgs=await Promise.all(lines.map(l=>_loadImg(pubImg(l.code))));
+    // row thumb: ფოტო თუ აქვს, თუ არა — ავტ. ფორმა (ლეიბლების გარეშე)
+    const imgs=await Promise.all(lines.map(l=>{const ph=pubImg(l.code);return ph?_loadImg(ph):_boxIllImg(l,{dims:false,caption:false});}));
+    // ქვევით — დიდი ფორმები ზომებით (მხოლოდ ყუთებზე, უნიკ. კოდ+ზომა)
+    const illList=[],_seenIll={};lines.forEach(l=>{if(!boxKind(l))return;const key=(l.code||'')+'|'+(l.size||'');if(_seenIll[key])return;_seenIll[key]=1;illList.push(l);});
+    const illBig=await Promise.all(illList.map(l=>_boxIllImg(l,{dims:true,caption:true})));
     const cust=($('iCust')&&$('iCust').value.trim())||'';
     const dateStr=($('iDate')&&$('iDate').value)||todayStr();
     const noStr=($('iNo')&&$('iNo').value.trim())||'';
@@ -1808,7 +1814,11 @@ async function makeOfferJPG(){
     const rowsY=headH+thH;
     const noteBlockH=note?(24+34+noteW.length*30+18):0;
     const footerH=76;
-    const H=Math.ceil(rowsY+lines.length*rowH+noteBlockH+footerH);
+    // ფორმების სექცია
+    const illGap=16, illCols=3, illCardW=(innerW-illGap*(illCols-1))/illCols, illImgH=188, illCardH=illImgH+54;
+    const illRows=illList.length?Math.ceil(illList.length/illCols):0;
+    const illSectionH=illList.length?(48+illRows*illCardH+(illRows-1)*illGap+12):0;
+    const H=Math.ceil(rowsY+lines.length*rowH+noteBlockH+illSectionH+footerH);
     function paint(useImgs){
       const cv=document.createElement('canvas');cv.width=W*SC;cv.height=H*SC;
       const ctx=cv.getContext('2d');ctx.scale(SC,SC);ctx.textBaseline='alphabetic';
@@ -1853,6 +1863,17 @@ async function makeOfferJPG(){
       let yb=rowsY+lines.length*rowH;
       if(note){yb+=24;ctx.textAlign='left';ctx.fillStyle='#6d3ad6';ctx.font='800 18px '+GEO;ctx.fillText('შენიშვნა:',padX,yb+16);
         ctx.fillStyle='#14261C';ctx.font='400 22px '+GEO;noteW.forEach((ln,k)=>ctx.fillText(ln,padX,yb+16+34+k*30));yb+=34+noteW.length*30+18;}
+      // ფორმები და ზომები
+      if(useImgs&&illList.length){
+        ctx.textAlign='left';ctx.fillStyle='#0B6B3C';ctx.font='800 22px '+GEO;ctx.fillText('ფორმები და ზომები',padX,yb+30);
+        const gy0=yb+48;
+        illList.forEach((l,i)=>{const r=Math.floor(i/illCols),c=i%illCols;const cx0=padX+c*(illCardW+illGap),cy0=gy0+r*(illCardH+illGap);
+          ctx.fillStyle='#FDFBF6';ctx.strokeStyle='#E4EBE7';ctx.lineWidth=1.5;ctx.beginPath();ctx.rect(cx0,cy0,illCardW,illCardH);ctx.fill();ctx.stroke();
+          if(illBig[i])_contain(ctx,illBig[i],cx0+8,cy0+8,illCardW-16,illImgH);
+          ctx.textAlign='center';ctx.fillStyle='#0B6B3C';ctx.font='800 18px '+GEO;ctx.fillText(ruCode(l.code),cx0+illCardW/2,cy0+illImgH+28);
+          const nm2=l.name||'';if(nm2){ctx.fillStyle='#5C6B62';ctx.font='400 14px '+GEO;let t2=nm2;while(ctx.measureText(t2).width>illCardW-16&&t2.length>4)t2=t2.slice(0,-2);ctx.fillText(t2+(t2!==nm2?'…':''),cx0+illCardW/2,cy0+illImgH+46);}
+        });
+      }
       // footer
       ctx.fillStyle='#0F8A4D';ctx.fillRect(padX,H-footerH+14,innerW,3);
       ctx.textAlign='center';ctx.fillStyle='#5C6B62';ctx.font='600 16px '+GEO;
