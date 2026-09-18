@@ -535,7 +535,7 @@ function renderCat(){
   if(groupsInDir.length>1)groupsInDir.forEach(x=>{const b=document.createElement('button');b.className='subtab'+(x.id===curGid?' on':'');b.innerHTML=esc(x.name)+' · '+x.items.length;b.onclick=()=>{curGid=x.id;renderCat();};st.appendChild(b);});
   const d=g,body=$('catBody');let h='';
   const showPly=(d.dir==='მუყაოს ყუთები');const plyTh=showPly?'<th title="რამდენ შრიანი">შრე</th>':'';
-  h+='<div class="card parambox"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2>⚙️ პარამეტრები — '+esc(d.name)+'</h2><span class="saveflag" id="saveflag"></span></div><div class="prow" style="margin-top:8px">';
+  h+='<div class="card parambox"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2>⚙️ პარამეტრები — '+esc(d.name)+'</h2><button class="btn sm" id="applyAllParams" style="background:#6d3ad6;color:#fff;margin:0" title="ამ პარამეტრებით შეიცვალოს ამ მიმართულების ყველა კატეგორია">📋 გავრცელდეს ყველა კატეგორიაზე</button><span class="saveflag" id="saveflag"></span></div><div class="muted" style="font-size:11.5px;margin-top:6px">💡 შეავსე ერთხელ და დააჭირე „📋 გავრცელდეს ყველა კატეგორიაზე" — იგივე პარამეტრები დაეყენება ამ მიმართულების ყველა ტაბს.</div><div class="prow" style="margin-top:8px">';
   PORDER.forEach(k=>{if(d.params[k]==null)return;const step=(k==='vat'||k==='profit'||k==='step'||k==='usdGel')?'0.01':'1';
     h+='<div class="f"><label>'+PLABEL[k]+'</label><input type="number" step="'+step+'" value="'+d.params[k]+'" data-pk="'+k+'"></div>';});
   h+='</div><div class="muted" style="margin-top:8px;font-size:12px">ტრანსპ. 1 ცალზე = ტრანსპ.სულ ÷ თითო ყუთის <b>„კონტ. ცალი"</b> (თუ ცარიელია — ნაგულისხმევი '+d.params.container+') · ლოგიკა: RUB÷'+d.params.usdRub+(d.hasSetka?' + სეტკა(₽÷'+d.params.usdRub+')':'')+' + ტრანსპ → +დღგ → +მოგება → ×'+d.params.usdGel+' → მრგვალდება '+d.params.step+'-ზე</div>'+
@@ -613,6 +613,7 @@ function renderCat(){
   paintRows();
   body.querySelectorAll('input[data-pk]').forEach(inp=>inp.onchange=()=>{d.params[inp.dataset.pk]=parseFloat(inp.value)||0;saveDirs();renderCat();});
   body.querySelectorAll('input[data-brik]').forEach(inp=>inp.onchange=()=>{if(!d.brik)d.brik=briketDefaults();d.brik[inp.dataset.brik]=parseFloat(inp.value)||0;saveDirs();renderCat();});
+  const ap=body.querySelector('#applyAllParams');if(ap)ap.onclick=()=>{const grps=DIRS.filter(g=>g.dir===d.dir);if(grps.length<2){alert('ამ მიმართულებაში სხვა კატეგორია არ არის.');return;}if(!confirm('„'+d.name+'"-ის პარამეტრებით შეიცვალოს ამ მიმართულების ('+d.dir+') ყველა '+grps.length+' კატეგორია?\n(თითო კატეგორიის ინდივიდუალური „კონტ. ცალი" ცხრილში დარჩება.)'))return;let n=0;grps.forEach(g=>{if(g.id!==d.id){g.params=JSON.parse(JSON.stringify(d.params));if(d.brik)g.brik=JSON.parse(JSON.stringify(d.brik));n++;}});saveDirs();renderCat();alert('✔ პარამეტრები გავრცელდა '+n+' კატეგორიაზე.');};
   const add=body.querySelector('[data-add]');if(add)add.onclick=()=>{const pre=(d.tag||'X').toUpperCase();let n=1;const has=c=>d.items.some(x=>x.code===c);while(has(pre+(n<10?'0':'')+n))n++;d.items.push({code:pre+(n<10?'0':'')+n,name:'ახალი პროდუქტი',size:'',rub:0});saveDirs();paintRows();};
   updateCartBar();
   const cartGo=body.querySelector('#cartGo');if(cartGo)cartGo.onclick=()=>{const b=document.querySelector('#tabbar [data-t="invoice"]');if(b)b.click();};
