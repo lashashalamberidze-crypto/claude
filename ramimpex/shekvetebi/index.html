@@ -87,9 +87,9 @@ td.right,th.right{text-align:right}
 </style></head>
 <body>
 <div class="top"><div><div class="lg">RAM IMPEX</div><div class="su">ადმინ პანელი</div></div>
- <div class="tabbar" id="tabbar" style="display:none"><button class="tb on" data-t="orders">📋 შეკვეთები</button><button class="tb" data-t="catalog">💰 კატალოგი & ფასები</button><button class="tb" data-t="invoice">🧾 ინვოისი</button><button class="tb" data-t="sales">📊 გაყიდვები</button><button class="tb" data-t="expenses">💸 ხარჯები</button><button class="tb" data-t="booklets">📄 ბუკლეტები</button></div>
+ <div class="tabbar" id="tabbar" style="display:none"><button class="tb on" data-t="orders">📋 შეკვეთები</button><button class="tb" data-t="catalog">💰 კატალოგი & ფასები</button><button class="tb" data-t="invoice">🧾 ინვოისი</button><button class="tb" data-t="bookings">🚚 ჯავშნები</button><button class="tb" data-t="sales">📊 გაყიდვები</button><button class="tb" data-t="expenses">💸 ხარჯები</button><button class="tb" data-t="booklets">📄 ბუკლეტები</button></div>
  <button class="btn line sm" id="logout" style="display:none">გასვლა</button></div>
-<div class="wrap"><div id="app"><div class="empty">იტვირთება…</div></div><div id="cat" style="display:none"></div><div id="inv" style="display:none"></div><div id="sales" style="display:none"></div><div id="sal" style="display:none"></div><div id="buk" style="display:none"></div></div>
+<div class="wrap"><div id="app"><div class="empty">იტვირთება…</div></div><div id="cat" style="display:none"></div><div id="inv" style="display:none"></div><div id="book" style="display:none"></div><div id="sales" style="display:none"></div><div id="sal" style="display:none"></div><div id="buk" style="display:none"></div></div>
 <div class="ov" id="ov"><img id="ovImg" src=""></div>
 <div id="printArea"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -104,7 +104,7 @@ const IMG_BY_CODE={"PL-1418": "/img/r3.jpg", "PL-1068": "/img/r3.jpg", "PL-1134"
 const PIZZA_IMG={"PZC01": "/files/pizza_corner_kraft.png", "PZC02": "/files/pizza_corner.png", "PZC03": "/files/pizza_corner_kraft.png", "PZC04": "/files/pizza_corner.png", "PZC05": "/files/pizza_corner_kraft.png", "PZC06": "/files/pizza_corner.png", "PZC07": "/files/pizza_corner_kraft.png", "PZC08": "/files/pizza_corner.png", "PZC09": "/files/pizza_corner_kraft.png", "PZC10": "/files/pizza_corner.png", "PZC11": "/files/pizza_corner_kraft.png", "PZC12": "/files/pizza_corner.png", "PZC13": "/files/pizza_corner_kraft.png", "PZC14": "/files/pizza_corner.png", "PZC15": "/files/pizza_corner_kraft.png", "PZC16": "/files/pizza_corner.png", "PZC17": "/files/pizza_corner_kraft.png", "PZC18": "/files/pizza_corner.png", "PZC19": "/files/pizza_corner_kraft.png", "PZC20": "/files/pizza_corner.png", "PZS01": "/files/pizza_square_kraft.png", "PZS02": "/files/pizza_square.png", "PZS03": "/files/pizza_square_kraft.png", "PZS04": "/files/pizza_square.png", "PZS05": "/files/pizza_square_kraft.png", "PZS06": "/files/pizza_square.png", "PZS07": "/files/pizza_square_kraft.png", "PZS08": "/files/pizza_square.png", "PZS09": "/files/pizza_square_kraft.png", "PZS10": "/files/pizza_square.png", "PZS11": "/files/pizza_square_kraft.png", "PZS12": "/files/pizza_square.png", "PZS13": "/files/pizza_square_kraft.png", "PZS14": "/files/pizza_square.png", "PZS15": "/files/pizza_square_kraft.png", "PZS16": "/files/pizza_square.png", "PZS17": "/files/pizza_square_kraft.png", "PZS18": "/files/pizza_square.png", "PZR01": "/files/pizza_round_kraft.png", "PZR02": "/files/pizza_round.png", "PZR03": "/files/pizza_round_kraft.png", "PZR04": "/files/pizza_round.png", "PZR05": "/files/pizza_round_kraft.png", "PZR06": "/files/pizza_round.png"};    // პიცის ფორმა-სურათი კოდით (კვადრატი/მოჭრილკუთხა/მრგვალი × კრაფტი/თეთრი) — გადაწონის
 const PIZZA_SHAPE={PZS:'კვადრატული',PZC:'მოჭრილკუთხებიანი',PZR:'მრგვალი'};
 function pizzaShapeWord(code,name){const m=(''+(code||'')).match(/^(PZ[SCR])/);if(!m)return '';const w=PIZZA_SHAPE[m[1]]||'';if(!w)return '';return (name||'').indexOf(w)>=0?'':w;}
-const $=id=>document.getElementById(id), app=$('app'), catEl=$('cat'), invEl=$('inv'), salesEl=$('sales'), salEl=$('sal'), bukEl=$('buk');
+const $=id=>document.getElementById(id), app=$('app'), catEl=$('cat'), invEl=$('inv'), salesEl=$('sales'), salEl=$('sal'), bukEl=$('buk'), bookEl=$('book');
 const esc=s=>(s==null?'':(''+s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const money=v=>(Math.round((+v||0)*100)/100).toFixed(2);
 const DIR_RU={boxes:'Картонные ящики',edge:'Уголковые защиты',anth:'Антрацитовый брикет',contact:'Сообщение с сайта','':'—'};
@@ -126,10 +126,12 @@ $('tabbar').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{
   app.style.display=t==='orders'?'':'none';
   catEl.style.display=t==='catalog'?'':'none';
   invEl.style.display=t==='invoice'?'':'none';
+  bookEl.style.display=t==='bookings'?'':'none';
   salesEl.style.display=t==='sales'?'':'none';
   salEl.style.display=t==='expenses'?'':'none';
   bukEl.style.display=t==='booklets'?'':'none';
   if(t==='catalog'){if(!catEl.dataset.ready)loadCatalog();}
+  if(t==='bookings')openBookings();
   if(t==='invoice')openInvoice();
   if(t==='sales')openSales();
   if(t==='expenses')openExpenses();
@@ -245,7 +247,7 @@ function invProdOptions(dirFilter){let h='<option value="">— აირჩი�
   else{const pr=effective(d,it);inner+='<option value="'+esc(it.code)+'">'+esc(ruCode(it.code))+' · '+esc(it.name||'')+(it.size?' · '+esc(it.size):'')+' — '+money(pr)+' ₾</option>';}
   });if(inner)h+='<optgroup label="'+esc(d.name)+'">'+inner+'</optgroup>';});return h;}
 function loginView(msg){
- $('tabbar').style.display='none';$('logout').style.display='none';catEl.style.display='none';invEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';app.style.display='';
+ $('tabbar').style.display='none';$('logout').style.display='none';catEl.style.display='none';invEl.style.display='none';bookEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';app.style.display='';
  app.innerHTML='<div class="card" style="max-width:380px;margin:40px auto"><h2 style="margin-bottom:6px">შესვლა</h2><p class="muted" style="font-size:12px;margin-bottom:8px">ადმინის ელ.ფოსტა/პაროლი (Supabase)</p>'+(msg?'<p style="color:#c62828;font-size:12px;margin-bottom:6px">'+esc(msg)+'</p>':'')+'<label>ელ. ფოსტა</label><input id="em" type="email"><label>პაროლი</label><input id="pw" type="password"><button class="btn" id="lg" style="width:100%;margin-top:12px">შესვლა</button></div>';
  $('lg').onclick=async()=>{$('lg').disabled=true;$('lg').textContent='...';const {error}=await sb.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});if(error){loginView(error.message);}else{onLogin();}};
 }
@@ -1906,6 +1908,197 @@ async function addDraftToOrders(){
   }catch(e){alert('ვერ დაემატა: '+(e.message||e));}
   finally{if(btn){btn.disabled=false;btn.textContent=ob;}}
 }
+/* ======================= 🚚 ჯავშნები / მიწოდების სია ======================= */
+let BOOKINGS=[], BOOK_ERR='', bookDist='', bookSettingsOpen=false;
+const RT_WEST=[
+ {name:'იმერეთი — ახლო',munis:[{m:'ვანი',km:20},{m:'ხონი',km:18},{m:'ქუთაისი',km:25},{m:'წყალტუბო',km:30},{m:'ბაღდათი',km:35}]},
+ {name:'იმერეთი-შორი + რაჭა',munis:[{m:'ზესტაფონი',km:45},{m:'თერჯოლა',km:50},{m:'ტყიბული',km:55},{m:'ხარაგაული',km:65},{m:'ჭიათურა',km:70},{m:'საჩხერე',km:90},{m:'ცაგერი',km:90},{m:'ამბროლაური',km:110},{m:'ონი',km:140},{m:'ლენტეხი',km:130}]},
+ {name:'სამეგრელო + სვანეთი',munis:[{m:'აბაშა',km:20},{m:'სენაკი',km:25},{m:'მარტვილი',km:35},{m:'ფოთი',km:45},{m:'ხობი',km:45},{m:'ჩხოროწყუ',km:50},{m:'ზუგდიდი',km:60},{m:'წალენჯიხა',km:70},{m:'მესტია',km:190}]},
+ {name:'გურია — აჭარა',munis:[{m:'ლანჩხუთი',km:35},{m:'ჩოხატაური',km:50},{m:'ოზურგეთი',km:55},{m:'ქობულეთი',km:95},{m:'ბათუმი',km:120},{m:'ხელვაჩაური',km:125}]}
+];
+const RT_EAST=[
+ {name:'კახეთი-1',munis:[{m:'საგარეჯო',km:45},{m:'სიღნაღი',km:110},{m:'დედოფლისწყარო',km:150},{m:'ლაგოდეხი',km:150}]},
+ {name:'კახეთი-2',munis:[{m:'ახმეტა',km:95},{m:'თელავი',km:85},{m:'ყვარელი',km:110},{m:'გურჯაანი',km:95}]},
+ {name:'სამცხე-ჯავახეთი',munis:[{m:'ბორჯომი',km:130},{m:'ახალციხე',km:170},{m:'ადიგენი',km:180},{m:'ასპინძა',km:185},{m:'ახალქალაქი',km:200},{m:'ნინოწმინდა',km:215}]},
+ {name:'შიდა ქართლი',munis:[{m:'კასპი',km:40},{m:'გორი',km:55},{m:'ქარელი',km:75},{m:'ხაშური',km:90}]},
+ {name:'ქვემო ქართლი',munis:[{m:'რუსთავი',km:50},{m:'გარდაბანი',km:60},{m:'მარნეული',km:70},{m:'თეთრიწყარო',km:75},{m:'ბოლნისი',km:110},{m:'წალკა',km:130},{m:'დმანისი',km:140}]}
+];
+const BOOK_MIN_KG=500;
+function bDist(){return DISTRIBUTORS.find(x=>String(x.id)===String(bookDist))||null;}
+function bset(d){const s=Object.assign({base:'',l100:12,fuelP:3.8,costKg:1.8,retailKg:2.2,iban:'',bank:'',payinfo:'',routes:null},(d&&d.bset)||{});
+  if(!s.base)s.base=/კახეთ|ქართლ|სამცხ|მცხეთ|თბილის/.test((d&&d.region)||'')?'ნატახტარი':'სამტრედია';
+  if(!s.routes||!s.routes.length)s.routes=JSON.parse(JSON.stringify(RT_WEST.concat(RT_EAST)));
+  return s;}
+function fuelPerKm(s){return ((+s.l100||0)/100)*(+s.fuelP||0);}
+function muniKm(s,route,muni){const r=(s.routes||[]).find(x=>x.name===route);if(!r)return 0;const m=(r.munis||[]).find(x=>x.m===muni);return m?(+m.km||0):0;}
+function muniTransport(s,route,muni){return Math.ceil(muniKm(s,route,muni)*2*fuelPerKm(s));}      // იქ-დაბრ., ↑ მთელ ₾
+function buyersInMuni(id,route,muni){return BOOKINGS.filter(b=>String(b.distributor_id)===String(id)&&b.route===route&&b.municipality===muni).length;}
+function bookTransport(b,s){const n=buyersInMuni(b.distributor_id,b.route,b.municipality)||1;return Math.ceil(muniTransport(s,b.route,b.municipality)/n);}   // 1 მყიდველზე ↑ მთელ ₾
+function bookKg(b){return (+b.qty||0)*(+b.bag_size||10);}
+function bookProduct(b,s){return bookKg(b)*(+s.retailKg||0);}
+function bookCost(b,s){return bookKg(b)*(+s.costKg||0);}          // დისტრიბუტორის ვალი
+function bookTotal(b,s){return bookProduct(b,s)+bookTransport(b,s);}
+async function loadBookings(){try{const {data,error}=await sb.from('bookings').select('*').order('created_at',{ascending:true});if(error)throw error;BOOKINGS=data||[];BOOK_ERR='';}catch(e){BOOKINGS=[];BOOK_ERR=e.message||(''+e);}}
+async function openBookings(){bookEl.innerHTML='<div class="empty">იტვირთება…</div>';try{await loadDistrib();}catch(e){}await loadBookings();renderBookings();}
+function bookDistOptions(){return '<option value="">— აირჩიე დისტრიბუტორი —</option>'+(DISTRIBUTORS||[]).map(d=>'<option value="'+esc(d.id)+'"'+(String(bookDist)===String(d.id)?' selected':'')+'>'+esc(d.name||d.shop_name||'—')+(d.region?' — '+esc(d.region):'')+'</option>').join('');}
+function renderBookings(){
+  if(BOOK_ERR&&/relation|table|schema|not exist|bookings/i.test(BOOK_ERR)){bookEl.innerHTML='<div class="card"><h2>🚚 ჯავშნები</h2><p style="color:#c62828;font-weight:700">ცხრილი „bookings" ვერ მოიძებნა.</p><p class="muted" style="font-size:13px">გაუშვი <b>sql/bookings.sql</b> Supabase → SQL Editor-ში, შემდეგ განაახლე გვერდი.</p></div>';return;}
+  let h='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2>🚚 ჯავშნები — მიწოდების სია</h2></div>'+
+    '<div class="row"><div style="flex:2"><label>დისტრიბუტორი</label><select id="bkDist">'+bookDistOptions()+'</select></div>'+
+    '<div style="flex:0 0 auto;align-self:flex-end"><button class="btn line" id="bkSet">⚙️ პარამეტრები</button></div></div></div>';
+  if(!bookDist){h+='<div class="card"><div class="empty">აირჩიე დისტრიბუტორი — შემდეგ დაამატე მყიდველები მიმართულებაზე.</div></div>';bookEl.innerHTML=h;wireBookHead();return;}
+  const d=bDist(),s=bset(d);
+  if(bookSettingsOpen)h+=bookSettingsHTML(d,s);
+  // დამატების ფორმა
+  h+='<div class="card"><h2>➕ მყიდველის დამატება</h2>'+
+     '<div class="row"><div style="flex:2"><label>მიმართულება</label><select id="bkRoute">'+(s.routes||[]).map(r=>'<option>'+esc(r.name)+'</option>').join('')+'</select></div>'+
+     '<div style="flex:2"><label>მუნიციპალიტეტი</label><select id="bkMuni"></select></div>'+
+     '<div style="flex:2"><label>სახელი, გვარი</label><input id="bkName" placeholder="მყიდველი"></div></div>'+
+     '<div class="row" style="margin-top:8px"><div><label>ტელეფონი</label><input id="bkPhone" placeholder="5xx.."></div>'+
+     '<div style="flex:2"><label>მისამართი (არჩ.)</label><input id="bkAddr" placeholder="სოფელი/ქუჩა"></div>'+
+     '<div style="flex:0 0 120px"><label>ტომრის ზომა</label><select id="bkBag"><option value="10">10 კგ</option><option value="40">40 კგ</option></select></div>'+
+     '<div style="flex:0 0 110px"><label>რაოდ. (ტომ.)</label><input id="bkQty" type="number" min="1" value="1"></div>'+
+     '<div style="flex:0 0 auto;align-self:flex-end"><button class="btn" id="bkAdd">＋ დამატება</button></div></div>'+
+     '<div id="bkMsg" style="margin-top:6px;font-size:12.5px"></div></div>';
+  // მარშრუტების სია
+  const mine=BOOKINGS.filter(b=>String(b.distributor_id)===String(bookDist));
+  let debtProd=0,paidSum=0;
+  mine.forEach(b=>{debtProd+=bookCost(b,s);paidSum+=(+b.paid_amount||0);});
+  h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2>📋 სია — '+esc(d.name||d.shop_name||'')+'</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn a" id="bkXls">📊 Excel</button><button class="btn line" id="bkPdf">📄 PDF</button></div></div>'+
+     '<div class="salkpi" style="margin-top:10px;grid-template-columns:repeat(4,1fr)"><div class="skpi"><div class="l">მყიდველები</div><div class="v">'+mine.length+'</div></div><div class="skpi blue"><div class="l">დისტრ. ვალი (1.8₾)</div><div class="v" style="color:#2b6cb0">'+money(debtProd)+'</div></div><div class="skpi green"><div class="l">ჩარიცხული</div><div class="v" style="color:#0B6B3C">'+money(paidSum)+'</div></div><div class="skpi red"><div class="l">დარჩ. ვალი</div><div class="v" style="color:#b00020">'+money(Math.max(0,debtProd-paidSum))+'</div></div></div>';
+  if(!mine.length)h+='<div class="empty">ჯერ მყიდველი არ არის. დაამატე ზემოთ.</div>';
+  else{
+    (s.routes||[]).forEach(r=>{
+      const rb=mine.filter(b=>b.route===r.name);if(!rb.length)return;
+      const kg=rb.reduce((a,b)=>a+bookKg(b),0);const pct=Math.min(100,Math.round(kg/BOOK_MIN_KG*100));const full=kg>=BOOK_MIN_KG;
+      h+='<div style="margin-top:14px;border:1px solid #e5ece7;border-radius:12px;overflow:hidden">'+
+        '<div style="background:'+(full?'#eaf7ef':'#f6f8f7')+';padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><b style="color:#0B6B3C">🛣 '+esc(r.name)+'</b>'+
+        '<span style="font-size:12.5px;font-weight:800;color:'+(full?'#0B6B3C':'#8a6a00')+'">'+fmtNum(kg)+' / '+BOOK_MIN_KG+' კგ '+(full?'✅ წასაღებია':'⏳ ივსება')+'</span></div>'+
+        '<div style="height:7px;background:#e5ece7"><div style="height:100%;width:'+pct+'%;background:'+(full?'#0B6B3C':'#e6a700')+'"></div></div>'+
+        '<div class="scroll"><table><thead><tr><th>მუნიციპ.</th><th>მყიდველი</th><th class="right">ტომ.</th><th class="right">კგ</th><th class="right">პროდ. ₾</th><th class="right">ტრანსპ. ₾</th><th class="right">სულ ₾</th><th>სტატ.</th><th>დოკ.</th><th></th></tr></thead><tbody>';
+      rb.sort((a,b)=>(a.municipality||'').localeCompare(b.municipality||'')).forEach(b=>{
+        const docs=b.docs||{};const hasDoc=!!docs.transfer;
+        h+='<tr><td>'+esc(b.municipality||'')+'</td><td><b>'+esc(b.cust_name||'—')+'</b>'+(b.phone?'<div class="muted" style="font-size:10px">📞 '+esc(b.phone)+'</div>':'')+(b.address?'<div class="muted" style="font-size:10px">📍 '+esc(b.address)+'</div>':'')+'</td>'+
+          '<td class="right">'+fmtNum(b.qty)+' × '+fmtNum(b.bag_size)+'</td><td class="right">'+fmtNum(bookKg(b))+'</td>'+
+          '<td class="right">'+money(bookProduct(b,s))+'</td><td class="right">'+money(bookTransport(b,s))+'</td><td class="right"><b>'+money(bookTotal(b,s))+'</b></td>'+
+          '<td style="white-space:nowrap">'+(b.paid?'<span class="dtag ok">💰</span>':'')+(b.delivered?'<span class="dtag ok">🚚</span>':'')+((!b.paid&&!b.delivered)?'<span class="muted" style="font-size:10px">—</span>':'')+'</td>'+
+          '<td>'+(hasDoc?'<a class="dchip ok" href="'+esc(docs.transfer)+'" target="_blank" title="გადარიცხვა">💳</a>':'<span class="dchip" title="არ არის">💳</span>')+'</td>'+
+          '<td class="right" style="white-space:nowrap"><button class="smini" data-bkwa="'+esc(b.id)+'" title="WhatsApp მყიდველს" style="background:#25D366;color:#fff">📱</button> <button class="smini" data-bkpaid="'+esc(b.id)+'" title="ჩარიცხვის მონიშვნა"'+(b.paid?' style="background:#0B6B3C;color:#fff"':'')+'>💰</button> <button class="smini" data-bkdlv="'+esc(b.id)+'" title="მიტანის მონიშვნა"'+(b.delivered?' style="background:#0B6B3C;color:#fff"':'')+'>🚚</button> <button class="smini" data-bkdoc="'+esc(b.id)+'" title="გადარიცხვის დოკ.">📎</button> <button class="smini" data-bked="'+esc(b.id)+'" title="რედაქტ.">✏</button> <button class="smini danger" data-bkdel="'+esc(b.id)+'" title="წაშლა">🗑</button></td></tr>';
+      });
+      h+='</tbody></table></div></div>';
+    });
+  }
+  h+='</div>';
+  bookEl.innerHTML=h;
+  wireBookHead();wireBookForm(d,s);wireBookRows(d,s);
+}
+function bookSettingsHTML(d,s){
+  let rt='';(s.routes||[]).forEach((r,ri)=>{rt+='<div style="border:1px solid #e5ece7;border-radius:10px;padding:8px 10px;margin-top:8px"><div style="display:flex;justify-content:space-between;align-items:center"><input value="'+esc(r.name)+'" data-rn="'+ri+'" style="font-weight:800;color:#0B6B3C;border:none;background:transparent;min-width:160px"><button class="smini danger" data-rdel="'+ri+'">🗑 მარშრ.</button></div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">'+(r.munis||[]).map((m,mi)=>'<span style="display:inline-flex;align-items:center;gap:4px;background:#f3faf5;border:1px solid #cfe6d8;border-radius:8px;padding:3px 6px;font-size:12px"><input value="'+esc(m.m)+'" data-rm="'+ri+'_'+mi+'" style="width:96px;border:none;background:transparent;font-weight:700"><input type="number" value="'+(+m.km||0)+'" data-rk="'+ri+'_'+mi+'" style="width:52px;border:none;background:#fff;border-radius:5px" title="კმ">კმ<button class="smini danger" data-mdel="'+ri+'_'+mi+'" style="padding:0 5px">✕</button></span>').join('')+'<button class="smini" data-madd="'+ri+'">＋ მუნიციპ.</button></div></div>';});
+  return '<div class="card" style="border:1.5px solid #6d3ad6"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="color:#6d3ad6">⚙️ პარამეტრები — '+esc(d.name||'')+'</h2><button class="smini" id="bkSetClose">✕</button></div>'+
+    '<div class="row"><div><label>საწყისი წერტილი</label><input id="stBase" value="'+esc(s.base)+'"></div><div><label>საწვავი ლ/100კმ</label><input id="stL100" type="number" step="0.1" value="'+(+s.l100||0)+'"></div><div><label>საწვავის ფასი ₾/ლ</label><input id="stFuel" type="number" step="0.01" value="'+(+s.fuelP||0)+'"></div></div>'+
+    '<div class="row" style="margin-top:8px"><div><label>თვითღირ. ₾/კგ (ვალი)</label><input id="stCost" type="number" step="0.01" value="'+(+s.costKg||0)+'"></div><div><label>მყიდველზე ₾/კგ</label><input id="stRetail" type="number" step="0.01" value="'+(+s.retailKg||0)+'"></div></div>'+
+    '<div class="row" style="margin-top:8px"><div style="flex:2"><label>ანგარიში / IBAN (მყიდველს ეგზავნება)</label><input id="stIban" value="'+esc(s.iban||'')+'" placeholder="GE..."></div><div style="flex:2"><label>მიმღები / ბანკი</label><input id="stBank" value="'+esc(s.bank||'')+'" placeholder="სახელი / ბანკი"></div></div>'+
+    '<div class="muted" style="font-size:11.5px;margin-top:6px">⛽ 1 კმ = ('+(+s.l100||0)+'÷100)×'+(+s.fuelP||0)+' = <b>'+fuelPerKm(s).toFixed(3)+' ₾</b> · ტრანსპ. = მანძილი×2×'+fuelPerKm(s).toFixed(3)+' ÷ მყიდველთა რაოდ. (↑მთელ ₾)</div>'+
+    '<div style="margin-top:10px"><b style="color:#6d3ad6;font-size:14px">🛣 მარშრუტები & კმ</b>'+rt+'<button class="btn line sm" id="stAddRoute" style="margin-top:8px">＋ ახალი მარშრუტი</button></div>'+
+    '<div class="row" style="margin-top:12px"><button class="btn" id="stSave" style="background:#6d3ad6">💾 პარამეტრების შენახვა</button></div><div id="stMsg" style="margin-top:6px;font-size:12.5px"></div></div>';
+}
+function wireBookHead(){
+  if($('bkDist'))$('bkDist').onchange=()=>{bookDist=$('bkDist').value;bookSettingsOpen=false;renderBookings();};
+  if($('bkSet'))$('bkSet').onclick=()=>{bookSettingsOpen=!bookSettingsOpen;renderBookings();};
+}
+function fillBkMuni(){const s=bset(bDist());const rn=$('bkRoute')?$('bkRoute').value:'';const r=(s.routes||[]).find(x=>x.name===rn);if($('bkMuni'))$('bkMuni').innerHTML=(r&&r.munis?r.munis:[]).map(m=>'<option>'+esc(m.m)+'</option>').join('');}
+function wireBookForm(d,s){
+  if($('bkSetClose'))$('bkSetClose').onclick=()=>{bookSettingsOpen=false;renderBookings();};
+  if($('stSave'))$('stSave').onclick=()=>saveBookSettings(d);
+  if($('stAddRoute'))$('stAddRoute').onclick=()=>{const cur=collectSettings(d,s);cur.routes.push({name:'ახალი მარშრუტი',munis:[]});d.bset=cur;renderBookings();};
+  bookEl.querySelectorAll('[data-madd]').forEach(b=>b.onclick=()=>{const cur=collectSettings(d,s);const ri=+b.dataset.madd;cur.routes[ri].munis.push({m:'ახალი',km:0});d.bset=cur;renderBookings();});
+  bookEl.querySelectorAll('[data-rdel]').forEach(b=>b.onclick=()=>{const cur=collectSettings(d,s);cur.routes.splice(+b.dataset.rdel,1);d.bset=cur;renderBookings();});
+  bookEl.querySelectorAll('[data-mdel]').forEach(b=>b.onclick=()=>{const cur=collectSettings(d,s);const p=b.dataset.mdel.split('_');cur.routes[+p[0]].munis.splice(+p[1],1);d.bset=cur;renderBookings();});
+  if($('bkRoute'))$('bkRoute').onchange=fillBkMuni;fillBkMuni();
+  if($('bkAdd'))$('bkAdd').onclick=()=>addBooking(d);
+  if($('bkXls'))$('bkXls').onclick=bookExportXls;
+  if($('bkPdf'))$('bkPdf').onclick=bookDownloadPDF;
+}
+function collectSettings(d,s){ // წაიკითხავს ფორმის მიმდინარე მნიშვნელობებს (რომ არ დაიკარგოს რედაქტ.)
+  const cur=JSON.parse(JSON.stringify(s));
+  if($('stBase'))cur.base=$('stBase').value.trim();
+  if($('stL100'))cur.l100=parseFloat($('stL100').value)||0;
+  if($('stFuel'))cur.fuelP=parseFloat($('stFuel').value)||0;
+  if($('stCost'))cur.costKg=parseFloat($('stCost').value)||0;
+  if($('stRetail'))cur.retailKg=parseFloat($('stRetail').value)||0;
+  if($('stIban'))cur.iban=$('stIban').value.trim();
+  if($('stBank'))cur.bank=$('stBank').value.trim();
+  bookEl.querySelectorAll('[data-rn]').forEach(inp=>{const ri=+inp.dataset.rn;if(cur.routes[ri])cur.routes[ri].name=inp.value;});
+  bookEl.querySelectorAll('[data-rm]').forEach(inp=>{const p=inp.dataset.rm.split('_');if(cur.routes[+p[0]]&&cur.routes[+p[0]].munis[+p[1]])cur.routes[+p[0]].munis[+p[1]].m=inp.value;});
+  bookEl.querySelectorAll('[data-rk]').forEach(inp=>{const p=inp.dataset.rk.split('_');if(cur.routes[+p[0]]&&cur.routes[+p[0]].munis[+p[1]])cur.routes[+p[0]].munis[+p[1]].km=parseFloat(inp.value)||0;});
+  return cur;
+}
+async function saveBookSettings(d){const cur=collectSettings(d,bset(d));const b=$('stSave');if(b){b.disabled=true;b.textContent='⏳…';}
+  try{const r=await sbUpdateSafe('distributors',{bset:cur},d.id,['bset']);if(r.error)throw r.error;d.bset=cur;if($('stMsg'))$('stMsg').innerHTML='<span style="color:#0B6B3C">✔ შენახულია</span>';bookSettingsOpen=false;renderBookings();}
+  catch(e){if($('stMsg'))$('stMsg').innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+'</span>';if(b){b.disabled=false;b.textContent='💾 პარამეტრების შენახვა';}}
+}
+async function addBooking(d){
+  const name=($('bkName')&&$('bkName').value.trim())||'';if(!name){$('bkMsg').innerHTML='<span style="color:#b00020">ჩაწერე სახელი</span>';return;}
+  const rec={id:'bk'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),distributor_id:d.id,route:$('bkRoute').value,municipality:$('bkMuni').value,cust_name:name,phone:($('bkPhone')?$('bkPhone').value.trim():''),address:($('bkAddr')?$('bkAddr').value.trim():''),bag_size:parseFloat($('bkBag').value)||10,qty:parseFloat($('bkQty').value)||1,paid:false,delivered:false,paid_amount:0};
+  const b=$('bkAdd');if(b){b.disabled=true;b.textContent='⏳…';}
+  try{const r=await sbInsertSafe('bookings',rec,['docs','contact2','note']);if(r.error)throw r.error;await loadBookings();renderBookings();}
+  catch(e){$('bkMsg').innerHTML='<span style="color:#b00020">ვერ დაემატა: '+esc(e.message||e)+'</span>';if(b){b.disabled=false;b.textContent='＋ დამატება';}}
+}
+function wireBookRows(d,s){
+  bookEl.querySelectorAll('[data-bkpaid]').forEach(b=>b.onclick=()=>bookTogglePaid(b.dataset.bkpaid,d,s));
+  bookEl.querySelectorAll('[data-bkdlv]').forEach(b=>b.onclick=()=>bookToggle(b.dataset.bkdlv,'delivered'));
+  bookEl.querySelectorAll('[data-bkdel]').forEach(b=>b.onclick=()=>bookDelete(b.dataset.bkdel));
+  bookEl.querySelectorAll('[data-bked]').forEach(b=>b.onclick=()=>bookEdit(b.dataset.bked));
+  bookEl.querySelectorAll('[data-bkwa]').forEach(b=>b.onclick=()=>bookWA(b.dataset.bkwa,d,s));
+  bookEl.querySelectorAll('[data-bkdoc]').forEach(b=>b.onclick=()=>bookDoc(b.dataset.bkdoc));
+}
+function bookFind(id){return BOOKINGS.find(x=>String(x.id)===String(id));}
+async function bookToggle(id,field){const b=bookFind(id);if(!b)return;const v=!b[field];try{const {error}=await sb.from('bookings').update({[field]:v}).eq('id',id);if(error)throw error;b[field]=v;renderBookings();}catch(e){alert('ვერ განახლდა: '+(e.message||e));}}
+async function bookTogglePaid(id,d,s){const b=bookFind(id);if(!b)return;const v=!b.paid;const amt=v?bookCost(b,s):0;try{const {error}=await sb.from('bookings').update({paid:v,paid_amount:amt}).eq('id',id);if(error)throw error;b.paid=v;b.paid_amount=amt;renderBookings();}catch(e){alert('ვერ განახლდა: '+(e.message||e));}}
+async function bookDelete(id){if(!confirm('წავშალო ეს ჯავშანი?'))return;try{const {error}=await sb.from('bookings').delete().eq('id',id);if(error)throw error;await loadBookings();renderBookings();}catch(e){alert('ვერ წაიშალა: '+(e.message||e));}}
+function bookEdit(id){const b=bookFind(id);if(!b)return;const d=bDist(),s=bset(d);
+  const nm=prompt('სახელი გვარი:',b.cust_name||'');if(nm===null)return;
+  const ph=prompt('ტელეფონი:',b.phone||'');if(ph===null)return;
+  const ad=prompt('მისამართი:',b.address||'');if(ad===null)return;
+  const q=prompt('რაოდენობა (ტომარა):',b.qty||1);if(q===null)return;
+  const bg=prompt('ტომრის ზომა (10 ან 40):',b.bag_size||10);if(bg===null)return;
+  sb.from('bookings').update({cust_name:nm.trim(),phone:ph.trim(),address:ad.trim(),qty:parseFloat(q)||b.qty,bag_size:parseFloat(bg)||b.bag_size}).eq('id',id).then(async r=>{if(r.error){alert('ვერ განახლდა: '+r.error.message);return;}await loadBookings();renderBookings();});
+}
+function bookWA(id,d,s){const b=bookFind(id);if(!b)return;const ph=waPhone(b.phone);if(!ph){alert('ტელეფონი არ არის.');return;}
+  const prod=bookProduct(b,s),tr=bookTransport(b,s),tot=bookTotal(b,s);
+  const pay=[s.iban?('ანგარიში: '+s.iban):'',s.bank?('მიმღები: '+s.bank):''].filter(Boolean).join('\n');
+  const msg='გამარჯობა'+(b.cust_name?' '+b.cust_name:'')+'! 🔥 RAM IMPEX — ანთრაციტის ბრიკეტი.\n'+
+    '📦 '+fmtNum(b.qty)+' × '+fmtNum(b.bag_size)+'კგ ('+fmtNum(bookKg(b))+' კგ) — '+esc(b.municipality||'')+'\n'+
+    'პროდუქცია: '+money(prod)+' ₾\n🚚 ტრანსპორტი: '+money(tr)+' ₾\n💰 სულ ჩასარიცხი: '+money(tot)+' ₾'+
+    (pay?('\n\n💳 გადახდა:\n'+pay):'')+'\n\n📞 '+((d&&d.phone)||'595 533 500');
+  window.open('https://wa.me/'+ph+'?text='+encodeURIComponent(msg),'_blank');
+}
+async function bookDoc(id){const b=bookFind(id);if(!b)return;const fi=document.createElement('input');fi.type='file';fi.accept='image/*,application/pdf';
+  fi.onchange=async()=>{const f=fi.files&&fi.files[0];if(!f)return;try{const path='bookings/'+id+'/'+Date.now()+'_'+f.name.replace(/[^\w.\-]/g,'_');const up=await sb.storage.from('sale-docs').upload(path,f,{upsert:true});if(up.error)throw up.error;const {data}=sb.storage.from('sale-docs').getPublicUrl(path);const docs=Object.assign({},b.docs||{});docs.transfer=data.publicUrl;const {error}=await sb.from('bookings').update({docs:docs}).eq('id',id);if(error)throw error;b.docs=docs;renderBookings();}catch(e){alert('ვერ აიტვირთა: '+(e.message||e));}};
+  fi.click();
+}
+function bookListReportHTML(d,s){
+  const mine=BOOKINGS.filter(b=>String(b.distributor_id)===String(bookDist));
+  let rows='',n=0,tKg=0,tTot=0;
+  (s.routes||[]).forEach(r=>{const rb=mine.filter(b=>b.route===r.name);if(!rb.length)return;
+    rows+='<tr><td colspan="8" style="background:#eaf7ef;font-weight:800;color:#0B6B3C;padding:6px 8px">🛣 '+esc(r.name)+'</td></tr>';
+    rb.sort((a,b)=>(a.municipality||'').localeCompare(b.municipality||'')).forEach(b=>{n++;tKg+=bookKg(b);tTot+=bookTotal(b,s);
+      rows+='<tr><td style="padding:5px 8px;border:1px solid #ddd">'+n+'</td><td style="padding:5px 8px;border:1px solid #ddd">'+esc(b.municipality||'')+'</td><td style="padding:5px 8px;border:1px solid #ddd">'+esc(b.cust_name||'')+(b.phone?' · '+esc(b.phone):'')+(b.address?'<br>'+esc(b.address):'')+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right">'+fmtNum(b.qty)+'×'+fmtNum(b.bag_size)+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right">'+fmtNum(bookKg(b))+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right">'+money(bookTransport(b,s))+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right;font-weight:700">'+money(bookTotal(b,s))+'</td><td style="padding:5px 8px;border:1px solid #ddd">'+(b.paid?'✔ ჩარიცხ.':'')+(b.delivered?' ✔ მიტ.':'')+'</td></tr>';});
+  });
+  return '<div style="font-family:\'Noto Sans Georgian\',sans-serif;padding:22px;color:#14261C;background:#fff;width:940px">'+
+    '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #0F8A4D;padding-bottom:8px;margin-bottom:12px"><div><div style="font-size:22px;font-weight:800;color:#0B6B3C">RAM IMPEX</div><div style="font-size:12px;color:#5C6B62">მიწოდების სია — '+esc(d.name||'')+' · '+esc(s.base)+'</div></div><div style="text-align:right;font-size:12px;color:#5C6B62">'+todayStr()+'</div></div>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:6px">#</th><th style="padding:6px">მუნიციპ.</th><th style="padding:6px">მყიდველი</th><th style="padding:6px">ტომ.</th><th style="padding:6px">კგ</th><th style="padding:6px">ტრანსპ.₾</th><th style="padding:6px">სულ₾</th><th style="padding:6px">სტატ.</th></tr></thead><tbody>'+(rows||'<tr><td colspan="8" style="padding:8px">—</td></tr>')+'</tbody></table>'+
+    '<div style="margin-top:10px;font-size:13px;font-weight:800;color:#0B6B3C">სულ: '+n+' მყიდველი · '+fmtNum(tKg)+' კგ · '+money(tTot)+' ₾</div>'+
+    '<div style="margin-top:8px;font-size:11px;color:#5C6B62">RAM IMPEX · 595 533 500 · ramimpex.com.ge</div></div>';
+}
+function bookDownloadPDF(){const d=bDist(),s=bset(d);htmlToPDF(bookListReportHTML(d,s),'RAM_IMPEX_javshani_'+((d&&d.name)||'')+'_'+todayStr());}
+function bookExportXls(){if(!window.XLSX||!window.XLSX.utils){alert('Excel ვერ ჩაიტვირთა.');return;}const d=bDist(),s=bset(d);const XLSX=window.XLSX;const wbk=XLSX.utils.book_new();
+  const mine=BOOKINGS.filter(b=>String(b.distributor_id)===String(bookDist));
+  const rows=mine.map((b,i)=>[i+1,b.route||'',b.municipality||'',b.cust_name||'',b.phone||'',b.address||'',+b.qty||0,+b.bag_size||0,bookKg(b),bookProduct(b,s),bookTransport(b,s),bookTotal(b,s),(b.paid?'ჩარიცხ.':''),(b.delivered?'მიტან.':'')]);
+  xlsSheet(XLSX,wbk,'ჯავშნები','RAM IMPEX — მიწოდების სია — '+((d&&d.name)||''),['#','მარშრუტი','მუნიციპ.','მყიდველი','ტელ.','მისამართი','ტომ.','ზომა','კგ','პროდ.₾','ტრანსპ.₾','სულ₾','ჩარიცხ.','მიტან.'],rows,[6,7,8,9,10,11]);
+  try{XLSX.writeFile(wbk,'RAM_IMPEX_javshani_'+todayStr()+'.xlsx');}catch(e){alert('ვერ შეიქმნა: '+(e.message||e));}}
+/* ===== end ჯავშნები ===== */
 // ინვოისის ბოლოს — ყუთის ფორმის ილუსტრაციები ზომებით (რომ კლიენტმა ფორმა გაიგოს)
 // illMap: {key: pngDataURL} — PDF-ისთვის წინასწარ დარენდერებული PNG (html2canvas SVG-ს ვერ ხატავს)
 function invBoxIllSection(inv,illMap){
