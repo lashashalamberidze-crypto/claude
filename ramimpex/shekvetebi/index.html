@@ -812,8 +812,10 @@ let DISTRIBUTORS=[], DIST_PICKUPS=[], DIST_SALES=[], DIST_ERR='', distReportFor=
 const DIST_DOCS=[['waybill','ზედნადები','🚚'],['payment','გადარიცხვა','💳'],['receipt','შეტანის ქვითარი','🧾']];
 function gotoTab(t){const b=$('tabbar')&&$('tabbar').querySelector('[data-t="'+t+'"]');if(b)b.click();}
 // უსაფრთხო insert/update — თუ არასავალდებულო სვეტი ჯერ არ არსებობს ბაზაში, ავტ. ამოიღებს და თავიდან სცდის
-async function sbInsertSafe(table,rec,optKeys){let r=await sb.from(table).insert(rec);if(r.error&&/column|schema|cache/i.test(r.error.message||'')){const base=Object.assign({},rec);(optKeys||[]).forEach(k=>delete base[k]);r=await sb.from(table).insert(base);}return r;}
-async function sbUpdateSafe(table,rec,id,optKeys){let r=await sb.from(table).update(rec).eq('id',id);if(r.error&&/column|schema|cache/i.test(r.error.message||'')){const base=Object.assign({},rec);(optKeys||[]).forEach(k=>delete base[k]);r=await sb.from(table).update(base).eq('id',id);}return r;}
+// მხოლოდ პრობლემურ (არარსებულ) სვეტს ვაგდებთ, სათითაოდ — დანარჩენი ინახება
+function _dropOffending(cur,optKeys,msg){let dropped=null;(optKeys||[]).forEach(k=>{if(dropped)return;if((k in cur)&&msg.indexOf("'"+k+"'")>=0){delete cur[k];dropped=k;}});if(!dropped){const rem=(optKeys||[]).find(k=>k in cur);if(rem){delete cur[rem];dropped=rem;}}return dropped;}
+async function sbInsertSafe(table,rec,optKeys){let cur=Object.assign({},rec);for(let i=0;i<10;i++){const r=await sb.from(table).insert(cur);if(!r.error)return r;const msg=r.error.message||'';if(!/column|schema|cache/i.test(msg))return r;if(!_dropOffending(cur,optKeys,msg))return r;}return await sb.from(table).insert(cur);}
+async function sbUpdateSafe(table,rec,id,optKeys){let cur=Object.assign({},rec);for(let i=0;i<10;i++){const r=await sb.from(table).update(cur).eq('id',id);if(!r.error)return r;const msg=r.error.message||'';if(!/column|schema|cache/i.test(msg))return r;if(!_dropOffending(cur,optKeys,msg))return r;}return await sb.from(table).update(cur).eq('id',id);}
 async function loadDistrib(){
   DIST_ERR='';
   try{const {data,error}=await sb.from('distributors').select('*').order('created_at',{ascending:false});if(error)throw error;DISTRIBUTORS=data||[];}
