@@ -1982,15 +1982,17 @@ function renderBookings(){
   else{
     (s.routes||[]).forEach(r=>{
       const rb=mine.filter(b=>b.route===r.name);if(!rb.length)return;
-      const kg=rb.reduce((a,b)=>a+bookKg(b),0);const pct=Math.min(100,Math.round(kg/BOOK_MIN_KG*100));const full=kg>=BOOK_MIN_KG;
+      const kg=rb.filter(b=>!b.delivered).reduce((a,b)=>a+bookKg(b),0);   // მიტანილი აღარ ითვლება — ათვლა თავიდან
+      const dlvKg=rb.filter(b=>b.delivered).reduce((a,b)=>a+bookKg(b),0);
+      const pct=Math.min(100,Math.round(kg/BOOK_MIN_KG*100));const full=kg>=BOOK_MIN_KG;
       h+='<div style="margin-top:14px;border:1px solid #e5ece7;border-radius:12px;overflow:hidden">'+
         '<div style="background:'+(full?'#eaf7ef':'#f6f8f7')+';padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><b style="color:#0B6B3C">🛣 '+esc(r.name)+' <span style="font-weight:600;color:#5c6b62;font-size:12px">🏭 '+esc(routeOrigin(r,s))+'-დან</span></b>'+
-        '<span style="font-size:12.5px;font-weight:800;color:'+(full?'#0B6B3C':'#8a6a00')+'">'+fmtNum(kg)+' / '+BOOK_MIN_KG+' კგ '+(full?'✅ წასაღებია':'⏳ ივსება')+'</span></div>'+
+        '<span style="font-size:12.5px;font-weight:800;color:'+(full?'#0B6B3C':'#8a6a00')+'">'+fmtNum(kg)+' / '+BOOK_MIN_KG+' კგ '+(full?'✅ წასაღებია':'⏳ ივსება')+(dlvKg>0?' <span style="color:#0B6B3C;font-weight:700">· 🚚 მიტანილი '+fmtNum(dlvKg)+' კგ</span>':'')+'</span></div>'+
         '<div style="height:7px;background:#e5ece7"><div style="height:100%;width:'+pct+'%;background:'+(full?'#0B6B3C':'#e6a700')+'"></div></div>'+
         '<div class="scroll"><table><thead><tr><th>მუნიციპ.</th><th>მყიდველი</th><th class="right">ტომ.</th><th class="right">კგ</th><th class="right">ერთ.₾</th><th class="right">პროდ. ₾</th><th class="right">ტრანსპ. ₾</th><th class="right">სულ ₾</th><th>სტატ.</th><th>დოკ.</th><th></th></tr></thead><tbody>';
-      rb.sort((a,b)=>(a.municipality||'').localeCompare(b.municipality||'')).forEach(b=>{
+      rb.sort((a,b)=>((a.delivered?1:0)-(b.delivered?1:0))||(a.municipality||'').localeCompare(b.municipality||'')).forEach(b=>{
         const docs=b.docs||{};const hasDoc=!!docs.transfer;
-        h+='<tr><td>'+esc(b.municipality||'')+'</td><td><b>'+esc(b.cust_name||'—')+'</b>'+(b.phone?'<div class="muted" style="font-size:10px">📞 '+esc(b.phone)+'</div>':'')+(b.contact2?'<div class="muted" style="font-size:10px">📱 '+esc(b.contact2)+'</div>':'')+(b.address?'<div class="muted" style="font-size:10px">📍 '+esc(b.address)+'</div>':'')+'</td>'+
+        h+='<tr'+(b.delivered?' style="opacity:.5;background:#eef4f0"':'')+'><td>'+esc(b.municipality||'')+'</td><td><b>'+esc(b.cust_name||'—')+'</b>'+(b.delivered?' <span style="font-size:10px;color:#0B6B3C;font-weight:800">✅ მიტანილი</span>':'')+(b.phone?'<div class="muted" style="font-size:10px">📞 '+esc(b.phone)+'</div>':'')+(b.contact2?'<div class="muted" style="font-size:10px">📱 '+esc(b.contact2)+'</div>':'')+(b.address?'<div class="muted" style="font-size:10px">📍 '+esc(b.address)+'</div>':'')+'</td>'+
           '<td class="right">'+fmtNum(b.qty)+' × '+fmtNum(b.bag_size)+'</td><td class="right">'+fmtNum(bookKg(b))+'</td>'+
           '<td class="right" title="1 ტომრის გასაყიდი ფასი">'+money(bookUnitPrice(b,s))+'</td><td class="right">'+money(bookProduct(b,s))+'</td><td class="right">'+money(bookTransport(b,s))+'</td><td class="right"><b>'+money(bookTotal(b,s))+'</b></td>'+
           '<td style="white-space:nowrap">'+(b.paid?'<span class="dtag ok">💰</span>':'')+(b.delivered?'<span class="dtag ok">🚚</span>':'')+((!b.paid&&!b.delivered)?'<span class="muted" style="font-size:10px">—</span>':'')+'</td>'+
