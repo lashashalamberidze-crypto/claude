@@ -2126,7 +2126,7 @@ async function bookDoc(id){const b=bookFind(id);if(!b)return;const fi=document.c
   fi.click();
 }
 function bookListReportHTML(d,s){
-  const mine=BOOKINGS.filter(b=>String(b.distributor_id)===String(bookDist));
+  const mine=BOOKINGS.filter(b=>String(b.distributor_id)===String(bookDist)&&!b.delivered);   // მიწოდების სია — მხოლოდ მიუტანელი
   let rows='',n=0,tKg=0,tTot=0,tPaid=0,tDue=0;const origins={};
   (s.routes||[]).forEach(r=>{const rb=mine.filter(b=>b.route===r.name);if(!rb.length)return;
     origins[routeOrigin(r,s)]=1;
@@ -2147,9 +2147,10 @@ function bookListReportHTML(d,s){
     '<div style="margin-top:4px;font-size:12.5px;font-weight:700"><span style="color:#0B6B3C">✅ გადახდილი: '+money(tPaid)+' ₾</span> &nbsp;·&nbsp; <span style="color:#b00020">🔴 გადასახდელი: '+money(tDue)+' ₾</span></div>'+
     '<div style="margin-top:8px;font-size:11px;color:#5C6B62">RAM IMPEX · 595 533 500 · ramimpex.com.ge</div></div>';
 }
-function bookDownloadPDF(){const d=bDist(),s=bset(d);htmlToPDF(bookListReportHTML(d,s),'RAM_IMPEX_javshani_'+((d&&d.name)||'')+'_'+todayStr());}
+function bookDownloadPDF(){const d=bDist(),s=bset(d);if(!BOOKINGS.some(b=>String(b.distributor_id)===String(bookDist)&&!b.delivered)){alert('მიუტანელი მყიდველი არ არის — ყველა უკვე მიტანილია.');return;}htmlToPDF(bookListReportHTML(d,s),'RAM_IMPEX_javshani_'+((d&&d.name)||'')+'_'+todayStr());}
 function bookExportXls(){if(!window.XLSX||!window.XLSX.utils){alert('Excel ვერ ჩაიტვირთა.');return;}const d=bDist(),s=bset(d);const XLSX=window.XLSX;const wbk=XLSX.utils.book_new();
-  const mine=BOOKINGS.filter(b=>String(b.distributor_id)===String(bookDist));
+  const mine=BOOKINGS.filter(b=>String(b.distributor_id)===String(bookDist)&&!b.delivered);   // მიწოდების სია — მხოლოდ მიუტანელი
+  if(!mine.length){alert('მიუტანელი მყიდველი არ არის — ყველა უკვე მიტანილია.');return;}
   const rows=mine.map((b,i)=>[i+1,b.route||'',b.municipality||'',b.cust_name||'',b.phone||'',b.address||'',+b.qty||0,+b.bag_size||0,bookUnitPrice(b,s),bookKg(b),bookProduct(b,s),bookTransport(b,s),bookTotal(b,s),(b.paid?'ჩარიცხ.':''),(b.delivered?'მიტან.':'')]);
   xlsSheet(XLSX,wbk,'ჯავშნები','RAM IMPEX — მიწოდების სია — '+((d&&d.name)||''),['#','მარშრუტი','მუნიციპ.','მყიდველი','ტელ.','მისამართი','ტომ.','ზომა','ერთ.₾','კგ','პროდ.₾','ტრანსპ.₾','სულ₾','ჩარიცხ.','მიტან.'],rows,[6,7,8,9,10,11,12]);
   try{XLSX.writeFile(wbk,'RAM_IMPEX_javshani_'+todayStr()+'.xlsx');}catch(e){alert('ვერ შეიქმნა: '+(e.message||e));}}
