@@ -1031,7 +1031,7 @@ function monthTrend(){const m={};
   (INVOICES||[]).forEach(v=>{const d=(v.date||'').slice(0,7);if(!d)return;m[d]=(m[d]||0)+(+v.grand||0);});
   (DIST_SALES||[]).forEach(s=>{const d=(s.date||'').slice(0,7);if(!d)return;m[d]=(m[d]||0)+((+s.amount)||((+s.qty||0)*(+s.price||0)));});
   return Object.keys(m).sort().slice(-8).map(k=>[k,m[k]]);}
-function retailKg(){let kg=0;(INVOICES||[]).forEach(v=>(v.lines||[]).forEach(l=>{if(isBriket(l.code))kg+=(+l.qty||0);}));return kg;}
+function retailKg(){let kg=0;(INVOICES||[]).forEach(v=>{if((v.extra||{}).custType==='dist')return;(v.lines||[]).forEach(l=>{if(isBriket(l.code))kg+=(+l.qty||0);});});return kg;}
 function reportModal(){
   const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
   ov.innerHTML='<div class="card salform" style="max-width:520px;width:100%"><h2>📈 ანგარიშის PDF</h2>'+
