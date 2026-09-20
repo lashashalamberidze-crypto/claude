@@ -1916,7 +1916,7 @@ const RT_EAST=[
  {name:'შიდა ქართლი',origin:'ნატახტარი',region:'შიდა ქართლი',munis:[{m:'კასპი',km:40},{m:'გორი',km:55},{m:'ქარელი',km:75},{m:'ხაშური',km:90}]},
  {name:'ქვემო ქართლი',origin:'ნატახტარი',region:'ქვემო ქართლი',munis:[{m:'რუსთავი',km:50},{m:'გარდაბანი',km:60},{m:'მარნეული',km:70},{m:'თეთრიწყარო',km:75},{m:'ბოლნისი',km:110},{m:'წალკა',km:130},{m:'დმანისი',km:140}]}
 ];
-function routeOrigin(r,s){return (r&&r.origin)||(s&&s.base)||'';}
+function routeOrigin(r,s){if(r&&r.origin)return r.origin;const t=(r&&r.name)?RT_WEST.concat(RT_EAST).find(x=>x.name===r.name):null;if(t&&t.origin)return t.origin;return (s&&s.base)||'';}
 const BOOK_MIN_KG=500;
 function bDist(){return DISTRIBUTORS.find(x=>String(x.id)===String(bookDist))||null;}
 function bset(d){const s=Object.assign({base:'',l100:12,fuelP:3.8,costKg:1.8,retailKg:2.2,iban:'',bank:'',payinfo:'',routes:null},(d&&d.bset)||{});
@@ -1932,6 +1932,7 @@ function routeTripFuel(s,route,rb){return routeMaxKm(s,route,rb)*2*fuelPerKm(s);
 // ტრანსპორტი 1 მყიდველზე = რეისის საწვავი × (მისი კმ ÷ ყველა მყიდველის კმ ჯამი) — ახლო↓ შორ↑, ↑მთელ ₾
 function bookTransport(b,s){const rb=routeBuyers(b.distributor_id,b.route);const sumk=rb.reduce((a,x)=>a+bkKm(x,s),0);if(!sumk)return 0;const trip=routeTripFuel(s,b.route,rb);const myk=bkKm(b,s);return Math.ceil(trip*(myk/sumk));}
 function bookKg(b){return (+b.qty||0)*(+b.bag_size||10);}
+function bookUnitPrice(b,s){return (+b.bag_size||10)*(+s.retailKg||0);}   // 1 ტომრის გასაყიდი ფასი
 function bookProduct(b,s){return bookKg(b)*(+s.retailKg||0);}
 function bookCost(b,s){return bookKg(b)*(+s.costKg||0);}          // დისტრიბუტორის ვალი
 function bookTotal(b,s){return bookProduct(b,s)+bookTransport(b,s);}
@@ -1977,12 +1978,12 @@ function renderBookings(){
         '<div style="background:'+(full?'#eaf7ef':'#f6f8f7')+';padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><b style="color:#0B6B3C">🛣 '+esc(r.name)+' <span style="font-weight:600;color:#5c6b62;font-size:12px">🏭 '+esc(routeOrigin(r,s))+'-დან</span></b>'+
         '<span style="font-size:12.5px;font-weight:800;color:'+(full?'#0B6B3C':'#8a6a00')+'">'+fmtNum(kg)+' / '+BOOK_MIN_KG+' კგ '+(full?'✅ წასაღებია':'⏳ ივსება')+'</span></div>'+
         '<div style="height:7px;background:#e5ece7"><div style="height:100%;width:'+pct+'%;background:'+(full?'#0B6B3C':'#e6a700')+'"></div></div>'+
-        '<div class="scroll"><table><thead><tr><th>მუნიციპ.</th><th>მყიდველი</th><th class="right">ტომ.</th><th class="right">კგ</th><th class="right">პროდ. ₾</th><th class="right">ტრანსპ. ₾</th><th class="right">სულ ₾</th><th>სტატ.</th><th>დოკ.</th><th></th></tr></thead><tbody>';
+        '<div class="scroll"><table><thead><tr><th>მუნიციპ.</th><th>მყიდველი</th><th class="right">ტომ.</th><th class="right">კგ</th><th class="right">ერთ.₾</th><th class="right">პროდ. ₾</th><th class="right">ტრანსპ. ₾</th><th class="right">სულ ₾</th><th>სტატ.</th><th>დოკ.</th><th></th></tr></thead><tbody>';
       rb.sort((a,b)=>(a.municipality||'').localeCompare(b.municipality||'')).forEach(b=>{
         const docs=b.docs||{};const hasDoc=!!docs.transfer;
         h+='<tr><td>'+esc(b.municipality||'')+'</td><td><b>'+esc(b.cust_name||'—')+'</b>'+(b.phone?'<div class="muted" style="font-size:10px">📞 '+esc(b.phone)+'</div>':'')+(b.contact2?'<div class="muted" style="font-size:10px">📱 '+esc(b.contact2)+'</div>':'')+(b.address?'<div class="muted" style="font-size:10px">📍 '+esc(b.address)+'</div>':'')+'</td>'+
           '<td class="right">'+fmtNum(b.qty)+' × '+fmtNum(b.bag_size)+'</td><td class="right">'+fmtNum(bookKg(b))+'</td>'+
-          '<td class="right">'+money(bookProduct(b,s))+'</td><td class="right">'+money(bookTransport(b,s))+'</td><td class="right"><b>'+money(bookTotal(b,s))+'</b></td>'+
+          '<td class="right" title="1 ტომრის გასაყიდი ფასი">'+money(bookUnitPrice(b,s))+'</td><td class="right">'+money(bookProduct(b,s))+'</td><td class="right">'+money(bookTransport(b,s))+'</td><td class="right"><b>'+money(bookTotal(b,s))+'</b></td>'+
           '<td style="white-space:nowrap">'+(b.paid?'<span class="dtag ok">💰</span>':'')+(b.delivered?'<span class="dtag ok">🚚</span>':'')+((!b.paid&&!b.delivered)?'<span class="muted" style="font-size:10px">—</span>':'')+'</td>'+
           '<td>'+(hasDoc?'<a class="dchip ok" href="'+esc(docs.transfer)+'" target="_blank" title="გადარიცხვა">💳</a>':'<span class="dchip" title="არ არის">💳</span>')+'</td>'+
           '<td class="right" style="white-space:nowrap"><button class="smini" data-bkwa="'+esc(b.id)+'" title="WhatsApp მყიდველს" style="background:#25D366;color:#fff">📱</button> <button class="smini" data-bkpaid="'+esc(b.id)+'" title="ჩარიცხვის მონიშვნა"'+(b.paid?' style="background:#0B6B3C;color:#fff"':'')+'>💰</button> <button class="smini" data-bkdlv="'+esc(b.id)+'" title="მიტანის მონიშვნა"'+(b.delivered?' style="background:#0B6B3C;color:#fff"':'')+'>🚚</button> <button class="smini" data-bkdoc="'+esc(b.id)+'" title="გადარიცხვის დოკ.">📎</button> <button class="smini" data-bked="'+esc(b.id)+'" title="რედაქტ.">✏</button> <button class="smini danger" data-bkdel="'+esc(b.id)+'" title="წაშლა">🗑</button></td></tr>';
@@ -2115,25 +2116,31 @@ async function bookDoc(id){const b=bookFind(id);if(!b)return;const fi=document.c
 }
 function bookListReportHTML(d,s){
   const mine=BOOKINGS.filter(b=>String(b.distributor_id)===String(bookDist));
-  let rows='',n=0,tKg=0,tTot=0;
+  let rows='',n=0,tKg=0,tTot=0,tPaid=0,tDue=0;const origins={};
   (s.routes||[]).forEach(r=>{const rb=mine.filter(b=>b.route===r.name);if(!rb.length)return;
+    origins[routeOrigin(r,s)]=1;
     const rkg=rb.reduce((a,b)=>a+bookKg(b),0);const full=rkg>=BOOK_MIN_KG;
-    rows+='<tr><td colspan="8" style="background:'+(full?'#dff3e6':'#fff4d6')+';font-weight:800;color:#0B6B3C;padding:6px 8px">🛣 '+esc(r.name)+' · '+esc(routeOrigin(r,s))+'-დან — '+fmtNum(rkg)+' / '+BOOK_MIN_KG+' კგ '+(full?'✅ წასაღებია':'⏳ ივსება')+'</td></tr>';
-    rb.sort((a,b)=>(a.municipality||'').localeCompare(b.municipality||'')).forEach(b=>{n++;tKg+=bookKg(b);tTot+=bookTotal(b,s);
+    rows+='<tr><td colspan="8" style="background:'+(full?'#dff3e6':'#fff4d6')+';font-weight:800;color:#0B6B3C;padding:6px 8px;border:1px solid #ddd">🛣 '+esc(r.name)+' · '+esc(routeOrigin(r,s))+'-დან — '+fmtNum(rkg)+' / '+BOOK_MIN_KG+' კგ '+(full?'✅ წასაღებია':'⏳ ივსება')+'</td></tr>';
+    let curM=null;
+    rb.sort((a,b)=>(a.municipality||'').localeCompare(b.municipality||'')).forEach(b=>{n++;tKg+=bookKg(b);const tot=bookTotal(b,s);tTot+=tot;if(b.paid)tPaid+=tot;else tDue+=tot;
+      if((b.municipality||'')!==curM){curM=b.municipality||'';rows+='<tr><td colspan="8" style="background:#eef4f0;font-weight:800;color:#0B6B3C;padding:4px 8px;border:1px solid #ddd">🏛 '+esc(curM||'—')+'</td></tr>';}
       const contact=[b.phone,b.contact2].filter(Boolean).join(' · ');
-      rows+='<tr><td style="padding:5px 8px;border:1px solid #ddd">'+n+'</td><td style="padding:5px 8px;border:1px solid #ddd">'+esc(b.municipality||'')+'</td><td style="padding:5px 8px;border:1px solid #ddd"><b>'+esc(b.cust_name||'')+'</b>'+(contact?'<br>📞 '+esc(contact):'')+(b.address?'<br>📍 '+esc(b.address):'')+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right">'+fmtNum(b.qty)+'×'+fmtNum(b.bag_size)+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right">'+fmtNum(bookKg(b))+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right">'+money(bookTransport(b,s))+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right;font-weight:700">'+money(bookTotal(b,s))+'</td><td style="padding:5px 8px;border:1px solid #ddd">'+(b.paid?'✔ ჩარიცხ.':'')+(b.delivered?' ✔ მიტ.':'')+'</td></tr>';});
+      const st=(b.paid?'<span style="color:#0B6B3C;font-weight:800">✅ გადახდილია</span>':'<span style="color:#b00020;font-weight:800">🔴 გადაუხდელია</span>')+(b.delivered?'<br><span style="color:#0B6B3C;font-weight:700">🚚 მიტანილია</span>':'');
+      rows+='<tr><td style="padding:5px 8px;border:1px solid #ddd;text-align:center">'+n+'</td><td style="padding:5px 8px;border:1px solid #ddd"><b>'+esc(b.cust_name||'')+'</b>'+(contact?'<br>📞 '+esc(contact):'')+(b.address?'<br>📍 '+esc(b.address):'')+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right">'+fmtNum(b.qty)+'×'+fmtNum(b.bag_size)+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right">'+fmtNum(bookKg(b))+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right">'+money(bookUnitPrice(b,s))+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right">'+money(bookTransport(b,s))+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right;font-weight:700">'+money(tot)+'</td><td style="padding:5px 8px;border:1px solid #ddd">'+st+'</td></tr>';});
   });
+  const originStr=Object.keys(origins).filter(Boolean).join(', ')||s.base||'';
   return '<div style="font-family:\'Noto Sans Georgian\',sans-serif;padding:22px;color:#14261C;background:#fff;width:940px">'+
-    '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #0F8A4D;padding-bottom:8px;margin-bottom:12px"><div><div style="font-size:22px;font-weight:800;color:#0B6B3C">RAM IMPEX</div><div style="font-size:12px;color:#5C6B62">მიწოდების სია — '+esc(d.name||'')+' · '+esc(s.base)+'</div></div><div style="text-align:right;font-size:12px;color:#5C6B62">'+todayStr()+'</div></div>'+
-    '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:6px">#</th><th style="padding:6px">მუნიციპ.</th><th style="padding:6px">მყიდველი</th><th style="padding:6px">ტომ.</th><th style="padding:6px">კგ</th><th style="padding:6px">ტრანსპ.₾</th><th style="padding:6px">სულ₾</th><th style="padding:6px">სტატ.</th></tr></thead><tbody>'+(rows||'<tr><td colspan="8" style="padding:8px">—</td></tr>')+'</tbody></table>'+
+    '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #0F8A4D;padding-bottom:8px;margin-bottom:12px"><div><div style="font-size:22px;font-weight:800;color:#0B6B3C">RAM IMPEX</div><div style="font-size:12px;color:#5C6B62">მიწოდების სია — '+esc(d.name||'')+(originStr?' · 🏭 '+esc(originStr)+'-დან':'')+'</div></div><div style="text-align:right;font-size:12px;color:#5C6B62">'+todayStr()+'</div></div>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:6px">#</th><th style="padding:6px;text-align:left">მყიდველი</th><th style="padding:6px">ტომ.</th><th style="padding:6px">კგ</th><th style="padding:6px">ერთ.₾<br><span style="font-weight:400;font-size:9px">1 ტომარა</span></th><th style="padding:6px">ტრანსპ.₾</th><th style="padding:6px">სულ₾</th><th style="padding:6px">სტატუსი</th></tr></thead><tbody>'+(rows||'<tr><td colspan="8" style="padding:8px">—</td></tr>')+'</tbody></table>'+
     '<div style="margin-top:10px;font-size:13px;font-weight:800;color:#0B6B3C">სულ: '+n+' მყიდველი · '+fmtNum(tKg)+' კგ · '+money(tTot)+' ₾</div>'+
+    '<div style="margin-top:4px;font-size:12.5px;font-weight:700"><span style="color:#0B6B3C">✅ გადახდილი: '+money(tPaid)+' ₾</span> &nbsp;·&nbsp; <span style="color:#b00020">🔴 გადასახდელი: '+money(tDue)+' ₾</span></div>'+
     '<div style="margin-top:8px;font-size:11px;color:#5C6B62">RAM IMPEX · 595 533 500 · ramimpex.com.ge</div></div>';
 }
 function bookDownloadPDF(){const d=bDist(),s=bset(d);htmlToPDF(bookListReportHTML(d,s),'RAM_IMPEX_javshani_'+((d&&d.name)||'')+'_'+todayStr());}
 function bookExportXls(){if(!window.XLSX||!window.XLSX.utils){alert('Excel ვერ ჩაიტვირთა.');return;}const d=bDist(),s=bset(d);const XLSX=window.XLSX;const wbk=XLSX.utils.book_new();
   const mine=BOOKINGS.filter(b=>String(b.distributor_id)===String(bookDist));
-  const rows=mine.map((b,i)=>[i+1,b.route||'',b.municipality||'',b.cust_name||'',b.phone||'',b.address||'',+b.qty||0,+b.bag_size||0,bookKg(b),bookProduct(b,s),bookTransport(b,s),bookTotal(b,s),(b.paid?'ჩარიცხ.':''),(b.delivered?'მიტან.':'')]);
-  xlsSheet(XLSX,wbk,'ჯავშნები','RAM IMPEX — მიწოდების სია — '+((d&&d.name)||''),['#','მარშრუტი','მუნიციპ.','მყიდველი','ტელ.','მისამართი','ტომ.','ზომა','კგ','პროდ.₾','ტრანსპ.₾','სულ₾','ჩარიცხ.','მიტან.'],rows,[6,7,8,9,10,11]);
+  const rows=mine.map((b,i)=>[i+1,b.route||'',b.municipality||'',b.cust_name||'',b.phone||'',b.address||'',+b.qty||0,+b.bag_size||0,bookUnitPrice(b,s),bookKg(b),bookProduct(b,s),bookTransport(b,s),bookTotal(b,s),(b.paid?'ჩარიცხ.':''),(b.delivered?'მიტან.':'')]);
+  xlsSheet(XLSX,wbk,'ჯავშნები','RAM IMPEX — მიწოდების სია — '+((d&&d.name)||''),['#','მარშრუტი','მუნიციპ.','მყიდველი','ტელ.','მისამართი','ტომ.','ზომა','ერთ.₾','კგ','პროდ.₾','ტრანსპ.₾','სულ₾','ჩარიცხ.','მიტან.'],rows,[6,7,8,9,10,11,12]);
   try{XLSX.writeFile(wbk,'RAM_IMPEX_javshani_'+todayStr()+'.xlsx');}catch(e){alert('ვერ შეიქმნა: '+(e.message||e));}}
 /* ===== end ჯავშნები ===== */
 // ინვოისის ბოლოს — ყუთის ფორმის ილუსტრაციები ზომებით (რომ კლიენტმა ფორმა გაიგოს)
