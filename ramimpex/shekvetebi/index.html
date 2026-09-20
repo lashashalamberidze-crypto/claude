@@ -806,6 +806,7 @@ let SALES_SUB='retail', IL_WANT_DIST=false;
 // დისტრიბუტორის ვალი = ინვოისების ჯამი − ჩარიცხვები („რამდენი წაიღო იმდენი ჩაირიცხოს")
 function distInvoicesFor(id){return (INVOICES||[]).filter(v=>((v.extra||{}).custType==='dist')&&String((v.extra||{}).distributor_id||'')===String(id));}
 function distTakenFor(id){return distInvoicesFor(id).reduce((a,v)=>a+(+v.grand||0),0);}
+function distTakenKgFor(id){return distInvoicesFor(id).reduce((a,v)=>a+invWeightKg(v),0);}
 function distDepositsFor(id){const dd=DISTRIBUTORS.find(x=>String(x.id)===String(id))||{};const dep=(Array.isArray(dd.payments)?dd.payments.reduce((s,p)=>s+(+p.amount||0),0):0);const invp=distInvoicesFor(id).reduce((a,v)=>a+(+v.paid||0),0);return dep+invp;}
 function distDebtFor(id){return Math.max(0,distTakenFor(id)-distDepositsFor(id));}
 let DISTRIBUTORS=[], DIST_PICKUPS=[], DIST_SALES=[], DIST_ERR='', distReportFor='';
@@ -916,19 +917,19 @@ function renderDist(){
   if(distBookFor){bookHostId='salesBody';bookDist=distBookFor;bookFixed=true;renderBookings();return;}
   IL_WANT_DIST=true;
   const DL=DISTRIBUTORS.slice();
-  let tTaken=0,tPaid=0,tDebt=0;
-  DL.forEach(d=>{tTaken+=distTakenFor(d.id);tPaid+=distDepositsFor(d.id);tDebt+=distDebtFor(d.id);});
+  let tTaken=0,tPaid=0,tDebt=0,tKg=0;
+  DL.forEach(d=>{tTaken+=distTakenFor(d.id);tPaid+=distDepositsFor(d.id);tDebt+=distDebtFor(d.id);tKg+=distTakenKgFor(d.id);});
   let h='';
   // KPIs (ჯამში ყველაფერი)
   h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2>🚚 დისტრიბუცია</h2><div style="display:flex;gap:8px"><button class="dbtn line" id="distAddNew">➕ ახალი დისტრიბუტორი</button></div></div>'+
-    '<div class="salkpi" style="margin-top:12px;grid-template-columns:repeat(4,1fr)"><div class="skpi blue"><div class="l">სულ წაღებული ₾ (ინვოისები)</div><div class="v" style="color:#2b6cb0">'+money(tTaken)+'</div></div><div class="skpi green"><div class="l">ჩარიცხული ₾</div><div class="v" style="color:#0B6B3C">'+money(tPaid)+'</div></div><div class="skpi red"><div class="l">ვალი სულ ₾</div><div class="v">'+money(tDebt)+'</div></div><div class="skpi"><div class="l">დისტრიბუტორები</div><div class="v">'+DL.length+'</div></div></div></div>';
+    '<div class="salkpi" style="margin-top:12px;grid-template-columns:repeat(5,1fr)"><div class="skpi" style="border-color:#c9701a"><div class="l">⚖️ წაღებული კგ</div><div class="v" style="color:#c9701a">'+fmtNum(tKg)+'</div></div><div class="skpi blue"><div class="l">სულ წაღებული ₾</div><div class="v" style="color:#2b6cb0">'+money(tTaken)+'</div></div><div class="skpi green"><div class="l">ჩარიცხული ₾</div><div class="v" style="color:#0B6B3C">'+money(tPaid)+'</div></div><div class="skpi red"><div class="l">ვალი სულ ₾</div><div class="v">'+money(tDebt)+'</div></div><div class="skpi"><div class="l">დისტრიბუტორები</div><div class="v">'+DL.length+'</div></div></div></div>';
   // დისტრიბუტორების შემაჯამებელი ცხრილი (ვალი = ინვოისი − ჩარიცხვა)
   h+='<div class="card"><h2>👥 დისტრიბუტორები — ვალი & მყიდველები</h2>';
   if(!DL.length)h+='<div class="empty">ჯერ დისტრიბუტორი არ არის. დაამატე „➕ ახალი დისტრიბუტორი" ან განაცხადი მოვა /distribution გვერდიდან.</div>';
-  else{h+='<div class="scroll"><table><thead><tr><th>დისტრიბუტორი</th><th>რეგ./მუნიც.</th><th class="right">წაღებული ₾</th><th class="right">ჩარიცხ. ₾</th><th class="right">ვალი ₾</th><th class="right">დამტკ.</th><th></th></tr></thead><tbody>';
-    DL.forEach(d=>{const tk=distTakenFor(d.id),pd=distDepositsFor(d.id),db=distDebtFor(d.id);
+  else{h+='<div class="scroll"><table><thead><tr><th>დისტრიბუტორი</th><th>რეგ./მუნიც.</th><th class="right">წაღ. კგ</th><th class="right">წაღებული ₾</th><th class="right">ჩარიცხ. ₾</th><th class="right">ვალი ₾</th><th class="right">დამტკ.</th><th></th></tr></thead><tbody>';
+    DL.forEach(d=>{const tk=distTakenFor(d.id),pd=distDepositsFor(d.id),db=distDebtFor(d.id),kg=distTakenKgFor(d.id);
       h+='<tr><td><b>'+esc(d.name||d.shop_name||'—')+'</b>'+(d.phone?'<div class="muted" style="font-size:10px">📞 '+esc(d.phone)+'</div>':'')+'</td><td>'+esc(d.region||'—')+((d.municipalities&&d.municipalities.length)?' · '+esc(d.municipalities.join(', ')):(d.municipality?' · '+esc(d.municipality):''))+'</td>'+
-      '<td class="right">'+money(tk)+'</td><td class="right">'+money(pd)+'</td><td class="right">'+(db>0.01?'<b style="color:#b00020">'+money(db)+'</b>':'0.00')+'</td>'+
+      '<td class="right"><b style="color:#c9701a">'+fmtNum(kg)+'</b></td><td class="right">'+money(tk)+'</td><td class="right">'+money(pd)+'</td><td class="right">'+(db>0.01?'<b style="color:#b00020">'+money(db)+'</b>':'0.00')+'</td>'+
       '<td class="right">'+(d.approved?'<span class="dtag ok">✅</span>':'<span class="dtag wait">⏳</span>')+'</td>'+
       '<td class="right" style="white-space:nowrap"><button class="smini" data-dbook="'+esc(d.id)+'" title="მყიდველები / მიწოდების სია" style="background:#6d3ad6;color:#fff">📋</button> <button class="smini" data-dpay="'+esc(d.id)+'" title="ჩარიცხვის ჩაწერა">💰</button> <button class="smini" data-dview="'+esc(d.id)+'" title="სრული ინფო">👁</button> <button class="smini" data-dedit="'+esc(d.id)+'" title="რედაქტ./დამტკიცება">✏</button></td></tr>';});
     h+='</tbody></table></div>';}
