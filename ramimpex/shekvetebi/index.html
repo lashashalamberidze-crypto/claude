@@ -1972,6 +1972,12 @@ function renderBookings(){
   h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2>📋 მიწოდების სია (მყიდველები) — '+esc(d.name||d.shop_name||'')+'</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn a" id="bkXls">📊 Excel</button><button class="btn line" id="bkPdf">📄 PDF</button></div></div>'+
      '<div class="muted" style="font-size:11.5px;margin:4px 0 2px">ℹ️ ეს დისტრიბუტორის მყიდველების სიაა (გასაყიდი '+(+s.retailKg||0)+'₾/კგ + ტრანსპ.). დისტრიბუტორის ვალი <b>რამ-თან</b> (1.8₾) ცალკეა — „🚚 დისტრიბუცია" ცხრილში (ინვოისებით).</div>'+
      '<div class="salkpi" style="margin-top:8px;grid-template-columns:repeat(5,1fr)"><div class="skpi"><div class="l">მყიდველები</div><div class="v">'+mine.length+'</div></div><div class="skpi" style="border-color:#c9701a"><div class="l">⚖️ სია — კგ</div><div class="v" style="color:#c9701a">'+fmtNum(totKg)+'</div></div><div class="skpi blue"><div class="l">სულ ჩასარიცხი ₾</div><div class="v" style="color:#2b6cb0">'+money(totDue)+'</div></div><div class="skpi green"><div class="l">ჩარიცხული ₾</div><div class="v" style="color:#0B6B3C">'+money(paidSum)+'</div></div><div class="skpi red"><div class="l">დარჩენილი ₾</div><div class="v" style="color:#b00020">'+money(Math.max(0,totDue-paidSum))+'</div></div></div>';
+  // შეჯერება: ინვოისებით წაღებული vs სიაში გაწერილი კგ
+  {const invKg=distTakenKgFor(bookDist);const rest=invKg-totKg;
+   h+='<div style="margin-top:8px;background:'+(rest>0?'#fff7e4':(rest<0?'#fde3e3':'#eaf7ef'))+';border:1px solid '+(rest>0?'#f0d98a':(rest<0?'#f3b4b4':'#bfe6cd'))+';border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:700;color:#14261C;display:flex;flex-wrap:wrap;gap:6px 16px">'+
+     '<span>📦 ინვოისებით წაღებული: <b style="color:#c9701a">'+fmtNum(invKg)+' კგ</b></span>'+
+     '<span>📋 სიაში გაწერილი: <b style="color:#2b6cb0">'+fmtNum(totKg)+' კგ</b></span>'+
+     (rest>0?'<span>⏳ დარჩა გასაწერი: <b style="color:#b00020">'+fmtNum(rest)+' კგ</b></span>':(rest<0?'<span>⚠️ სიაში მეტია ვიდრე წაღებულია: <b style="color:#b00020">'+fmtNum(-rest)+' კგ</b> (მონიშნე ინვოისი „📦 გატანილად" ან შეამოწმე)</span>':'<span style="color:#0B6B3C">✅ სია ემთხვევა წაღებულს</span>'))+'</div>';}
   if(!mine.length)h+='<div class="empty">ჯერ მყიდველი არ არის. დაამატე ზემოთ.</div>';
   else{
     (s.routes||[]).forEach(r=>{
