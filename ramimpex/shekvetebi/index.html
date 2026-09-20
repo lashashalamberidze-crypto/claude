@@ -2065,13 +2065,40 @@ function bookFind(id){return BOOKINGS.find(x=>String(x.id)===String(id));}
 async function bookToggle(id,field){const b=bookFind(id);if(!b)return;const v=!b[field];try{const {error}=await sb.from('bookings').update({[field]:v}).eq('id',id);if(error)throw error;b[field]=v;renderBookings();}catch(e){alert('ვერ განახლდა: '+(e.message||e));}}
 async function bookTogglePaid(id,d,s){const b=bookFind(id);if(!b)return;const v=!b.paid;const amt=v?bookCost(b,s):0;try{const {error}=await sb.from('bookings').update({paid:v,paid_amount:amt}).eq('id',id);if(error)throw error;b.paid=v;b.paid_amount=amt;renderBookings();}catch(e){alert('ვერ განახლდა: '+(e.message||e));}}
 async function bookDelete(id){if(!confirm('წავშალო ეს ჯავშანი?'))return;try{const {error}=await sb.from('bookings').delete().eq('id',id);if(error)throw error;await loadBookings();renderBookings();}catch(e){alert('ვერ წაიშალა: '+(e.message||e));}}
-function bookEdit(id){const b=bookFind(id);if(!b)return;const d=bDist(),s=bset(d);
-  const nm=prompt('სახელი გვარი:',b.cust_name||'');if(nm===null)return;
-  const ph=prompt('ტელეფონი:',b.phone||'');if(ph===null)return;
-  const ad=prompt('მისამართი:',b.address||'');if(ad===null)return;
-  const q=prompt('რაოდენობა (ტომარა):',b.qty||1);if(q===null)return;
-  const bg=prompt('ტომრის ზომა (10 ან 40):',b.bag_size||10);if(bg===null)return;
-  sb.from('bookings').update({cust_name:nm.trim(),phone:ph.trim(),address:ad.trim(),qty:parseFloat(q)||b.qty,bag_size:parseFloat(bg)||b.bag_size}).eq('id',id).then(async r=>{if(r.error){alert('ვერ განახლდა: '+r.error.message);return;}await loadBookings();renderBookings();});
+function bookEdit(id){const b=bookFind(id);if(!b)return;const d=bDist(),s=bset(d);const routes=(s.routes||[]);
+  const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
+  const routeOpts=routes.map(r=>'<option'+(r.name===b.route?' selected':'')+'>'+esc(r.name)+'</option>').join('');
+  ov.innerHTML='<div class="card" style="max-width:560px;width:100%"><h2>✏ ჯავშნის რედაქტირება</h2>'+
+   '<div class="fg" style="grid-template-columns:1fr 1fr">'+
+   '<div><label>მიმართულება</label><select id="beRoute">'+routeOpts+'</select></div>'+
+   '<div><label>მუნიციპალიტეტი</label><select id="beMuni"></select></div>'+
+   '<div id="beCustomWrap" style="grid-column:span 2;display:none"><label>მუნიციპალიტეტი (ხელით) + კმ საწყისიდან</label><div style="display:flex;gap:8px"><input id="beMuniCustom" placeholder="დასახელება" style="flex:2"><input id="beKm" type="number" placeholder="კმ" style="flex:1"></div></div>'+
+   '<div><label>სახელი გვარი *</label><input id="beName" value="'+esc(b.cust_name||'')+'"></div>'+
+   '<div><label>ტელეფონი</label><input id="bePhone" value="'+esc(b.phone||'')+'"></div>'+
+   '<div style="grid-column:span 2"><label>მისამართი</label><input id="beAddr" value="'+esc(b.address||'')+'"></div>'+
+   '<div><label>დამატ. კონტაქტი</label><input id="beC2" value="'+esc(b.contact2||'')+'" placeholder="WhatsApp / სხვა"></div>'+
+   '<div><label>ტომრის ზომა</label><select id="beBag"><option value="10"'+(+b.bag_size===10?' selected':'')+'>10 კგ</option><option value="40"'+(+b.bag_size===40?' selected':'')+'>40 კგ</option></select></div>'+
+   '<div><label>რაოდენობა (ტომარა)</label><input id="beQty" type="number" min="1" value="'+(+b.qty||1)+'"></div>'+
+   '</div>'+
+   '<div style="display:flex;gap:8px;margin-top:14px"><button class="btn" id="beSave">💾 შენახვა</button><button class="btn line" id="beClose">დახურვა</button></div><div id="beMsg" style="margin-top:8px;font-size:12.5px"></div></div>';
+  document.body.appendChild(ov);
+  const qq=x=>ov.querySelector(x);
+  const toggleCustom=()=>{const c=qq('#beMuni').value==='__custom__';qq('#beCustomWrap').style.display=c?'':'none';if(c){if(!qq('#beMuniCustom').value)qq('#beMuniCustom').value=b.municipality||'';if(!qq('#beKm').value)qq('#beKm').value=(+b.km||0)||'';}};
+  const fillM=()=>{const rn=qq('#beRoute').value;const r=routes.find(x=>x.name===rn);const munis=(r&&r.munis)?r.munis:[];
+    qq('#beMuni').innerHTML=munis.map(m=>'<option'+(m.m===b.municipality?' selected':'')+'>'+esc(m.m)+'</option>').join('')+'<option value="__custom__">➕ სხვა (ხელით)</option>';
+    if(b.municipality&&!munis.some(m=>m.m===b.municipality))qq('#beMuni').value='__custom__';
+    toggleCustom();};
+  fillM();
+  qq('#beRoute').onchange=()=>fillM();
+  qq('#beMuni').onchange=toggleCustom;
+  qq('#beClose').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  qq('#beSave').onclick=async()=>{const name=qq('#beName').value.trim();if(!name){qq('#beMsg').innerHTML='<span style="color:#b00020">ჩაწერე სახელი</span>';return;}
+    let muni=qq('#beMuni').value,km=0;
+    if(muni==='__custom__'){muni=qq('#beMuniCustom').value.trim();km=parseFloat(qq('#beKm').value)||0;if(!muni){qq('#beMsg').innerHTML='<span style="color:#b00020">ჩაწერე მუნიციპალიტეტი</span>';return;}}
+    const rec={route:qq('#beRoute').value,municipality:muni,km:km,cust_name:name,phone:qq('#bePhone').value.trim(),address:qq('#beAddr').value.trim(),contact2:qq('#beC2').value.trim(),bag_size:parseFloat(qq('#beBag').value)||10,qty:parseFloat(qq('#beQty').value)||1};
+    const bt=qq('#beSave');bt.disabled=true;bt.textContent='⏳…';
+    try{const r=await sbUpdateSafe('bookings',rec,id,['contact2','km']);if(r.error)throw r.error;Object.assign(b,rec);ov.remove();await loadBookings();renderBookings();}
+    catch(e){qq('#beMsg').innerHTML='<span style="color:#b00020">ვერ განახლდა: '+esc(e.message||e)+'</span>';bt.disabled=false;bt.textContent='💾 შენახვა';}};
 }
 function bookWA(id,d,s){const b=bookFind(id);if(!b)return;const ph=waPhone(b.phone);if(!ph){alert('ტელეფონი არ არის.');return;}
   const prod=bookProduct(b,s),tr=bookTransport(b,s),tot=bookTotal(b,s);
