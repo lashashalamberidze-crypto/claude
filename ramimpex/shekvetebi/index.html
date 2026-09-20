@@ -1915,20 +1915,21 @@ async function addDraftToOrders(){
 let BOOKINGS=[], BOOK_ERR='', bookDist='', bookSettingsOpen=false, bookHostId='book', bookFixed=false, distBookFor='';
 function bookHost(){return document.getElementById(bookHostId)||bookEl;}
 const RT_WEST=[
- {name:'იმერეთი — ახლო',munis:[{m:'ვანი',km:20},{m:'ხონი',km:18},{m:'ქუთაისი',km:25},{m:'წყალტუბო',km:30},{m:'ბაღდათი',km:35}]},
- {name:'იმერეთი — შორი',munis:[{m:'ზესტაფონი',km:45},{m:'თერჯოლა',km:50},{m:'ტყიბული',km:55},{m:'ხარაგაული',km:65},{m:'ჭიათურა',km:70},{m:'საჩხერე',km:90}]},
- {name:'რაჭა-ლეჩხუმი',munis:[{m:'ცაგერი',km:90},{m:'ამბროლაური',km:110},{m:'ლენტეხი',km:130},{m:'ონი',km:140}]},
- {name:'სამეგრელო + სვანეთი',munis:[{m:'აბაშა',km:20},{m:'სენაკი',km:25},{m:'მარტვილი',km:35},{m:'ფოთი',km:45},{m:'ხობი',km:45},{m:'ჩხოროწყუ',km:50},{m:'ზუგდიდი',km:60},{m:'წალენჯიხა',km:70},{m:'მესტია',km:190}]},
- {name:'გურია',munis:[{m:'ლანჩხუთი',km:35},{m:'ჩოხატაური',km:50},{m:'ოზურგეთი',km:55},{m:'ქობულეთი',km:95}]},
- {name:'აჭარა',munis:[{m:'ბათუმი',km:120},{m:'ხელვაჩაური',km:125},{m:'ქედა',km:135},{m:'შუახევი',km:150},{m:'ხულო',km:170}]}
+ {name:'იმერეთი — ახლო',origin:'სამტრედია',munis:[{m:'ვანი',km:20},{m:'ხონი',km:18},{m:'ქუთაისი',km:25},{m:'წყალტუბო',km:30},{m:'ბაღდათი',km:35}]},
+ {name:'იმერეთი — შორი',origin:'სამტრედია',munis:[{m:'ზესტაფონი',km:45},{m:'თერჯოლა',km:50},{m:'ტყიბული',km:55},{m:'ხარაგაული',km:65},{m:'ჭიათურა',km:70},{m:'საჩხერე',km:90}]},
+ {name:'რაჭა-ლეჩხუმი',origin:'სამტრედია',munis:[{m:'ცაგერი',km:90},{m:'ამბროლაური',km:110},{m:'ლენტეხი',km:130},{m:'ონი',km:140}]},
+ {name:'სამეგრელო + სვანეთი',origin:'სამტრედია',munis:[{m:'აბაშა',km:20},{m:'სენაკი',km:25},{m:'მარტვილი',km:35},{m:'ფოთი',km:45},{m:'ხობი',km:45},{m:'ჩხოროწყუ',km:50},{m:'ზუგდიდი',km:60},{m:'წალენჯიხა',km:70},{m:'მესტია',km:190}]},
+ {name:'გურია',origin:'სამტრედია',munis:[{m:'ლანჩხუთი',km:35},{m:'ჩოხატაური',km:50},{m:'ოზურგეთი',km:55},{m:'ქობულეთი',km:95}]},
+ {name:'აჭარა',origin:'სამტრედია',munis:[{m:'ბათუმი',km:120},{m:'ხელვაჩაური',km:125},{m:'ქედა',km:135},{m:'შუახევი',km:150},{m:'ხულო',km:170}]}
 ];
 const RT_EAST=[
- {name:'კახეთი-1',munis:[{m:'საგარეჯო',km:45},{m:'სიღნაღი',km:110},{m:'დედოფლისწყარო',km:150},{m:'ლაგოდეხი',km:150}]},
- {name:'კახეთი-2',munis:[{m:'ახმეტა',km:95},{m:'თელავი',km:85},{m:'ყვარელი',km:110},{m:'გურჯაანი',km:95}]},
- {name:'სამცხე-ჯავახეთი',munis:[{m:'ბორჯომი',km:130},{m:'ახალციხე',km:170},{m:'ადიგენი',km:180},{m:'ასპინძა',km:185},{m:'ახალქალაქი',km:200},{m:'ნინოწმინდა',km:215}]},
- {name:'შიდა ქართლი',munis:[{m:'კასპი',km:40},{m:'გორი',km:55},{m:'ქარელი',km:75},{m:'ხაშური',km:90}]},
- {name:'ქვემო ქართლი',munis:[{m:'რუსთავი',km:50},{m:'გარდაბანი',km:60},{m:'მარნეული',km:70},{m:'თეთრიწყარო',km:75},{m:'ბოლნისი',km:110},{m:'წალკა',km:130},{m:'დმანისი',km:140}]}
+ {name:'კახეთი-1',origin:'ნატახტარი',munis:[{m:'საგარეჯო',km:45},{m:'სიღნაღი',km:110},{m:'დედოფლისწყარო',km:150},{m:'ლაგოდეხი',km:150}]},
+ {name:'კახეთი-2',origin:'ნატახტარი',munis:[{m:'ახმეტა',km:95},{m:'თელავი',km:85},{m:'ყვარელი',km:110},{m:'გურჯაანი',km:95}]},
+ {name:'სამცხე-ჯავახეთი',origin:'ნატახტარი',munis:[{m:'ბორჯომი',km:130},{m:'ახალციხე',km:170},{m:'ადიგენი',km:180},{m:'ასპინძა',km:185},{m:'ახალქალაქი',km:200},{m:'ნინოწმინდა',km:215}]},
+ {name:'შიდა ქართლი',origin:'ნატახტარი',munis:[{m:'კასპი',km:40},{m:'გორი',km:55},{m:'ქარელი',km:75},{m:'ხაშური',km:90}]},
+ {name:'ქვემო ქართლი',origin:'ნატახტარი',munis:[{m:'რუსთავი',km:50},{m:'გარდაბანი',km:60},{m:'მარნეული',km:70},{m:'თეთრიწყარო',km:75},{m:'ბოლნისი',km:110},{m:'წალკა',km:130},{m:'დმანისი',km:140}]}
 ];
+function routeOrigin(r,s){return (r&&r.origin)||(s&&s.base)||'';}
 const BOOK_MIN_KG=500;
 function bDist(){return DISTRIBUTORS.find(x=>String(x.id)===String(bookDist))||null;}
 function bset(d){const s=Object.assign({base:'',l100:12,fuelP:3.8,costKg:1.8,retailKg:2.2,iban:'',bank:'',payinfo:'',routes:null},(d&&d.bset)||{});
@@ -1986,7 +1987,7 @@ function renderBookings(){
       const rb=mine.filter(b=>b.route===r.name);if(!rb.length)return;
       const kg=rb.reduce((a,b)=>a+bookKg(b),0);const pct=Math.min(100,Math.round(kg/BOOK_MIN_KG*100));const full=kg>=BOOK_MIN_KG;
       h+='<div style="margin-top:14px;border:1px solid #e5ece7;border-radius:12px;overflow:hidden">'+
-        '<div style="background:'+(full?'#eaf7ef':'#f6f8f7')+';padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><b style="color:#0B6B3C">🛣 '+esc(r.name)+'</b>'+
+        '<div style="background:'+(full?'#eaf7ef':'#f6f8f7')+';padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><b style="color:#0B6B3C">🛣 '+esc(r.name)+' <span style="font-weight:600;color:#5c6b62;font-size:12px">🏭 '+esc(routeOrigin(r,s))+'-დან</span></b>'+
         '<span style="font-size:12.5px;font-weight:800;color:'+(full?'#0B6B3C':'#8a6a00')+'">'+fmtNum(kg)+' / '+BOOK_MIN_KG+' კგ '+(full?'✅ წასაღებია':'⏳ ივსება')+'</span></div>'+
         '<div style="height:7px;background:#e5ece7"><div style="height:100%;width:'+pct+'%;background:'+(full?'#0B6B3C':'#e6a700')+'"></div></div>'+
         '<div class="scroll"><table><thead><tr><th>მუნიციპ.</th><th>მყიდველი</th><th class="right">ტომ.</th><th class="right">კგ</th><th class="right">პროდ. ₾</th><th class="right">ტრანსპ. ₾</th><th class="right">სულ ₾</th><th>სტატ.</th><th>დოკ.</th><th></th></tr></thead><tbody>';
@@ -2007,7 +2008,7 @@ function renderBookings(){
   wireBookHead();wireBookForm(d,s);wireBookRows(d,s);
 }
 function bookSettingsHTML(d,s){
-  let rt='';(s.routes||[]).forEach((r,ri)=>{rt+='<div style="border:1px solid #e5ece7;border-radius:10px;padding:8px 10px;margin-top:8px"><div style="display:flex;justify-content:space-between;align-items:center"><input value="'+esc(r.name)+'" data-rn="'+ri+'" style="font-weight:800;color:#0B6B3C;border:none;background:transparent;min-width:160px"><button class="smini danger" data-rdel="'+ri+'">🗑 მარშრ.</button></div>'+
+  let rt='';(s.routes||[]).forEach((r,ri)=>{rt+='<div style="border:1px solid #e5ece7;border-radius:10px;padding:8px 10px;margin-top:8px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><input value="'+esc(r.name)+'" data-rn="'+ri+'" style="font-weight:800;color:#0B6B3C;border:none;background:transparent;min-width:140px"><span style="font-size:11.5px;color:#5c6b62;display:inline-flex;align-items:center;gap:4px">🏭 საწყისი: <input value="'+esc(routeOrigin(r,s))+'" data-ro="'+ri+'" style="width:110px;border:1px solid #e5ece7;border-radius:6px;padding:2px 6px;font-weight:700"></span><button class="smini danger" data-rdel="'+ri+'">🗑 მარშრ.</button></div>'+
     '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">'+(r.munis||[]).map((m,mi)=>'<span style="display:inline-flex;align-items:center;gap:4px;background:#f3faf5;border:1px solid #cfe6d8;border-radius:8px;padding:3px 6px;font-size:12px"><input value="'+esc(m.m)+'" data-rm="'+ri+'_'+mi+'" style="width:96px;border:none;background:transparent;font-weight:700"><input type="number" value="'+(+m.km||0)+'" data-rk="'+ri+'_'+mi+'" style="width:52px;border:none;background:#fff;border-radius:5px" title="კმ">კმ<button class="smini danger" data-mdel="'+ri+'_'+mi+'" style="padding:0 5px">✕</button></span>').join('')+'<button class="smini" data-madd="'+ri+'">＋ მუნიციპ.</button></div></div>';});
   return '<div class="card" style="border:1.5px solid #6d3ad6"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="color:#6d3ad6">⚙️ პარამეტრები — '+esc(d.name||'')+'</h2><button class="smini" id="bkSetClose">✕</button></div>'+
     '<div class="row"><div><label>საწყისი წერტილი</label><input id="stBase" value="'+esc(s.base)+'"></div><div><label>საწვავი ლ/100კმ</label><input id="stL100" type="number" step="0.1" value="'+(+s.l100||0)+'"></div><div><label>საწვავის ფასი ₾/ლ</label><input id="stFuel" type="number" step="0.01" value="'+(+s.fuelP||0)+'"></div></div>'+
@@ -2047,6 +2048,7 @@ function collectSettings(d,s){ // წაიკითხავს ფორმი
   if($('stIban'))cur.iban=$('stIban').value.trim();
   if($('stBank'))cur.bank=$('stBank').value.trim();
   bookHost().querySelectorAll('[data-rn]').forEach(inp=>{const ri=+inp.dataset.rn;if(cur.routes[ri])cur.routes[ri].name=inp.value;});
+  bookHost().querySelectorAll('[data-ro]').forEach(inp=>{const ri=+inp.dataset.ro;if(cur.routes[ri])cur.routes[ri].origin=inp.value.trim();});
   bookHost().querySelectorAll('[data-rm]').forEach(inp=>{const p=inp.dataset.rm.split('_');if(cur.routes[+p[0]]&&cur.routes[+p[0]].munis[+p[1]])cur.routes[+p[0]].munis[+p[1]].m=inp.value;});
   bookHost().querySelectorAll('[data-rk]').forEach(inp=>{const p=inp.dataset.rk.split('_');if(cur.routes[+p[0]]&&cur.routes[+p[0]].munis[+p[1]])cur.routes[+p[0]].munis[+p[1]].km=parseFloat(inp.value)||0;});
   return cur;
@@ -2102,7 +2104,7 @@ function bookListReportHTML(d,s){
   let rows='',n=0,tKg=0,tTot=0;
   (s.routes||[]).forEach(r=>{const rb=mine.filter(b=>b.route===r.name);if(!rb.length)return;
     const rkg=rb.reduce((a,b)=>a+bookKg(b),0);const full=rkg>=BOOK_MIN_KG;
-    rows+='<tr><td colspan="8" style="background:'+(full?'#dff3e6':'#fff4d6')+';font-weight:800;color:#0B6B3C;padding:6px 8px">🛣 '+esc(r.name)+' — '+fmtNum(rkg)+' / '+BOOK_MIN_KG+' კგ '+(full?'✅ წასაღებია':'⏳ ივსება')+'</td></tr>';
+    rows+='<tr><td colspan="8" style="background:'+(full?'#dff3e6':'#fff4d6')+';font-weight:800;color:#0B6B3C;padding:6px 8px">🛣 '+esc(r.name)+' · '+esc(routeOrigin(r,s))+'-დან — '+fmtNum(rkg)+' / '+BOOK_MIN_KG+' კგ '+(full?'✅ წასაღებია':'⏳ ივსება')+'</td></tr>';
     rb.sort((a,b)=>(a.municipality||'').localeCompare(b.municipality||'')).forEach(b=>{n++;tKg+=bookKg(b);tTot+=bookTotal(b,s);
       const contact=[b.phone,b.contact2].filter(Boolean).join(' · ');
       rows+='<tr><td style="padding:5px 8px;border:1px solid #ddd">'+n+'</td><td style="padding:5px 8px;border:1px solid #ddd">'+esc(b.municipality||'')+'</td><td style="padding:5px 8px;border:1px solid #ddd"><b>'+esc(b.cust_name||'')+'</b>'+(contact?'<br>📞 '+esc(contact):'')+(b.address?'<br>📍 '+esc(b.address):'')+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right">'+fmtNum(b.qty)+'×'+fmtNum(b.bag_size)+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right">'+fmtNum(bookKg(b))+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right">'+money(bookTransport(b,s))+'</td><td style="padding:5px 8px;border:1px solid #ddd;text-align:right;font-weight:700">'+money(bookTotal(b,s))+'</td><td style="padding:5px 8px;border:1px solid #ddd">'+(b.paid?'✔ ჩარიცხ.':'')+(b.delivered?' ✔ მიტ.':'')+'</td></tr>';});
