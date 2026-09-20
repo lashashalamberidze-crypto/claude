@@ -1931,9 +1931,11 @@ function bset(d){const s=Object.assign({base:'',l100:12,fuelP:3.8,costKg:1.8,ret
   return s;}
 function fuelPerKm(s){return ((+s.l100||0)/100)*(+s.fuelP||0);}
 function muniKm(s,route,muni){const r=(s.routes||[]).find(x=>x.name===route);if(!r)return 0;const m=(r.munis||[]).find(x=>x.m===muni);return m?(+m.km||0):0;}
-function muniTransport(s,route,muni){return Math.ceil(muniKm(s,route,muni)*2*fuelPerKm(s));}      // იქ-დაბრ., ↑ მთელ ₾
-function buyersInMuni(id,route,muni){return BOOKINGS.filter(b=>String(b.distributor_id)===String(id)&&b.route===route&&b.municipality===muni).length;}
-function bookTransport(b,s){const n=buyersInMuni(b.distributor_id,b.route,b.municipality)||1;return Math.ceil(muniTransport(s,b.route,b.municipality)/n);}   // 1 მყიდველზე ↑ მთელ ₾
+function routeBuyers(id,route){return BOOKINGS.filter(b=>String(b.distributor_id)===String(id)&&b.route===route);}
+function routeMaxKm(s,route,rb){let mx=0;(rb||[]).forEach(b=>{const k=muniKm(s,route,b.municipality);if(k>mx)mx=k;});return mx;}
+function routeTripFuel(s,route,rb){return routeMaxKm(s,route,rb)*2*fuelPerKm(s);}   // მთელი რეისი შორეულ წერტილამდე (იქ-დაბრ.)
+// ტრანსპორტი 1 მყიდველზე = რეისის საწვავი × (მისი კმ ÷ ყველა მყიდველის კმ ჯამი) — ახლო↓ შორ↑, ↑მთელ ₾
+function bookTransport(b,s){const rb=routeBuyers(b.distributor_id,b.route);const sumk=rb.reduce((a,x)=>a+muniKm(s,b.route,x.municipality),0);if(!sumk)return 0;const trip=routeTripFuel(s,b.route,rb);const myk=muniKm(s,b.route,b.municipality);return Math.ceil(trip*(myk/sumk));}
 function bookKg(b){return (+b.qty||0)*(+b.bag_size||10);}
 function bookProduct(b,s){return bookKg(b)*(+s.retailKg||0);}
 function bookCost(b,s){return bookKg(b)*(+s.costKg||0);}          // დისტრიბუტორის ვალი
@@ -1999,7 +2001,7 @@ function bookSettingsHTML(d,s){
     '<div class="row"><div><label>საწყისი წერტილი</label><input id="stBase" value="'+esc(s.base)+'"></div><div><label>საწვავი ლ/100კმ</label><input id="stL100" type="number" step="0.1" value="'+(+s.l100||0)+'"></div><div><label>საწვავის ფასი ₾/ლ</label><input id="stFuel" type="number" step="0.01" value="'+(+s.fuelP||0)+'"></div></div>'+
     '<div class="row" style="margin-top:8px"><div><label>თვითღირ. ₾/კგ (ვალი)</label><input id="stCost" type="number" step="0.01" value="'+(+s.costKg||0)+'"></div><div><label>მყიდველზე ₾/კგ</label><input id="stRetail" type="number" step="0.01" value="'+(+s.retailKg||0)+'"></div></div>'+
     '<div class="row" style="margin-top:8px"><div style="flex:2"><label>ანგარიში / IBAN (მყიდველს ეგზავნება)</label><input id="stIban" value="'+esc(s.iban||'')+'" placeholder="GE..."></div><div style="flex:2"><label>მიმღები / ბანკი</label><input id="stBank" value="'+esc(s.bank||'')+'" placeholder="სახელი / ბანკი"></div></div>'+
-    '<div class="muted" style="font-size:11.5px;margin-top:6px">⛽ 1 კმ = ('+(+s.l100||0)+'÷100)×'+(+s.fuelP||0)+' = <b>'+fuelPerKm(s).toFixed(3)+' ₾</b> · ტრანსპ. = მანძილი×2×'+fuelPerKm(s).toFixed(3)+' ÷ მყიდველთა რაოდ. (↑მთელ ₾)</div>'+
+    '<div class="muted" style="font-size:11.5px;margin-top:6px">⛽ 1 კმ = ('+(+s.l100||0)+'÷100)×'+(+s.fuelP||0)+' = <b>'+fuelPerKm(s).toFixed(3)+' ₾</b> · რეისი = შორეული_კმ×2×1კმ · 1 მყიდველზე = რეისი × (მისი_კმ ÷ Σკმ) — ახლო↓ შორ↑ (↑მთელ ₾)</div>'+
     '<div style="margin-top:10px"><b style="color:#6d3ad6;font-size:14px">🛣 მარშრუტები & კმ</b>'+rt+'<button class="btn line sm" id="stAddRoute" style="margin-top:8px">＋ ახალი მარშრუტი</button></div>'+
     '<div class="row" style="margin-top:12px"><button class="btn" id="stSave" style="background:#6d3ad6">💾 პარამეტრების შენახვა</button></div><div id="stMsg" style="margin-top:6px;font-size:12.5px"></div></div>';
 }
