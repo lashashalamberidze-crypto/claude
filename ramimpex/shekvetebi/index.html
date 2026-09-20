@@ -1935,11 +1935,12 @@ function bset(d){const s=Object.assign({base:'',l100:12,fuelP:3.8,costKg:1.8,ret
   return s;}
 function fuelPerKm(s){return ((+s.l100||0)/100)*(+s.fuelP||0);}
 function muniKm(s,route,muni){const r=(s.routes||[]).find(x=>x.name===route);if(!r)return 0;const m=(r.munis||[]).find(x=>x.m===muni);return m?(+m.km||0):0;}
+function bkKm(b,s){const k=muniKm(s,b.route,b.municipality);return k||(+b.km||0);}   // მარშრუტიდან ან ხელით ჩაწერილი
 function routeBuyers(id,route){return BOOKINGS.filter(b=>String(b.distributor_id)===String(id)&&b.route===route);}
-function routeMaxKm(s,route,rb){let mx=0;(rb||[]).forEach(b=>{const k=muniKm(s,route,b.municipality);if(k>mx)mx=k;});return mx;}
+function routeMaxKm(s,route,rb){let mx=0;(rb||[]).forEach(b=>{const k=bkKm(b,s);if(k>mx)mx=k;});return mx;}
 function routeTripFuel(s,route,rb){return routeMaxKm(s,route,rb)*2*fuelPerKm(s);}   // მთელი რეისი შორეულ წერტილამდე (იქ-დაბრ.)
 // ტრანსპორტი 1 მყიდველზე = რეისის საწვავი × (მისი კმ ÷ ყველა მყიდველის კმ ჯამი) — ახლო↓ შორ↑, ↑მთელ ₾
-function bookTransport(b,s){const rb=routeBuyers(b.distributor_id,b.route);const sumk=rb.reduce((a,x)=>a+muniKm(s,b.route,x.municipality),0);if(!sumk)return 0;const trip=routeTripFuel(s,b.route,rb);const myk=muniKm(s,b.route,b.municipality);return Math.ceil(trip*(myk/sumk));}
+function bookTransport(b,s){const rb=routeBuyers(b.distributor_id,b.route);const sumk=rb.reduce((a,x)=>a+bkKm(x,s),0);if(!sumk)return 0;const trip=routeTripFuel(s,b.route,rb);const myk=bkKm(b,s);return Math.ceil(trip*(myk/sumk));}
 function bookKg(b){return (+b.qty||0)*(+b.bag_size||10);}
 function bookProduct(b,s){return bookKg(b)*(+s.retailKg||0);}
 function bookCost(b,s){return bookKg(b)*(+s.costKg||0);}          // დისტრიბუტორის ვალი
@@ -1963,6 +1964,7 @@ function renderBookings(){
      '<div class="row"><div style="flex:2"><label>მიმართულება</label><select id="bkRoute">'+(s.routes||[]).map(r=>'<option>'+esc(r.name)+'</option>').join('')+'</select></div>'+
      '<div style="flex:2"><label>მუნიციპალიტეტი</label><select id="bkMuni"></select></div>'+
      '<div style="flex:2"><label>სახელი, გვარი</label><input id="bkName" placeholder="მყიდველი"></div></div>'+
+     '<div class="row" id="bkCustomWrap" style="margin-top:8px;display:none"><div style="flex:2"><label>ხელით მუნიციპალიტეტი</label><input id="bkMuniCustom" placeholder="მუნიციპალიტეტის სახელი"></div><div style="flex:0 0 130px"><label>კმ (სამტ./ნატ.-დან)</label><input id="bkKmIn" type="number" step="1" placeholder="მაგ. 60"></div></div>'+
      '<div class="row" style="margin-top:8px"><div><label>ტელეფონი</label><input id="bkPhone" placeholder="5xx.."></div>'+
      '<div style="flex:2"><label>მისამართი (არჩ.)</label><input id="bkAddr" placeholder="სოფელი/ქუჩა"></div>'+
      '<div><label>დამატ. საკონტაქტო (არჩ.)</label><input id="bkC2" placeholder="WhatsApp / სხვა ტელ."></div>'+
@@ -2018,7 +2020,8 @@ function wireBookHead(){
   if($('bkSet'))$('bkSet').onclick=()=>{bookSettingsOpen=!bookSettingsOpen;renderBookings();};
   if($('bkBack'))$('bkBack').onclick=()=>{distBookFor='';bookFixed=false;bookHostId='book';bookSettingsOpen=false;renderDist();};
 }
-function fillBkMuni(){const s=bset(bDist());const rn=$('bkRoute')?$('bkRoute').value:'';const r=(s.routes||[]).find(x=>x.name===rn);if($('bkMuni'))$('bkMuni').innerHTML=(r&&r.munis?r.munis:[]).map(m=>'<option>'+esc(m.m)+'</option>').join('');}
+function fillBkMuni(){const s=bset(bDist());const rn=$('bkRoute')?$('bkRoute').value:'';const r=(s.routes||[]).find(x=>x.name===rn);if($('bkMuni'))$('bkMuni').innerHTML=(r&&r.munis?r.munis:[]).map(m=>'<option>'+esc(m.m)+'</option>').join('')+'<option value="__custom__">➕ სხვა (ხელით)</option>';bkCustomToggle();}
+function bkCustomToggle(){const w=$('bkCustomWrap');if(w)w.style.display=($('bkMuni')&&$('bkMuni').value==='__custom__')?'':'none';}
 function wireBookForm(d,s){
   if($('bkSetClose'))$('bkSetClose').onclick=()=>{bookSettingsOpen=false;renderBookings();};
   if($('stSave'))$('stSave').onclick=()=>saveBookSettings(d);
@@ -2027,6 +2030,7 @@ function wireBookForm(d,s){
   bookHost().querySelectorAll('[data-rdel]').forEach(b=>b.onclick=()=>{const cur=collectSettings(d,s);cur.routes.splice(+b.dataset.rdel,1);d.bset=cur;renderBookings();});
   bookHost().querySelectorAll('[data-mdel]').forEach(b=>b.onclick=()=>{const cur=collectSettings(d,s);const p=b.dataset.mdel.split('_');cur.routes[+p[0]].munis.splice(+p[1],1);d.bset=cur;renderBookings();});
   if($('bkRoute'))$('bkRoute').onchange=fillBkMuni;fillBkMuni();
+  if($('bkMuni'))$('bkMuni').onchange=bkCustomToggle;
   if($('bkAdd'))$('bkAdd').onclick=()=>addBooking(d);
   if($('bkXls'))$('bkXls').onclick=bookExportXls;
   if($('bkPdf'))$('bkPdf').onclick=bookDownloadPDF;
@@ -2051,9 +2055,11 @@ async function saveBookSettings(d){const cur=collectSettings(d,bset(d));const b=
 }
 async function addBooking(d){
   const name=($('bkName')&&$('bkName').value.trim())||'';if(!name){$('bkMsg').innerHTML='<span style="color:#b00020">ჩაწერე სახელი</span>';return;}
-  const rec={id:'bk'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),distributor_id:d.id,route:$('bkRoute').value,municipality:$('bkMuni').value,cust_name:name,phone:($('bkPhone')?$('bkPhone').value.trim():''),address:($('bkAddr')?$('bkAddr').value.trim():''),contact2:($('bkC2')?$('bkC2').value.trim():''),bag_size:parseFloat($('bkBag').value)||10,qty:parseFloat($('bkQty').value)||1,paid:false,delivered:false,paid_amount:0};
+  let muni=$('bkMuni').value,km=0;
+  if(muni==='__custom__'){muni=($('bkMuniCustom')?$('bkMuniCustom').value.trim():'');if(!muni){$('bkMsg').innerHTML='<span style="color:#b00020">ჩაწერე მუნიციპალიტეტი</span>';return;}km=parseFloat($('bkKmIn')?$('bkKmIn').value:'')||0;}
+  const rec={id:'bk'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),distributor_id:d.id,route:$('bkRoute').value,municipality:muni,km:km,cust_name:name,phone:($('bkPhone')?$('bkPhone').value.trim():''),address:($('bkAddr')?$('bkAddr').value.trim():''),contact2:($('bkC2')?$('bkC2').value.trim():''),bag_size:parseFloat($('bkBag').value)||10,qty:parseFloat($('bkQty').value)||1,paid:false,delivered:false,paid_amount:0};
   const b=$('bkAdd');if(b){b.disabled=true;b.textContent='⏳…';}
-  try{const r=await sbInsertSafe('bookings',rec,['docs','contact2','note']);if(r.error)throw r.error;await loadBookings();renderBookings();}
+  try{const r=await sbInsertSafe('bookings',rec,['docs','contact2','note','km']);if(r.error)throw r.error;await loadBookings();renderBookings();}
   catch(e){$('bkMsg').innerHTML='<span style="color:#b00020">ვერ დაემატა: '+esc(e.message||e)+'</span>';if(b){b.disabled=false;b.textContent='＋ დამატება';}}
 }
 function wireBookRows(d,s){

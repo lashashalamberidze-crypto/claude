@@ -24,6 +24,7 @@ create table if not exists public.bookings (
   contact2       text,      -- დამატ. საკონტაქტო
   bag_size       numeric,   -- ტომრის ზომა კგ (10 / 40)
   qty            numeric,   -- რაოდენობა (ტომარა)
+  km             numeric,   -- ხელით ჩაწერილი მუნიციპალიტეტის კმ (როცა სიაში არ არის)
   paid           boolean default false,  -- 💰 ჩარიცხულია
   delivered      boolean default false,  -- 🚚 მიტანილია
   paid_amount    numeric default 0,      -- ჩარიცხული თანხა ₾
