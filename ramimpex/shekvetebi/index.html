@@ -1767,6 +1767,19 @@ function printInvoice(inv){
   window.addEventListener('afterprint',restore);
   window.print();
 }
+// PDF გვერდის სწორება — „.pbreak-avoid" ელემენტი (მაგ. ყუთის მწკრივი) გვერდის ზღვარზე არ გაიჭრას:
+// წინ ცარიელ ადგილს ჩავსვამთ, რომ მთელი ბლოკი შემდეგ გვერდზე გადავიდეს.
+function _pdfPageAlign(node,cssPageH){try{
+  const base=node.getBoundingClientRect().top;
+  const els=Array.from(node.querySelectorAll('.pbreak-avoid'));
+  for(const el of els){
+    const r=el.getBoundingClientRect();const top=r.top-base,bot=r.bottom-base-1,h=r.height;
+    if(h>=cssPageH-4)continue;
+    const pgTop=Math.floor(top/cssPageH),pgBot=Math.floor(bot/cssPageH);
+    if(pgTop!==pgBot){const push=(pgTop+1)*cssPageH-top+2;
+      if(push>0&&push<cssPageH){const sp=document.createElement('div');sp.style.cssText='width:100%;height:'+push+'px;flex:0 0 100%';el.parentNode.insertBefore(sp,el);}}
+  }
+}catch(e){}}
 /* ინვოისის PDF — ჩამოტვირთვა (მუშაობს ტელეფონზეც; force-dark არ ამრუდებს) */
 async function buildInvoicePdf(inv){ // returns {pdf,fname} or null
   const fname=((inv&&inv.no)?(''+inv.no):'ინვოისი').replace(/[\\/:*?"<>|]/g,'-').trim();
@@ -1779,9 +1792,10 @@ async function buildInvoicePdf(inv){ // returns {pdf,fname} or null
   const node=holder.firstElementChild||holder;
   try{
     await new Promise(r=>setTimeout(r,120));
-    const canvas=await window.html2canvas(node,{scale:2,backgroundColor:'#ffffff',useCORS:true,windowWidth:760,logging:false});
     const {jsPDF}=window.jspdf;const pdf=new jsPDF('p','mm','a4');
     const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
+    _pdfPageAlign(node,760*ph/pw);   // ბარათი გვერდის ზღვარზე არ გაიჭრას
+    const canvas=await window.html2canvas(node,{scale:2,backgroundColor:'#ffffff',useCORS:true,windowWidth:760,logging:false});
     const perPagePx=Math.floor(canvas.width*ph/pw);
     if(canvas.height<=perPagePx){pdf.addImage(canvas,'JPEG',0,0,pw,canvas.height*pw/canvas.width);}
     else{let y=0;while(y<canvas.height){const hh=Math.min(perPagePx,canvas.height-y);const slice=document.createElement('canvas');slice.width=canvas.width;slice.height=hh;const cx=slice.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,slice.width,slice.height);cx.drawImage(canvas,0,y,canvas.width,hh,0,0,canvas.width,hh);if(y>0)pdf.addPage();pdf.addImage(slice,'JPEG',0,0,pw,hh*pw/canvas.width);y+=hh;}}
@@ -2194,15 +2208,17 @@ function bookExportXls(){if(!window.XLSX||!window.XLSX.utils){alert('Excel ვ�
 // illMap: {key: pngDataURL} — PDF-ისთვის წინასწარ დარენდერებული PNG (html2canvas SVG-ს ვერ ხატავს)
 function invBoxIllSection(inv,illMap){
   if(!window.RAM_boxIllURI)return '';
-  const seen={};let cards='';
+  const seen={};const cards=[];
   (inv.lines||[]).forEach(l=>{const k=boxKind(l);if(!k)return;const key=(l.code||'')+'|'+(l.size||'');if(seen[key])return;seen[key]=1;
     let src=(illMap&&illMap[key])||'';
     if(!src){try{src=window.RAM_boxIllURI({size:l.size,ply:l.ply,kind:k,dims:true,caption:true});}catch(e){return;}}
     if(!src)return;
-    cards+='<div style="width:232px;border:1px solid #e5ece7;border-radius:10px;padding:8px;background:#fff;text-align:center"><img src="'+src+'" style="width:216px;height:190px;object-fit:contain"><div style="font-size:12.5px;font-weight:800;color:#0B6B3C;margin-top:3px">'+esc(ruCode(l.code))+'</div>'+(l.name?'<div style="font-size:11px;color:#5C6B62">'+esc(l.name)+'</div>':'')+'</div>';
+    cards.push('<div style="width:232px;border:1px solid #e5ece7;border-radius:10px;padding:8px;background:#fff;text-align:center"><img src="'+src+'" style="width:216px;height:190px;object-fit:contain"><div style="font-size:12.5px;font-weight:800;color:#0B6B3C;margin-top:3px">'+esc(ruCode(l.code))+'</div>'+(l.name?'<div style="font-size:11px;color:#5C6B62">'+esc(l.name)+'</div>':'')+'</div>');
   });
-  if(!cards)return '';
-  return '<div style="margin-top:16px"><div style="font-size:14px;font-weight:800;color:#0B6B3C;margin-bottom:8px">📦 ფორმები და ზომები</div><div style="display:flex;flex-wrap:wrap;gap:10px">'+cards+'</div></div>';
+  if(!cards.length)return '';
+  // მწკრივებად (3 ცალი) — თითო მწკრივი „pbreak-avoid" (გვერდზე არ გაიჭრება)
+  let rows='';for(let i=0;i<cards.length;i+=3){rows+='<div class="pbreak-avoid" style="display:flex;gap:10px;margin-bottom:10px">'+cards.slice(i,i+3).join('')+'</div>';}
+  return '<div style="margin-top:16px"><div class="pbreak-avoid" style="font-size:14px;font-weight:800;color:#0B6B3C;margin-bottom:8px">📦 ფორმები და ზომები</div>'+rows+'</div>';
 }
 // წინასწარ PNG-ები ინვოისის ყუთებისთვის (PDF-ისთვის)
 function invBoxIllPNGs(inv){return new Promise(resolve=>{
