@@ -853,18 +853,32 @@ function retailTotals(dir){return invTotalsBy(dir,false);}       // საცა
 function distInvTotals(dir){return invTotalsBy(dir,true);}       // დისტრიბუტორზე გამოწერილი ინვოისები
 function distTotals(dir){let picked=0,sold=0,taken=0,paid=0,debt=0;(DISTRIBUTORS||[]).forEach(d=>{if(dir&&dir!=='all'&&(d.product||'ანთრაციტის ბრიკეტი')!==dir)return;const a=distAgg(d.id);picked+=a.pickedKg;sold+=a.soldKg;taken+=a.takenVal;paid+=a.paid;debt+=a.debt;});return {picked,sold,soldAmt:taken,taken,paid,due:debt,debt};}
 function distInvKg(dir){let k=0;(INVOICES||[]).forEach(v=>{if((v.extra||{}).custType!=='dist')return;if(dir&&dir!=='all'&&invDirBucket(v)!==dir)return;k+=invWeightKg(v);});return k;}
-function comboDashHTML(){const dir=IL_DIR;const rt=retailTotals(dir),di=distInvTotals(dir);const total=rt.T+di.T;const debts=rt.due+di.due;
-  const isBrik=(!dir||dir==='all'||dir==='ანთრაციტის ბრიკეტი');const dd=SAL_DIRS.find(x=>x[0]===dir);
+// —— დაშბორდის helper-ები (ინვოის-დაფუძნებული) ——
+function invLineQtyDir(inv,dir){let q=0;(inv.lines||[]).forEach(l=>{const cdir=saleDirOf(l.code,(byCode(l.code)||{}).dir||'');const match=(dir&&dir!=='all')?(cdir===dir):isBriket(l.code);if(match)q+=(+l.qty||0);});return q;}
+function retailSoldQty(dir){let q=0;(INVOICES||[]).forEach(v=>{if((v.extra||{}).custType==='dist')return;q+=invLineQtyDir(v,dir);});return q;}   // საცალო გაყიდული (ბრიკეტი კგ / ყუთი ცალი)
+function distSoldQty(dir){let q=0;(INVOICES||[]).forEach(v=>{const ex=v.extra||{};if(ex.custType!=='dist'||!ex.dispensed)return;q+=invLineQtyDir(v,dir);});return q;}   // დისტრ. გატანილი
+function stockQtyDir(dir){let k=0;Object.keys(STOCK||{}).forEach(c=>{if(STOCK[c]==null)return;const cdir=saleDirOf(c,(byCode(c)||{}).dir||'');const match=(dir&&dir!=='all')?(cdir===dir):isBriket(c);if(match)k+=(+STOCK[c]||0);});return k;}   // მარაგში დარჩენილი
+function distDashAgg(dir){let taken=0,paid=0,debt=0;(DISTRIBUTORS||[]).forEach(d=>{if(dir&&dir!=='all'&&(d.product||'ანთრაციტის ბრიკეტი')!==dir)return;taken+=distTakenFor(d.id);paid+=distDepositsFor(d.id);debt+=distDebtFor(d.id);});return {taken,paid,debt};}
+function comboDashHTML(){const dir=IL_DIR;const dd=SAL_DIRS.find(x=>x[0]===dir);
   const dlabel=(dir&&dir!=='all'&&dd)?(dd[2]+' '+dd[1]):'ყველა მიმართულება';
-  const card5=isBrik
-    ?'<div class="skpi" style="border-color:#c9701a"><div class="l">🔥 ბრიკეტი — სულ კგ</div><div class="v" style="font-size:20px;color:#c9701a">'+fmtNum(retailKg()+distInvKg("ანთრაციტის ბრიკეტი"))+'</div><div class="muted" style="font-size:10.5px">საცალო + დისტრიბ.</div></div>'
-    :'<div class="skpi" style="border-color:#c9701a"><div class="l">'+(dd?dd[2]+' '+dd[1]:'')+' — დისტრ. ინვ.</div><div class="v" style="font-size:20px;color:#c9701a">'+di.n+'</div><div class="muted" style="font-size:10.5px">ინვოისი</div></div>';
+  const isBrik=(!dir||dir==='all'||dir==='ანთრაციტის ბრიკეტი');const u=isBrik?' კგ':' ცალ';
+  const rt=retailTotals(dir), da=distDashAgg(dir);
+  const rKg=retailSoldQty(dir), dKg=distSoldQty(dir), stockK=stockQtyDir(dir);
+  const block=(title,inv,paid,debt,soldKg,extra)=>
+    '<div style="margin-bottom:10px"><div style="font-weight:900;color:#14261c;font-size:13.5px;margin:8px 2px 6px">'+title+'</div>'+
+    '<div class="salkpi" style="grid-template-columns:repeat('+(extra?5:4)+',1fr)">'+
+      '<div class="skpi blue"><div class="l">📝 გაწერილი ₾</div><div class="v" style="font-size:19px;color:#2b6cb0">'+money(inv)+'</div></div>'+
+      '<div class="skpi green"><div class="l">💰 ჩარიცხული ₾</div><div class="v" style="font-size:19px;color:#0B6B3C">'+money(paid)+'</div></div>'+
+      '<div class="skpi red"><div class="l">❗ დარჩენილი ვალი ₾</div><div class="v" style="font-size:19px;color:#b00020">'+money(debt)+'</div></div>'+
+      '<div class="skpi" style="border-color:#c9701a"><div class="l">⚖️ გაყიდული'+u+'</div><div class="v" style="font-size:19px;color:#c9701a">'+fmtNum(soldKg)+'</div></div>'+
+      (extra||'')+'</div></div>';
+  const totExtra='<div class="skpi" style="border-color:#6d3ad6"><div class="l">📦 დარჩ. გასაყიდი'+u+'</div><div class="v" style="font-size:19px;color:#6d3ad6">'+fmtNum(stockK)+'</div><div class="muted" style="font-size:10px">მარაგში</div></div>';
   return '<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2>💼 საერთო დაშბორდი <span class="muted" style="font-weight:600;font-size:12px">· '+esc(dlabel)+'</span></h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="dbtn v" id="cmbReport">📈 ანგარიში (PDF)</button><button class="dbtn a" id="cmbXls">📊 საერთო Excel</button><button class="dbtn line" id="cmbPdf">📄 საერთო PDF</button></div></div>'+
-    '<div class="salkpi" style="margin-top:12px;grid-template-columns:repeat(5,1fr)"><div class="skpi"><div class="l">🛒 საცალო ₾</div><div class="v" style="font-size:20px">'+money(rt.T)+'</div><div class="muted" style="font-size:10.5px">გადახდ. '+money(rt.P)+'</div></div>'+
-    '<div class="skpi blue"><div class="l">🚚 დისტრიბუცია ₾</div><div class="v" style="font-size:20px;color:#2b6cb0">'+money(di.T)+'</div><div class="muted" style="font-size:10.5px">ინვოისი '+di.n+'</div></div>'+
-    '<div class="skpi green"><div class="l">💰 სულ გაყიდვები ₾</div><div class="v" style="font-size:20px;color:#0B6B3C">'+money(total)+'</div></div>'+
-    '<div class="skpi red"><div class="l">❗ ვალები სულ ₾</div><div class="v" style="font-size:20px;color:#b00020">'+money(debts)+'</div></div>'+
-    card5+'</div></div>';
+    '<div style="margin-top:6px">'+
+    block('🛒 საცალო',rt.T,rt.P,rt.due,rKg,'')+
+    block('🚚 დისტრიბუცია',da.taken,da.paid,da.debt,dKg,'')+
+    block('📊 ჯამი — საცალო + დისტრიბუცია',rt.T+da.taken,rt.P+da.paid,rt.due+da.debt,rKg+dKg,totExtra)+
+    '</div></div>';
 }
 function renderSales(){
   distBookFor='';bookFixed=false;bookHostId='salesBody';
