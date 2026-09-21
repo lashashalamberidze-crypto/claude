@@ -379,6 +379,12 @@ const DTX={
 const esc=s=>(s==null?'':(''+s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let cache=null;
 async function ensure(){ if(cache)return; try{const {data,error}=await sb.from('distributors').select('*').eq('approved',true).order('region',{ascending:true});if(error)throw error;cache=data||[];}catch(e){cache=[];} }
+// რეგიონი+მუნიციპ. — შენახული ველებიდან, თუ ცარიელია — მარშრუტებიდან (bset.routes)
+function distRegMuni(d){const out=[];const rt=(d.bset&&Array.isArray(d.bset.routes))?d.bset.routes:[];
+  if(d.municipalities&&d.municipalities.length){const m2r={};rt.forEach(r=>(r.munis||[]).forEach(x=>{if(x&&x.m)m2r[x.m]=r.region||d.region||'—';}));d.municipalities.forEach(m=>out.push({region:m2r[m]||d.region||'—',muni:m}));}
+  else if(rt.length){rt.forEach(r=>(r.munis||[]).forEach(x=>{if(x&&x.m)out.push({region:r.region||d.region||'—',muni:x.m});}));}
+  else{out.push({region:d.region||'—',muni:d.municipality||''});}
+  return out;}
 function distCard(d){
   const nm=d.shop_name||d.name||'—';
   const sub=(d.shop_name&&d.name&&d.shop_name!==d.name)?('<div class="dsub">'+esc(d.name)+'</div>'):'';
@@ -397,7 +403,7 @@ window.RIfillDist=async function(lang){
   if(!list.length){h+='<div class="dist-empty">'+esc(t.none)+' <a href="../distribution/" style="color:var(--o);font-weight:800">'+esc(t.become)+'</a></div>';sec.innerHTML=h;return;}
   // group by region -> municipality (ჩამონათვალი)
   const byReg={};
-  list.forEach(d=>{const r=d.region||'—';const ms=(d.municipalities&&d.municipalities.length)?d.municipalities:[d.municipality||''];ms.forEach(m=>{(byReg[r]=byReg[r]||{})[m]=(byReg[r][m]||[]);byReg[r][m].push(d);});});
+  list.forEach(d=>{distRegMuni(d).forEach(({region,muni})=>{const r=region||'—';(byReg[r]=byReg[r]||{})[muni]=(byReg[r][muni]||[]);byReg[r][muni].push(d);});});
   Object.keys(byReg).sort().forEach(r=>{
     h+='<div class="reg-grp"><div class="rh">📍 '+esc(r)+'</div>';
     Object.keys(byReg[r]).sort().forEach(m=>{
