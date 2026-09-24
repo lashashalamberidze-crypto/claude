@@ -1806,7 +1806,8 @@ async function buildInvoicePdf(inv){ // returns {pdf,fname} or null
     await new Promise(r=>setTimeout(r,120));
     const {jsPDF}=window.jspdf;const pdf=new jsPDF('p','mm','a4');
     const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
-    _pdfPageAlign(node,760*ph/pw);   // ბარათი გვერდის ზღვარზე არ გაიჭრას
+    const nodeW=node.getBoundingClientRect().width||760;   // ნამდვილი სიგანე (max-width:720) — html2canvas ამ სიგანეზე ჭრის
+    _pdfPageAlign(node,nodeW*ph/pw);   // ბარათი გვერდის ზღვარზე არ გაიჭრას (ზუსტ სიგანეზე დაფუძნებული)
     const canvas=await window.html2canvas(node,{scale:2,backgroundColor:'#ffffff',useCORS:true,windowWidth:760,logging:false});
     const perPagePx=Math.floor(canvas.width*ph/pw);
     if(canvas.height<=perPagePx){pdf.addImage(canvas,'JPEG',0,0,pw,canvas.height*pw/canvas.width);}
