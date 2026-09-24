@@ -150,9 +150,7 @@ const RMETA={
 };
 function regionIdFor(region){const r=(region||'').toLowerCase();for(const id in RMETA){if(RMETA[id].al.some(a=>r.indexOf(a.toLowerCase())>=0))return id;}return '';}
 // დისტრიბუტორის ყველა რეგიონი — მუნიციპალიტეტების მიხედვით (რომ რამდენიმე რეგიონში გამოჩნდეს)
-function distMunis(d){if(d.municipalities&&d.municipalities.length)return d.municipalities;if(d.municipality)return [d.municipality];
-  // fallback: მარშრუტებიდან (bset.routes)
-  const rt=(d.bset&&Array.isArray(d.bset.routes))?d.bset.routes:[];const ms=[];rt.forEach(r=>(r.munis||[]).forEach(m=>{const nm=m&&m.m;if(nm&&ms.indexOf(nm)<0)ms.push(nm);}));return ms;}
+function distMunis(d){if(d.municipalities&&d.municipalities.length)return d.municipalities;if(d.municipality)return [d.municipality];return [];}
 function regionIdsFor(d){const ids={};distMunis(d).forEach(m=>{const id=regionIdFor(m);if(id)ids[id]=1;});if(!Object.keys(ids).length){const id=regionIdFor(d.region);if(id)ids[id]=1;}return Object.keys(ids);}
 function munisInRegion(d,id){const ms=distMunis(d);const f=ms.filter(m=>regionIdFor(m)===id);return f.length?f:ms;}
 let MAPDATA=null;
