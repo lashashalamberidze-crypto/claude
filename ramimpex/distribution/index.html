@@ -199,7 +199,13 @@ $('sendBtn').onclick=async()=>{
     (rec.monthly?('\n📦 თვიური: '+esc(rec.monthly)):'')+(rec.experience?('\n💼 გამოცდილება: '+esc(rec.experience)):'')+
     '\n📞 '+esc(phone)+(rec.contact2?(' · '+esc(rec.contact2)):'')+(rec.note?('\n📝 '+esc(rec.note)):'');
   let saved=false;
-  try{const {error}=await sb.from('distributors').insert(rec);if(!error)saved=true;}catch(e){}
+  // მდგრადი ჩაწერა — თუ რომელიმე არასავალდებულო სვეტი ბაზაში არ არსებობს, ამოვიღოთ და თავიდან
+  try{let cur=Object.assign({},rec);const OPT=['company_type','company','idc','address','monthly','experience','channel','transport','contact2','note','municipality','region'];
+    for(let i=0;i<12;i++){const {error}=await sb.from('distributors').insert(cur);if(!error){saved=true;break;}
+      const m=error.message||'';if(!/column|schema|cache|find/i.test(m))break;
+      let dropped=null;OPT.forEach(k=>{if(!dropped&&(k in cur)&&m.indexOf("'"+k+"'")>=0){delete cur[k];dropped=k;}});
+      if(!dropped){const rem=OPT.find(k=>k in cur);if(rem){delete cur[rem];dropped=rem;}else break;}}
+  }catch(e){}
   try{await sb.functions.invoke('telegram-notify',{body:{text:msg}});}catch(e){}
   if(saved || true){$('formCard').style.display='none';$('doneCard').style.display='block';window.scrollTo({top:0,behavior:'smooth'});}
   else{showMsg('ვერ გაიგზავნა — დაგვირეკე 595 533 500',false);btn.disabled=false;btn.textContent='📩 განაცხადის გაგზავნა';}
