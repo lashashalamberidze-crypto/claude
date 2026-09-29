@@ -247,8 +247,13 @@ function invProdOptions(dirFilter){let h='<option value="">— აირჩი�
   });if(inner)h+='<optgroup label="'+esc(d.name)+'">'+inner+'</optgroup>';});return h;}
 function loginView(msg){
  $('tabbar').style.display='none';$('logout').style.display='none';catEl.style.display='none';invEl.style.display='none';bookEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';app.style.display='';
- app.innerHTML='<div class="card" style="max-width:380px;margin:40px auto"><h2 style="margin-bottom:6px">შესვლა</h2><p class="muted" style="font-size:12px;margin-bottom:8px">ადმინის ელ.ფოსტა/პაროლი (Supabase)</p>'+(msg?'<p style="color:#c62828;font-size:12px;margin-bottom:6px">'+esc(msg)+'</p>':'')+'<label>ელ. ფოსტა</label><input id="em" type="email"><label>პაროლი</label><input id="pw" type="password"><button class="btn" id="lg" style="width:100%;margin-top:12px">შესვლა</button></div>';
+ app.innerHTML='<div class="card" style="max-width:380px;margin:40px auto"><h2 style="margin-bottom:6px">შესვლა</h2><p class="muted" style="font-size:12px;margin-bottom:8px">ადმინის ელ.ფოსტა/პაროლი (Supabase)</p>'+(msg?'<p style="color:#c62828;font-size:12px;margin-bottom:6px">'+esc(msg)+'</p>':'')+'<label>ელ. ფოსტა</label><input id="em" type="email"><label>პაროლი</label><input id="pw" type="password"><button class="btn" id="lg" style="width:100%;margin-top:12px">შესვლა</button><button class="smini" id="fpw" style="width:100%;margin-top:8px;background:#f3faf5;color:#0B6B3C">🔑 პაროლი დამავიწყდა</button><div id="fpwMsg" class="muted" style="font-size:12px;margin-top:6px"></div></div>';
  $('lg').onclick=async()=>{$('lg').disabled=true;$('lg').textContent='...';const {error}=await sb.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});if(error){loginView(error.message);}else{onLogin();}};
+ $('fpw').onclick=async()=>{const em=($('em').value||'').trim();if(!em){$('fpwMsg').innerHTML='<span style="color:#c62828">ჯერ ჩაწერე ელ.ფოსტა ზემოთ</span>';return;}$('fpw').disabled=true;const {error}=await sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});if(error){$('fpwMsg').innerHTML='<span style="color:#c62828">'+esc(error.message)+'</span>';$('fpw').disabled=false;}else{$('fpwMsg').innerHTML='<span style="color:#0B6B3C">✅ გამოგზავნილია აღდგენის ბმული <b>'+esc(em)+'</b>-ზე. გახსენი წერილი და დააყენე ახალი პაროლი.</span>';}};
+}
+function recoverView(){$('tabbar').style.display='none';$('logout').style.display='none';catEl.style.display='none';invEl.style.display='none';bookEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';app.style.display='';
+ app.innerHTML='<div class="card" style="max-width:380px;margin:40px auto"><h2 style="margin-bottom:6px">🔑 ახალი პაროლი</h2><p class="muted" style="font-size:12px;margin-bottom:8px">ჩაწერე ახალი პაროლი (მინ. 6 სიმბოლო)</p><label>ახალი პაროლი</label><input id="np" type="password"><button class="btn" id="npsave" style="width:100%;margin-top:12px">შენახვა</button><div id="npMsg" class="muted" style="font-size:12px;margin-top:6px"></div></div>';
+ $('npsave').onclick=async()=>{const p=$('np').value||'';if(p.length<6){$('npMsg').innerHTML='<span style="color:#c62828">მინ. 6 სიმბოლო</span>';return;}$('npsave').disabled=true;$('npsave').textContent='...';const {error}=await sb.auth.updateUser({password:p});if(error){$('npMsg').innerHTML='<span style="color:#c62828">'+esc(error.message)+'</span>';$('npsave').disabled=false;$('npsave').textContent='შენახვა';}else{$('npMsg').innerHTML='<span style="color:#0B6B3C">✅ პაროლი შეიცვალა</span>';history.replaceState(null,'',location.pathname);setTimeout(onLogin,600);}};
 }
 function onLogin(){$('tabbar').style.display='';$('logout').style.display='';loadOrders();}
 
@@ -2263,7 +2268,9 @@ function invoiceHTML(inv){const ex=inv.extra||{};const rows=(inv.lines||[]).map(
    '<div style="margin-top:12px;background:#E3F1E8;border-radius:8px;padding:9px 12px;font-size:11.5px;color:#0b6b3c;font-weight:600">✔ ნებისმიერ რაოდენობაზე მოლაპარაკება · ✔ ადგილზე მიწოდება საქართველოში · ✔ ნებისმიერი ზომის დამზადება</div>'+
    '<div style="margin-top:8px;font-size:11px;color:#5C6B62">'+(ex.vatIncl?'ფასები დღგ-ის ჩათვლით.':'ფასები დღგ-ს გარეშე.')+' მადლობა თანამშრომლობისთვის!</div></div>';}
 
+let RECOVERING=/type=recovery/.test(location.hash);
+sb.auth.onAuthStateChange((event)=>{if(event==='PASSWORD_RECOVERY'){RECOVERING=true;recoverView();}});
 loginView();
-(async()=>{try{const {data}=await sb.auth.getSession();if(data&&data.session)onLogin();}catch(e){console.error(e);}})();
+(async()=>{try{if(RECOVERING){recoverView();return;}const {data}=await sb.auth.getSession();if(data&&data.session)onLogin();}catch(e){console.error(e);}})();
 </script>
 </body></html>
