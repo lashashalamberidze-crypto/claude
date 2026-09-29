@@ -967,10 +967,10 @@ function renderDist(){
   // დისტრიბუტორების შემაჯამებელი ცხრილი (ვალი = ინვოისი − ჩარიცხვა)
   h+='<div class="card"><h2>👥 დისტრიბუტორები — ვალი & მყიდველები</h2>';
   if(!DL.length)h+='<div class="empty">ჯერ დისტრიბუტორი არ არის. დაამატე „➕ ახალი დისტრიბუტორი" ან განაცხადი მოვა /distribution გვერდიდან.</div>';
-  else{h+='<div class="scroll"><table><thead><tr><th>დისტრიბუტორი</th><th>რეგ./მუნიც.</th><th class="right">წაღ. კგ</th><th class="right">წაღებული ₾</th><th class="right">ჩარიცხ. ₾</th><th class="right">დისტრ. ვალი ₾</th><th class="right">დამტკ.</th><th></th></tr></thead><tbody>';
-    DL.forEach(d=>{const tk=distTakenFor(d.id),pd=distDepositsFor(d.id),db=distDebtFor(d.id),kg=distTakenKgFor(d.id);
+  else{h+='<div class="scroll"><table><thead><tr><th>დისტრიბუტორი</th><th>რეგ./მუნიც.</th><th class="right">წაღ. კგ</th><th class="right">დარჩა კგ</th><th class="right">წაღებული ₾</th><th class="right">ჩარიცხ. ₾</th><th class="right">დისტრ. ვალი ₾</th><th class="right">დამტკ.</th><th></th></tr></thead><tbody>';
+    DL.forEach(d=>{const tk=distTakenFor(d.id),pd=distDepositsFor(d.id),db=distDebtFor(d.id),kg=distTakenKgFor(d.id);const cq=(+bset(d).costKg)||1.8;const dkg=cq>0?db/cq:0;
       h+='<tr><td><b>'+esc(d.name||d.shop_name||'—')+'</b>'+(d.phone?'<div class="muted" style="font-size:10px">📞 '+esc(d.phone)+'</div>':'')+'</td><td>'+esc(d.region||'—')+((d.municipalities&&d.municipalities.length)?' · '+esc(d.municipalities.join(', ')):(d.municipality?' · '+esc(d.municipality):''))+'</td>'+
-      '<td class="right"><b style="color:#c9701a">'+fmtNum(kg)+'</b></td><td class="right">'+money(tk)+'</td><td class="right">'+money(pd)+'</td><td class="right">'+(db>0.01?'<b style="color:#b00020">'+money(db)+'</b>':'0.00')+'</td>'+
+      '<td class="right"><b style="color:#c9701a">'+fmtNum(kg)+'</b></td><td class="right">'+(dkg>0.5?'<b style="color:#b00020">'+fmtNum(Math.round(dkg))+'</b>':'0')+'</td><td class="right">'+money(tk)+'</td><td class="right">'+money(pd)+'</td><td class="right">'+(db>0.01?'<b style="color:#b00020">'+money(db)+'</b>':'0.00')+'</td>'+
       '<td class="right">'+(d.approved?'<span class="dtag ok">✅</span>':'<span class="dtag wait">⏳</span>')+'</td>'+
       '<td class="right" style="white-space:nowrap"><button class="smini" data-dbook="'+esc(d.id)+'" title="მყიდველები / მიწოდების სია" style="background:#6d3ad6;color:#fff">📋</button> <button class="smini" data-dpay="'+esc(d.id)+'" title="ჩარიცხვის ჩაწერა">💰</button> <button class="smini" data-dview="'+esc(d.id)+'" title="სრული ინფო">👁</button> <button class="smini" data-dedit="'+esc(d.id)+'" title="რედაქტ./დამტკიცება">✏</button></td></tr>';});
     h+='</tbody></table></div>';}
@@ -1215,12 +1215,16 @@ function parseLatLng(s){if(!s)return null;s=''+s;
   if(!m)m=s.match(/^\s*(-?\d{1,3}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)\s*$/);
   if(!m)return null;const la=+m[1],ln=+m[2];if(isNaN(la)||isNaN(ln)||la<-90||la>90||ln<-180||ln>180)return null;
   return [Math.round(la*1e6)/1e6,Math.round(ln*1e6)/1e6];}
-function distView(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));if(!d)return;const a=distAgg(id);
+function distView(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));if(!d)return;
+  const costKg=(+bset(d).costKg)||1.8;
+  const takenKg=distTakenKgFor(id), takenVal=distTakenFor(id), paidVal=distDepositsFor(id), debtVal=distDebtFor(id);
+  const paidKg=costKg>0?paidVal/costKg:0, debtKg=costKg>0?debtVal/costKg:0;
   const row=(l,v)=>v?('<div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px dashed #eef1ef"><div style="flex:0 0 150px;font-weight:800;color:#5c6b62;font-size:12.5px">'+l+'</div><div style="flex:1;font-size:13.5px">'+esc(v)+'</div></div>'):'';
   const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
   const created=d.created_at?(''+d.created_at).slice(0,10):'';
   ov.innerHTML='<div class="card" style="max-width:560px;width:100%;max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:flex-start"><h2>👁 '+esc(d.name||'—')+' '+(d.approved?'<span class="dtag ok">✅ დამტკიცებული</span>':'<span class="dtag wait">⏳ განსახილველი</span>')+'</h2><button class="smini" id="dvClose">✕</button></div>'+
-    '<div class="salkpi" style="margin:10px 0"><div class="skpi"><div class="l">გატანილი</div><div class="v" style="font-size:17px">'+fmtKg(a.pickedKg)+'</div></div><div class="skpi blue"><div class="l">გაყიდა</div><div class="v" style="font-size:17px">'+fmtKg(a.soldKg)+'</div></div><div class="skpi amber"><div class="l">დარჩა</div><div class="v" style="font-size:17px">'+fmtKg(a.remKg)+'</div></div><div class="skpi red"><div class="l">ვალი ₾</div><div class="v" style="font-size:17px">'+money(a.debt)+'</div></div></div>'+
+    '<div class="salkpi" style="margin:10px 0"><div class="skpi" style="border-color:#c9701a"><div class="l">⚖️ წაღებული კგ</div><div class="v" style="font-size:17px;color:#c9701a">'+fmtNum(takenKg)+'</div></div><div class="skpi green"><div class="l">✅ დაფარული კგ</div><div class="v" style="font-size:17px;color:#0B6B3C">'+fmtNum(Math.round(paidKg))+'</div></div><div class="skpi amber"><div class="l">⏳ დარჩა კგ</div><div class="v" style="font-size:17px;color:#c9701a">'+fmtNum(Math.round(debtKg))+'</div></div><div class="skpi red"><div class="l">ვალი ₾</div><div class="v" style="font-size:17px">'+money(debtVal)+'</div></div></div>'+
+    '<div class="salkpi" style="margin:0 0 8px"><div class="skpi blue"><div class="l">ღირებულება ₾</div><div class="v" style="font-size:15px;color:#2b6cb0">'+money(takenVal)+'</div></div><div class="skpi green"><div class="l">ჩარიცხული ₾</div><div class="v" style="font-size:15px;color:#0B6B3C">'+money(paidVal)+'</div></div></div>'+
     row('პირის ტიპი',d.company_type)+row('კომპანია',d.company)+row('პ/ნ ან ს/კ',d.idc)+row('მაღაზიის სახელი',d.shop_name)+
     row('რეგიონი',d.region)+row('მუნიციპალიტეტი',d.municipality)+row('მისამართი',d.address)+
     row('🛒 გაყიდვის არხი',d.channel)+row('🚚 ტრანსპორტი',d.transport)+row('📦 თვიური შესყ.',d.monthly)+row('💼 გამოცდილება',d.experience)+
