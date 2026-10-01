@@ -888,7 +888,7 @@ function comboDashHTML(){const dir=IL_DIR;const dd=SAL_DIRS.find(x=>x[0]===dir);
       '<div class="skpi red"><div class="l">❗ დარჩენილი ვალი ₾</div><div class="v" style="font-size:19px;color:#b00020">'+money(debt)+'</div></div>'+
       '<div class="skpi" style="border-color:#c9701a"><div class="l">⚖️ გაყიდული'+u+'</div><div class="v" style="font-size:19px;color:#c9701a">'+fmtNum(soldKg)+'</div></div>'+
       (extra||'')+'</div></div>';
-  const totExtra='<div class="skpi" style="border-color:#6d3ad6"><div class="l">📦 დარჩ. გასაყიდი'+u+'</div><div class="v" style="font-size:19px;color:#6d3ad6">'+fmtNum(stockK)+'</div><div class="muted" style="font-size:10px">მარაგში</div></div>';
+  const negStk=stockK<0;const totExtra='<div class="skpi" style="border-color:'+(negStk?'#b00020':'#6d3ad6')+'"><div class="l">📦 დარჩ. გასაყიდი'+u+'</div><div class="v" style="font-size:19px;color:'+(negStk?'#b00020':'#6d3ad6')+'">'+fmtNum(stockK)+'</div><div class="muted" style="font-size:10px">'+(negStk?'⚠️ მარაგი ამოიწურა — შეავსე 📦':'მარაგში')+'</div></div>';
   return '<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2>💼 საერთო დაშბორდი <span class="muted" style="font-weight:600;font-size:12px">· '+esc(dlabel)+'</span></h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="dbtn v" id="cmbReport">📈 ანგარიში (PDF)</button><button class="dbtn a" id="cmbXls">📊 საერთო Excel</button><button class="dbtn line" id="cmbPdf">📄 საერთო PDF</button></div></div>'+
     '<div style="margin-top:6px">'+
     block('🛒 საცალო',rt.T,rt.P,rt.due,rKg,'')+
