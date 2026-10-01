@@ -1782,9 +1782,12 @@ async function deleteInvoice(id){
   const inv=INVOICES.find(x=>String(x.id)===String(id));if(!inv)return;
   if(!confirm('წავშალო ინვოისი № '+(inv.no||inv.id)+'?\nეს მოქმედება შეუქცევადია.'))return;
   try{const {error}=await sb.from('invoices').delete().eq('id',inv.id);if(error)throw error;
+    // თუ ინვოისი გატანილი იყო — პროდუქცია დაუბრუნდეს მარაგს (თორემ მარაგი „იკარგება")
+    if((inv.extra||{}).dispensed){(inv.lines||[]).forEach(l=>{if(!l.code)return;STOCK[l.code]=(+STOCK[l.code]||0)+(+l.qty||0);});
+      try{const rows=[];const seen={};(inv.lines||[]).forEach(l=>{if(!l.code||seen[l.code])return;seen[l.code]=1;rows.push({code:l.code,qty:+STOCK[l.code]||0,updated_at:new Date().toISOString()});});if(rows.length)await sb.from('stock').upsert(rows,{onConflict:'code'});}catch(se){}}
     INVOICES=INVOICES.filter(x=>String(x.id)!==String(id));
     if(String(editingInvId)===String(id)){editingInvId=null;invDraft=[];const eb=$('editBanner');if(eb)eb.style.display='none';renderInvLines();}
-    renderInvList();
+    renderInvList();updateStockSummary();
   }catch(e){alert('ვერ წაიშალა: '+(e.message||e));}
 }
 function printInvoice(inv){
