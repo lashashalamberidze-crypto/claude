@@ -232,7 +232,14 @@ const SAL_CSS='.salkpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px
 '.dnote{margin-top:8px;font-size:12px;color:#8a6a00;background:#FFF4D6;border:1px solid #f0d98a;border-radius:8px;padding:8px 10px}'+
 '.dtag{display:inline-block;font-size:11px;font-weight:800;border-radius:6px;padding:2px 7px}'+
 '.dtag.ok{background:#dff3e6;color:#0B6B3C}.dtag.wait{background:#fff2cf;color:#8a6a00}.dtag.debt{background:#fde3e3;color:#b00020}'+
-'@media(max-width:640px){.salkpi{grid-template-columns:1fr 1fr}.salform .fg{grid-template-columns:1fr 1fr}.salocs,.saldocs{grid-template-columns:1fr 1fr}}';
+'@media(max-width:640px){'+
+'.salkpi{grid-template-columns:repeat(2,1fr)!important;gap:8px!important;margin-bottom:10px!important}'+
+'.skpi{padding:9px 11px!important;border-left-width:4px!important;border-radius:10px!important;box-shadow:0 2px 6px rgba(16,60,40,.06)!important}'+
+'.skpi .l{font-size:10.5px!important;line-height:1.2}'+
+'.skpi .v{font-size:16px!important;margin-top:2px!important;line-height:1.15}'+
+'.skpi .muted{font-size:9px!important}'+
+'.salform .fg{grid-template-columns:1fr 1fr}.salocs,.saldocs{grid-template-columns:1fr 1fr}'+
+'}';
 function saleDirOf(code,dir){const d=dir||((byCode(code)||{}).dir)||'';if(d==='ანთრაციტის ბრიკეტი')return 'ანთრაციტის ბრიკეტი';if(d==='კუთხოვანი დამცავები')return 'კუთხოვანი დამცავები';return 'მუყაოს ყუთები';}
 function fmtQty(q,u){if(q==null||q==='')return '';const n=+q;const s=isNaN(n)?q:n.toLocaleString('ka-GE');return s+(u?' '+u:'');}
 function salTotals(list){let t=0,p=0;list.forEach(s=>{t+=(+s.total||0);p+=(+s.paid||0);});return {t:t,p:p,due:t-p,n:list.length};}
