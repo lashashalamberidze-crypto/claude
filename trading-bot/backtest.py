@@ -5,10 +5,13 @@ Backtest — "დღეში ერთხელ" სტრატეგიებ
   X 20/50  — ყიდულობს როცა 20-დღიანი საშუალო > 50-დღიანზე, ყიდის როცა ქვემოთ ჩამოვა
   X 50/200 — იგივე 50/200 დღეზე ("golden cross")
   T 200    — ინახავს სანამ ფასი > 200-დღიან საშუალოზე, ქვემოთ ჩამოსვლისას ყიდის
+  T 200±B  — იგივე ზღვრით: ყიდულობს > საშუალო+B%, ყიდის < საშუალო-B% (bot.BUFFER_PCT)
   BH       — Buy & Hold
 
 $1000 თითო სიმბოლოზე. ხარჯი: აქციები 0.05%, კრიპტო 0.25% ერთ მხარეს.
-გაშვება: python backtest.py [წლები, ნაგულისხმევი 5]
+გაშვება: python backtest.py [წლები, ნაგულისხმევი 5] [--wide]
+  --wide — ბოტის სიის ნაცვლად 20 სხვადასხვა დიდი კომპანია (მათ შორის წარუმატებლებიც),
+           რომ შევამოწმოთ, სტრატეგია მხოლოდ "შერჩეულ გამარჯვებულებზე" ხომ არ მუშაობს.
 """
 import os
 import sys
@@ -22,10 +25,15 @@ from alpaca.data.timeframe import TimeFrame
 
 import bot
 
-YEARS = float(sys.argv[1]) if len(sys.argv) > 1 else 5
+ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
+WIDE = "--wide" in sys.argv
+YEARS = float(ARGS[0]) if ARGS else 5
 WARMUP_DAYS = 320  # 200-დღიანი საშუალოსთვის საჭირო წინა ისტორია (კალენდარული დღეები)
-STOCKS = bot.STOCKS
-CRYPTO = ["BTC/USD", "ETH/USD"]  # მხოლოდ შედარებისთვის — ბოტი კრიპტოთი არ ვაჭრობს
+WIDE_STOCKS = ["INTC", "BA", "DIS", "NKE", "PFE", "PYPL", "KO", "JNJ", "XOM", "WMT",
+               "JPM", "V", "CSCO", "IBM", "VZ", "MMM", "CVS", "SBUX", "TSLA", "MRK"]
+STOCKS = WIDE_STOCKS if WIDE else bot.STOCKS
+# კრიპტო მხოლოდ შედარებისთვის — ბოტი კრიპტოთი არ ვაჭრობს
+CRYPTO = [] if WIDE else ["BTC/USD", "ETH/USD"]
 COST = {False: 0.0005, True: 0.0025}  # is_crypto -> ერთი მხარის ხარჯი
 
 
@@ -41,21 +49,25 @@ def fetch(symbol, is_crypto, tf, start, end):
     return df["close"].astype(float)
 
 
-def run(closes, start, is_crypto, fast=None, slow=None, trend=None):
+def run(closes, start, is_crypto, fast=None, slow=None, trend=None, buffer=0.0):
     """აბრუნებს (მოგება $, გარიგებები, მოგებიანი %, max drawdown $, დრო ბაზარში %)."""
     cost = COST[is_crypto]
     if trend:
-        signal = closes > closes.rolling(trend).mean()
+        avg = closes.rolling(trend).mean()
+        buy_sig = closes > avg * (1 + buffer / 100)
+        sell_sig = closes < avg * (1 - buffer / 100)
     else:
-        signal = closes.rolling(fast).mean() > closes.rolling(slow).mean()
-    signal, px = signal[closes.index >= start], closes[closes.index >= start]
+        diff = closes.rolling(fast).mean() > closes.rolling(slow).mean()
+        buy_sig, sell_sig = diff, ~diff
+    keep = closes.index >= start
+    buy_sig, sell_sig, px = buy_sig[keep], sell_sig[keep], closes[keep]
 
     pnl, trades, wins, entry = 0.0, 0, 0, None
     peak, dd, days_in = 0.0, 0.0, 0
     for t, price in px.items():
-        if entry is None and signal[t]:
+        if entry is None and buy_sig[t]:
             entry = price * (1 + cost)
-        elif entry is not None and not signal[t]:
+        elif entry is not None and sell_sig[t]:
             profit = bot.DOLLARS_PER_TRADE * (price * (1 - cost) / entry - 1)
             pnl += profit; trades += 1; wins += profit > 0; entry = None
         days_in += entry is not None
@@ -79,7 +91,8 @@ def main():
     start = end - timedelta(days=int(365 * YEARS))
     strategies = [("X 20/50", dict(fast=20, slow=50)),
                   ("X 50/200", dict(fast=50, slow=200)),
-                  ("T 200", dict(trend=200))]
+                  ("T 200", dict(trend=200)),
+                  (f"T 200±{bot.BUFFER_PCT:g}%", dict(trend=200, buffer=bot.BUFFER_PCT))]
 
     rows = []
     for sym, is_crypto in [(s, False) for s in STOCKS] + [(s, True) for s in CRYPTO]:
@@ -95,7 +108,7 @@ def main():
         return f"{'+' if x >= 0 else '-'}${abs(x):,.0f}"
 
     names = [n for n, _ in strategies]
-    out = [f"## დღიური backtest — ბოლო {YEARS:g} წელი ({start:%Y-%m-%d} → {end:%Y-%m-%d})",
+    out = [f"## დღიური backtest{' (--wide: 20 სხვა კომპანია)' if WIDE else ''} — ბოლო {YEARS:g} წელი ({start:%Y-%m-%d} → {end:%Y-%m-%d})",
            "", f"${bot.DOLLARS_PER_TRADE} თითო სიმბოლოზე. უჯრაში: მოგება · გარიგებები · max ჩავარდნა", "",
            "| სიმბოლო | " + " | ".join(names) + " | Buy & Hold |",
            "|---" * (len(names) + 2) + "|"]

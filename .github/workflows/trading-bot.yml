@@ -1,9 +1,12 @@
 # ============================================================================
-# სავაჭრო ბოტი — დღეში ერთხელ, ბირჟის დახურვამდე ~30 წთ-ით ადრე (კომპიუტერი არ სჭირდება)
+# სავაჭრო ბოტი — დღეში ერთხელ, ბირჟის დახურვამდე ბოლო 45 წთ-ში (კომპიუტერი არ სჭირდება)
 #
 # საჭიროა 2 secret (GitHub → Settings → Secrets and variables → Actions):
 #   ALPACA_API_KEY     — Alpaca Paper API Key
 #   ALPACA_SECRET_KEY  — Alpaca Paper Secret Key
+# არასავალდებულო (Telegram შეტყობინებები):
+#   TELEGRAM_BOT_TOKEN — Telegram ბოტის token
+#   TELEGRAM_CHAT_ID   — შენი Telegram chat ID
 #
 # შენიშვნა: GitHub-ის schedule მუშაობს მხოლოდ main ბრანჩიდან.
 # ============================================================================
@@ -11,9 +14,10 @@ name: Trading bot
 
 on:
   schedule:
-    # 15:30 ნიუ-იორკის დროით: ზაფხულში 19:30 UTC, ზამთარში 20:30 UTC.
-    # ორივე ეშვება — ბოტი თავად ამოწმებს, დახურვამდე 45 წთ-ზე ნაკლებია თუ არა.
-    - cron: "30 19,20 * * 1-5"
+    # 15:15/15:30/15:45 ნიუ-იორკის დროით: ზაფხულში 19:xx UTC, ზამთარში 20:xx UTC.
+    # სამი ცდა — თუ GitHub ერთს დააგვიანებს, მეორე დაფარავს. ბოტი თავად ამოწმებს
+    # დახურვამდე დროს და ორჯერ ერთსა და იმავეს არ ყიდულობს.
+    - cron: "15,30,45 19,20 * * 1-5"
   workflow_dispatch:      # Actions ტაბში ხელით გაშვების ღილაკი
     inputs:
       force:
@@ -43,3 +47,5 @@ jobs:
           ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
           ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
           ALPACA_PAPER: "true"
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
