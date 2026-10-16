@@ -1800,7 +1800,7 @@ function renderPurchases(){
    '<div class="card"><h2>🛒 შესყიდვის დამატება</h2><p class="muted" style="font-size:12px">დაშალე პარტიის ხარჯი: 🧱 საქონელი (<b>ვალუტა × კურსი</b>: ₾/$/₽) · 🚚 ტრანსპ. · 🛃 საბაჟო · 💧 დღგ (ავტო 18%). „სულ" = პარტიის ხარჯი; 💧 დღგ <b>გიბრუნდებათ</b>, თვითღირ. მის გარეშე ითვლება.</p>'+
    '<div class="row"><div style="flex:2"><label>პროდუქტი</label><select id="puCode">'+purchProdOptions()+'</select></div><div><label>რაოდენობა (კგ/ცალი)</label><input id="puQty" type="number" step="any" placeholder="0"></div></div>'+
    '<div class="row" style="margin-top:8px;align-items:flex-end"><div><label>🧱 საქონელი</label><input id="puGoodsAmt" type="number" step="0.01" placeholder="0"></div><div style="flex:0 0 96px"><label>ვალუტა</label><select id="puCur"><option value="GEL">₾ ლარი</option><option value="USD">$ დოლარი</option><option value="RUB">₽ რუბლი</option></select></div><div style="flex:0 0 100px"><label>კურსი ₾</label><input id="puRate" type="number" step="0.0001" value="1" title="რამდენი ₾ ღირს 1 ერთ. ვალუტა"></div><div style="flex:0 0 120px"><label>= საქონელი ₾</label><input id="puGoodsGel" type="number" step="0.01" placeholder="0" readonly></div><div><label>🚚 ტრანსპ. ₾</label><input id="puTransp" type="number" step="0.01" placeholder="0"></div><div><label>🛃 საბაჟო ₾</label><input id="puCustoms" type="number" step="0.01" placeholder="0"></div></div>'+
-   '<div class="row" style="margin-top:8px;align-items:flex-end"><div style="flex:0 0 150px"><label>💧 დღგ ₾</label><input id="puVatAmt" type="number" step="0.01" placeholder="0"></div><div style="flex:1"><label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#2b6cb0;font-weight:700;cursor:pointer;margin-top:18px"><input type="checkbox" id="puVatAuto" checked style="width:16px;height:16px">ავტო 18% × (საქონ.+ტრანსპ.+საბაჟო)</label></div></div>'+
+   '<div class="row" style="margin-top:8px;align-items:flex-end"><div style="flex:0 0 150px"><label>💧 დღგ ₾</label><input id="puVatAmt" type="number" step="0.01" placeholder="0"></div><div style="flex:1"><label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#2b6cb0;font-weight:700;cursor:pointer;margin-top:18px"><input type="checkbox" id="puVatAuto" checked style="width:16px;height:16px">ავტო 18% × (საქონელი + ტრანსპორტი)</label></div></div>'+
    '<div class="row" style="margin-top:8px"><div style="flex:0 0 220px"><label>თარიღი</label><input id="puDate" type="date" value="'+todayStr()+'"></div><div style="flex:1"><label>შენიშვნა (არჩ.)</label><input id="puNote" placeholder="მომწოდებელი, პარტია…"></div></div>'+
    '<div class="row" style="margin-top:8px"><div style="flex:1"><label>📄 ინვოისი / ზედნადები (არჩ.)</label><input id="puInv" type="file" accept="image/*,application/pdf"><span id="puInvCur"></span></div><div style="flex:1"><label>🧾 გადახდის ქვითარი (არჩ.)</label><input id="puRcpt" type="file" accept="image/*,application/pdf"><span id="puRcptCur"></span></div></div>'+
    '<div id="puPrev" class="muted" style="margin-top:8px;font-size:13px;font-weight:700"></div>'+
@@ -1811,9 +1811,9 @@ function renderPurchases(){
   const g=id=>document.getElementById(id);
   const curDef={GEL:1,USD:defGel,RUB:defRub};
   const calcParts=()=>{const amt=+g('puGoodsAmt').value||0;const cur=g('puCur')?g('puCur').value:'GEL';const rate=(cur==='GEL')?1:(+g('puRate').value||0);const goods=amt*rate;if(g('puGoodsGel'))g('puGoodsGel').value=goods?Math.round(goods*100)/100:'';
-    const tr=+g('puTransp').value||0,cu=+g('puCustoms').value||0;const base=goods+tr+cu;
-    const auto=g('puVatAuto')&&g('puVatAuto').checked;let vat=auto?Math.round(base*0.18*100)/100:(+g('puVatAmt').value||0);
-    if(g('puVatAmt')){if(auto)g('puVatAmt').value=base>0?vat:'';g('puVatAmt').readOnly=auto;}
+    const tr=+g('puTransp').value||0,cu=+g('puCustoms').value||0;const base=goods+tr+cu;const vatBase=goods+tr;
+    const auto=g('puVatAuto')&&g('puVatAuto').checked;let vat=auto?Math.round(vatBase*0.18*100)/100:(+g('puVatAmt').value||0);
+    if(g('puVatAmt')){if(auto)g('puVatAmt').value=vatBase>0?vat:'';g('puVatAmt').readOnly=auto;}
     return {amt,cur,rate,goods,tr,cu,base,vat,total:base+vat};};
   const prev=()=>{const q=+g('puQty').value||0;const r=calcParts();const netU=q>0?r.base/q:0;
     g('puPrev').innerHTML=(r.total>0)?('💰 სულ გადახდილი: <b>'+money(r.total)+' ₾</b> · 💧 დასაბრ. დღგ: <b style="color:#2b6cb0">'+money(r.vat)+' ₾</b>'+(q>0?' · 🧾 თვითღირ.: <b style="color:#0B6B3C">'+money(netU)+' ₾/ერთ.</b> <span class="muted">(დღგ-ს გარეშე)</span>':'')):'';};
@@ -1845,7 +1845,7 @@ async function savePurchase(){const g=id=>document.getElementById(id);
   const code=g('puCode').value;const qty=+g('puQty').value||0;
   const amt=+g('puGoodsAmt').value||0;const cur=g('puCur')?g('puCur').value:'GEL';const rate=(cur==='GEL')?1:(+g('puRate').value||0);
   const goods=amt*rate;const tr=+g('puTransp').value||0,cu=+g('puCustoms').value||0;const base=goods+tr+cu;
-  const auto=g('puVatAuto')&&g('puVatAuto').checked;const vatAmt=auto?Math.round(base*0.18*100)/100:(+g('puVatAmt').value||0);
+  const auto=g('puVatAuto')&&g('puVatAuto').checked;const vatAmt=auto?Math.round((goods+tr)*0.18*100)/100:(+g('puVatAmt').value||0);
   const paid=Math.round((base+vatAmt)*100)/100;
   const parts={goodsAmt:amt,cur,rate,goods:Math.round(goods*100)/100,transport:tr,customs:cu,vat:vatAmt,other:0};
   if(!code){g('puMsg').innerHTML='<span style="color:#b00020">აირჩიე პროდუქტი</span>';return;}
