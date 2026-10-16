@@ -1,36 +1,31 @@
 """
-მარტივი სავაჭრო ბოტი Alpaca-სთვის (Paper Trading).
+სავაჭრო ბოტი Alpaca-სთვის — "დღეში ერთხელ" ტრენდის სტრატეგია (Paper Trading).
 
-სტრატეგია (SMA crossover + stop-loss / take-profit):
-  - ყოველ გაშვებაზე იღებს ბოლო 15-წუთიან სანთლებს თითოეულ სიმბოლოზე.
-  - მოკლე საშუალო (SMA_FAST) > გრძელ საშუალოზე (SMA_SLOW) და პოზიცია არ გვაქვს → ყიდულობს.
-  - მოკლე < გრძელზე, ან ზარალი >= STOP_LOSS_PCT, ან მოგება >= TAKE_PROFIT_PCT → ყიდის.
+სტრატეგია (T 200):
+  - ფასი > 200-დღიან საშუალოზე და პოზიცია არ გვაქვს → ყიდულობს $DOLLARS_PER_TRADE-ით.
+  - ფასი < 200-დღიან საშუალოზე და პოზიცია გვაქვს → ყიდის.
+5-წლიან backtest-ში (backtest.py) ეს იყო საუკეთესო "დღეში ერთხელ" სტრატეგია.
 
-ბოტი "stateless"-ია: ყოველი გაშვება ერთი შემოწმებაა. მუდმივად მუშაობისთვის
-GitHub Actions უშვებს ყოველ 15 წუთში (.github/workflows/trading-bot.yml),
-ან ლოკალურად: python bot.py --loop
+ბოტი ამოწმებს ბირჟის დახურვამდე ბოლო WINDOW_MINUTES წუთში (GitHub Actions უშვებს
+სამუშაო დღეებში, .github/workflows/trading-bot.yml). სხვა დროს არაფერს აკეთებს,
+თუ არ გაეშვა --force-ით.
 """
 import os
 import sys
-import time
 from datetime import datetime, timedelta, timezone
 
 from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
-from alpaca.data.historical import StockHistoricalDataClient, CryptoHistoricalDataClient
-from alpaca.data.requests import StockBarsRequest, CryptoBarsRequest
-from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
+from alpaca.data.historical import StockHistoricalDataClient
+from alpaca.data.requests import StockBarsRequest
+from alpaca.data.timeframe import TimeFrame
 
 # ---- პარამეტრები (შეგიძლია შეცვალო) ----
-STOCKS = ["AAPL", "MSFT", "NVDA", "SPY"]   # ვაჭრობს მხოლოდ ბირჟის საათებში
-CRYPTO = []   # გამორთულია: backtest-ში საკომისიოს გამო ზარალიანი იყო (იყო "BTC/USD", "ETH/USD")
-DOLLARS_PER_TRADE = 1000                   # ერთ ყიდვაზე რამდენი $
-SMA_FAST = 10
-SMA_SLOW = 30
-STOP_LOSS_PCT = 3.0                        # -3% ზარალზე ყიდის
-TAKE_PROFIT_PCT = 5.0                      # +5% მოგებაზე ყიდის
-LOOP_MINUTES = 15
+STOCKS = ["AAPL", "MSFT", "NVDA", "SPY", "QQQ", "AMZN", "GOOGL", "META"]
+DOLLARS_PER_TRADE = 1000      # თითო აქციაზე რამდენი $
+TREND_DAYS = 200              # გრძელვადიანი საშუალო (დღეები)
+WINDOW_MINUTES = 45           # დახურვამდე რამდენ წუთში შეუძლია ვაჭრობა
 
 # ლოკალურად გაშვებისას Key-ებს კითხულობს .env ფაილიდან (GitHub-ზე — Secrets-დან)
 _env = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
@@ -50,95 +45,70 @@ def log(msg):
     print(f"[{datetime.now(timezone.utc):%Y-%m-%d %H:%M UTC}] {msg}", flush=True)
 
 
-def sma(values, n):
-    return sum(values[-n:]) / n
-
-
-def get_closes(symbol, is_crypto, stock_data, crypto_data):
-    start = datetime.now(timezone.utc) - timedelta(days=7)
-    tf = TimeFrame(15, TimeFrameUnit.Minute)
-    if is_crypto:
-        bars = crypto_data.get_crypto_bars(
-            CryptoBarsRequest(symbol_or_symbols=symbol, timeframe=tf, start=start))
-    else:
-        bars = stock_data.get_stock_bars(
-            StockBarsRequest(symbol_or_symbols=symbol, timeframe=tf, start=start, feed="iex"))
-    return [b.close for b in bars.data.get(symbol, [])]
-
-
-def run_once():
+def run_once(force=False):
     if not API_KEY or not SECRET_KEY:
         sys.exit("ALPACA_API_KEY / ALPACA_SECRET_KEY არ არის მითითებული.")
 
     trading = TradingClient(API_KEY, SECRET_KEY, paper=PAPER)
-    stock_data = StockHistoricalDataClient(API_KEY, SECRET_KEY)
-    crypto_data = CryptoHistoricalDataClient(API_KEY, SECRET_KEY)
+    data = StockHistoricalDataClient(API_KEY, SECRET_KEY)
+
+    clock = trading.get_clock()
+    if not clock.is_open:
+        log("ბირჟა დახურულია — არაფერს ვაკეთებ.")
+        return
+    to_close = (clock.next_close - clock.timestamp).total_seconds() / 60
+    if to_close > WINDOW_MINUTES and not force:
+        log(f"დახურვამდე {to_close:.0f} წთ — ჯერ ადრეა (ვამოწმებ ბოლო {WINDOW_MINUTES} წთ-ში).")
+        return
 
     account = trading.get_account()
+    cash = float(account.cash)
     log(f"{'PAPER' if PAPER else 'LIVE'} ანგარიში | ღირებულება: ${float(account.equity):,.2f} "
-        f"| ნაღდი: ${float(account.cash):,.2f}")
+        f"| ნაღდი: ${cash:,.2f}")
 
-    # პოზიციების სიმბოლოები Alpaca-ში კრიპტოზე "/"-ის გარეშეა (BTCUSD)
     positions = {p.symbol: p for p in trading.get_all_positions()}
 
-    # კრიპტო სიიდან ამოღებულია — ძველი კრიპტო პოზიციები რომ არ დარჩეს უმართავი, ვხურავთ
-    crypto_on = {c.replace("/", "") for c in CRYPTO}
-    for sym, p in list(positions.items()):
-        if "crypto" in str(p.asset_class).lower() and sym not in crypto_on:
+    # ძველი სტრატეგიის პოზიციები (კრიპტო ან სიაში არმყოფი) — ვხურავთ
+    for sym, p in positions.items():
+        if sym not in STOCKS:
             trading.close_position(sym)
-            log(f"🔴 გაყიდვა {sym} — კრიპტო გამორთულია")
-            del positions[sym]
-    market_open = trading.get_clock().is_open
+            log(f"🔴 გაყიდვა {sym} — აღარ არის სიაში")
 
-    symbols = [(s, True) for s in CRYPTO]
-    if market_open:
-        symbols += [(s, False) for s in STOCKS]
-    else:
-        log("აქციების ბირჟა დახურულია.")
+    start = datetime.now(timezone.utc) - timedelta(days=int(TREND_DAYS * 1.6))
+    bars = data.get_stock_bars(StockBarsRequest(
+        symbol_or_symbols=STOCKS, timeframe=TimeFrame.Day, start=start, feed="iex")).data
 
-    for symbol, is_crypto in symbols:
+    for symbol in STOCKS:
         try:
-            closes = get_closes(symbol, is_crypto, stock_data, crypto_data)
-            if len(closes) < SMA_SLOW:
+            closes = [b.close for b in bars.get(symbol, [])]
+            if len(closes) < TREND_DAYS:
                 log(f"{symbol}: მონაცემები საკმარისი არ არის ({len(closes)})")
                 continue
+            price = closes[-1]
+            avg = sum(closes[-TREND_DAYS:]) / TREND_DAYS
+            pos = positions.get(symbol)
+            trend = f"ფასი {price:.2f} / {TREND_DAYS}-დღიანი {avg:.2f}"
 
-            fast, slow, price = sma(closes, SMA_FAST), sma(closes, SMA_SLOW), closes[-1]
-            pos = positions.get(symbol.replace("/", ""))
-            tif = TimeInForce.GTC if is_crypto else TimeInForce.DAY
-
-            if pos is None:
-                if fast > slow and float(account.cash) >= DOLLARS_PER_TRADE:
-                    trading.submit_order(MarketOrderRequest(
-                        symbol=symbol, notional=DOLLARS_PER_TRADE,
-                        side=OrderSide.BUY, time_in_force=tif))
-                    log(f"🟢 ყიდვა {symbol} ${DOLLARS_PER_TRADE} (ფასი {price:.2f})")
-                else:
-                    log(f"{symbol}: ლოდინი (fast {fast:.2f} / slow {slow:.2f})")
-                continue
-
-            pnl_pct = float(pos.unrealized_plpc) * 100
-            reason = None
-            if pnl_pct <= -STOP_LOSS_PCT:
-                reason = f"stop-loss {pnl_pct:.2f}%"
-            elif pnl_pct >= TAKE_PROFIT_PCT:
-                reason = f"take-profit {pnl_pct:.2f}%"
-            elif fast < slow:
-                reason = f"ტრენდი შემობრუნდა ({pnl_pct:+.2f}%)"
-
-            if reason:
-                trading.close_position(pos.symbol)
-                log(f"🔴 გაყიდვა {symbol} — {reason}")
+            if pos is None and price > avg:
+                if cash < DOLLARS_PER_TRADE:
+                    log(f"{symbol}: ნაღდი ფული არ კმარა")
+                    continue
+                trading.submit_order(MarketOrderRequest(
+                    symbol=symbol, notional=DOLLARS_PER_TRADE,
+                    side=OrderSide.BUY, time_in_force=TimeInForce.DAY))
+                cash -= DOLLARS_PER_TRADE
+                log(f"🟢 ყიდვა {symbol} ${DOLLARS_PER_TRADE} ({trend})")
+            elif pos is not None and price < avg:
+                trading.close_position(symbol)
+                log(f"🔴 გაყიდვა {symbol} — ტრენდი დაეცა ({trend}, "
+                    f"{float(pos.unrealized_plpc) * 100:+.2f}%)")
+            elif pos is not None:
+                log(f"{symbol}: ვინახავ ({float(pos.unrealized_plpc) * 100:+.2f}%, {trend})")
             else:
-                log(f"{symbol}: ვინახავ პოზიციას ({pnl_pct:+.2f}%)")
+                log(f"{symbol}: ლოდინი — ტრენდი დაბლაა ({trend})")
         except Exception as e:  # ერთი სიმბოლოს შეცდომამ დანარჩენი არ გააჩეროს
             log(f"⚠️ {symbol}: შეცდომა — {e}")
 
 
 if __name__ == "__main__":
-    if "--loop" in sys.argv:
-        while True:
-            run_once()
-            time.sleep(LOOP_MINUTES * 60)
-    else:
-        run_once()
+    run_once(force="--force" in sys.argv)
