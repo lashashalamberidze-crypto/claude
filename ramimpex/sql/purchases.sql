@@ -9,8 +9,11 @@ create table if not exists public.purchases (
   paid numeric,
   date date,
   note text,
+  docs jsonb,
   created_at timestamptz default now()
 );
+-- თუ ცხრილი უკვე შექმნილია, ეს ერთი ხაზი დაამატებს docs სვეტს:
+alter table public.purchases add column if not exists docs jsonb;
 alter table public.purchases enable row level security;
 create policy "auth read purchases"   on public.purchases for select to authenticated using (true);
 create policy "auth insert purchases" on public.purchases for insert to authenticated with check (true);
