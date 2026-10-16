@@ -1815,8 +1815,8 @@ function renderPurchases(){
     const auto=g('puVatAuto')&&g('puVatAuto').checked;let vat=auto?Math.round(vatBase*0.18*100)/100:(+g('puVatAmt').value||0);
     if(g('puVatAmt')){if(auto)g('puVatAmt').value=vatBase>0?vat:'';g('puVatAmt').readOnly=auto;}
     return {amt,cur,rate,goods,tr,cu,base,vat,total:base+vat};};
-  const prev=()=>{const q=+g('puQty').value||0;const r=calcParts();const netU=q>0?r.base/q:0;
-    g('puPrev').innerHTML=(r.total>0)?('💰 სულ გადახდილი: <b>'+money(r.total)+' ₾</b> · 💧 დასაბრ. დღგ: <b style="color:#2b6cb0">'+money(r.vat)+' ₾</b>'+(q>0?' · 🧾 თვითღირ.: <b style="color:#0B6B3C">'+money(netU)+' ₾/ერთ.</b> <span class="muted">(დღგ-ს გარეშე)</span>':'')):'';};
+  const prev=()=>{const q=+g('puQty').value||0;const r=calcParts();const netU=q>0?r.base/q:0,grossU=q>0?r.total/q:0;
+    g('puPrev').innerHTML=(r.total>0)?('💰 სულ გადახდილი: <b>'+money(r.total)+' ₾</b> · 💧 დასაბრ. დღგ: <b style="color:#2b6cb0">'+money(r.vat)+' ₾</b>'+(q>0?'<br>💵 1 ერთ. გადახდილი (დღგ-ით): <b>'+money(grossU)+' ₾</b> · 🧾 თვითღირებულება 1 ერთ. (დღგ-ს გარეშე — <u>ამ ფასზე ითვლება მოგება</u>): <b style="color:#0B6B3C">'+money(netU)+' ₾</b>':'')):'';};
   const setRate=()=>{const cur=g('puCur')?g('puCur').value:'GEL';if(g('puRate')){if(cur==='GEL'){g('puRate').value=1;g('puRate').readOnly=true;}else{g('puRate').readOnly=false;if(!(+g('puRate').value>0))g('puRate').value=curDef[cur]||'';}}prev();};
   ['puGoodsAmt','puRate','puTransp','puCustoms','puVatAmt','puQty'].forEach(idd=>{if(g(idd))g(idd).oninput=prev;});
   if(g('puCur'))g('puCur').onchange=setRate;
