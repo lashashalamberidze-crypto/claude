@@ -10,12 +10,16 @@ create table if not exists public.purchases (
   date date,
   note text,
   docs jsonb,
+  vat boolean,
+  batch text,
   created_at timestamptz default now()
 );
 -- თუ ცხრილი უკვე შექმნილია, ეს ერთი ხაზი დაამატებს docs სვეტს:
 alter table public.purchases add column if not exists docs jsonb;
 -- დღგ-ის ჩათვლის ნიშანი (true = გადახდილი დღგ-ით, ჩაითვლება/დაბრუნდება):
 alter table public.purchases add column if not exists vat boolean;
+-- პარტიის (ლოტის) კოდი — თითო შესყიდვა = პარტია (მაგ. ANT-01):
+alter table public.purchases add column if not exists batch text;
 alter table public.purchases enable row level security;
 create policy "auth read purchases"   on public.purchases for select to authenticated using (true);
 create policy "auth insert purchases" on public.purchases for insert to authenticated with check (true);

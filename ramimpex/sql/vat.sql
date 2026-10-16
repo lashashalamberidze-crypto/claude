@@ -6,3 +6,7 @@
 --         ტრანსპორტი, საწვავი, ინვენტარი = დღგ-იანი; ხელფასი/გადასახადი/სხვა = არა)
 alter table public.expenses  add column if not exists vat boolean;
 alter table public.purchases add column if not exists vat boolean;
+
+-- 📦 პარტია (ლოტი): თითო შესყიდვა = პარტია (კოდი ANT-01…). ხარჯს შეიძლება მიება პარტია.
+alter table public.purchases add column if not exists batch text;
+alter table public.expenses  add column if not exists batch text;
