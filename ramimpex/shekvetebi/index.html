@@ -466,11 +466,16 @@ function purchUnitCost(code){let paid=0,qty=0;(PURCHASES||[]).forEach(p=>{if(p&&
 function batchPrefix(code){const r=(ruCode(code)||code||'LOT').toString().toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);return r||'LOT';}
 // ამ პარტიაზე მიბმული ხარჯები (ხარჯებიდან, batch-ით)
 function batchExpNet(bcode){let net=0,vat=0;if(bcode)(EXPENSES||[]).forEach(e=>{if((e.batch||'')!==bcode)return;const g=+e.amount||0,n=netOf(g,expHasVat(e));net+=n;vat+=(g-n);});return {net,vat};}
-// პარტიის თვითღირ. (დღგ-ს გარეშე) = საქონელი + მიბმული ხარჯები
-function batchCost(p){const qty=+((p||{}).qty)||0;const goodsGross=(+((p||{}).paid))||0;const goods=netOf(goodsGross,purchHasVat(p));const ex=batchExpNet(p&&p.batch);const net=goods+ex.net;return {qty,goods,goodsGross,exNet:ex.net,vat:(goodsGross-goods)+ex.vat,net,unit:qty>0?net/qty:0};}
+// პარტიის თვითღირ. (დღგ-ს გარეშე) = საქონელი(+ტრანსპ.+საბაჟო) + მიბმული ხარჯები. დღგ ბრუნდება → net-ში არ ითვლება.
+function batchCost(p){const qty=+((p||{}).qty)||0;const goodsGross=(+((p||{}).paid))||0;
+  let goodsNet,goodsVat;
+  if(p&&p.parts){const pt=p.parts;goodsNet=(+pt.goods||0)+(+pt.transport||0)+(+pt.customs||0)+(+pt.other||0);goodsVat=(+pt.vat||0);} // ხელით დაშლილი
+  else{goodsNet=netOf(goodsGross,purchHasVat(p));goodsVat=goodsGross-goodsNet;}
+  const ex=batchExpNet(p&&p.batch);const net=goodsNet+ex.net;
+  return {qty,goods:goodsNet,goodsGross,exNet:ex.net,vat:goodsVat+ex.vat,net,unit:qty>0?net/qty:0};}
 function batchesForProduct(code){return (PURCHASES||[]).filter(p=>p&&p.code===code).slice().sort((a,b)=>(String(a.date||'').localeCompare(String(b.date||'')))||String(a.id||'').localeCompare(String(b.id||'')));}
 // პროდუქტის დასპენსილი შემოსავალი (დღგ-ს გარეშე) + რაოდ.
-function prodDispRev(code){let rev=0,q=0;(INVOICES||[]).forEach(inv=>{if(!(inv.extra||{}).dispensed)return;const vi=(inv.extra||{}).vatIncl;(inv.lines||[]).forEach(l=>{if(l.code!==code)return;const qq=+l.qty||0,pr=+l.price||0;let lr=qq*pr;if(vi)lr/=1.18;rev+=lr;q+=qq;});});return {rev,q};}
+function prodDispRev(code){let rev=0,gross=0,q=0;(INVOICES||[]).forEach(inv=>{if(!(inv.extra||{}).dispensed)return;const vi=(inv.extra||{}).vatIncl;(inv.lines||[]).forEach(l=>{if(l.code!==code)return;const qq=+l.qty||0,pr=+l.price||0;const g=qq*pr;gross+=g;rev+=vi?g/1.18:g;q+=qq;});});return {rev,revGross:gross,q};}
 // FIFO: რამდენი გაიყიდა თითო პარტიიდან (ძველი ჯერ)
 function batchSoldMap(code){const bs=batchesForProduct(code);let rem=prodDispRev(code).q;const m={};bs.forEach(p=>{const q=+p.qty||0;const s=Math.max(0,Math.min(rem,q));m[p.id]=s;rem-=s;});return m;}
 // COGS (დღგ-ს გარეშე) + გაყიდულ რაოდ.-ზე დღგ — პარტიებით (FIFO); fallback — კატალოგის გათვლა
@@ -498,20 +503,22 @@ function dirProductCodes(dir){const s=new Set();
   (PURCHASES||[]).forEach(p=>{if(!p||!p.code)return;const cdir=saleDirOf(p.code,(byCode(p.code)||{}).dir||'');if(cdir===dir)s.add(p.code);});
   return Array.from(s);}
 // —— ერთი მიმართულების P&L (პარტიული COGS; batch-ხარჯი→COGS, უბატჩო→ოპ.ხარჯი) ——
-function computePLDir(dir){let rev=0,cogs=0,qty=0,cogsVat=0;
-  dirProductCodes(dir).forEach(code=>{const r=prodDispRev(code);rev+=r.rev;qty+=r.q;const cg=prodCOGS(code);cogs+=cg.net;cogsVat+=cg.vat;});
+function computePLDir(dir){let rev=0,revGross=0,cogs=0,qty=0,cogsVat=0;
+  dirProductCodes(dir).forEach(code=>{const r=prodDispRev(code);rev+=r.rev;revGross+=r.revGross;qty+=r.q;const cg=prodCOGS(code);cogs+=cg.net;cogsVat+=cg.vat;});
   let opex=0,opexVat=0;
   (EXPENSES||[]).forEach(e=>{if((e.code||'')!==dir)return;if(e.batch)return;/* პარტიის ხარჯი უკვე COGS-შია */const g=+e.amount||0,n=netOf(g,expHasVat(e));opex+=n;opexVat+=(g-n);});
-  return {rev,cogs,qty,cogsVat,opex,opexVat};}
+  return {rev,revGross,cogs,qty,cogsVat,opex,opexVat};}
 function computePL(dir){const isAll=(!dir||dir==='all');
-  let rev=0,cogs=0,qty=0,cogsVat=0,opex=0,opexVat=0;
-  if(isAll){plDirKeys().forEach(k=>{const p=computePLDir(k);rev+=p.rev;cogs+=p.cogs;qty+=p.qty;cogsVat+=p.cogsVat;opex+=p.opex;opexVat+=p.opexVat;});
+  let rev=0,revGross=0,cogs=0,qty=0,cogsVat=0,opex=0,opexVat=0;
+  if(isAll){plDirKeys().forEach(k=>{const p=computePLDir(k);rev+=p.rev;revGross+=p.revGross;cogs+=p.cogs;qty+=p.qty;cogsVat+=p.cogsVat;opex+=p.opex;opexVat+=p.opexVat;});
     (EXPENSES||[]).forEach(e=>{if(e.batch)return;if((e.code||'')!=='')return;/* ზოგადი/კაპიტალური (იჯარა, დანადგარი) */const g=+e.amount||0,n=netOf(g,expHasVat(e));opex+=n;opexVat+=(g-n);});}
-  else{const p=computePLDir(dir);rev=p.rev;cogs=p.cogs;qty=p.qty;cogsVat=p.cogsVat;opex=p.opex;opexVat=p.opexVat;}
-  const vatBack=cogsVat+opexVat;
+  else{const p=computePLDir(dir);rev=p.rev;revGross=p.revGross;cogs=p.cogs;qty=p.qty;cogsVat=p.cogsVat;opex=p.opex;opexVat=p.opexVat;}
+  const vatOut=revGross-rev;      // კლიენტისგან აკრეფილი დღგ (გადასახდელი)
+  const vatBack=cogsVat+opexVat;  // ჩასათვლელი/დასაბრუნებელი დღგ
+  const vatNet=vatBack-vatOut;    // >0 → გიბრუნდებათ; <0 → დასახდელია
   const margin=rev-cogs;const beforeTax=margin-opex;const tax=Math.max(0,beforeTax)*(+PL_TAX||0);const net=beforeTax-tax;
   const perUnit=qty>0?net/qty:0;
-  return {rev,cogs,qty,opex,margin,beforeTax,tax,net,vatBack,cogsVat,opexVat,perUnit,isAll};}
+  return {rev,revGross,vatOut,cogs,qty,opex,margin,beforeTax,tax,net,vatBack,vatNet,cogsVat,opexVat,perUnit,isAll};}
 function briketDefaults(){return {t1:1000,t2:21000,p1:2.0,p2:1.8,p3:1.3};}
 function brikGroup(){return DIRS?DIRS.find(d=>d&&d.dir==='ანთრაციტის ბრიკეტი'):null;}
 function brikTiers(){const g=brikGroup();return (g&&g.brik)||briketDefaults();}
@@ -998,20 +1005,31 @@ function plCardHTML(dir){
   const perUnit=pl.perUnit;
   const rtA=retailTotals('all'),daA=distDashAgg('all');const debt=rtA.due+daA.debt;
   const row=(l,v,col,bold)=>'<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px solid #eef1ef">'+'<span style="color:'+(col||'#33423a')+';font-weight:'+(bold?900:600)+'">'+l+'</span><span style="color:'+(col||'#14261c')+';font-weight:'+(bold?900:800)+'">'+v+'</span></div>';
-  let body=row('📥 შემოსავალი (გაყიდვები, დღგ-ს გარეშე)',money(pl.rev)+' ₾','#2b6cb0')+
-    row('📦 − საქონლის თვითღირებულება (დღგ-ს გარეშე)',money(pl.cogs)+' ₾','#8a5a00')+
+  let body=row('📥 შემოსავალი (გაყიდვები, დღგ-ს გარეშე)',money(pl.rev)+' ₾','#2b6cb0');
+  if(pl.vatOut>0.005){body+='<div style="padding:2px 2px 6px;font-size:11px;color:#8a939c;border-bottom:1px solid #eef1ef">კლიენტმა დღგ-ით გადაიხადა '+money(pl.revGross)+' ₾ · აქედან 18% დღგ ('+money(pl.vatOut)+' ₾) <b>თქვენი არ არის</b> — სახელმწიფოს ერგება, ამიტომ შემოსავალი დღგ-ს გარეშე იწერება.</div>';}
+  body+=row('📦 − საქონლის თვითღირებულება (დღგ-ს გარეშე)',money(pl.cogs)+' ₾','#8a5a00')+
     row('= მოგება (ოპ. ხარჯამდე)',money(pl.margin)+' ₾','#14261c',true)+
     row('💸 − '+(isAll?'საოპერაციო/კაპიტ. ხარჯები':'ამ მიმართულების ზოგადი ხარჯები')+' (დღგ-ს გარეშე)',money(pl.opex)+' ₾','#8a5a00')+
     row('🏛️ − მოგების გადასახადი ('+(Math.round(PL_TAX*1000)/10)+'%)',money(pl.tax)+' ₾','#b00020')+
     row('💚 = სუფთა მოგება',money(pl.net)+' ₾',(pl.net>=0?'#0B6B3C':'#b00020'),true);
-  if(pl.vatBack>0.005){body+=row('💧 აქედან დასაბრუნებელი დღგ (ჩაითვლება, 18%)',money(pl.vatBack)+' ₾','#2b6cb0');}
   const kpis='<div class="salkpi" style="grid-template-columns:repeat('+(isAll?3:2)+',1fr);margin-top:12px;max-width:620px">'+
     '<div class="skpi" style="border-color:#0B6B3C"><div class="l">💰 სუფთა მოგება 1 '+unit+'-ზე</div><div class="v" style="font-size:18px;color:'+(perUnit>=0?'#0B6B3C':'#b00020')+'">'+money(perUnit)+' ₾</div><div class="muted" style="font-size:9.5px">გაყიდული (გატანილი): '+fmtNum(Math.round(pl.qty))+' '+unit+'</div></div>'+
     '<div class="skpi green"><div class="l">💚 სუფთა მოგება ₾</div><div class="v" style="font-size:18px;color:'+(pl.net>=0?'#0B6B3C':'#b00020')+'">'+money(pl.net)+'</div></div>'+
     (isAll?'<div class="skpi red"><div class="l">❗ დავალიანება (მისაღები) ₾</div><div class="v" style="font-size:18px;color:#b00020">'+money(debt)+'</div></div>':'')+'</div>';
+  // 💧 დღგ — ცალკე ყუთი, მოგებაში არ შედის
+  let vatBox='';
+  if(pl.vatBack>0.005||pl.vatOut>0.005){
+    const back=money(pl.vatBack),out=money(pl.vatOut),net=pl.vatNet;
+    vatBox='<div style="margin-top:12px;background:#eef4ff;border:1px solid #cfe0f7;border-radius:12px;padding:12px 14px;max-width:620px">'+
+      '<div style="font-weight:900;color:#2b6cb0;font-size:13.5px;margin-bottom:6px">💧 დღგ — ცალკე (მოგებაში არ შედის)</div>'+
+      '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px"><span>➕ ჩასათვლელი/დასაბრუნებელი (ხარჯების)</span><b style="color:#0B6B3C">'+back+' ₾</b></div>'+
+      '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px"><span>➖ აკრეფილი (გაყიდვების, გადასახდელი)</span><b style="color:#b00020">'+out+' ₾</b></div>'+
+      '<div style="display:flex;justify-content:space-between;padding:6px 0 0;border-top:1px solid #cfe0f7;margin-top:4px;font-size:13.5px;font-weight:900"><span>'+(net>=0?'💚 სალდო — გიბრუნდებათ':'🏛️ სალდო — გადასახდელია')+'</span><span style="color:'+(net>=0?'#0B6B3C':'#b00020')+'">'+money(Math.abs(net))+' ₾</span></div>'+
+      '<div class="muted" style="font-size:10.5px;margin-top:6px">ეს ფული მოგებას (💚 '+money(pl.net)+' ₾) <b>არ ემატება და არ აკლდება</b> — დღგ ცალკე ანგარიშდება სახელმწიფოსთან.</div></div>';
+  }
   return '<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px"><h2>💰 მოგება-ზარალი <span class="muted" style="font-weight:600;font-size:12px">· '+esc(dlabel)+'</span></h2>'+
     '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end"><div><label style="font-size:10px;color:#5c6b62;font-weight:700;display:block">მოგ. გადასახადი %</label><input id="plTax" type="number" step="0.5" value="'+(Math.round(PL_TAX*1000)/10)+'" style="width:84px"></div></div></div>'+
-    '<div style="max-width:620px;margin-top:10px;font-size:13.5px">'+body+'</div>'+kpis+
+    '<div style="max-width:620px;margin-top:10px;font-size:13.5px">'+body+'</div>'+kpis+vatBox+
     '<div class="muted" style="font-size:11px;margin-top:8px">ℹ️ მხოლოდ 📦 <b>გატანილი</b> ინვოისები. თვითღირებულება — 🛒 <b>შესყიდვებიდან პარტიულად</b> (საქონელი + ამ პარტიის ხარჯები ÷ რაოდ.), გაყიდულ წილზე (FIFO) — დანარჩენი მარაგშია, არა ზარალი. 💸 <b>ზოგადი/კაპიტალური</b> ხარჯი (იჯარა, დანადგარი, უპარტიო) — ცალკე, საერთო მოგებიდან. ყველა დღგ-ს გარეშე; 💧 ჩასათვლელი დღგ <b>გიბრუნდებათ</b>. '+(isAll?'<b>ყველა</b> მიმართულება ერთად.':'ზოგადი (უმიმართ.) ხარჯი — „🗂 ყველა"-ში.')+' პარტიების დეტალები — 🛒 <b>შესყიდვების</b> ტაბში.</div>'+
   '</div>';
 }
@@ -1776,23 +1794,42 @@ function renderPurchases(){
     '<div class="scroll"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#6d3ad6;color:#fff">'+
     '<th style="padding:7px;text-align:left">პარტია</th><th style="padding:7px;text-align:left">პროდ.</th><th style="padding:7px;text-align:right">ნაყიდი</th><th style="padding:7px;text-align:right">სრული ღირ. ₾</th><th style="padding:7px;text-align:right">1 ერთ. ₾</th><th style="padding:7px;text-align:right">გაყიდ.</th><th style="padding:7px;text-align:right">გაყ. თვითღ. ₾</th><th style="padding:7px;text-align:right">მოგება ₾</th><th style="padding:7px;text-align:right">დარჩ. მარაგი</th></tr></thead><tbody>'+
     (batRows||'<tr><td colspan="9" class="muted" style="padding:10px">ჯერ პარტია არ არის — ჩაწერე შესყიდვა.</td></tr>')+'</tbody></table></div></div>';
+  const defGel=(function(){for(const d of (DIRS||[])){if(d&&d.params&&+d.params.usdGel>0)return +d.params.usdGel;}return 0;})();
+  const defRub=(function(){for(const d of (DIRS||[])){if(d&&d.params&&+d.params.usdGel>0&&+d.params.usdRub>0)return Math.round((+d.params.usdGel/+d.params.usdRub)*10000)/10000;}return 0;})();
   purchEl.innerHTML=
-   '<div class="card"><h2>🛒 შესყიდვის დამატება</h2><p class="muted" style="font-size:12px">ჩაწერ რა იყიდე, რამდენი (კგ/ცალი) და რამდენი გადაიხადე — თვითღირებულება ავტომატურად დაითვლება (გადახდილი ÷ რაოდ.). P&L სწორედ ამ რეალურ ფასს აიღებს.</p>'+
-   '<div class="row"><div style="flex:2"><label>პროდუქტი</label><select id="puCode">'+purchProdOptions()+'</select></div><div><label>რაოდენობა (კგ/ცალი)</label><input id="puQty" type="number" step="any" placeholder="0"></div><div><label>გადახდილი სულ ₾</label><input id="puPaid" type="number" step="0.01" placeholder="0.00"></div></div>'+
+   '<div class="card"><h2>🛒 შესყიდვის დამატება</h2><p class="muted" style="font-size:12px">დაშალე პარტიის ხარჯი: 🧱 საქონელი (<b>ვალუტა × კურსი</b>: ₾/$/₽) · 🚚 ტრანსპ. · 🛃 საბაჟო · 💧 დღგ (ავტო 18%). „სულ" = პარტიის ხარჯი; 💧 დღგ <b>გიბრუნდებათ</b>, თვითღირ. მის გარეშე ითვლება.</p>'+
+   '<div class="row"><div style="flex:2"><label>პროდუქტი</label><select id="puCode">'+purchProdOptions()+'</select></div><div><label>რაოდენობა (კგ/ცალი)</label><input id="puQty" type="number" step="any" placeholder="0"></div></div>'+
+   '<div class="row" style="margin-top:8px;align-items:flex-end"><div><label>🧱 საქონელი</label><input id="puGoodsAmt" type="number" step="0.01" placeholder="0"></div><div style="flex:0 0 96px"><label>ვალუტა</label><select id="puCur"><option value="GEL">₾ ლარი</option><option value="USD">$ დოლარი</option><option value="RUB">₽ რუბლი</option></select></div><div style="flex:0 0 100px"><label>კურსი ₾</label><input id="puRate" type="number" step="0.0001" value="1" title="რამდენი ₾ ღირს 1 ერთ. ვალუტა"></div><div style="flex:0 0 120px"><label>= საქონელი ₾</label><input id="puGoodsGel" type="number" step="0.01" placeholder="0" readonly></div><div><label>🚚 ტრანსპ. ₾</label><input id="puTransp" type="number" step="0.01" placeholder="0"></div><div><label>🛃 საბაჟო ₾</label><input id="puCustoms" type="number" step="0.01" placeholder="0"></div></div>'+
+   '<div class="row" style="margin-top:8px;align-items:flex-end"><div style="flex:0 0 150px"><label>💧 დღგ ₾</label><input id="puVatAmt" type="number" step="0.01" placeholder="0"></div><div style="flex:1"><label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#2b6cb0;font-weight:700;cursor:pointer;margin-top:18px"><input type="checkbox" id="puVatAuto" checked style="width:16px;height:16px">ავტო 18% × (საქონ.+ტრანსპ.+საბაჟო)</label></div></div>'+
    '<div class="row" style="margin-top:8px"><div style="flex:0 0 220px"><label>თარიღი</label><input id="puDate" type="date" value="'+todayStr()+'"></div><div style="flex:1"><label>შენიშვნა (არჩ.)</label><input id="puNote" placeholder="მომწოდებელი, პარტია…"></div></div>'+
    '<div class="row" style="margin-top:8px"><div style="flex:1"><label>📄 ინვოისი / ზედნადები (არჩ.)</label><input id="puInv" type="file" accept="image/*,application/pdf"><span id="puInvCur"></span></div><div style="flex:1"><label>🧾 გადახდის ქვითარი (არჩ.)</label><input id="puRcpt" type="file" accept="image/*,application/pdf"><span id="puRcptCur"></span></div></div>'+
-   '<div class="row" style="margin-top:6px"><label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;color:#2b6cb0;font-weight:700"><input type="checkbox" id="puVat" checked style="width:17px;height:17px;flex:0 0 auto">💧 დღგ-იანია — ჩაითვლება/დაბრუნდება (18%)</label></div>'+
-   '<div id="puPrev" class="muted" style="margin-top:6px;font-size:12.5px;font-weight:700"></div>'+
+   '<div id="puPrev" class="muted" style="margin-top:8px;font-size:13px;font-weight:700"></div>'+
    '<div style="margin-top:12px"><button class="btn" id="puSave">'+(editingPuId?'💾 განახლება':'💾 შესყიდვის ჩაწერა')+'</button>'+(editingPuId?' <button class="btn line" id="puCancel">გაუქმება</button>':'')+'<span id="puMsg" style="margin-left:10px;font-size:12.5px"></span></div></div>'+
    '<div class="card"><h2>📦 საშ. თვითღირებულება პროდუქტზე</h2><div class="scroll"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0F8A4D;color:#fff"><th style="padding:7px;text-align:left">პროდუქტი</th><th style="padding:7px;text-align:right">სულ რაოდ.</th><th style="padding:7px;text-align:right">სულ გადახდ. ₾</th><th style="padding:7px;text-align:right">საშ. ფასი/ერთ.</th></tr></thead><tbody>'+(sumRows||'<tr><td colspan="4" class="muted" style="padding:10px">ჯერ შესყიდვა არ არის.</td></tr>')+'</tbody></table></div></div>'+
    batCard+
    '<div class="card"><h2>🧾 შესყიდვების ისტორია</h2><div class="scroll"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:6px;text-align:left">თარიღი</th><th style="padding:6px;text-align:left">პარტია</th><th style="padding:6px;text-align:left">პროდუქტი</th><th style="padding:6px;text-align:right">რაოდ.</th><th style="padding:6px;text-align:right">გადახდ. ₾</th><th style="padding:6px;text-align:right">ფასი/ერთ.</th><th style="padding:6px">შენიშვნა</th><th style="padding:6px;text-align:center">დოკ.</th><th></th></tr></thead><tbody id="puRows"></tbody></table></div></div>';
   const g=id=>document.getElementById(id);
-  const prev=()=>{const q=+g('puQty').value||0,p=+g('puPaid').value||0;const vat=g('puVat')&&g('puVat').checked;const uc=q>0?p/q:0,ucn=vat?uc/1.18:uc;g('puPrev').innerHTML=(q>0&&p>0)?('→ თვითღირ.: <b style="color:#0B6B3C">'+money(uc)+' ₾/ერთ.</b>'+(vat?' · დღგ-ს გარეშე: <b style="color:#2b6cb0">'+money(ucn)+' ₾</b>':'')):'';};
-  g('puQty').oninput=prev;g('puPaid').oninput=prev;if(g('puVat'))g('puVat').onchange=prev;
+  const curDef={GEL:1,USD:defGel,RUB:defRub};
+  const calcParts=()=>{const amt=+g('puGoodsAmt').value||0;const cur=g('puCur')?g('puCur').value:'GEL';const rate=(cur==='GEL')?1:(+g('puRate').value||0);const goods=amt*rate;if(g('puGoodsGel'))g('puGoodsGel').value=goods?Math.round(goods*100)/100:'';
+    const tr=+g('puTransp').value||0,cu=+g('puCustoms').value||0;const base=goods+tr+cu;
+    const auto=g('puVatAuto')&&g('puVatAuto').checked;let vat=auto?Math.round(base*0.18*100)/100:(+g('puVatAmt').value||0);
+    if(g('puVatAmt')){if(auto)g('puVatAmt').value=base>0?vat:'';g('puVatAmt').readOnly=auto;}
+    return {amt,cur,rate,goods,tr,cu,base,vat,total:base+vat};};
+  const prev=()=>{const q=+g('puQty').value||0;const r=calcParts();const netU=q>0?r.base/q:0;
+    g('puPrev').innerHTML=(r.total>0)?('💰 სულ გადახდილი: <b>'+money(r.total)+' ₾</b> · 💧 დასაბრ. დღგ: <b style="color:#2b6cb0">'+money(r.vat)+' ₾</b>'+(q>0?' · 🧾 თვითღირ.: <b style="color:#0B6B3C">'+money(netU)+' ₾/ერთ.</b> <span class="muted">(დღგ-ს გარეშე)</span>':'')):'';};
+  const setRate=()=>{const cur=g('puCur')?g('puCur').value:'GEL';if(g('puRate')){if(cur==='GEL'){g('puRate').value=1;g('puRate').readOnly=true;}else{g('puRate').readOnly=false;if(!(+g('puRate').value>0))g('puRate').value=curDef[cur]||'';}}prev();};
+  ['puGoodsAmt','puRate','puTransp','puCustoms','puVatAmt','puQty'].forEach(idd=>{if(g(idd))g(idd).oninput=prev;});
+  if(g('puCur'))g('puCur').onchange=setRate;
+  if(g('puVatAuto'))g('puVatAuto').onchange=prev;
+  if(g('puRate'))g('puRate').readOnly=true;
   g('puSave').onclick=savePurchase;
   if(editingPuId){const p=(PURCHASES||[]).find(x=>String(x.id)===String(editingPuId));
-    if(p){g('puCode').value=p.code||'';g('puQty').value=(p.qty!=null?p.qty:'');g('puPaid').value=(p.paid!=null?p.paid:'');g('puDate').value=p.date||todayStr();g('puNote').value=p.note||'';if(g('puVat'))g('puVat').checked=purchHasVat(p);prev();
+    if(p){g('puCode').value=p.code||'';g('puQty').value=(p.qty!=null?p.qty:'');g('puDate').value=p.date||todayStr();g('puNote').value=p.note||'';
+      const pt=p.parts||null;if(g('puVatAuto'))g('puVatAuto').checked=false;
+      if(pt){g('puGoodsAmt').value=(pt.goodsAmt!=null?pt.goodsAmt:(pt.goods!=null?pt.goods:''));if(g('puCur'))g('puCur').value=pt.cur||'GEL';g('puRate').value=(pt.rate!=null&&pt.rate!==''?pt.rate:1);g('puTransp').value=pt.transport||'';g('puCustoms').value=pt.customs||'';g('puVatAmt').value=pt.vat||'';}
+      else{const net=purchHasVat(p)?((+p.paid||0)/1.18):(+p.paid||0);g('puGoodsAmt').value=net?Math.round(net*100)/100:'';if(g('puCur'))g('puCur').value='GEL';g('puRate').value=1;g('puVatAmt').value=((+p.paid||0)-net)?Math.round(((+p.paid||0)-net)*100)/100:'';}
+      if(g('puRate'))g('puRate').readOnly=((g('puCur')&&g('puCur').value==='GEL'));
+      prev();
       const dc=p.docs||{};if(g('puInvCur'))g('puInvCur').innerHTML=dc.invoice?' <a href="'+esc(dc.invoice)+'" target="_blank" style="font-size:11px;color:#0B6B3C">📄 არსებული</a>':'';if(g('puRcptCur'))g('puRcptCur').innerHTML=dc.receipt?' <a href="'+esc(dc.receipt)+'" target="_blank" style="font-size:11px;color:#0B6B3C">🧾 არსებული</a>':'';}
     else editingPuId=null;}
   if(g('puCancel'))g('puCancel').onclick=()=>{editingPuId=null;renderPurchases();};
@@ -1805,9 +1842,14 @@ function renderPurchList(){const tb=document.getElementById('puRows');if(!tb)ret
   tb.querySelectorAll('[data-pudel]').forEach(b=>b.onclick=async()=>{if(!confirm('წავშალო ეს შესყიდვა?'))return;try{const {error}=await sb.from('purchases').delete().eq('id',b.dataset.pudel);if(error)throw error;PURCHASES=PURCHASES.filter(x=>String(x.id)!==String(b.dataset.pudel));if(String(editingPuId)===String(b.dataset.pudel))editingPuId=null;renderPurchases();}catch(e){alert('ვერ წაიშალა: '+(e.message||e));}});
 }
 async function savePurchase(){const g=id=>document.getElementById(id);
-  const code=g('puCode').value;const qty=+g('puQty').value||0;const paid=+g('puPaid').value||0;
+  const code=g('puCode').value;const qty=+g('puQty').value||0;
+  const amt=+g('puGoodsAmt').value||0;const cur=g('puCur')?g('puCur').value:'GEL';const rate=(cur==='GEL')?1:(+g('puRate').value||0);
+  const goods=amt*rate;const tr=+g('puTransp').value||0,cu=+g('puCustoms').value||0;const base=goods+tr+cu;
+  const auto=g('puVatAuto')&&g('puVatAuto').checked;const vatAmt=auto?Math.round(base*0.18*100)/100:(+g('puVatAmt').value||0);
+  const paid=Math.round((base+vatAmt)*100)/100;
+  const parts={goodsAmt:amt,cur,rate,goods:Math.round(goods*100)/100,transport:tr,customs:cu,vat:vatAmt,other:0};
   if(!code){g('puMsg').innerHTML='<span style="color:#b00020">აირჩიე პროდუქტი</span>';return;}
-  if(qty<=0||paid<=0){g('puMsg').innerHTML='<span style="color:#b00020">ჩაწერე რაოდენობა და გადახდილი თანხა</span>';return;}
+  if(qty<=0||base<=0){g('puMsg').innerHTML='<span style="color:#b00020">ჩაწერე რაოდენობა და საქონლის ფასი</span>';return;}
   const btn=g('puSave');btn.disabled=true;btn.textContent='⏳…';
   try{
     const existing=editingPuId?(PURCHASES||[]).find(x=>String(x.id)===String(editingPuId)):null;
@@ -1815,10 +1857,10 @@ async function savePurchase(){const g=id=>document.getElementById(id);
     const upID=editingPuId||('pu'+Date.now().toString(36)+Math.random().toString(36).slice(2,5));
     const up=async(inp,key)=>{const f=inp&&inp.files&&inp.files[0];if(!f)return;const path='purchase/'+upID+'/'+key+'-'+Date.now()+'-'+f.name.replace(/[^\w.\-]/g,'_');const r=await sb.storage.from('sale-docs').upload(path,f,{upsert:true});if(r.error)throw r.error;docs[key]=sb.storage.from('sale-docs').getPublicUrl(path).data.publicUrl;};
     await up(g('puInv'),'invoice');await up(g('puRcpt'),'receipt');
-    const p=byCode(code)||{};const vat=!!(g('puVat')&&g('puVat').checked);
+    const p=byCode(code)||{};const vat=vatAmt>0;
     const pref=batchPrefix(code);let batch=(existing&&existing.batch)||'';
     if(!batch){const used=(PURCHASES||[]).filter(x=>x&&typeof x.batch==='string'&&x.batch.indexOf(pref+'-')===0).length;batch=pref+'-'+String(used+1).padStart(2,'0');}
-    const rec={id:upID,code,name:p.name||'',dir:p.dir||'',qty,paid,vat,batch,date:g('puDate').value||todayStr(),note:g('puNote').value||'',docs};
+    const rec={id:upID,code,name:p.name||'',dir:p.dir||'',qty,paid,vat,parts,batch,date:g('puDate').value||todayStr(),note:g('puNote').value||'',docs};
     if(editingPuId){const {error}=await sb.from('purchases').update(rec).eq('id',editingPuId);if(error)throw error;const ix=PURCHASES.findIndex(x=>String(x.id)===String(editingPuId));if(ix>=0)PURCHASES[ix]=rec;editingPuId=null;}
     else{const {error}=await sb.from('purchases').insert([rec]);if(error)throw error;PURCHASES.unshift(rec);}
     renderPurchases();
