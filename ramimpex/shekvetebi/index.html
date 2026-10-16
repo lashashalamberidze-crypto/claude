@@ -1822,7 +1822,7 @@ async function savePurchase(){const g=id=>document.getElementById(id);
     if(editingPuId){const {error}=await sb.from('purchases').update(rec).eq('id',editingPuId);if(error)throw error;const ix=PURCHASES.findIndex(x=>String(x.id)===String(editingPuId));if(ix>=0)PURCHASES[ix]=rec;editingPuId=null;}
     else{const {error}=await sb.from('purchases').insert([rec]);if(error)throw error;PURCHASES.unshift(rec);}
     renderPurchases();
-  }catch(e){g('puMsg').innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+' (გაუშვი purchases SQL — + docs jsonb)</span>';const b2=g('puSave');if(b2){b2.disabled=false;b2.textContent=editingPuId?'💾 განახლება':'💾 შესყიდვის ჩაწერა';}}
+  }catch(e){g('puMsg').innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+' — გაუშვი <b>sql/vat.sql</b> Supabase-ში (ამატებს docs/vat/batch სვეტებს)</span>';const b2=g('puSave');if(b2){b2.disabled=false;b2.textContent=editingPuId?'💾 განახლება':'💾 შესყიდვის ჩაწერა';}}
 }
 async function openExpenses(){
   if(!document.getElementById('salCss')){const st=document.createElement('style');st.id='salCss';st.textContent=SAL_CSS;document.head.appendChild(st);}
@@ -1933,7 +1933,7 @@ async function saveExpense(){const g=id=>document.getElementById(id);
     const {error}=await sb.from('expenses').upsert(row,{onConflict:'id'});if(error)throw error;
     if(editingExpId){EXPENSES=EXPENSES.map(e=>String(e.id)===String(id)?Object.assign({},e,row):e);}else{EXPENSES.unshift(Object.assign({created_at:new Date().toISOString()},row));}
     editingExpId=null;expPeople=[];renderExpenses();
-  }catch(e){alert('ვერ შეინახა: '+(e.message||e)+'\n(თუ expenses ცხრილი არ არსებობს — გაუშვი sql/expenses.sql)');btn.disabled=false;btn.textContent=editingExpId?'💾 განახლება':'💾 ხარჯის დამატება';}
+  }catch(e){alert('ვერ შეინახა: '+(e.message||e)+'\n(გაუშვი sql/vat.sql Supabase-ში — ამატებს vat/batch სვეტებს)');btn.disabled=false;btn.textContent=editingExpId?'💾 განახლება':'💾 ხარჯის დამატება';}
 }
 async function deleteExpense(id){if(!confirm('წავშალო ეს ხარჯი?'))return;
   try{const {error}=await sb.from('expenses').delete().eq('id',id);if(error)throw error;EXPENSES=EXPENSES.filter(x=>String(x.id)!==String(id));renderExpenses();}

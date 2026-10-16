@@ -1,12 +1,15 @@
--- 💧 დღგ-ის ჩათვლის სვეტები (reclaimable input VAT flag)
--- გაუშვი Supabase → SQL Editor-ში ერთხელ.
--- true  = თანხა გადახდილია დღგ-ით და ის ჩაითვლება/დაბრუნდება (გამოაკლდება რეალურ ხარჯს)
--- false = დღგ-ის გარეშე (მაგ. ხელფასი, გადასახადი, არა-დღგ-ს გადამხდელი მომწოდებელი)
--- null  = ძველი ჩანაწერი → აპლიკაცია კატეგორიით წყვეტს (ნედლეული/ყიდვა, შეფუთვა,
---         ტრანსპორტი, საწვავი, ინვენტარი = დღგ-იანი; ხელფასი/გადასახადი/სხვა = არა)
-alter table public.expenses  add column if not exists vat boolean;
-alter table public.purchases add column if not exists vat boolean;
+-- ✅ გაუშვი მხოლოდ ეს ფაილი Supabase → SQL Editor-ში (უსაფრთხო, გამეორებადი).
+-- ამატებს ყველა ახალ სვეტს. policy-ებს არ ეხება, ამიტომ „already exists" შეცდომა აღარ იქნება.
+-- თუ სვეტი უკვე არსებობს — ჩუმად გამოტოვებს.
 
--- 📦 პარტია (ლოტი): თითო შესყიდვა = პარტია (კოდი ANT-01…). ხარჯს შეიძლება მიება პარტია.
+-- 🛒 შესყიდვები (purchases): დოკუმენტები, დღგ, პარტია
+alter table public.purchases add column if not exists docs  jsonb;
+alter table public.purchases add column if not exists vat   boolean;
 alter table public.purchases add column if not exists batch text;
+
+-- 💸 ხარჯები (expenses): დღგ, პარტია
+alter table public.expenses  add column if not exists vat   boolean;
 alter table public.expenses  add column if not exists batch text;
+
+-- დღგ: true = გადახდილი დღგ-ით, ჩაითვლება/დაბრუნდება · false = დღგ-ის გარეშე (ხელფასი, გადასახადი)
+-- batch: პარტიის კოდი (მაგ. ANT-01) — თითო შესყიდვა = პარტია; ხარჯს შეიძლება მიება პარტია
