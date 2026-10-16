@@ -466,16 +466,15 @@ function soldDispensedQtyDir(dir){let q=0;(INVOICES||[]).forEach(inv=>{if(!(inv.
 function stockFromPurch(dir){return purchQtyDir(dir)-soldDispensedQtyDir(dir);}
 function plGet(k,def){try{const v=localStorage.getItem(k);return (v==null||v==='')?def:(+v);}catch(e){return def;}}
 let PL_TAX=plGet('pl_tax',0.15), PL_PACK=plGet('pl_pack',0.07);
-function computePL(dir){let rev=0,cogs=0,pack=0,antKg=0,qty=0;
+function computePL(dir){let rev=0,cogs=0,qty=0;
   (INVOICES||[]).forEach(inv=>{if(!(inv.extra||{}).dispensed)return;/* მხოლოდ საწყობიდან გატანილი */const vi=(inv.extra||{}).vatIncl;
     (inv.lines||[]).forEach(l=>{const cdir=saleDirOf(l.code,(byCode(l.code)||{}).dir||'');
       if(dir&&dir!=='all'&&cdir!==dir)return;
       const q=+l.qty||0,price=+l.price||0;let lr=q*price;if(vi)lr=lr/1.18;rev+=lr;qty+=q;
-      cogs+=q*unitCostGel(l.code);
-      if(isBriket(l.code)){antKg+=q;pack+=q*(+PL_PACK||0);}});});
+      cogs+=q*unitCostGel(l.code);});});
   const opex=(!dir||dir==='all')?(EXPENSES||[]).reduce((s,e)=>s+(+e.amount||0),0):0;
-  const margin=rev-cogs-pack;const beforeTax=margin-opex;const tax=Math.max(0,beforeTax)*(+PL_TAX||0);const net=beforeTax-tax;
-  return {rev,cogs,pack,antKg,qty,opex,margin,beforeTax,tax,net};}
+  const margin=rev-cogs;const beforeTax=margin-opex;const tax=Math.max(0,beforeTax)*(+PL_TAX||0);const net=beforeTax-tax;
+  return {rev,cogs,qty,opex,margin,beforeTax,tax,net};}
 function briketDefaults(){return {t1:1000,t2:21000,p1:2.0,p2:1.8,p3:1.3};}
 function brikGroup(){return DIRS?DIRS.find(d=>d&&d.dir==='ანთრაციტის ბრიკეტი'):null;}
 function brikTiers(){const g=brikGroup();return (g&&g.brik)||briketDefaults();}
@@ -953,7 +952,6 @@ function comboDashHTML(){const dir=IL_DIR;const dd=SAL_DIRS.find(x=>x[0]===dir);
     '</div></div>';
 }
 function wirePL(rerender){const rr=rerender||renderSales;
-  if($('plPack'))$('plPack').onchange=e=>{PL_PACK=+e.target.value||0;try{localStorage.setItem('pl_pack',PL_PACK);}catch(x){}rr();};
   if($('plTax'))$('plTax').onchange=e=>{PL_TAX=(+e.target.value||0)/100;try{localStorage.setItem('pl_tax',PL_TAX);}catch(x){}rr();};
 }
 function plCardHTML(dir){
@@ -965,7 +963,6 @@ function plCardHTML(dir){
   const row=(l,v,col,bold)=>'<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px solid #eef1ef">'+'<span style="color:'+(col||'#33423a')+';font-weight:'+(bold?900:600)+'">'+l+'</span><span style="color:'+(col||'#14261c')+';font-weight:'+(bold?900:800)+'">'+v+'</span></div>';
   let body=row('📥 შემოსავალი (გაყიდვები, დღგ-ს გარეშე)',money(pl.rev)+' ₾','#2b6cb0')+
     row('📦 − საქონლის თვითღირებულება',money(pl.cogs)+' ₾','#8a5a00')+
-    (pl.pack>0?row('🏭 − შეფუთვა/მუშა ('+PL_PACK+' ₾/კგ × '+fmtNum(Math.round(pl.antKg))+' კგ)',money(pl.pack)+' ₾','#8a5a00'):'')+
     row('= მოგება (ოპ. ხარჯამდე)',money(pl.margin)+' ₾','#14261c',true);
   if(isAll){body+=row('💸 − საოპერაციო ხარჯები',money(pl.opex)+' ₾','#8a5a00')+
       row('🏛️ − მოგების გადასახადი ('+(Math.round(PL_TAX*1000)/10)+'%)',money(pl.tax)+' ₾','#b00020')+
@@ -975,9 +972,9 @@ function plCardHTML(dir){
     '<div class="skpi green"><div class="l">💚 '+(isAll?'სუფთა მოგება':'მოგება (ოპ.ხარჯამდე)')+' ₾</div><div class="v" style="font-size:18px;color:'+((isAll?pl.net:pl.margin)>=0?'#0B6B3C':'#b00020')+'">'+money(isAll?pl.net:pl.margin)+'</div></div>'+
     (isAll?'<div class="skpi red"><div class="l">❗ დავალიანება (მისაღები) ₾</div><div class="v" style="font-size:18px;color:#b00020">'+money(debt)+'</div></div>':'')+'</div>';
   return '<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px"><h2>💰 მოგება-ზარალი <span class="muted" style="font-weight:600;font-size:12px">· '+esc(dlabel)+'</span></h2>'+
-    '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end"><div><label style="font-size:10px;color:#5c6b62;font-weight:700;display:block">შეფუთვა/მუშა ₾/კგ</label><input id="plPack" type="number" step="0.01" value="'+PL_PACK+'" style="width:84px"></div><div><label style="font-size:10px;color:#5c6b62;font-weight:700;display:block">მოგ. გადასახადი %</label><input id="plTax" type="number" step="0.5" value="'+(Math.round(PL_TAX*1000)/10)+'" style="width:84px"></div></div></div>'+
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end"><div><label style="font-size:10px;color:#5c6b62;font-weight:700;display:block">მოგ. გადასახადი %</label><input id="plTax" type="number" step="0.5" value="'+(Math.round(PL_TAX*1000)/10)+'" style="width:84px"></div></div></div>'+
     '<div style="max-width:620px;margin-top:10px;font-size:13.5px">'+body+'</div>'+kpis+
-    '<div class="muted" style="font-size:11px;margin-top:8px">ℹ️ მხოლოდ 📦 <b>გატანილი</b> ინვოისები (შევსებული, მაგრამ გაუტანელი არ ითვლება). შემოსავალი — რეალური გასაყიდი ფასით; თვითღირებულება — კატალოგის რეალ. ხარჯი (დღგ ბრუნდება). '+(isAll?'':'ოპ. ხარჯები და მოგების გადასახადი — „🗂 ყველა"-ში (საერთო).')+'</div>'+
+    '<div class="muted" style="font-size:11px;margin-top:8px">ℹ️ მხოლოდ 📦 <b>გატანილი</b> ინვოისები. თვითღირებულება — 🛒 <b>შესყიდვებიდან</b> (რეალური ფასი); ოპ. ხარჯები — 💸 <b>ხარჯებიდან</b> (მეშოკი, ხელფასი, ქირა…). თითო ხარჯი ერთხელ ითვლება — დუბლირების გარეშე. '+(isAll?'':'ოპ. ხარჯები და გადასახადი — „🗂 ყველა"-ში.')+'</div>'+
   '</div>';
 }
 function renderSales(){
