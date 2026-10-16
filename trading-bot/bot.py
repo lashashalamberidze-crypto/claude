@@ -76,7 +76,8 @@ def run_once(force=False):
 
     start = datetime.now(timezone.utc) - timedelta(days=int(TREND_DAYS * 1.6))
     bars = data.get_stock_bars(StockBarsRequest(
-        symbol_or_symbols=STOCKS, timeframe=TimeFrame.Day, start=start, feed="iex")).data
+        symbol_or_symbols=STOCKS, timeframe=TimeFrame.Day, start=start, feed="iex",
+        adjustment="all"))  # split-ებით დაკორექტირებული ფასები.data
 
     for symbol in STOCKS:
         try:
