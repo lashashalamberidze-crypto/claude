@@ -87,9 +87,9 @@ td.right,th.right{text-align:right}
 </style></head>
 <body>
 <div class="top"><div><div class="lg">RAM IMPEX</div><div class="su">ადმინ პანელი</div></div>
- <div class="tabbar" id="tabbar" style="display:none"><button class="tb on" data-t="orders">📋 შეკვეთები</button><button class="tb" data-t="catalog">💰 კატალოგი & ფასები</button><button class="tb" data-t="invoice">🧾 ინვოისი</button><button class="tb" data-t="sales">📊 გაყიდვები</button><button class="tb" data-t="expenses">💸 ხარჯები</button><button class="tb" data-t="booklets">📄 ბუკლეტები</button></div>
+ <div class="tabbar" id="tabbar" style="display:none"><button class="tb on" data-t="orders">📋 შეკვეთები</button><button class="tb" data-t="catalog">💰 კატალოგი & ფასები</button><button class="tb" data-t="invoice">🧾 ინვოისი</button><button class="tb" data-t="sales">📊 გაყიდვები</button><button class="tb" data-t="purchases">🛒 შესყიდვები</button><button class="tb" data-t="expenses">💸 ხარჯები</button><button class="tb" data-t="booklets">📄 ბუკლეტები</button></div>
  <button class="btn line sm" id="logout" style="display:none">გასვლა</button></div>
-<div class="wrap"><div id="app"><div class="empty">იტვირთება…</div></div><div id="cat" style="display:none"></div><div id="inv" style="display:none"></div><div id="book" style="display:none"></div><div id="sales" style="display:none"></div><div id="sal" style="display:none"></div><div id="buk" style="display:none"></div></div>
+<div class="wrap"><div id="app"><div class="empty">იტვირთება…</div></div><div id="cat" style="display:none"></div><div id="inv" style="display:none"></div><div id="book" style="display:none"></div><div id="sales" style="display:none"></div><div id="sal" style="display:none"></div><div id="purch" style="display:none"></div><div id="buk" style="display:none"></div></div>
 <div class="ov" id="ov"><img id="ovImg" src=""></div>
 <div id="printArea"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -104,7 +104,7 @@ const IMG_BY_CODE={"PL-1418": "/img/r3.jpg", "PL-1068": "/img/r3.jpg", "PL-1134"
 const PIZZA_IMG={"PZC01": "/files/pizza_corner_kraft.png", "PZC02": "/files/pizza_corner.png", "PZC03": "/files/pizza_corner_kraft.png", "PZC04": "/files/pizza_corner.png", "PZC05": "/files/pizza_corner_kraft.png", "PZC06": "/files/pizza_corner.png", "PZC07": "/files/pizza_corner_kraft.png", "PZC08": "/files/pizza_corner.png", "PZC09": "/files/pizza_corner_kraft.png", "PZC10": "/files/pizza_corner.png", "PZC11": "/files/pizza_corner_kraft.png", "PZC12": "/files/pizza_corner.png", "PZC13": "/files/pizza_corner_kraft.png", "PZC14": "/files/pizza_corner.png", "PZC15": "/files/pizza_corner_kraft.png", "PZC16": "/files/pizza_corner.png", "PZC17": "/files/pizza_corner_kraft.png", "PZC18": "/files/pizza_corner.png", "PZC19": "/files/pizza_corner_kraft.png", "PZC20": "/files/pizza_corner.png", "PZS01": "/files/pizza_square_kraft.png", "PZS02": "/files/pizza_square.png", "PZS03": "/files/pizza_square_kraft.png", "PZS04": "/files/pizza_square.png", "PZS05": "/files/pizza_square_kraft.png", "PZS06": "/files/pizza_square.png", "PZS07": "/files/pizza_square_kraft.png", "PZS08": "/files/pizza_square.png", "PZS09": "/files/pizza_square_kraft.png", "PZS10": "/files/pizza_square.png", "PZS11": "/files/pizza_square_kraft.png", "PZS12": "/files/pizza_square.png", "PZS13": "/files/pizza_square_kraft.png", "PZS14": "/files/pizza_square.png", "PZS15": "/files/pizza_square_kraft.png", "PZS16": "/files/pizza_square.png", "PZS17": "/files/pizza_square_kraft.png", "PZS18": "/files/pizza_square.png", "PZR01": "/files/pizza_round_kraft.png", "PZR02": "/files/pizza_round.png", "PZR03": "/files/pizza_round_kraft.png", "PZR04": "/files/pizza_round.png", "PZR05": "/files/pizza_round_kraft.png", "PZR06": "/files/pizza_round.png"};    // პიცის ფორმა-სურათი კოდით (კვადრატი/მოჭრილკუთხა/მრგვალი × კრაფტი/თეთრი) — გადაწონის
 const PIZZA_SHAPE={PZS:'კვადრატული',PZC:'მოჭრილკუთხებიანი',PZR:'მრგვალი'};
 function pizzaShapeWord(code,name){const m=(''+(code||'')).match(/^(PZ[SCR])/);if(!m)return '';const w=PIZZA_SHAPE[m[1]]||'';if(!w)return '';return (name||'').indexOf(w)>=0?'':w;}
-const $=id=>document.getElementById(id), app=$('app'), catEl=$('cat'), invEl=$('inv'), salesEl=$('sales'), salEl=$('sal'), bukEl=$('buk'), bookEl=$('book');
+const $=id=>document.getElementById(id), app=$('app'), catEl=$('cat'), invEl=$('inv'), salesEl=$('sales'), salEl=$('sal'), bukEl=$('buk'), bookEl=$('book'), purchEl=$('purch');
 const esc=s=>(s==null?'':(''+s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const money=v=>(Math.round((+v||0)*100)/100).toFixed(2);
 const DIR_RU={boxes:'Картонные ящики',edge:'Уголковые защиты',anth:'Антрацитовый брикет',contact:'Сообщение с сайта','':'—'};
@@ -129,11 +129,13 @@ $('tabbar').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{
   bookEl.style.display='none';
   salesEl.style.display=t==='sales'?'':'none';
   salEl.style.display=t==='expenses'?'':'none';
+  purchEl.style.display=t==='purchases'?'':'none';
   bukEl.style.display=t==='booklets'?'':'none';
   if(t==='catalog'){if(!catEl.dataset.ready)loadCatalog();}
   if(t==='invoice')openInvoice();
   if(t==='sales')openSales();
   if(t==='expenses')openExpenses();
+  if(t==='purchases')openPurchases();
   if(t==='booklets')renderBooklets();
 });
 /* ========================= BOOKLETS (download) ========================= */
@@ -253,12 +255,12 @@ function invProdOptions(dirFilter){let h='<option value="">— აირჩი�
   else{const pr=effective(d,it);inner+='<option value="'+esc(it.code)+'">'+esc(ruCode(it.code))+' · '+esc(it.name||'')+(it.size?' · '+esc(it.size):'')+' — '+money(pr)+' ₾</option>';}
   });if(inner)h+='<optgroup label="'+esc(d.name)+'">'+inner+'</optgroup>';});return h;}
 function loginView(msg){
- $('tabbar').style.display='none';$('logout').style.display='none';catEl.style.display='none';invEl.style.display='none';bookEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';app.style.display='';
+ $('tabbar').style.display='none';$('logout').style.display='none';catEl.style.display='none';invEl.style.display='none';bookEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';purchEl.style.display='none';app.style.display='';
  app.innerHTML='<div class="card" style="max-width:380px;margin:40px auto"><h2 style="margin-bottom:6px">შესვლა</h2><p class="muted" style="font-size:12px;margin-bottom:8px">ადმინის ელ.ფოსტა/პაროლი (Supabase)</p>'+(msg?'<p style="color:#c62828;font-size:12px;margin-bottom:6px">'+esc(msg)+'</p>':'')+'<label>ელ. ფოსტა</label><input id="em" type="email"><label>პაროლი</label><input id="pw" type="password"><button class="btn" id="lg" style="width:100%;margin-top:12px">შესვლა</button><button class="smini" id="fpw" style="width:100%;margin-top:8px;background:#f3faf5;color:#0B6B3C">🔑 პაროლი დამავიწყდა</button><div id="fpwMsg" class="muted" style="font-size:12px;margin-top:6px"></div></div>';
  $('lg').onclick=async()=>{$('lg').disabled=true;$('lg').textContent='...';const {error}=await sb.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});if(error){loginView(error.message);}else{onLogin();}};
  $('fpw').onclick=async()=>{const em=($('em').value||'').trim();if(!em){$('fpwMsg').innerHTML='<span style="color:#c62828">ჯერ ჩაწერე ელ.ფოსტა ზემოთ</span>';return;}$('fpw').disabled=true;const {error}=await sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});if(error){$('fpwMsg').innerHTML='<span style="color:#c62828">'+esc(error.message)+'</span>';$('fpw').disabled=false;}else{$('fpwMsg').innerHTML='<span style="color:#0B6B3C">✅ გამოგზავნილია აღდგენის ბმული <b>'+esc(em)+'</b>-ზე. გახსენი წერილი და დააყენე ახალი პაროლი.</span>';}};
 }
-function recoverView(){$('tabbar').style.display='none';$('logout').style.display='none';catEl.style.display='none';invEl.style.display='none';bookEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';app.style.display='';
+function recoverView(){$('tabbar').style.display='none';$('logout').style.display='none';catEl.style.display='none';invEl.style.display='none';bookEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';purchEl.style.display='none';app.style.display='';
  app.innerHTML='<div class="card" style="max-width:380px;margin:40px auto"><h2 style="margin-bottom:6px">🔑 ახალი პაროლი</h2><p class="muted" style="font-size:12px;margin-bottom:8px">ჩაწერე ახალი პაროლი (მინ. 6 სიმბოლო)</p><label>ახალი პაროლი</label><input id="np" type="password"><button class="btn" id="npsave" style="width:100%;margin-top:12px">შენახვა</button><div id="npMsg" class="muted" style="font-size:12px;margin-top:6px"></div></div>';
  $('npsave').onclick=async()=>{const p=$('np').value||'';if(p.length<6){$('npMsg').innerHTML='<span style="color:#c62828">მინ. 6 სიმბოლო</span>';return;}$('npsave').disabled=true;$('npsave').textContent='...';const {error}=await sb.auth.updateUser({password:p});if(error){$('npMsg').innerHTML='<span style="color:#c62828">'+esc(error.message)+'</span>';$('npsave').disabled=false;$('npsave').textContent='შენახვა';}else{$('npMsg').innerHTML='<span style="color:#0B6B3C">✅ პაროლი შეიცვალა</span>';history.replaceState(null,'',location.pathname);setTimeout(onLogin,600);}};
 }
@@ -451,8 +453,12 @@ function boxKind(l){const p=byCode(l&&l.code)||{};const dir=p.dir||l.dir||'';
 function boxSizeVal(s){if(!s)return Infinity;const m=(''+s).match(/\d+(?:[.,]\d+)?/g);if(!m||!m.length)return Infinity;const v=m.map(n=>parseFloat(n.replace(',','.'))).filter(n=>!isNaN(n));if(!v.length)return Infinity;if(v.length>=3)return v[0]*v[1]*v[2];if(v.length===2)return v[0]*v[1];return v[0];}
 /* ანთრაციტის ბრიკეტი — კგ-ის საფეხურებრივი ფასი ინვოისში/შეკვეთაში */
 function isBriket(code){const p=byCode(code);return !!(p&&p.dir==='ანთრაციტის ბრიკეტი');}
-// —— P&L: თვითღირებულება ერთეულზე (₾, დღგ-ს გარეშე) კატალოგიდან ——
-function unitCostGel(code){for(const d of (DIRS||[])){for(const it of (d.items||[])){if(it&&it.code===code){try{const c=calcRow(d,it);return c.landed*(+d.params.usdGel||1);}catch(e){return 0;}}}}return 0;}
+// —— P&L: თვითღირებულება ერთეულზე (₾, დღგ-ს გარეშე) ——
+let PURCHASES=[];
+function purchUnitCost(code){let paid=0,qty=0;(PURCHASES||[]).forEach(p=>{if(p&&p.code===code){paid+=(+p.paid||0);qty+=(+p.qty||0);}});return qty>0?paid/qty:0;}  // რეალური საშ. შესყიდვის ფასი
+function unitCostGel(code){const pc=purchUnitCost(code);if(pc>0)return pc;  // 1) რეალური შესყიდვა; 2) კატალოგის გათვლა
+  for(const d of (DIRS||[])){for(const it of (d.items||[])){if(it&&it.code===code){try{const c=calcRow(d,it);return c.landed*(+d.params.usdGel||1);}catch(e){return 0;}}}}return 0;}
+async function loadPurchases(){try{const {data}=await sb.from('purchases').select('*').order('date',{ascending:false});PURCHASES=data||[];}catch(e){PURCHASES=[];}}
 function plGet(k,def){try{const v=localStorage.getItem(k);return (v==null||v==='')?def:(+v);}catch(e){return def;}}
 let PL_TAX=plGet('pl_tax',0.15), PL_PACK=plGet('pl_pack',0.07);
 function computePL(dir){let rev=0,cogs=0,pack=0,antKg=0,qty=0;
@@ -905,6 +911,7 @@ async function openSales(){
   try{const {data}=await sb.from('invoices').select('*').order('created_at',{ascending:false}).limit(500);INVOICES=data||[];}catch(e){INVOICES=[];}
   await loadDistrib();
   try{await loadExpenses();}catch(e){}
+  try{await loadPurchases();}catch(e){}
   renderSales();
 }
 function invTotalsBy(dir,wantDist){let T=0,P=0,n=0;(INVOICES||[]).forEach(v=>{if(invIsDist(v)!==wantDist)return;if(dir&&dir!=='all'&&invDirBucket(v)!==dir)return;T+=(+v.grand||0);P+=(+v.paid||0);n++;});return {T,P,due:T-P,n};}
@@ -1694,12 +1701,52 @@ function expRevenueByDir(){const rev={};(INVOICES||[]).forEach(v=>{if((v.status|
 function expByDir(){const e={};(EXPENSES||[]).forEach(x=>{const c=x.code||'';e[c]=(e[c]||0)+(+x.amount||0);});return e;}
 function expDetail(x){let s='';if(x.category==='salary'&&x.docs&&x.docs.people&&x.docs.people.length){s='👷 '+x.docs.people.map(p=>p.name+(p.amount?(' — '+money(p.amount)+'₾'):'')).join('; ');}if(x.note)s=s?(s+' · 📝 '+x.note):('📝 '+x.note);return s;}
 function filteredExpenses(){let list=EXPENSES.slice();if(EXP_FILTER==='__gen__')list=list.filter(x=>!(x.code));else if(EXP_FILTER)list=list.filter(x=>(x.code||'')===EXP_FILTER);if(EXP_FROM)list=list.filter(x=>(x.date||'')>=EXP_FROM);if(EXP_TO)list=list.filter(x=>(x.date||'')<=EXP_TO);list.sort((a,b)=>{const d=(b.date||'').localeCompare(a.date||'');return d!==0?d:String(b.id||'').localeCompare(String(a.id||''));});return list;}
+/* ========================= 🛒 შესყიდვები — რეალური თვითღირებულება (SKU) ========================= */
+function purchProdOptions(){let h='<option value="">— აირჩიე პროდუქტი —</option>';(DIRS||[]).forEach(d=>{let inner='';(d.items||[]).forEach(it=>{inner+='<option value="'+esc(it.code)+'">'+esc(ruCode(it.code))+' · '+esc(it.name||'')+(it.size?' · '+esc(it.size):'')+'</option>';});if(inner)h+='<optgroup label="'+esc(d.name)+'">'+inner+'</optgroup>';});return h;}
+async function openPurchases(){
+  if(!document.getElementById('salCss')){const st=document.createElement('style');st.id='salCss';st.textContent=SAL_CSS;document.head.appendChild(st);}
+  purchEl.innerHTML='<div class="empty">იტვირთება…</div>';
+  try{await ensureDirs();}catch(e){}
+  await loadPurchases();
+  renderPurchases();
+}
+function renderPurchases(){
+  const bySku={};(PURCHASES||[]).forEach(p=>{if(!p||!p.code)return;const s=bySku[p.code]||(bySku[p.code]={paid:0,qty:0,name:p.name||''});s.paid+=(+p.paid||0);s.qty+=(+p.qty||0);});
+  const sumRows=Object.keys(bySku).map(c=>{const s=bySku[c];const uc=s.qty>0?s.paid/s.qty:0;return '<tr><td style="padding:6px"><b>'+esc(ruCode(c))+'</b> <span class="muted" style="font-size:11px">'+esc(s.name)+'</span></td><td style="padding:6px;text-align:right">'+fmtNum(s.qty)+'</td><td style="padding:6px;text-align:right">'+money(s.paid)+'</td><td style="padding:6px;text-align:right;font-weight:800;color:#0B6B3C">'+money(uc)+' ₾</td></tr>';}).join('');
+  purchEl.innerHTML=
+   '<div class="card"><h2>🛒 შესყიდვის დამატება</h2><p class="muted" style="font-size:12px">ჩაწერ რა იყიდე, რამდენი (კგ/ცალი) და რამდენი გადაიხადე — თვითღირებულება ავტომატურად დაითვლება (გადახდილი ÷ რაოდ.). P&L სწორედ ამ რეალურ ფასს აიღებს.</p>'+
+   '<div class="row"><div style="flex:2"><label>პროდუქტი</label><select id="puCode">'+purchProdOptions()+'</select></div><div><label>რაოდენობა (კგ/ცალი)</label><input id="puQty" type="number" step="any" placeholder="0"></div><div><label>გადახდილი სულ ₾</label><input id="puPaid" type="number" step="0.01" placeholder="0.00"></div></div>'+
+   '<div class="row" style="margin-top:8px"><div style="flex:0 0 220px"><label>თარიღი</label><input id="puDate" type="date" value="'+todayStr()+'"></div><div style="flex:1"><label>შენიშვნა (არჩ.)</label><input id="puNote" placeholder="მომწოდებელი, პარტია…"></div></div>'+
+   '<div id="puPrev" class="muted" style="margin-top:6px;font-size:12.5px;font-weight:700"></div>'+
+   '<div style="margin-top:12px"><button class="btn" id="puSave">💾 შესყიდვის ჩაწერა</button><span id="puMsg" style="margin-left:10px;font-size:12.5px"></span></div></div>'+
+   '<div class="card"><h2>📦 საშ. თვითღირებულება პროდუქტზე</h2><div class="scroll"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0F8A4D;color:#fff"><th style="padding:7px;text-align:left">პროდუქტი</th><th style="padding:7px;text-align:right">სულ რაოდ.</th><th style="padding:7px;text-align:right">სულ გადახდ. ₾</th><th style="padding:7px;text-align:right">საშ. ფასი/ერთ.</th></tr></thead><tbody>'+(sumRows||'<tr><td colspan="4" class="muted" style="padding:10px">ჯერ შესყიდვა არ არის.</td></tr>')+'</tbody></table></div></div>'+
+   '<div class="card"><h2>🧾 შესყიდვების ისტორია</h2><div class="scroll"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:6px;text-align:left">თარიღი</th><th style="padding:6px;text-align:left">პროდუქტი</th><th style="padding:6px;text-align:right">რაოდ.</th><th style="padding:6px;text-align:right">გადახდ. ₾</th><th style="padding:6px;text-align:right">ფასი/ერთ.</th><th style="padding:6px">შენიშვნა</th><th></th></tr></thead><tbody id="puRows"></tbody></table></div></div>';
+  const g=id=>document.getElementById(id);
+  const prev=()=>{const q=+g('puQty').value||0,p=+g('puPaid').value||0;g('puPrev').innerHTML=(q>0&&p>0)?('→ თვითღირებულება: <b style="color:#0B6B3C">'+money(p/q)+' ₾ / ერთ.</b>'):'';};
+  g('puQty').oninput=prev;g('puPaid').oninput=prev;
+  g('puSave').onclick=savePurchase;
+  renderPurchList();
+}
+function renderPurchList(){const tb=document.getElementById('puRows');if(!tb)return;
+  tb.innerHTML=(PURCHASES||[]).map(p=>{const uc=(+p.qty>0)?(+p.paid/+p.qty):0;return '<tr><td style="padding:6px">'+esc(''+(p.date||''))+'</td><td style="padding:6px"><b>'+esc(ruCode(p.code))+'</b> <span class="muted" style="font-size:11px">'+esc(p.name||'')+'</span></td><td style="padding:6px;text-align:right">'+fmtNum(+p.qty||0)+'</td><td style="padding:6px;text-align:right;font-weight:700">'+money(p.paid)+'</td><td style="padding:6px;text-align:right;color:#0B6B3C;font-weight:700">'+money(uc)+'</td><td style="padding:6px;font-size:12px">'+esc(p.note||'')+'</td><td style="padding:6px;text-align:right"><button class="smini danger" data-pudel="'+esc(p.id)+'">🗑</button></td></tr>';}).join('')||'<tr><td colspan="7" class="muted" style="padding:10px">ჯერ შესყიდვა არ არის.</td></tr>';
+  tb.querySelectorAll('[data-pudel]').forEach(b=>b.onclick=async()=>{if(!confirm('წავშალო ეს შესყიდვა?'))return;try{const {error}=await sb.from('purchases').delete().eq('id',b.dataset.pudel);if(error)throw error;PURCHASES=PURCHASES.filter(x=>String(x.id)!==String(b.dataset.pudel));renderPurchases();}catch(e){alert('ვერ წაიშალა: '+(e.message||e));}});
+}
+async function savePurchase(){const g=id=>document.getElementById(id);
+  const code=g('puCode').value;const qty=+g('puQty').value||0;const paid=+g('puPaid').value||0;
+  if(!code){g('puMsg').innerHTML='<span style="color:#b00020">აირჩიე პროდუქტი</span>';return;}
+  if(qty<=0||paid<=0){g('puMsg').innerHTML='<span style="color:#b00020">ჩაწერე რაოდენობა და გადახდილი თანხა</span>';return;}
+  const p=byCode(code)||{};const rec={id:'pu'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),code,name:p.name||'',dir:p.dir||'',qty,paid,date:g('puDate').value||todayStr(),note:g('puNote').value||''};
+  const btn=g('puSave');btn.disabled=true;btn.textContent='⏳…';
+  try{const {error}=await sb.from('purchases').insert([rec]);if(error)throw error;PURCHASES.unshift(rec);renderPurchases();}
+  catch(e){g('puMsg').innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+' (გაუშვი sql/purchases.sql)</span>';btn.disabled=false;btn.textContent='💾 შესყიდვის ჩაწერა';}
+}
 async function openExpenses(){
   if(!document.getElementById('salCss')){const st=document.createElement('style');st.id='salCss';st.textContent=SAL_CSS;document.head.appendChild(st);}
   salEl.innerHTML='<div class="empty">იტვირთება…</div>';
   try{await ensureDirs();}catch(e){salEl.innerHTML='<div class="card"><p style="color:#c62828">კატალოგი ვერ ჩაიტვირთა: '+esc(e.message||e)+'</p></div>';return;}
   if(!(INVOICES&&INVOICES.length)){try{const {data}=await sb.from('invoices').select('*').order('created_at',{ascending:false}).limit(1000);INVOICES=data||[];}catch(e){}}
   await loadExpenses();
+  try{await loadPurchases();}catch(e){}
   renderExpenses();
 }
 function renderExpenses(){
