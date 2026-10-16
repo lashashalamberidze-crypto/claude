@@ -456,7 +456,7 @@ function unitCostGel(code){for(const d of (DIRS||[])){for(const it of (d.items||
 function plGet(k,def){try{const v=localStorage.getItem(k);return (v==null||v==='')?def:(+v);}catch(e){return def;}}
 let PL_TAX=plGet('pl_tax',0.15), PL_PACK=plGet('pl_pack',0.07);
 function computePL(dir){let rev=0,cogs=0,pack=0,antKg=0,qty=0;
-  (INVOICES||[]).forEach(inv=>{const vi=(inv.extra||{}).vatIncl;
+  (INVOICES||[]).forEach(inv=>{if(!(inv.extra||{}).dispensed)return;/* მხოლოდ საწყობიდან გატანილი */const vi=(inv.extra||{}).vatIncl;
     (inv.lines||[]).forEach(l=>{const cdir=saleDirOf(l.code,(byCode(l.code)||{}).dir||'');
       if(dir&&dir!=='all'&&cdir!==dir)return;
       const q=+l.qty||0,price=+l.price||0;let lr=q*price;if(vi)lr=lr/1.18;rev+=lr;qty+=q;
@@ -939,9 +939,9 @@ function comboDashHTML(){const dir=IL_DIR;const dd=SAL_DIRS.find(x=>x[0]===dir);
     block('📊 ჯამი — საცალო + დისტრიბუცია',rt.T+da.taken,rt.P+da.paid,rt.due+da.debt,rKg+dKg,totExtra)+
     '</div></div>';
 }
-function wirePL(){
-  if($('plPack'))$('plPack').onchange=e=>{PL_PACK=+e.target.value||0;try{localStorage.setItem('pl_pack',PL_PACK);}catch(x){}renderSales();};
-  if($('plTax'))$('plTax').onchange=e=>{PL_TAX=(+e.target.value||0)/100;try{localStorage.setItem('pl_tax',PL_TAX);}catch(x){}renderSales();};
+function wirePL(rerender){const rr=rerender||renderSales;
+  if($('plPack'))$('plPack').onchange=e=>{PL_PACK=+e.target.value||0;try{localStorage.setItem('pl_pack',PL_PACK);}catch(x){}rr();};
+  if($('plTax'))$('plTax').onchange=e=>{PL_TAX=(+e.target.value||0)/100;try{localStorage.setItem('pl_tax',PL_TAX);}catch(x){}rr();};
 }
 function plCardHTML(dir){
   const isAll=(!dir||dir==='all');const pl=computePL(dir);
@@ -964,7 +964,7 @@ function plCardHTML(dir){
   return '<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px"><h2>💰 მოგება-ზარალი <span class="muted" style="font-weight:600;font-size:12px">· '+esc(dlabel)+'</span></h2>'+
     '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end"><div><label style="font-size:10px;color:#5c6b62;font-weight:700;display:block">შეფუთვა/მუშა ₾/კგ</label><input id="plPack" type="number" step="0.01" value="'+PL_PACK+'" style="width:84px"></div><div><label style="font-size:10px;color:#5c6b62;font-weight:700;display:block">მოგ. გადასახადი %</label><input id="plTax" type="number" step="0.5" value="'+(Math.round(PL_TAX*1000)/10)+'" style="width:84px"></div></div></div>'+
     '<div style="max-width:620px;margin-top:10px;font-size:13.5px">'+body+'</div>'+kpis+
-    '<div class="muted" style="font-size:11px;margin-top:8px">ℹ️ შემოსავალი — რეალური გასაყიდი ფასით. თვითღირებულება — კატალოგის რეალ. ხარჯი (დღგ ბრუნდება). '+(isAll?'':'ოპ. ხარჯები და მოგების გადასახადი — „🗂 ყველა"-ში (საერთო).')+'</div>'+
+    '<div class="muted" style="font-size:11px;margin-top:8px">ℹ️ მხოლოდ 📦 <b>გატანილი</b> ინვოისები (შევსებული, მაგრამ გაუტანელი არ ითვლება). შემოსავალი — რეალური გასაყიდი ფასით; თვითღირებულება — კატალოგის რეალ. ხარჯი (დღგ ბრუნდება). '+(isAll?'':'ოპ. ხარჯები და მოგების გადასახადი — „🗂 ყველა"-ში (საერთო).')+'</div>'+
   '</div>';
 }
 function renderSales(){
@@ -1730,7 +1730,8 @@ function renderExpenses(){
    '<div class="card"><h2>🧾 ხარჯების ჩამონათვალი</h2>'+
    '<div class="saldir" id="eDirTabs">'+([['','ყველა','🗂']].concat(EXP_DIRS.map(d=>[d[0],d[1],d[2]])).concat([['__gen__','ზოგადი','🔧']])).map(t=>'<button class="chip'+((EXP_FILTER||'')===t[0]?' on':'')+'" data-etab="'+esc(t[0])+'">'+t[2]+' '+esc(t[1])+'</button>').join('')+'</div>'+
    '<div class="row"><div><label>დან</label><input id="eFrom" type="date"></div><div><label>მდე</label><input id="eTo" type="date"></div><div style="align-self:flex-end;display:flex;gap:8px"><button class="btn a" id="eXls">📊 Excel</button><button class="btn line" id="ePdf">📄 PDF</button></div></div>'+
-   '<div class="scroll" style="margin-top:10px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:6px;text-align:left">თარიღი</th><th style="padding:6px;text-align:left">მიმართულება</th><th style="padding:6px;text-align:left">კატეგორია</th><th style="padding:6px;text-align:right">თანხა ₾</th><th style="padding:6px;text-align:center">ზედნადები</th><th style="padding:6px">დეტალები</th><th></th></tr></thead><tbody id="eRows"></tbody></table></div><div id="eEmpty" class="empty" style="display:none">ჯერ ხარჯი არ არის.</div></div>';
+   '<div class="scroll" style="margin-top:10px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:6px;text-align:left">თარიღი</th><th style="padding:6px;text-align:left">მიმართულება</th><th style="padding:6px;text-align:left">კატეგორია</th><th style="padding:6px;text-align:right">თანხა ₾</th><th style="padding:6px;text-align:center">ზედნადები</th><th style="padding:6px">დეტალები</th><th></th></tr></thead><tbody id="eRows"></tbody></table></div><div id="eEmpty" class="empty" style="display:none">ჯერ ხარჯი არ არის.</div></div>'+
+   plCardHTML('all');
   const g=id=>document.getElementById(id);
   expPeople=[];editingExpId=null;expEditIdx=null;
   g('eSave').onclick=saveExpense;
@@ -1741,6 +1742,7 @@ function renderExpenses(){
   if(g('eTo')){g('eTo').value=EXP_TO||'';g('eTo').onchange=()=>{EXP_TO=g('eTo').value;renderExpList();};}
   if(g('eXls'))g('eXls').onclick=()=>exportExpXls(filteredExpenses());
   if(g('ePdf'))g('ePdf').onclick=()=>downloadExpPDF(filteredExpenses());
+  wirePL(renderExpenses);
   updateExpForm();renderPeople();renderExpList();
 }
 function updateExpForm(){const g=id=>document.getElementById(id);if(!g('eCat'))return;const sal=g('eCat').value==='salary';if(g('eSalBlock'))g('eSalBlock').style.display=sal?'':'none';if(g('eGenRow'))g('eGenRow').style.display=sal?'none':'';}
