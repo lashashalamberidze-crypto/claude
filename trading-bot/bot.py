@@ -24,7 +24,7 @@ from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 
 # ---- პარამეტრები (შეგიძლია შეცვალო) ----
 STOCKS = ["AAPL", "MSFT", "NVDA", "SPY"]   # ვაჭრობს მხოლოდ ბირჟის საათებში
-CRYPTO = ["BTC/USD", "ETH/USD"]            # ვაჭრობს 24/7
+CRYPTO = []   # გამორთულია: backtest-ში საკომისიოს გამო ზარალიანი იყო (იყო "BTC/USD", "ETH/USD")
 DOLLARS_PER_TRADE = 1000                   # ერთ ყიდვაზე რამდენი $
 SMA_FAST = 10
 SMA_SLOW = 30
@@ -80,13 +80,21 @@ def run_once():
 
     # პოზიციების სიმბოლოები Alpaca-ში კრიპტოზე "/"-ის გარეშეა (BTCUSD)
     positions = {p.symbol: p for p in trading.get_all_positions()}
+
+    # კრიპტო სიიდან ამოღებულია — ძველი კრიპტო პოზიციები რომ არ დარჩეს უმართავი, ვხურავთ
+    crypto_on = {c.replace("/", "") for c in CRYPTO}
+    for sym, p in list(positions.items()):
+        if "crypto" in str(p.asset_class).lower() and sym not in crypto_on:
+            trading.close_position(sym)
+            log(f"🔴 გაყიდვა {sym} — კრიპტო გამორთულია")
+            del positions[sym]
     market_open = trading.get_clock().is_open
 
     symbols = [(s, True) for s in CRYPTO]
     if market_open:
         symbols += [(s, False) for s in STOCKS]
     else:
-        log("აქციების ბირჟა დახურულია — ვამოწმებ მხოლოდ კრიპტოს.")
+        log("აქციების ბირჟა დახურულია.")
 
     for symbol, is_crypto in symbols:
         try:

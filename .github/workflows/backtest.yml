@@ -1,0 +1,33 @@
+# Backtest — სტრატეგიის შემოწმება ისტორიაზე. შედეგი: Actions → Backtest → run → Summary
+name: Backtest
+
+on:
+  push:
+    branches:
+      - claude/wizardly-ritchie-j0mwl6
+    paths:
+      - "trading-bot/**"
+      - ".github/workflows/backtest.yml"
+  workflow_dispatch:
+    inputs:
+      years:
+        description: "რამდენი წლის ისტორია"
+        default: "5"
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: trading-bot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python backtest_daily.py "${{ inputs.years || '5' }}"
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
