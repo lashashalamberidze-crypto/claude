@@ -47,5 +47,6 @@ jobs:
             **/.github/**
             sql/**
             supabase/**
+            trading-bot/**
             *.md
             README*

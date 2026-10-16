@@ -1,0 +1,38 @@
+# ============================================================================
+# სავაჭრო ბოტი — ავტომატური გაშვება ყოველ 15 წუთში (კომპიუტერი ჩართული არ სჭირდება)
+#
+# საჭიროა 2 secret (GitHub → Settings → Secrets and variables → Actions):
+#   ALPACA_API_KEY     — Alpaca Paper API Key
+#   ALPACA_SECRET_KEY  — Alpaca Paper Secret Key
+#
+# შენიშვნა: GitHub-ის schedule მუშაობს მხოლოდ main ბრანჩიდან.
+# ============================================================================
+name: Trading bot
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}   # Actions ტაბში ხელით გაშვების ღილაკი
+
+concurrency:
+  group: trading-bot
+  cancel-in-progress: false
+
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: trading-bot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python bot.py
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          ALPACA_PAPER: "true"
