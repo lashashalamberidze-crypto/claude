@@ -1,0 +1,115 @@
+<!doctype html><html lang="ka"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QR — გალა ვახშამი</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Georgian:wght@400;600;700;800&family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap">
+<style>
+:root{--green:#0e3b32;--gold:#c9a96b;--cream:#f2efe8;
+  --serif:"Noto Serif Georgian",Georgia,serif;--sans:"Noto Sans Georgian",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:var(--sans);background:#dcdcd6;padding:26px 16px;display:flex;
+  flex-direction:column;align-items:center;gap:18px}
+.bar{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+.bar button{padding:11px 22px;border:0;border-radius:11px;background:var(--green);color:var(--cream);
+  font:700 .84rem var(--sans);cursor:pointer}
+.bar button.alt{background:transparent;border:1px solid var(--green);color:var(--green)}
+.bar span{font-size:.76rem;color:#55605c;align-self:center}
+
+/* ─── A4 პოსტერი ─── */
+.sheet{width:210mm;height:297mm;background:var(--green);color:var(--cream);
+  position:relative;overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 14px 50px rgba(0,0,0,.3)}
+.orn{position:absolute;inset:0;background-image:url("pattern.png");background-size:13mm 13mm;background-repeat:repeat}
+.frame{position:absolute;inset:11mm;border:1.4px solid var(--gold);pointer-events:none}
+.frame::after{content:"";position:absolute;inset:3.4mm;border:.5px solid rgba(201,169,107,.45)}
+.dm{position:absolute;width:5mm;height:5mm;border:1.4px solid var(--gold);background:var(--green);
+  transform:rotate(45deg);z-index:2}
+.dm.a{top:8.5mm;left:8.5mm}.dm.b{top:8.5mm;right:8.5mm}
+.dm.c{bottom:8.5mm;left:8.5mm}.dm.d{bottom:8.5mm;right:8.5mm}
+
+.in{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;
+  align-items:center;text-align:center;padding:26mm 20mm 20mm}
+.logo{display:block;width:96mm;height:auto;margin:0 auto 2mm}
+.rule{display:flex;align-items:center;justify-content:center;gap:4mm;margin:6mm 0 5mm}
+.rule i{display:block;width:22mm;height:.4mm;background:linear-gradient(90deg,transparent,var(--gold))}
+.rule i+i{background:linear-gradient(90deg,var(--gold),transparent)}
+.rule b{width:2.2mm;height:2.2mm;border:.4mm solid var(--gold);transform:rotate(45deg);display:block}
+h1{font-family:var(--serif);font-weight:800;font-size:34pt;color:var(--gold);line-height:1.08}
+.sub{font-family:var(--serif);font-size:13pt;color:var(--cream);margin-top:4mm;line-height:1.55}
+
+.qbox{margin:9mm auto 0;background:#fff;border-radius:5mm;padding:7mm;
+  box-shadow:0 4mm 14mm rgba(0,0,0,.26)}
+.qr{display:block;width:72mm;height:72mm}
+.scan{margin-top:6mm;font-family:var(--serif);font-weight:700;font-size:16pt;color:var(--gold)}
+.steps{margin-top:9mm;font-size:15pt;color:var(--cream);line-height:1.95;font-weight:500}
+.steps span{display:flex;align-items:center;justify-content:center;gap:4mm}
+.bu{width:2.6mm;height:2.6mm;background:var(--gold);transform:rotate(45deg);
+  flex-shrink:0;display:block;border-radius:.3mm}
+
+.when{margin-top:auto;padding-top:7mm;width:100%;display:flex;justify-content:center;
+  border-top:.4mm solid rgba(201,169,107,.3)}
+.when div{padding:0 7mm;border-right:.4mm solid rgba(201,169,107,.3)}
+.when div:last-child{border-right:0}
+.when .k{font-size:8pt;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:1.6mm}
+.when .v{font-family:var(--serif);font-weight:700;font-size:12pt;color:var(--cream)}
+.when .s{font-size:8.4pt;color:rgba(242,239,232,.6);margin-top:.8mm}
+
+/* ─── მაგიდის პატარა ბარათი (A6-ზე 4 ცალი) ─── */
+.sheet.small .in{padding:16mm 14mm 12mm}
+.sheet.small h1{font-size:25pt}
+.sheet.small .qr{width:58mm;height:58mm}
+
+@page{size:A4;margin:0}
+@media print{
+  body{background:#fff;padding:0;gap:0}
+  .bar{display:none}
+  .sheet{box-shadow:none;page-break-after:always}
+}
+</style></head><body>
+
+<div class="bar">
+  <button onclick="window.print()">🖨 დაბეჭდვა / PDF</button>
+  <button class="alt" onclick="dl()">⬇ QR ცალკე (SVG)</button>
+  <span>A4 · დაბეჭდე და გამოაკარი შესასვლელში</span>
+</div>
+
+<div class="sheet">
+  <div class="orn"></div><div class="frame"></div>
+  <span class="dm a"></span><span class="dm b"></span><span class="dm c"></span><span class="dm d"></span>
+  <div class="in">
+    <img class="logo" src="logo.png" alt="საქართველოს ეკონომიკის განვითარების კორპორაცია">
+    <div class="rule"><i></i><b></b><i></i></div>
+    <h1>გალა ვახშამი</h1>
+    <div class="sub">იპოვეთ თქვენი მაგიდა</div>
+
+    <div class="qbox" id="qbox"><svg class="qr" viewBox="0 0 29 29" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg"><path fill="none" d="M0 0h29v29H0z"/><path stroke="#0e3b32" d="M0 0.5h7m2 0h1m1 0h2m1 0h1m3 0h2m2 0h7M0 1.5h1m5 0h1m2 0h2m1 0h1m3 0h3m1 0h1m1 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m2 0h1m1 0h2m1 0h2m1 0h1m1 0h2m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m4 0h1m1 0h1m2 0h1m1 0h1m3 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m2 0h2m1 0h1m7 0h1m1 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m1 0h1m1 0h2m3 0h5m2 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M10 7.5h4m1 0h3m2 0h1M0 8.5h1m2 0h1m1 0h2m1 0h2m2 0h1m1 0h1m1 0h1m4 0h1m1 0h1M12 9.5h2m1 0h3m2 0h1m1 0h1m2 0h1m2 0h1M0 10.5h2m4 0h1m3 0h2m1 0h3m3 0h1m1 0h1m3 0h3M0 11.5h2m2 0h1m2 0h2m1 0h1m1 0h2m2 0h1m1 0h1m2 0h1m1 0h2m1 0h2M0 12.5h1m1 0h1m1 0h5m1 0h1m3 0h4m2 0h3m2 0h1m1 0h2M0 13.5h2m1 0h1m6 0h7m2 0h2M0 14.5h1m1 0h1m1 0h1m1 0h3m1 0h5m1 0h1m5 0h1m1 0h5M2 15.5h4m2 0h3m1 0h1m2 0h1m1 0h1m2 0h1m1 0h1m2 0h1m1 0h1M0 16.5h1m3 0h1m1 0h1m1 0h1m3 0h2m3 0h1m2 0h1m6 0h1M1 17.5h1m3 0h1m4 0h2m1 0h3m2 0h1m1 0h4m1 0h1m2 0h1M0 18.5h1m1 0h1m2 0h2m1 0h2m1 0h1m2 0h1m6 0h1m5 0h2M7 19.5h2m1 0h1m1 0h1m1 0h1m2 0h1m2 0h2m5 0h2M0 20.5h1m5 0h1m3 0h3m2 0h2m2 0h6m1 0h1M8 21.5h2m4 0h1m2 0h1m1 0h2m3 0h1m1 0h3M0 22.5h7m5 0h1m4 0h2m1 0h1m1 0h1m1 0h1m2 0h1M0 23.5h1m5 0h1m1 0h5m1 0h2m2 0h1m1 0h1m3 0h4M0 24.5h1m1 0h3m1 0h1m3 0h1m1 0h1m4 0h1m2 0h5m3 0h1M0 25.5h1m1 0h3m1 0h1m1 0h2m2 0h2m5 0h2m1 0h1m1 0h4M0 26.5h1m1 0h3m1 0h1m3 0h1m1 0h3m1 0h1m2 0h2m3 0h3m1 0h1M0 27.5h1m5 0h1m2 0h2m2 0h2m2 0h5m5 0h1M0 28.5h7m1 0h1m3 0h1m1 0h1m1 0h2m2 0h6m1 0h1"/></svg></div>
+
+    <div class="steps">
+      <span><i class="bu"></i>დაასკანერეთ QR კოდი</span>
+      <span><i class="bu"></i>აკრიფეთ სახელი ან გვარი</span>
+      <span><i class="bu"></i>ეკრანზე გამოჩნდება თქვენი მაგიდა</span>
+    </div>
+
+    <div class="when">
+      <div><div class="k">თარიღი</div><div class="v">20 ოქტომბერი</div></div>
+      <div><div class="k">დრო</div><div class="v">19:00</div></div>
+      <div><div class="k">ლოკაცია</div><div class="v">სასტუმრო „სტამბა"</div>
+        <div class="s">რუფტოპი · კოსტავას 14</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function dl(){
+  var svg=document.querySelector('#qbox svg').cloneNode(true);
+  svg.setAttribute('width','1000'); svg.setAttribute('height','1000');
+  svg.querySelector('path').setAttribute('fill','#ffffff');
+  var s=new XMLSerializer().serializeToString(svg);
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([s],{type:'image/svg+xml'}));
+  a.download='eventcorp-qr.svg'; a.click();
+}
+</script>
+</body></html>

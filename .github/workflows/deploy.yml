@@ -48,5 +48,6 @@ jobs:
             sql/**
             supabase/**
             trading-bot/**
+            events.com.ge/**
             *.md
             README*
