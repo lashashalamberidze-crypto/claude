@@ -16,6 +16,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{min-height:100%}
+body{min-height:100vh;min-height:100svh}
 body{
   font-family:var(--sans);background:var(--green);color:var(--cream);
   line-height:1.6;-webkit-font-smoothing:antialiased;
@@ -30,7 +31,7 @@ body{
 /* ორნამენტის ფონი */
 .bg{position:fixed;inset:0;z-index:0;pointer-events:none;
   background-image:url("pattern.png");background-size:50px 50px;background-repeat:repeat;opacity:.55}
-.wrap{position:relative;z-index:1;width:100%;max-width:520px;display:flex;flex-direction:column;flex:1}
+.wrap{position:relative;z-index:1;width:100%;max-width:520px;display:flex;flex-direction:column;flex:1;justify-content:center}
 
 /* ─── თავსართი ─── */
 .head{text-align:center;padding:10px 0 4px}
