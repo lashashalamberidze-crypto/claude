@@ -1274,14 +1274,16 @@ function reportModal(){
     catch(e){q('#rpMsg').innerHTML='<span style="color:#b00020">ვერ შეიქმნა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='📄 PDF-ის შექმნა';}};
 }
 const RPL={
- ka:{sub:'📈 შემაჯამებელი ანგარიში',date:'თარიღი',sold:'სულ გაყიდული',kg:'კგ',rev:'სულ შემოსავალი',exp:'ხარჯები',profit:'სუფთა მოგება',retail:'🛒 საცალო',dist:'🚚 დისტრიბუცია',paid:'გადახდილი',debt:'ვალი',trend:'📅 შემოსავლის ტენდენცია (₾)',nodata:'მონაცემები ჯერ არ არის.',soc:'📱 სოციალური აქტივობა (Facebook)',views:'👁 ნახვები',eng:'💬 ჩართულობა',fol:'👥 ახალი გამომწერი',foot:'შპს „რამ იმპექს" · 📞 595 533 500 · 🌐 ramimpex.com.ge · დაბეჭდილია',mon:{'01':'იან','02':'თებ','03':'მარ','04':'აპრ','05':'მაი','06':'ივნ','07':'ივლ','08':'აგვ','09':'სექ','10':'ოქტ','11':'ნოე','12':'დეკ'}},
- ru:{sub:'📈 Сводный отчёт',date:'Дата',sold:'Всего продано',kg:'кг',rev:'Общий доход',exp:'Расходы',profit:'Чистая прибыль',retail:'🛒 Розница',dist:'🚚 Дистрибуция',paid:'Оплачено',debt:'Долг',trend:'📅 Динамика дохода (₾)',nodata:'Пока нет данных.',soc:'📱 Активность (Facebook)',views:'👁 Просмотры',eng:'💬 Вовлечённость',fol:'👥 Новые подписчики',foot:'ООО «Рам Импекс» · 📞 595 533 500 · 🌐 ramimpex.com.ge · Распечатано',mon:{'01':'янв','02':'фев','03':'мар','04':'апр','05':'май','06':'июн','07':'июл','08':'авг','09':'сен','10':'окт','11':'ноя','12':'дек'}}
+ ka:{sub:'📈 შემაჯამებელი ანგარიში',date:'თარიღი',sold:'სულ გაყიდული',kg:'კგ',rev:'სულ შემოსავალი',exp:'ხარჯები',profit:'სუფთა მოგება',retail:'🛒 საცალო',dist:'🚚 დისტრიბუცია',paid:'გადახდილი',debt:'ვალი',gone:'📤 გატანილი (საწყ.)',stock:'📦 დარჩ. მარაგი',trend:'📅 შემოსავლის ტენდენცია (₾)',nodata:'მონაცემები ჯერ არ არის.',soc:'📱 სოციალური აქტივობა (Facebook)',views:'👁 ნახვები',eng:'💬 ჩართულობა',fol:'👥 ახალი გამომწერი',foot:'შპს „რამ იმპექს" · 📞 595 533 500 · 🌐 ramimpex.com.ge · დაბეჭდილია',mon:{'01':'იან','02':'თებ','03':'მარ','04':'აპრ','05':'მაი','06':'ივნ','07':'ივლ','08':'აგვ','09':'სექ','10':'ოქტ','11':'ნოე','12':'დეკ'}},
+ ru:{sub:'📈 Сводный отчёт',date:'Дата',sold:'Всего продано',kg:'кг',rev:'Общий доход',exp:'Расходы',profit:'Чистая прибыль',retail:'🛒 Розница',dist:'🚚 Дистрибуция',paid:'Оплачено',debt:'Долг',gone:'📤 Выдано (склад)',stock:'📦 Остаток',trend:'📅 Динамика дохода (₾)',nodata:'Пока нет данных.',soc:'📱 Активность (Facebook)',views:'👁 Просмотры',eng:'💬 Вовлечённость',fol:'👥 Новые подписчики',foot:'ООО «Рам Импекс» · 📞 595 533 500 · 🌐 ramimpex.com.ge · Распечатано',mon:{'01':'янв','02':'фев','03':'мар','04':'апр','05':'май','06':'июн','07':'июл','08':'авг','09':'сен','10':'окт','11':'ноя','12':'дек'}}
 };
 function reportHTML(soc,expenses,lang){
   const L=RPL[lang]||RPL.ka;
   const rt=retailTotals(),dt=distTotals();
   const revenue=rt.T+dt.soldAmt, profit=revenue-(expenses||0);
   const kg=retailKg()+dt.sold;
+  const brDir='ანთრაციტის ბრიკეტი';
+  const goneKg=soldDispensedQtyDir(brDir), stockKg=stockFromPurch(brDir);
   const tr=monthTrend();const mx=Math.max(1,...tr.map(x=>x[1]));
   const MON=L.mon;
   const bars=tr.map(x=>{const h=Math.round(x[1]/mx*150);const lbl=MON[x[0].slice(5,7)]||x[0].slice(5,7);return '<td style="vertical-align:bottom;text-align:center;padding:0 6px"><div style="font-size:11px;font-weight:800;color:#0B6B3C">'+money(x[1])+'</div><div style="width:44px;height:'+h+'px;margin:4px auto 0;background:linear-gradient(180deg,#0F8A4D,#0B6B3C);border-radius:6px 6px 0 0"></div><div style="font-size:12px;color:#5c6b62;font-weight:700;border-top:2px solid #e3ece7;margin-top:4px;padding-top:4px">'+lbl+'</div></td>';}).join('');
@@ -1296,7 +1298,8 @@ function reportHTML(soc,expenses,lang){
   return '<div style="font-family:\'Noto Sans Georgian\',sans-serif;padding:26px;color:#14261C;background:#fff;width:760px">'+
    '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #0F8A4D;padding-bottom:10px;margin-bottom:14px"><div><div style="font-size:24px;font-weight:900;color:#0B6B3C">RAM IMPEX</div><div style="font-size:13px;color:#5C6B62">'+L.sub+'</div></div><div style="text-align:right;font-size:12px;color:#5C6B62">'+L.date+': '+todayStr()+'</div></div>'+
    '<table style="width:100%;border-collapse:collapse"><tr>'+kpi(L.sold,'~'+fmtKg(kg)+' '+L.kg)+kpi(L.rev,money(revenue)+' ₾','#2b6cb0')+kpi(L.exp,money(expenses||0)+' ₾','#c9701a')+kpi(L.profit,money(profit)+' ₾','#0B6B3C')+'</tr><tr>'+
-     kpi(L.retail,money(rt.T)+' ₾')+kpi(L.dist,money(dt.soldAmt)+' ₾','#6d3ad6')+kpi(L.paid,money(rt.P+dt.paid)+' ₾','#0B6B3C')+kpi(L.debt,money(rt.due+dt.debt)+' ₾','#b00020')+'</tr></table>'+
+     kpi(L.retail,money(rt.T)+' ₾')+kpi(L.dist,money(dt.soldAmt)+' ₾','#6d3ad6')+kpi(L.paid,money(rt.P+dt.paid)+' ₾','#0B6B3C')+kpi(L.debt,money(rt.due+dt.debt)+' ₾','#b00020')+'</tr><tr>'+
+     kpi(L.gone,'~'+fmtKg(goneKg)+' '+L.kg,'#6d3ad6')+kpi(L.stock,'~'+fmtKg(stockKg)+' '+L.kg,(stockKg<0?'#b00020':'#0F8A4D'))+'<td></td><td></td></tr></table>'+
    '<h3 style="font-size:15px;color:#0B6B3C;margin:18px 0 6px;border-left:4px solid #F2B807;padding-left:8px">'+L.trend+'</h3>'+
    (tr.length?('<table style="width:100%;border-collapse:collapse;height:210px"><tr>'+bars+'</tr></table>'):'<div style="color:#8a939c;font-size:13px">'+L.nodata+'</div>')+
    soch+
