@@ -37,6 +37,12 @@ body{font-family:var(--sans);color:var(--cream);-webkit-font-smoothing:antialias
 .welcome{text-align:center}
 .welcome .k{font-size:18px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);opacity:.85}
 .welcome .t{font-family:var(--serif);font-weight:800;font-size:44px;color:var(--cream);margin-top:6px;line-height:1.2}
+.qbig{font-family:var(--serif);font-weight:700;font-size:40px;line-height:1.45;color:var(--cream);margin-top:60px;text-align:center;padding:0 10px}
+.qbig b{color:var(--gold);font-weight:800}
+.qbig small{display:block;margin-top:26px;font-family:var(--sans);font-weight:500;font-size:20px;color:var(--gold-l);opacity:.85}
+.xqt{font-family:var(--serif);font-weight:600;font-size:27px;color:var(--cream);margin-top:8px;line-height:1.35;max-width:900px;margin-left:auto;margin-right:auto;opacity:0;animation:in 1.2s .4s ease forwards}
+.welcome .qt::before,.welcome .qt::after{color:var(--gold);font-size:34px}
+.welcome .qt::before{content:"„"}.welcome .qt::after{content:"“"}
 .clock{text-align:right}
 .time{font-family:var(--serif);font-weight:800;font-size:96px;line-height:1;color:var(--gold);letter-spacing:-2px;font-variant-numeric:tabular-nums}
 .time .sec{font-size:44px;opacity:.65;margin-left:6px}
@@ -77,14 +83,64 @@ body{font-family:var(--sans);color:var(--cream);-webkit-font-smoothing:antialias
 .upcoming-bd{margin-top:18px;font-size:19px;opacity:.75;line-height:1.7}
 .upcoming-bd b{color:var(--gold-l);font-weight:600}
 
+/* მონაცვლე სლაიდები მარცხენა პანელში */
+.slide{position:absolute;inset:22px 28px 54px;opacity:0;transform:translateX(40px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.7,.2,1);pointer-events:none}
+.slide.on{opacity:1;transform:none}
+.slide.out{opacity:0;transform:translateX(-40px)}
+.dots{position:absolute;left:0;right:0;bottom:22px;display:flex;justify-content:center;gap:10px}
+.dots i{width:10px;height:10px;border-radius:50%;background:rgba(242,239,232,.25);transition:all .5s}
+.dots i.on{width:34px;border-radius:6px;background:var(--gold)}
+/* ახალი თანამშრომლები */
+.nw-list{display:flex;flex-direction:column;gap:20px}
+.nw{display:grid;grid-template-columns:140px 1fr;gap:22px;align-items:center;padding:20px;border-radius:22px;
+  background:linear-gradient(135deg,rgba(201,169,107,.14),rgba(201,169,107,.02));border:1px solid rgba(201,169,107,.3)}
+.ph{width:140px;height:140px;border-radius:50%;overflow:hidden;position:relative;
+  background:linear-gradient(160deg,#1d6b5a,#0c3a31);box-shadow:0 0 0 4px var(--gold),0 0 0 10px rgba(201,169,107,.18),0 18px 40px -12px rgba(0,0,0,.6)}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph svg{position:absolute;left:0;right:0;bottom:-6px;margin:auto;width:110px;height:110px}
+.slide.on .ph{animation:pop .8s cubic-bezier(.2,1.4,.4,1) both}
+.slide.on .nw:nth-child(2) .ph{animation-delay:.25s}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+.nw .n{font-family:var(--serif);font-weight:800;font-size:28px;line-height:1.2;color:var(--cream)}
+.nw .r{font-size:18px;color:var(--gold-l);margin-top:4px}
+.nw .q{font-size:18px;line-height:1.5;opacity:.8;margin-top:8px;font-style:italic}
+.nw .since{display:inline-block;margin-top:10px;font-size:15px;font-weight:700;letter-spacing:.06em;color:var(--green);background:var(--gold);padding:4px 12px;border-radius:999px}
+/* ვაკანსიები + QR */
+.vc-list{display:flex;flex-direction:column;gap:12px}
+.vc{display:flex;align-items:center;gap:16px;padding:14px 18px;border-radius:16px;background:rgba(242,239,232,.05);border:1px solid rgba(242,239,232,.1)}
+.vc>div:first-child{flex:1;min-width:0}
+.vc .vt{font-size:22px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vc .vm{font-size:16px;opacity:.6;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vc .vd{margin-left:auto;font-size:15px;font-weight:700;color:var(--gold-l);white-space:nowrap}
+.survey{margin-top:20px;display:flex;align-items:center;gap:22px;padding:18px;border-radius:20px;
+  background:linear-gradient(135deg,rgba(201,169,107,.2),rgba(201,169,107,.04));border:1px solid var(--gold)}
+.survey svg{flex:none;width:150px;height:150px;border-radius:12px;display:block}
+.survey .st1{font-family:var(--serif);font-weight:800;font-size:28px;color:var(--gold);line-height:1.2}
+.survey .st2{font-size:18px;opacity:.8;margin-top:6px;line-height:1.45}
+/* უკუთვლა და ვალუტა */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.duo .panel{padding:20px 26px}
+.cdn{display:flex;align-items:baseline;gap:14px;margin-top:6px}
+.cdn .big{font-family:var(--serif);font-weight:800;font-size:72px;line-height:1;color:var(--gold);font-variant-numeric:tabular-nums}
+.cdn .lbl{font-size:22px;line-height:1.3}
+.cdn2{font-size:17px;opacity:.6;margin-top:8px}
+.fx{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.fxr{display:grid;grid-template-columns:60px 1fr auto;align-items:center;gap:12px;font-variant-numeric:tabular-nums}
+.fxr .c{font-weight:700;font-size:20px;color:var(--gold-l)}
+.fxr .v{font-family:var(--serif);font-weight:700;font-size:28px}
+.fxr .df{font-size:17px;font-weight:600}
+.fxr .df.up{color:#7fd6a8}.fxr .df.dn{color:#f0a3a3}
+.fxsrc{font-size:14px;opacity:.5;margin-top:2px}
+.small-h{white-space:nowrap;font-family:var(--serif);font-weight:700;font-size:22px;color:var(--gold);display:flex;align-items:center;gap:10px}
+.small-h .sub{margin-left:auto;font-family:var(--sans);font-weight:500;font-size:14px;color:var(--cream);opacity:.5}
 /* შეხვედრები */
 .meet{flex:1}
-.tl{position:relative;display:flex;flex-direction:column;gap:12px}
-.m{display:grid;grid-template-columns:110px minmax(0,1fr) auto;align-items:center;gap:20px;padding:13px 20px;border-radius:18px;
+.tl{position:relative;display:flex;flex-direction:column;gap:9px}
+.m{display:grid;grid-template-columns:110px minmax(0,1fr) auto;align-items:center;gap:20px;padding:8px 20px;border-radius:18px;
   background:rgba(242,239,232,.04);border:1px solid rgba(242,239,232,.08);transition:all .6s;opacity:0;animation:in .7s ease forwards}
 .m .h{font-family:var(--serif);font-weight:700;font-size:28px;color:var(--gold);font-variant-numeric:tabular-nums}
 .m .h small{display:block;font-family:var(--sans);font-weight:400;font-size:16px;color:var(--cream);opacity:.55}
-.m .ti{font-size:24px;font-weight:600;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m .ti{font-size:23px;font-weight:600;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .m .ro{font-size:17px;opacity:.6;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .m .st{font-size:16px;font-weight:700;letter-spacing:.06em;padding:8px 14px;border-radius:999px;white-space:nowrap}
 .m.done{opacity:.38!important}
@@ -141,19 +197,38 @@ body{font-family:var(--sans);color:var(--cream);-webkit-font-smoothing:antialias
   <div class="wrap">
     <header class="top">
       <img class="logo" src="logo.png" alt="საქართველოს ეკონომიკის განვითარების კორპორაცია">
-      <div class="welcome"><div class="k" id="greet">დილა მშვიდობისა</div><div class="t">კარგი დღე გისურვებთ, გუნდო!</div></div>
+      <div class="welcome"><div class="k" id="greet">დილა მშვიდობისა</div><div class="t">წარმატებულ დღეს გისურვებთ!</div></div>
       <div class="clock"><div class="time" id="time">--:--</div><div class="date" id="date"></div></div>
     </header>
 
     <div class="main">
       <div class="col">
         <section class="panel bday" style="animation-delay:.1s">
-          <div class="confetti" id="confetti"></div>
-          <h2><span class="ic">🎉</span>დღეს დაბადების დღეა</h2>
-          <div class="rule"></div>
-          <div class="bd-list" id="bdays"></div>
-          <div class="wish">გილოცავთ! ბედნიერებას და წარმატებებს გისურვებთ</div>
-          <div class="upcoming-bd" id="bdNext"></div>
+          <div class="slide on">
+            <div class="confetti" id="confetti"></div>
+            <h2><span class="ic">🎉</span>დღეს დაბადების დღეა</h2>
+            <div class="rule"></div>
+            <div class="bd-list" id="bdays"></div>
+            <div class="wish">გილოცავთ! ბედნიერებას და წარმატებებს გისურვებთ</div>
+            <div class="upcoming-bd" id="bdNext"></div>
+          </div>
+          <div class="slide">
+            <h2><span class="ic">👋</span>ახალი თანამშრომლები</h2>
+            <div class="rule"></div>
+            <div class="nw-list" id="newcomers"></div>
+          </div>
+          <div class="slide">
+            <h2><span class="ic">💼</span>შიდა ვაკანსიები</h2>
+            <div class="rule"></div>
+            <div class="vc-list" id="vacancies"></div>
+            <div class="survey"><svg viewBox="-2 -2 29 29" shape-rendering="crispEdges"><rect x="-2" y="-2" width="29" height="29" fill="#f2efe8"/><path stroke="#0e3b32" d="M0 0.5h7M8 0.5h1M10 0.5h3M14 0.5h1M18 0.5h7M0 1.5h1M6 1.5h1M8 1.5h2M13 1.5h1M16 1.5h1M18 1.5h1M24 1.5h1M0 2.5h1M2 2.5h3M6 2.5h1M8 2.5h1M13 2.5h2M18 2.5h1M20 2.5h3M24 2.5h1M0 3.5h1M2 3.5h3M6 3.5h1M10 3.5h7M18 3.5h1M20 3.5h3M24 3.5h1M0 4.5h1M2 4.5h3M6 4.5h1M8 4.5h1M10 4.5h5M16 4.5h1M18 4.5h1M20 4.5h3M24 4.5h1M0 5.5h1M6 5.5h1M9 5.5h2M12 5.5h3M18 5.5h1M24 5.5h1M0 6.5h7M8 6.5h1M10 6.5h1M12 6.5h1M14 6.5h1M16 6.5h1M18 6.5h7M9 7.5h1M11 7.5h5M0 8.5h1M3 8.5h7M12 8.5h1M14 8.5h4M20 8.5h1M22 8.5h3M1 9.5h3M5 9.5h1M9 9.5h4M14 9.5h2M17 9.5h1M19 9.5h5M0 10.5h2M3 10.5h6M10 10.5h4M15 10.5h1M18 10.5h4M24 10.5h1M1 11.5h1M3 11.5h2M10 11.5h2M14 11.5h2M17 11.5h1M19 11.5h1M21 11.5h4M0 12.5h2M4 12.5h3M9 12.5h1M12 12.5h1M16 12.5h1M18 12.5h2M24 12.5h1M0 13.5h1M2 13.5h1M5 13.5h1M13 13.5h3M20 13.5h1M23 13.5h1M0 14.5h2M4 14.5h3M8 14.5h1M11 14.5h5M17 14.5h2M20 14.5h5M0 15.5h1M3 15.5h1M7 15.5h1M11 15.5h1M15 15.5h5M21 15.5h2M24 15.5h1M0 16.5h1M3 16.5h2M6 16.5h5M13 16.5h8M22 16.5h2M8 17.5h2M11 17.5h3M15 17.5h2M20 17.5h1M22 17.5h2M0 18.5h7M8 18.5h1M10 18.5h2M16 18.5h1M18 18.5h1M20 18.5h1M24 18.5h1M0 19.5h1M6 19.5h1M8 19.5h2M12 19.5h2M15 19.5h2M20 19.5h1M0 20.5h1M2 20.5h3M6 20.5h1M8 20.5h2M12 20.5h2M15 20.5h6M23 20.5h2M0 21.5h1M2 21.5h3M6 21.5h1M8 21.5h1M10 21.5h1M14 21.5h1M16 21.5h3M23 21.5h2M0 22.5h1M2 22.5h3M6 22.5h1M10 22.5h1M12 22.5h1M14 22.5h1M17 22.5h1M20 22.5h5M0 23.5h1M6 23.5h1M9 23.5h2M15 23.5h1M19 23.5h2M22 23.5h3M0 24.5h7M8 24.5h1M10 24.5h1M12 24.5h3M16 24.5h2M21 24.5h1M24 24.5h1"/></svg><div><div class="st1">დაასკანერე<br>და შეაფასე</div><div class="st2">თანამშრომელთა კმაყოფილების კვლევა — 2 წუთი, ანონიმურად</div></div></div>
+          </div>
+          <div class="slide">
+            <h2><span class="ic">💡</span>დღის ციტატა</h2>
+            <div class="rule"></div>
+            <div class="qbig" id="quote"></div>
+          </div>
+          <div class="dots" id="dots"></div>
         </section>
       </div>
 
@@ -163,6 +238,17 @@ body{font-family:var(--sans);color:var(--cream);-webkit-font-smoothing:antialias
           <div class="rule"></div>
           <div class="tl" id="meetings"></div>
         </section>
+        <div class="duo">
+          <section class="panel" style="animation-delay:.35s">
+            <div class="small-h">🎄 უკუთვლა</div>
+            <div class="cdn"><div class="big" id="cdN">--</div><div class="lbl" id="cdL"></div></div>
+            <div class="cdn2" id="cdNext"></div>
+          </section>
+          <section class="panel" style="animation-delay:.45s">
+            <div class="small-h">💱 ვალუტის კურსი</div><div class="fxsrc" id="fxSrc">ეროვნული ბანკი</div>
+            <div class="fx" id="fx"></div>
+          </section>
+        </div>
       </div>
 
       <div class="col">
@@ -198,13 +284,29 @@ var BIRTHDAYS = [
   { name: "დავით მაისურაძე",  role: "იურიდიული დეპარტამენტი",  offset: 2 },
   { name: "მარიამ ჯაფარიძე",  role: "HR სამსახური",            offset: 5 }
 ];
+// photo: ფოტოს ფაილი იმავე საქაღალდეში (მაგ. "levan.jpg"); ცარიელზე სილუეტი ჩანს
+var NEWCOMERS = [
+  { name: "ლევან გელაშვილი", role: "IT სამსახური · სისტემური ადმინისტრატორი", since: 0,  photo: "", text: "მიხარია, რომ თქვენს გუნდს შემოვუერთდი!" },
+  { name: "სოფო ქავთარაძე",  role: "მარკეტინგი · ციფრული კომუნიკაცია",        since: -2, photo: "", text: "მზად ვარ, ერთად შევქმნათ ახალი იდეები." }
+];
+var VACANCIES = [
+  { title: "პროექტის მენეჯერი",    dept: "ინვესტიციების დეპარტამენტი", until: 10 },
+  { title: "ფინანსური ანალიტიკოსი", dept: "ფინანსური დეპარტამენტი",     until: 14 },
+  { title: "იურისტი",               dept: "იურიდიული დეპარტამენტი",     until: 20 }
+];
+var QUOTES = [
+  ["წარმატება არის პატარა ძალისხმევების ჯამი, რომელიც ყოველდღე მეორდება.", "რობერტ კოლიერი"],
+  ["დიდი საქმის კეთების ერთადერთი გზა ის არის, რომ გიყვარდეს ის, რასაც აკეთებ.", "სტივ ჯობსი"],
+  ["მარტო ცოტას მივაღწევთ, ერთად — ბევრს.", "ჰელენ კელერი"],
+  ["დაიწყე იქ, სადაც ხარ. გამოიყენე ის, რაც გაქვს. გააკეთე ის, რაც შეგიძლია.", "არტურ ეში"]
+];
 var MEETINGS = [
   { from: "09:30", to: "10:00", title: "დილის სტენდაპი",             room: "საკონფერენციო დარბაზი A" },
   { from: "11:00", to: "12:00", title: "ბიუჯეტის განხილვა — Q4",      room: "დირექტორის კაბინეტი" },
   { from: "13:00", to: "14:00", title: "ახალბედების ორიენტაცია", room: "სასწავლო ოთახი" },
   { from: "15:00", to: "16:00", title: "პარტნიორებთან შეხვედრა",       room: "საკონფერენციო დარბაზი B" },
-  { from: "16:30", to: "17:30", title: "პროექტების სტატუსი",          room: "Online · Zoom" },
-  { from: "17:45", to: "18:15", title: "გასაუბრება — ვაკანსია",        room: "HR ოთახი" }
+  { from: "16:30", to: "17:30", title: "პროექტების სტატუსი",          room: "Online · Zoom" }
+
 ];
 var EVENTS = [
   { title: "ლიდერობის ტრენინგი",           place: "სასწავლო ცენტრი · 10:00",    offset: 3 },
@@ -255,6 +357,65 @@ setInterval(clock, 1000); clock();
   for (var i=0;i<26;i++) h += '<i style="left:'+(Math.random()*100)+'%;background:'+cols[i%cols.length]+';animation-duration:'+(6+Math.random()*6)+'s;animation-delay:'+(-Math.random()*10)+'s"></i>';
   cf.innerHTML = h;
 })();
+
+/* ═══ ახალი თანამშრომლები, ვაკანსიები, ციტატა ═══ */
+(function(){
+  var sil = '<svg viewBox="0 0 100 100"><circle cx="50" cy="36" r="20" fill="#e2caa0" opacity=".85"/><path d="M12 100c0-24 17-38 38-38s38 14 38 38z" fill="#e2caa0" opacity=".85"/></svg>';
+  document.getElementById("newcomers").innerHTML = NEWCOMERS.map(function(p){
+    var d = addDays(new Date(), p.since), when = p.since===0 ? "დღეიდან ჩვენთანაა" : d.getDate()+" "+MO[d.getMonth()]+"-დან";
+    return '<div class="nw"><div class="ph">'+(p.photo ? '<img src="'+esc(p.photo)+'" alt="">' : sil)+'</div>'+
+      '<div><div class="n">'+esc(p.name)+'</div><div class="r">'+esc(p.role)+'</div><div class="q">„'+esc(p.text)+'“</div><div class="since">'+when+'</div></div></div>';
+  }).join("");
+  document.getElementById("vacancies").innerHTML = VACANCIES.map(function(v){
+    var d = addDays(new Date(), v.until);
+    return '<div class="vc"><div><div class="vt">'+esc(v.title)+'</div><div class="vm">'+esc(v.dept)+'</div></div><div class="vd">'+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'-მდე</div></div>';
+  }).join("");
+  var now = new Date(), doy = Math.floor((now - new Date(now.getFullYear(),0,0)) / 864e5), q = QUOTES[doy % QUOTES.length];
+  document.getElementById("quote").innerHTML = "<b>„</b>" + esc(q[0]) + "<b>“</b><small>— " + esc(q[1]) + "</small>";
+  // მარცხენა პანელი: სლაიდების მონაცვლეობა ყოველ 15 წამში
+  var slides = document.querySelectorAll(".bday .slide"), dotsEl = document.getElementById("dots"), cur = 0;
+  dotsEl.innerHTML = Array.prototype.map.call(slides, function(_,i){ return '<i'+(i?'':' class="on"')+'></i>'; }).join("");
+  var dots = dotsEl.querySelectorAll("i");
+  setInterval(function(){
+    var a = slides[cur]; cur = (cur+1) % slides.length; var b = slides[cur];
+    a.classList.remove("on"); a.classList.add("out");
+    b.classList.remove("out"); void b.offsetWidth; b.classList.add("on");
+    for (var i=0;i<dots.length;i++) dots[i].className = i===cur ? "on" : "";
+    setTimeout(function(){ a.classList.remove("out"); }, 950);
+  }, 15000);
+})();
+
+/* ═══ დღესასწაულების უკუთვლა ═══ */
+(function(){
+  var H = [[1,1,"ახალ წლამდე"],[1,7,"შობამდე"],[3,3,"დედის დღემდე"],[3,8,"8 მარტამდე"],[5,26,"დამოუკიდებლობის დღემდე"],
+           [8,28,"მარიამობამდე"],[10,14,"მცხეთობამდე"],[11,23,"გიორგობამდე"]];
+  var t = new Date(); t.setHours(0,0,0,0);
+  var list = H.map(function(h){ var d = new Date(t.getFullYear(), h[0]-1, h[1]); if (d < t) d.setFullYear(d.getFullYear()+1);
+    return { d:d, n:Math.round((d-t)/864e5), l:h[2] }; }).sort(function(a,b){ return a.n-b.n; });
+  var ny = list.filter(function(x){ return x.l==="ახალ წლამდე"; })[0], first = list[0];
+  var main = ny, other = first.l===ny.l ? list[1] : first;
+  document.getElementById("cdN").textContent = main.n;
+  document.getElementById("cdL").innerHTML = "დღე<br>" + main.l;
+  document.getElementById("cdNext").textContent = other.l + " — " + other.n + " დღე";
+})();
+
+/* ═══ ვალუტის კურსი — ეროვნული ბანკი (ინტერნეტის გარეშე — სადემო) ═══ */
+function renderFx(rows, demo){
+  document.getElementById("fx").innerHTML = rows.map(function(r){
+    var cls = r.diff>0 ? "up" : r.diff<0 ? "dn" : "", ar = r.diff>0 ? "▲" : r.diff<0 ? "▼" : "•";
+    return '<div class="fxr"><div class="c">'+r.code+'</div><div class="v">'+r.rate.toFixed(4)+' ₾</div><div class="df '+cls+'">'+ar+' '+Math.abs(r.diff).toFixed(4)+'</div></div>';
+  }).join("");
+  document.getElementById("fxSrc").textContent = demo ? "სადემო მონაცემი" : "ეროვნული ბანკი";
+}
+function loadFx(){
+  fetch("https://nbg.gov.ge/gw/api/ct/monetarypolicy/currencies/ka/json/?currencies=USD&currencies=EUR&currencies=GBP")
+    .then(function(r){ return r.json(); }).then(function(j){
+      var c = j[0].currencies, order = ["USD","EUR","GBP"];
+      renderFx(order.map(function(k){ var x = c.filter(function(y){ return y.code===k; })[0]; return { code:k, rate:x.rate/(x.quantity||1), diff:(x.diff||0)/(x.quantity||1) }; }), false);
+    }).catch(function(){});
+}
+renderFx([{code:"USD",rate:2.7000,diff:0},{code:"EUR",rate:3.1500,diff:0},{code:"GBP",rate:3.6000,diff:0}], true);
+loadFx(); setInterval(loadFx, 60*60*1000);
 
 /* ═══ შეხვედრები — სტატუსი რეალურ დროში ═══ */
 function meetings(){
