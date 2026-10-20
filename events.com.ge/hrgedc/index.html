@@ -80,6 +80,7 @@ body{font-family:var(--sans);color:var(--cream);-webkit-font-smoothing:antialias
 .bday h2,.bday .rule,.bd-list,.wish,.upcoming-bd{position:relative;z-index:1}
 .confetti i{position:absolute;top:-20px;width:10px;height:16px;border-radius:2px;opacity:.85;animation:fall linear infinite}
 @keyframes fall{to{transform:translateY(760px) rotate(540deg)}}
+.empty{padding:30px 10px;text-align:center;font-size:22px;opacity:.55}
 .upcoming-bd{margin-top:18px;font-size:19px;opacity:.75;line-height:1.7}
 .upcoming-bd b{color:var(--gold-l);font-weight:600}
 
@@ -276,7 +277,12 @@ body{font-family:var(--sans);color:var(--cream);-webkit-font-smoothing:antialias
 </div>
 
 <script>
-/* ═══ სადემონსტრაციო მონაცემები — რეალური ინტეგრაციისას აქ შეიცვლება ═══ */
+/* ═══ მონაცემების წყარო ═══
+   DATA_URL — Google Apps Script-ის ბმული (…/exec), რომელსაც google-form-setup.gs აბრუნებს.
+   ცარიელზე ჩანს ქვემოთ მოცემული სადემო მონაცემები. */
+var DATA_URL = "";
+
+/* ═══ სადემონსტრაციო მონაცემები ═══ */
 var BIRTHDAYS = [
   { name: "ნინო ბერიძე",     role: "ფინანსური დეპარტამენტი", offset: 0 },
   { name: "გიორგი კაპანაძე",  role: "IT სამსახური",            offset: 0 },
@@ -344,7 +350,7 @@ function clock(){
 setInterval(clock, 1000); clock();
 
 /* ═══ დაბადების დღეები ═══ */
-(function(){
+function renderBdays(){
   var today = BIRTHDAYS.filter(function(b){ return b.offset===0; }), next = BIRTHDAYS.filter(function(b){ return b.offset>0; });
   document.getElementById("bdays").innerHTML = today.map(function(b,i){
     var ini = b.name.split(" ").map(function(w){ return w[0]; }).join("");
@@ -353,13 +359,17 @@ setInterval(clock, 1000); clock();
   document.getElementById("bdNext").innerHTML = next.length ? "მალე: " + next.map(function(b){
     var d = addDays(new Date(), b.offset); return "<b>"+esc(b.name)+"</b> — "+d.getDate()+" "+MO[d.getMonth()];
   }).join(" · ") : "";
+  if (!today.length) document.getElementById("bdays").innerHTML = '<div class="empty">დღეს დაბადების დღე არავის აქვს</div>';
+}
+renderBdays();
+(function(){
   var cf = document.getElementById("confetti"), cols = ["#c9a96b","#e2caa0","#f2efe8","#3fae8f","#e8b4b8"], h = "";
   for (var i=0;i<26;i++) h += '<i style="left:'+(Math.random()*100)+'%;background:'+cols[i%cols.length]+';animation-duration:'+(6+Math.random()*6)+'s;animation-delay:'+(-Math.random()*10)+'s"></i>';
   cf.innerHTML = h;
 })();
 
 /* ═══ ახალი თანამშრომლები, ვაკანსიები, ციტატა ═══ */
-(function(){
+function renderPeople(){
   var sil = '<svg viewBox="0 0 100 100"><circle cx="50" cy="36" r="20" fill="#e2caa0" opacity=".85"/><path d="M12 100c0-24 17-38 38-38s38 14 38 38z" fill="#e2caa0" opacity=".85"/></svg>';
   document.getElementById("newcomers").innerHTML = NEWCOMERS.map(function(p){
     var d = addDays(new Date(), p.since), when = p.since===0 ? "დღეიდან ჩვენთანაა" : d.getDate()+" "+MO[d.getMonth()]+"-დან";
@@ -370,6 +380,11 @@ setInterval(clock, 1000); clock();
     var d = addDays(new Date(), v.until);
     return '<div class="vc"><div><div class="vt">'+esc(v.title)+'</div><div class="vm">'+esc(v.dept)+'</div></div><div class="vd">'+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'-მდე</div></div>';
   }).join("");
+  if (!NEWCOMERS.length) document.getElementById("newcomers").innerHTML = '<div class="empty">ახალი თანამშრომლები ამ ეტაპზე არ არის</div>';
+  if (!VACANCIES.length) document.getElementById("vacancies").innerHTML = '<div class="empty">ღია ვაკანსია ამ ეტაპზე არ არის</div>';
+}
+renderPeople();
+(function(){
   var now = new Date(), doy = Math.floor((now - new Date(now.getFullYear(),0,0)) / 864e5), q = QUOTES[doy % QUOTES.length];
   document.getElementById("quote").innerHTML = "<b>„</b>" + esc(q[0]) + "<b>“</b><small>— " + esc(q[1]) + "</small>";
   // მარცხენა პანელი: სლაიდების მონაცვლეობა ყოველ 15 წამში
@@ -429,7 +444,7 @@ function meetings(){
     html += '<div class="m '+cls+'" style="animation-delay:'+(.6+i*.12)+'s"><div class="h">'+m.from+'<small>'+m.to+'-მდე</small></div>'+
       '<div><div class="ti">'+esc(m.title)+'</div><div class="ro">📍 '+esc(m.room)+'</div></div><div class="st">'+st+'</div></div>';
   });
-  document.getElementById("meetings").innerHTML = html;
+  document.getElementById("meetings").innerHTML = html || '<div class="empty">დღეს შეხვედრები არ არის დაგეგმილი</div>';
   document.getElementById("meetSub").textContent = MEETINGS.length + " შეხვედრა";
 }
 meetings(); setInterval(meetings, 30000);
@@ -437,18 +452,20 @@ meetings(); setInterval(meetings, 30000);
 setTimeout(function(){ var st=document.createElement("style"); st.textContent=".m{animation:none!important;opacity:1}"; document.head.appendChild(st); }, 2500);
 
 /* ═══ ღონისძიებები ═══ */
-(function(){
+function renderEvents(){
   var MS = ["იან","თებ","მარ","აპრ","მაი","ივნ","ივლ","აგვ","სექ","ოქტ","ნოე","დეკ"];
   var list = EVENTS.slice().sort(function(a,b){ return a.offset-b.offset; }).slice(0,3);
   document.getElementById("events").innerHTML = list.map(function(e,i){
-    var d = addDays(new Date(), e.offset), cd = e.offset===1 ? "ხვალ" : e.offset+" დღეში";
+    var d = addDays(new Date(), e.offset), cd = e.offset===0 ? "დღეს" : e.offset===1 ? "ხვალ" : e.offset+" დღეში";
     return '<div class="e" style="animation-delay:'+(.8+i*.15)+'s"><div class="cal"><div class="mo">'+MS[d.getMonth()]+'</div><div class="dd">'+d.getDate()+'</div></div>'+
       '<div><div class="et">'+esc(e.title)+'</div><div class="em">'+esc(e.place)+'</div></div><div class="cd">'+cd+'</div></div>';
-  }).join("");
-})();
+  }).join("") || '<div class="empty">დაგეგმილი ღონისძიება არ არის</div>';
+}
+renderEvents();
 
 /* ═══ სიახლეების ზოლი ═══ */
-document.getElementById("ticker").innerHTML = NEWS.map(esc).join('<em>◆</em>');
+function renderNews(){ document.getElementById("ticker").innerHTML = NEWS.map(esc).join('<em>◆</em>'); }
+renderNews();
 
 /* ═══ ამინდი — Open-Meteo (გასაღების გარეშე); ინტერნეტის გარეშე სადემო მონაცემები ═══ */
 var WX = { 0:["☀️","მზიანი"],1:["🌤️","ძირითადად მზიანი"],2:["⛅","ნაწილობრივ ღრუბლიანი"],3:["☁️","ღრუბლიანი"],45:["🌫️","ნისლი"],48:["🌫️","ნისლი"],
@@ -479,6 +496,41 @@ function loadWx(){
   }).catch(function(){ if (document.getElementById("wxT").textContent === "--°") demoWx(); });
 }
 demoWx(); loadWx(); setInterval(loadWx, 30*60*1000);
+
+/* ═══ ცოცხალი მონაცემები Google Form-ის ცხრილიდან ═══ */
+function dayDiff(iso){ // "2026-10-20" → დღეების სხვაობა დღევანდელთან
+  var p = String(iso).split("-"), d = new Date(+p[0], +p[1]-1, +p[2]), t = new Date(); t.setHours(0,0,0,0);
+  return Math.round((d - t) / 864e5);
+}
+function untilBirthday(day, month){
+  var t = new Date(); t.setHours(0,0,0,0);
+  var d = new Date(t.getFullYear(), month-1, day); if (d < t) d.setFullYear(d.getFullYear()+1);
+  return Math.round((d - t) / 864e5);
+}
+function applyData(j){
+  var td = new Date(), todayIso = td.getFullYear()+"-"+pad(td.getMonth()+1)+"-"+pad(td.getDate());
+  var bd = (j.birthdays||[]).map(function(b){ return { name:b.name, role:b.dept||"", offset:untilBirthday(+b.day, +b.month) }; })
+    .filter(function(b){ return b.offset <= 7; }).sort(function(a,b){ return a.offset-b.offset; });
+  BIRTHDAYS = bd.filter(function(b){ return b.offset===0; }).slice(0,3).concat(bd.filter(function(b){ return b.offset>0; }).slice(0,3));
+  NEWCOMERS = (j.newcomers||[]).map(function(n){ return { name:n.name, role:n.role||"", since:dayDiff(n.start), photo:n.photo||"", text:n.text||"" }; })
+    .filter(function(n){ return n.since <= 0 && n.since >= -30; }).sort(function(a,b){ return b.since-a.since; }).slice(0,2);
+  VACANCIES = (j.vacancies||[]).map(function(v){ return { title:v.title, dept:v.dept||"", until:dayDiff(v.until) }; })
+    .filter(function(v){ return v.until >= 0; }).sort(function(a,b){ return a.until-b.until; }).slice(0,3);
+  MEETINGS = (j.meetings||[]).filter(function(m){ return m.date === todayIso; })
+    .map(function(m){ return { from:m.from, to:m.to || m.from, title:m.title, room:m.room||"" }; })
+    .sort(function(a,b){ return mins(a.from)-mins(b.from); }).slice(0,5);
+  EVENTS = (j.events||[]).map(function(e){ return { title:e.title, place:[e.place, e.time].filter(Boolean).join(" · "), offset:dayDiff(e.date) }; })
+    .filter(function(e){ return e.offset >= 0; });
+  var news = (j.news||[]).filter(function(n){ return !n.until || dayDiff(n.until) >= 0; }).map(function(n){ return n.text; });
+  if (news.length) NEWS = news;
+  renderBdays(); renderPeople(); renderEvents(); renderNews(); meetings();
+}
+function loadData(){
+  if (!DATA_URL) return;
+  fetch(DATA_URL + (DATA_URL.indexOf("?")<0 ? "?" : "&") + "t=" + Date.now())
+    .then(function(r){ return r.json(); }).then(applyData).catch(function(){});
+}
+loadData(); setInterval(loadData, 5*60*1000);
 
 // გვერდის თავიდან ჩატვირთვა ყოველ 6 საათში (ტელევიზორზე დღეების ცვლისთვის)
 setTimeout(function(){ location.reload(); }, 6*3600*1000);
