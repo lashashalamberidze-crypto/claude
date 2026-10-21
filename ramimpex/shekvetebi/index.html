@@ -1798,6 +1798,10 @@ const EXP_DIRS=SAL_DIRS.filter(d=>d[0]!=='all'); // [key, short, emoji]
 function dirLabel(k){if(!k)return '🔧 ზოგადი';const d=SAL_DIRS.find(x=>x[0]===k);return d?(d[2]+' '+d[0]):k;}
 function expDirOptions(sel){return '<option value="">🔧 ზოგადი (მიმართულების გარეშე)</option>'+EXP_DIRS.map(d=>'<option value="'+esc(d[0])+'"'+(d[0]===sel?' selected':'')+'>'+d[2]+' '+esc(d[0])+'</option>').join('');}
 async function loadExpenses(){try{const {data}=await sb.from('expenses').select('*').order('date',{ascending:false});EXPENSES=data||[];}catch(e){EXPENSES=[];}}
+// 🔁 ყოველთვიური ხარჯები
+let RECURRING=[], editingRxId=null, RECUR_MONTH=(new Date().toISOString().slice(0,7));
+async function loadRecurring(){try{const {data}=await sb.from('recurring').select('*').order('name');RECURRING=data||[];}catch(e){RECURRING=[];}}
+function recurMonLbl(m){const mon={'01':'იან','02':'თებ','03':'მარ','04':'აპრ','05':'მაი','06':'ივნ','07':'ივლ','08':'აგვ','09':'სექ','10':'ოქტ','11':'ნოე','12':'დეკ'};const p=String(m||'').split('-');return (mon[p[1]]||p[1]||'')+'. '+(p[0]||'');}
 function expRevenueByDir(){const rev={};(INVOICES||[]).forEach(v=>{if((v.status||invStatus(v))!=='paid')return;(v.lines||[]).forEach(l=>{const d=saleDirOf(l.code,(byCode(l.code)||{}).dir);rev[d]=(rev[d]||0)+(+l.price||0)*(+l.qty||0);});});return rev;}
 function expByDir(){const e={};(EXPENSES||[]).forEach(x=>{const c=x.code||'';e[c]=(e[c]||0)+(+x.amount||0);});return e;}
 function expDetail(x){let s='';if(x&&x.batch)s='📦 '+x.batch;if(x.category==='salary'&&x.docs&&x.docs.people&&x.docs.people.length){const sal='👷 '+x.docs.people.map(p=>p.name+(p.amount?(' — '+money(p.amount)+'₾'):'')).join('; ');s=s?(s+' · '+sal):sal;}if(x.note)s=s?(s+' · 📝 '+x.note):('📝 '+x.note);return s;}
@@ -1912,6 +1916,7 @@ async function openExpenses(){
   if(!(INVOICES&&INVOICES.length)){try{const {data}=await sb.from('invoices').select('*').order('created_at',{ascending:false}).limit(1000);INVOICES=data||[];}catch(e){}}
   await loadExpenses();
   try{await loadPurchases();}catch(e){}
+  try{await loadRecurring();}catch(e){}
   renderExpenses();
 }
 function renderExpenses(){
@@ -1938,6 +1943,7 @@ function renderExpenses(){
    '<label style="margin-top:8px;display:block">შენიშვნა (არჩ.)</label><input id="eNote" placeholder="მაგ. მომწოდებელი, დეტალები…">'+
    '<label style="margin-top:8px;display:block">ზედნადები / ქვითარი (არჩ.) — ატვირთვისას გამწვანდება</label><input id="eDoc" type="file">'+
    '<div style="margin-top:12px"><button class="btn" id="eSave">💾 ხარჯის დამატება</button></div></div>'+
+   recurCard()+
    '<div class="card"><h2>📊 დაშბორდი — მიმართულებებზე</h2><p class="muted" style="font-size:12px">შემოსავალი = მხოლოდ <b>გადახდილი</b> ინვოისები. ხარჯი = ამ ტაბში დამატებული. მოგება = შემოსავალი − ხარჯი. თითო მიმართულება ცალკე + ერთიანი ჯამი.</p>'+
    '<div class="salkpi" style="margin-top:12px"><div class="skpi green"><div class="l">შემოსავალი (გადახდ.)</div><div class="v">'+money(TR)+' ₾</div></div><div class="skpi red"><div class="l">ხარჯი</div><div class="v">'+money(TE)+' ₾</div></div><div class="skpi '+(TP>=0?'blue':'red')+'"><div class="l">მოგება</div><div class="v">'+money(TP)+' ₾</div></div></div>'+
    '<div class="scroll" style="margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0F8A4D;color:#fff"><th style="padding:7px;text-align:left">მიმართულება</th><th style="padding:7px;text-align:right">შემოსავალი ₾</th><th style="padding:7px;text-align:right">ხარჯი ₾</th><th style="padding:7px;text-align:right">მოგება ₾</th></tr></thead><tbody>'+drows+genRow+'<tr style="background:#0B6B3C;color:#fff;font-weight:bold"><td style="padding:7px">ჯამი (ერთიანი)</td><td style="padding:7px;text-align:right">'+money(TR)+'</td><td style="padding:7px;text-align:right">'+money(TE)+'</td><td style="padding:7px;text-align:right">'+money(TP)+'</td></tr></tbody></table></div></div>'+
@@ -1958,8 +1964,58 @@ function renderExpenses(){
   if(g('eXls'))g('eXls').onclick=()=>exportExpXls(filteredExpenses());
   if(g('ePdf'))g('ePdf').onclick=()=>downloadExpPDF(filteredExpenses());
   wirePL(renderExpenses);
+  wireRecur();
   updateExpForm();renderPeople();renderExpList();
 }
+// —— 🔁 ყოველთვიური ხარჯები ——
+function recurCard(){const month=RECUR_MONTH;const active=(RECURRING||[]);
+  let tot=0,paidT=0;
+  const rows=active.map(r=>{const amt=+r.amount||0;tot+=amt;
+    const pe=(EXPENSES||[]).find(e=>e&&e.recurring_id===r.id&&(e.date||'').slice(0,7)===month);
+    const paid=!!pe;if(paid)paidT+=(+pe.amount||0);
+    return '<tr>'+
+      '<td style="padding:7px"><b>'+esc(r.name||'—')+'</b><div class="muted" style="font-size:11px">'+esc(dirLabel(r.code))+' · '+esc(expCatLabel(r.category))+(r.vat?' · 💧დღგ':'')+'</div></td>'+
+      '<td style="padding:7px;text-align:right;font-weight:700">'+money(amt)+' ₾</td>'+
+      '<td style="padding:7px;text-align:center">'+(paid
+         ?'<button class="btn sm" data-rxpay="'+esc(r.id)+'" style="background:#0B6B3C;color:#fff;font-size:11px;padding:4px 10px;margin:0" title="დააჭირე გასაუქმებლად">✅ გადახდილია</button>'
+         :'<button class="btn sm" data-rxpay="'+esc(r.id)+'" style="background:#e39a00;color:#fff;font-size:11px;padding:4px 10px;margin:0" title="მონიშნე გადახდილად">⬜ გადასახდელი</button>')+'</td>'+
+      '<td style="padding:7px;text-align:right;white-space:nowrap"><button class="smini" data-rxed="'+esc(r.id)+'" title="რედაქტ.">✏</button> <button class="smini danger" data-rxdel="'+esc(r.id)+'" title="წაშლა">🗑</button></td>'+
+    '</tr>';}).join('');
+  const unpaid=tot-paidT;
+  return '<div class="card"><h2>🔁 ყოველთვიური ხარჯები</h2>'+
+    '<p class="muted" style="font-size:12px">ფიქსირებული ხარჯები (იჯარა, ხელფასი, აბონ.…). შეიყვან ერთხელ — ყოველ თვე გამოჩნდება. მონიშნე „გადახდილად" → ჩაიწერება იმ თვის ხარჯად და ავტომატურად P&L-ში აისახება.</p>'+
+    '<div class="row"><div style="flex:2"><label>დასახელება</label><input id="rxName" placeholder="მაგ. ოფისის იჯარა"></div><div><label>თანხა ₾</label><input id="rxAmt" type="number" step="0.01" placeholder="0.00"></div></div>'+
+    '<div class="row" style="margin-top:8px"><div><label>მიმართულება</label><select id="rxProd">'+expDirOptions('')+'</select></div><div><label>კატეგორია</label><select id="rxCat">'+EXP_CATS.map(c=>'<option value="'+c[0]+'">'+esc(c[1])+'</option>').join('')+'</select></div><div style="flex:0 0 auto;align-self:flex-end"><label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:#2b6cb0;font-weight:700;cursor:pointer;white-space:nowrap"><input type="checkbox" id="rxVat" style="width:16px;height:16px">💧 დღგ</label></div></div>'+
+    '<div style="margin-top:10px"><button class="btn" id="rxSave">'+(editingRxId?'💾 განახლება':'➕ დამატება სიაში')+'</button>'+(editingRxId?' <button class="btn line" id="rxCancel">გაუქმება</button>':'')+'<span id="rxMsg" style="margin-left:10px;font-size:12.5px"></span></div>'+
+    '<div style="margin-top:14px;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;background:#f6f8f7;border:1px solid #e3ece7;border-radius:10px;padding:10px 12px"><div><label style="font-size:11px;color:#5c6b62;font-weight:700;display:block">თვე</label><input id="rxMonth" type="month" value="'+month+'" style="width:160px"></div>'+
+    '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px"><div>სულ: <b>'+money(tot)+' ₾</b></div><div style="color:#0B6B3C">✅ გადახდილი: <b>'+money(paidT)+' ₾</b></div><div style="color:#b00020">⬜ დარჩენილი: <b>'+money(unpaid)+' ₾</b></div></div></div>'+
+    '<div class="scroll" style="margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:7px;text-align:left">ხარჯი</th><th style="padding:7px;text-align:right">თანხა ₾</th><th style="padding:7px;text-align:center">'+recurMonLbl(month)+'</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="4" class="muted" style="padding:10px">ჯერ ყოველთვიური ხარჯი არ არის — დაამატე ზემოთ.</td></tr>')+'</tbody></table></div></div>';}
+function wireRecur(){const g=id=>document.getElementById(id);
+  if(g('rxSave'))g('rxSave').onclick=saveRecurring;
+  if(g('rxCancel'))g('rxCancel').onclick=()=>{editingRxId=null;renderExpenses();};
+  if(g('rxMonth'))g('rxMonth').onchange=()=>{RECUR_MONTH=g('rxMonth').value||RECUR_MONTH;renderExpenses();};
+  if(editingRxId){const r=(RECURRING||[]).find(x=>x.id===editingRxId);if(r){if(g('rxName'))g('rxName').value=r.name||'';if(g('rxAmt'))g('rxAmt').value=(r.amount!=null?r.amount:'');if(g('rxProd'))g('rxProd').value=r.code||'';if(g('rxCat'))g('rxCat').value=r.category||'other';if(g('rxVat'))g('rxVat').checked=!!r.vat;}}
+  salEl.querySelectorAll('[data-rxpay]').forEach(b=>b.onclick=()=>recurPay(b.dataset.rxpay));
+  salEl.querySelectorAll('[data-rxed]').forEach(b=>b.onclick=()=>{editingRxId=b.dataset.rxed;renderExpenses();window.scrollTo(0,0);});
+  salEl.querySelectorAll('[data-rxdel]').forEach(b=>b.onclick=()=>deleteRecurring(b.dataset.rxdel));}
+async function saveRecurring(){const g=id=>document.getElementById(id);
+  const name=(g('rxName').value||'').trim();const amount=+g('rxAmt').value||0;const code=g('rxProd').value;const category=g('rxCat').value;const vat=!!(g('rxVat')&&g('rxVat').checked);
+  if(!name){g('rxMsg').innerHTML='<span style="color:#b00020">ჩაწერე დასახელება</span>';return;}
+  if(amount<=0){g('rxMsg').innerHTML='<span style="color:#b00020">ჩაწერე თანხა</span>';return;}
+  const id=editingRxId||('rx'+Date.now().toString(36));const row={id,name,amount,code,category,vat,active:true};
+  try{const {error}=await sb.from('recurring').upsert(row,{onConflict:'id'});if(error)throw error;
+    if(editingRxId){RECURRING=RECURRING.map(r=>r.id===id?Object.assign({},r,row):r);}else{RECURRING.unshift(row);}
+    editingRxId=null;renderExpenses();
+  }catch(e){g('rxMsg').innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+' — გაუშვი sql/recurring.sql</span>';}}
+async function deleteRecurring(id){if(!confirm('წავშალო ეს ყოველთვიური ხარჯი? (უკვე ჩაწერილი თვეების ხარჯები დარჩება)'))return;
+  try{const {error}=await sb.from('recurring').delete().eq('id',id);if(error)throw error;RECURRING=RECURRING.filter(r=>r.id!==id);if(editingRxId===id)editingRxId=null;renderExpenses();}catch(e){alert('ვერ წაიშალა: '+(e.message||e));}}
+async function recurPay(id){const rec=(RECURRING||[]).find(r=>r.id===id);if(!rec)return;const month=RECUR_MONTH;
+  const existing=(EXPENSES||[]).find(e=>e&&e.recurring_id===id&&(e.date||'').slice(0,7)===month);
+  try{
+    if(existing){if(!confirm('გადახდა გავაუქმო '+recurMonLbl(month)+'-ზე? (წაიშლება ამ თვის ხარჯი)'))return;const {error}=await sb.from('expenses').delete().eq('id',existing.id);if(error)throw error;EXPENSES=EXPENSES.filter(e=>e.id!==existing.id);}
+    else{const eid='rxp'+Date.now().toString(36);const row={id:eid,date:month+'-01',code:rec.code||'',product:dirLabel(rec.code||''),category:rec.category||'other',amount:+rec.amount||0,vat:!!rec.vat,recurring_id:id,note:'🔁 '+(rec.name||'')};const {error}=await sb.from('expenses').upsert(row,{onConflict:'id'});if(error)throw error;EXPENSES.unshift(row);}
+    renderExpenses();
+  }catch(e){alert('ვერ შეინახა: '+(e.message||e)+'\n(გაუშვი sql/recurring.sql — recurring_id სვეტი)');}}
 function updateExpForm(){const g=id=>document.getElementById(id);if(!g('eCat'))return;const cat=g('eCat').value,sal=cat==='salary';if(g('eSalBlock'))g('eSalBlock').style.display=sal?'':'none';if(g('eGenRow'))g('eGenRow').style.display=sal?'none':'';if(g('eVatRow'))g('eVatRow').style.display=sal?'none':'';if(g('eVat')&&!editingExpId)g('eVat').checked=VAT_CATS.indexOf(cat)>=0;}
 function renderPeople(){const tb=document.getElementById('ePeople');if(!tb)return;let tot=0;
   tb.innerHTML=expPeople.map((p,i)=>{tot+=(+p.amount||0);return '<tr><td style="padding:4px 6px"><b>'+esc(p.name)+'</b>'+(p.pid?' <span class="muted" style="font-size:11px">'+esc(p.pid)+'</span>':'')+(p.phone?' <span class="muted" style="font-size:11px">📞 '+esc(p.phone)+'</span>':'')+'</td><td style="padding:4px 6px;text-align:right;font-weight:700;color:#6d3ad6">'+money(p.amount)+' ₾</td><td style="padding:4px 6px;text-align:right;white-space:nowrap"><button class="smini" data-eped="'+i+'" title="რედაქტ.">✏</button> <button class="smini danger" data-eprm="'+i+'" title="წაშლა">✕</button></td></tr>';}).join('');
