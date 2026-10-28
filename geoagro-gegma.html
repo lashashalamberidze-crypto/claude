@@ -9,7 +9,7 @@
 <style>
 :root{
   --bg:#f5f6f2; --surface:#fff; --surface-2:#eef0ea; --line:#dde1d6; --text:#1c2230; --muted:#626b78;
-  --brand:#3b3f8f; --brand-ink:#fff;
+  --brand:#34418f; --brand-ink:#fff; --leaf:#2f8a4a;
   --c-staff:#3b6fd4; --c-agro:#2f8a4a; --c-infra:#c2782a; --c-buy:#8a4fc2; --c-pick:#c2415b;
   --done:#2f8a4a; --prog:#c2782a; --todo:#8a93a0;
   --font:"Noto Sans Georgian",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -21,9 +21,17 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 var(--font)}
 .wrap{max-width:1240px;margin:0 auto;padding:0 16px}
-header.top{background:var(--surface);border-bottom:1px solid var(--line);padding:18px 0}
-header.top .wrap{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
-h1{font-size:22px;margin:0}
+header.top{background:linear-gradient(120deg,#1f2660 0%,#34418f 55%,#5b4a9e 100%);color:#fff;padding:28px 0 26px;position:relative;overflow:hidden}
+header.top::after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#7d8ae0,#2b3478 70%);opacity:.35}
+header.top .wrap{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;position:relative;z-index:1}
+header.top .sub{color:rgba(255,255,255,.82)}
+header.top .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#b9c2ff;font-weight:700}
+header.top .tag{display:inline-block;margin-top:10px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:3px 11px;font-size:12px;font-weight:600}
+header.top .tag[hidden]{display:none}
+header.top .btn{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#fff}
+header.top .btn:hover{background:rgba(255,255,255,.22)}
+header.top .btn.primary{background:#fff;color:#1f2660;border-color:#fff}
+h1{font-size:26px;margin:2px 0 4px}
 h2{font-size:17px;margin:28px 0 12px}
 .sub{color:var(--muted);margin-top:2px}
 .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
@@ -44,6 +52,26 @@ h2{font-size:17px;margin:28px 0 12px}
 .legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin:8px 0}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+/* intro & overview */
+.intro{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-top:18px}
+.intro .card{padding:16px 18px}
+.intro h3{margin:0 0 6px;font-size:15px}
+.intro p{margin:0 0 8px}
+.intro ol{margin:0;padding-left:18px}
+.intro li{margin:3px 0}
+@media (max-width:800px){.intro{grid-template-columns:1fr}}
+.stages{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+@media (max-width:1000px){.stages{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:560px){.stages{grid-template-columns:1fr}}
+.stage{padding:14px;position:relative;border-top:4px solid var(--brand)}
+.stage .num{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.stage h4{margin:2px 0 6px;font-size:15px}
+.stage .goal{font-weight:600;font-size:13px}
+.stage .res{font-size:12px;color:var(--muted);margin-top:6px}
+.stage .bar{margin-top:10px}
+.stage.empty{border-top-style:dashed;border-top-color:var(--line);background:transparent;border-style:dashed}
+.section-note{color:var(--muted);font-size:13px;margin:-6px 0 10px}
 
 /* Gantt */
 .gantt{overflow-x:auto}
@@ -73,7 +101,14 @@ h2{font-size:17px;margin:28px 0 12px}
 .task .stripe{border-radius:3px}
 .task .t{font-weight:600}
 .task .meta{color:var(--muted);font-size:12px;display:flex;gap:12px;flex-wrap:wrap;margin-top:2px}
-.task .note{font-size:13px;margin-top:4px;white-space:pre-wrap}
+.task .note{font-size:13px;margin-top:4px;white-space:pre-wrap;color:var(--muted)}
+.task .why{font-size:13px;margin-top:6px;padding:6px 10px;border-radius:8px;background:var(--surface-2)}
+.task .why b{font-weight:700}
+.phase>h3 .sp{flex:1}
+.addrow{padding:10px 14px;border-top:1px dashed var(--line)}
+.addrow button{border:1px dashed var(--line);background:transparent;color:var(--muted);border-radius:9px;padding:7px 12px;font:inherit;font-weight:600;cursor:pointer;width:100%}
+.addrow button:hover{color:var(--brand);border-color:var(--brand)}
+.phase.empty .emptytxt{padding:14px;color:var(--muted);font-size:13px}
 .task ul{list-style:none;padding:0;margin:8px 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:2px 16px}
 .task li label{display:flex;gap:7px;align-items:flex-start;cursor:pointer;font-size:13px}
 .task li input{margin-top:3px;accent-color:var(--done)}
@@ -112,7 +147,11 @@ footer{color:var(--muted);font-size:12px;padding:30px 0}
   body{font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .no-print,.actions,.task .side .btn,.btn{display:none!important}
   .print-only{display:block}
-  header.top{border:0;padding:0 0 6px}
+  header.top{padding:14px 16px;border-radius:8px}
+  .addrow,.phase.empty,.stage.empty{display:none!important}
+  .intro .card:last-child{display:none}
+  .intro{grid-template-columns:1fr}
+  .stages{grid-template-columns:repeat(4,1fr)}
   .wrap{max-width:none;padding:0}
   .gantt{overflow:visible}
   .g{min-width:0;grid-template-columns:230px 1fr}
@@ -136,9 +175,10 @@ footer{color:var(--muted);font-size:12px;padding:30px 0}
 <header class="top">
   <div class="wrap">
     <div>
-      <h1>Geo Agro Estate — სამუშაო გეგმა-გრაფიკი</h1>
-      <div class="sub">მოცვის პლანტაცია · სეფიეთი, აბაშა · <span id="range"></span></div>
-      <div class="sub">დირექტორი: ლაშა შალამბერიძე · <span id="updated"></span></div>
+      <div class="eyebrow">შპს Geo Agro Estate · მოცვის პლანტაცია · სეფიეთი, აბაშა</div>
+      <h1>სამუშაო გეგმა-გრაფიკი</h1>
+      <div class="sub"><span id="range"></span> · დირექტორი: ლაშა შალამბერიძე</div>
+      <span class="tag">სამუშაო ვერსია · მფლობელებთან შესათანხმებლად</span> <span class="tag" id="updated"></span>
     </div>
     <div class="actions">
       <button class="btn" id="addBtn">+ ამოცანა</button>
@@ -152,13 +192,36 @@ footer{color:var(--muted);font-size:12px;padding:30px 0}
 </header>
 
 <main class="wrap">
-  <div class="kpis" id="kpis"></div>
+  <div class="intro">
+    <div class="card">
+      <h3>რა არის ეს დოკუმენტი</h3>
+      <p>კომპანიის სამუშაო გეგმა ნოემბრიდან სეზონის დაწყებამდე: რა უნდა გაკეთდეს, როდის და ვინ არის პასუხისმგებელი. მიზანია, რომ მოსავლის აღებისთვის კომპანიას ჰქონდეს გაწვრთნილი გუნდი, მოწესრიგებული პლანტაცია და მზა ინფრასტრუქტურა.</p>
+      <p class="sub" style="margin:0">ფინანსები და ფასები ცალკე შეთანხმდება მფლობელებთან. ინვენტარის ბიუჯეტის ცხრილი ბოლოშია და ფასების გარკვევისას შეივსება.</p>
+    </div>
+    <div class="card">
+      <h3>როგორ წავიკითხოთ და შევავსოთ</h3>
+      <ol>
+        <li><b>ეტაპები</b>: თითო თვის მიზანი და მოსალოდნელი შედეგი.</li>
+        <li><b>გრაფიკი</b>: ზოლი აჩვენებს ამოცანის ვადას, ფერი მის კატეგორიას. ზოლის მუქი ნაწილი შესრულების პროცენტია.</li>
+        <li><b>ამოცანები</b>: მონიშნე ქვეპუნქტი, როცა შესრულდება. სტატუსი ავტომატურად შეიცვლება.</li>
+        <li><b>დამატება</b>: ყოველი თვის ბოლოს არის „+ ამოცანის დამატება“. რედაქტირება ზოლზე ან ღილაკზე დაჭერით.</li>
+      </ol>
+    </div>
+  </div>
 
-  <h2>გრაფიკი</h2>
+  <h2>ეტაპები</h2>
+  <div class="stages" id="stages"></div>
+
+  <h2>მიმდინარე მდგომარეობა</h2>
+  <div class="kpis" id="kpis" style="margin-top:0"></div>
+
+  <h2 class="page-break">გრაფიკი</h2>
+  <p class="section-note">დროის ხაზი კვირების მიხედვით (რიცხვი = კვირის დასაწყისი, ორშაბათი).</p>
   <div class="legend" id="legend"></div>
   <div class="card gantt"><div class="g" id="gantt"></div></div>
 
   <h2 class="page-break">ამოცანები თვეების მიხედვით</h2>
+  <p class="section-note">თითო ამოცანას აქვს ვადა, პასუხისმგებელი, მიზანი („რატომ“) და შესასრულებელი ქვეპუნქტები.</p>
   <div id="phases"></div>
 
   <h2 class="page-break">ინვენტარის ბიუჯეტი</h2>
@@ -190,6 +253,7 @@ footer{color:var(--muted);font-size:12px;padding:30px 0}
       <div><label>პასუხისმგებელი</label><input name="owner"></div>
       <div><label>სტატუსი</label><select name="status"><option value="todo">არ დაწყებულა</option><option value="prog">მიმდინარე</option><option value="done">დასრულებული</option></select></div>
     </div>
+    <label>რატომ / რა შედეგი გვინდა</label><input name="why">
     <label>ქვეპუნქტები (თითო ხაზზე ერთი)</label><textarea name="items"></textarea>
     <label>შენიშვნა</label><textarea name="note" style="min-height:60px"></textarea>
     <div class="dlg-act">
@@ -202,7 +266,7 @@ footer{color:var(--muted);font-size:12px;padding:30px 0}
 </dialog>
 
 <script>
-const KEY = 'geoagro_plan_v1';
+const KEY = 'geoagro_plan_v2';
 const RANGE = { start: '2026-11-02', end: '2027-02-28' };
 const PHASES = {
   nov: 'ნოემბერი 2026', dec: 'დეკემბერი 2026', jan: 'იანვარი 2027', feb: 'თებერვალი 2027',
@@ -215,39 +279,47 @@ const CATS = {
   buy:   ['შესყიდვები / ბიუჯეტი', 'var(--c-buy)'],
   pick:  ['მოსავალი / მკრეფავები', 'var(--c-pick)']
 };
+const PHASE_INFO = {
+  nov: { goal: 'გუნდის შეკრება და მომზადება', res: 'დაკომპლექტებული, გაწვრთნილი და ფორმიანი გუნდი; ბალახისგან გაწმენდილი რიგები.' },
+  dec: { goal: 'გასხვლა და მომწოდებლების შერჩევა', res: 'გასხლული პლანტაცია; შერჩეული კომპანიები, ფასები და ინვენტარის ბიუჯეტი.' },
+  jan: { goal: 'ინფრასტრუქტურის მშენებლობა', res: 'სადგომი, კარავი, სანიტარული კვანძი, საწყობი და ესტაკადა მშენებლობის პროცესში.' },
+  feb: { goal: 'მკრეფავების მომზადება', res: 'მოწვეული მკრეფავები, ნაჩვენები ინფრასტრუქტურა, გადამოწმებული სიები.' },
+  mar: { goal: 'დასამატებელია', res: '' },
+  apr: { goal: 'დასამატებელია', res: '' }
+};
 const STATUS = { todo: 'არ დაწყებულა', prog: 'მიმდინარე', done: 'დასრულებული' };
 const MONTHS = ['იანვარი','თებერვალი','მარტი','აპრილი','მაისი','ივნისი','ივლისი','აგვისტო','სექტემბერი','ოქტომბერი','ნოემბერი','დეკემბერი'];
 
 const it = arr => arr.map(t => ({ t, done: false }));
 const DEFAULT = {
   tasks: [
-    { id:'t1', phase:'nov', cat:'staff', title:'პერსონალის მოძიება და დაკომპლექტება', start:'2026-11-09', end:'2026-11-15', owner:'დირექტორი', status:'todo', note:'ნოემბრის მე-2 კვირა',
+    { id:'t1', why:'სეზონის ყველა სამუშაოს საფუძველი: საჭირო რაოდენობის სანდო ხალხი.', phase:'nov', cat:'staff', title:'პერსონალის მოძიება და დაკომპლექტება', start:'2026-11-09', end:'2026-11-15', owner:'დირექტორი', status:'todo', note:'ნოემბრის მე-2 კვირა',
       items: it(['საჭირო პოზიციების და რაოდენობის განსაზღვრა','ვაკანსიის გავრცელება','გასაუბრებები','შერჩეულ კანდიდატებთან ხელშეკრულებები','სიის შედგენა (სახელი, ტელეფონი, პირადი №)']) },
-    { id:'t2', phase:'nov', cat:'staff', title:'თანამშრომლებისთვის უნიფორმის მომზადება', start:'2026-11-09', end:'2026-11-30', owner:'', status:'todo', note:'',
+    { id:'t2', why:'ერთიანი, ლამაზი ვიზუალი და უსაფრთხოება. თანამშრომლები ადვილად ამოსაცნობები არიან.', phase:'nov', cat:'staff', title:'თანამშრომლებისთვის უნიფორმის მომზადება', start:'2026-11-09', end:'2026-11-30', owner:'', status:'todo', note:'',
       items: it(['ზომების შეგროვება','მომწოდებლის შერჩევა','ლოგოს/დიზაინის შეთანხმება','შეკვეთა და დარიგება']) },
-    { id:'t3', phase:'nov', cat:'agro', title:'ტრენინგი თანამშრომლებისთვის გასხვლაზე', start:'2026-11-16', end:'2026-11-22', owner:'აგრონომი', status:'todo', note:'ნოემბრის მე-3 კვირა',
+    { id:'t3', why:'სწორი გასხვლა პირდაპირ განსაზღვრავს მომავალი მოსავლის რაოდენობასა და ხარისხს.', phase:'nov', cat:'agro', title:'ტრენინგი თანამშრომლებისთვის გასხვლაზე', start:'2026-11-16', end:'2026-11-22', owner:'აგრონომი', status:'todo', note:'ნოემბრის მე-3 კვირა',
       items: it(['გასხვლის წესები მოცვზე (თეორია)','პრაქტიკა ნაკვეთზე','სეკატორების გამოყენება და დეზინფექცია','უსაფრთხოების ინსტრუქტაჟი']) },
-    { id:'t4', phase:'nov', cat:'agro', title:'ბალახის მოშორების პროცესი', start:'2026-11-23', end:'2026-11-30', owner:'აგრონომი', status:'todo', note:'ნოემბრის მე-4 კვირა',
+    { id:'t4', why:'სუფთა რიგები: ადვილი გასხვლა და ნაკლები კონკურენცია მცენარისთვის.', phase:'nov', cat:'agro', title:'ბალახის მოშორების პროცესი', start:'2026-11-23', end:'2026-11-30', owner:'აგრონომი', status:'todo', note:'ნოემბრის მე-4 კვირა',
       items: [] },
-    { id:'t5', phase:'dec', cat:'agro', title:'გასხვლის სამუშაოების ჩატარება', start:'2026-12-01', end:'2026-12-31', owner:'აგრონომი', status:'todo', note:'დეკემბრის ბოლომდე',
+    { id:'t5', why:'ზამთრის გასხვლა უნდა დასრულდეს კვირტების გაღვიძებამდე.', phase:'dec', cat:'agro', title:'გასხვლის სამუშაოების ჩატარება', start:'2026-12-01', end:'2026-12-31', owner:'აგრონომი', status:'todo', note:'დეკემბრის ბოლომდე',
       items: [] },
-    { id:'t6', phase:'dec', cat:'buy', title:'კომპანიების მოძიება და ფასების დადგენა: ფორმები, ტუალეტები, აბაზანა/საშხაპე, შესანახი ლოკერები', start:'2026-12-01', end:'2026-12-14', owner:'', status:'todo', note:'',
+    { id:'t6', why:'მშენებლობამდე ვიცით ზუსტი ფასები და ვირჩევთ საუკეთესო შეთავაზებას.', phase:'dec', cat:'buy', title:'კომპანიების მოძიება და ფასების დადგენა: ფორმები, ტუალეტები, აბაზანა/საშხაპე, შესანახი ლოკერები', start:'2026-12-01', end:'2026-12-14', owner:'', status:'todo', note:'',
       items: it(['ფორმები (უნიფორმა)','ბიოტუალეტები','აბაზანა / საშხაპე / ხელსაბანი','შესანახი ლოკერები','კომპანიების ნახვა ადგილზე','ფასების შედარების ცხრილი']) },
-    { id:'t7', phase:'dec', cat:'infra', title:'კომპანიის მოძიება: ავტოსადგომი გადახურვით + Kärcher სამრეცხაო', start:'2026-12-01', end:'2026-12-20', owner:'', status:'todo', note:'',
+    { id:'t7', why:'ტექნიკა და ავტომობილები დაცულია ამინდისგან, რეცხვა კი ერთ ადგილას ხდება.', phase:'dec', cat:'infra', title:'კომპანიის მოძიება: ავტოსადგომი გადახურვით + Kärcher სამრეცხაო', start:'2026-12-01', end:'2026-12-20', owner:'', status:'todo', note:'',
       items: it(['სადგომის ზომა და ადგილი','გადახურვის ტიპი','Kärcher სამრეცხაოს წერტილი (წყალი, დრენაჟი, დენი)','3 კომპანიის შეთავაზება']) },
-    { id:'t8', phase:'dec', cat:'infra', title:'კომპანიის მოძიება: დიდი კარავი სასადილოსა და დასასვენებლად, ინფრასტრუქტურით', start:'2026-12-01', end:'2026-12-20', owner:'', status:'todo', note:'',
+    { id:'t8', why:'მკრეფავებს აქვთ ჩრდილი, კვება და დასასვენებელი ადგილი: ნაკლები დაღლა, მეტი პროდუქტიულობა.', phase:'dec', cat:'infra', title:'კომპანიის მოძიება: დიდი კარავი სასადილოსა და დასასვენებლად, ინფრასტრუქტურით', start:'2026-12-01', end:'2026-12-20', owner:'', status:'todo', note:'',
       items: it(['კარვის ზომა მკრეფავების რაოდენობაზე','მაგიდები და სკამები','ვენტილატორები / განათება / დენი','საკვების ზონა','3 კომპანიის შეთავაზება']) },
-    { id:'t9', phase:'dec', cat:'infra', title:'კომპანიის მოძიება: სამაცივრიდან ჩასასვლელი (ესტაკადა)', start:'2026-12-07', end:'2026-12-24', owner:'', status:'todo', note:'',
+    { id:'t9', why:'პროდუქციის უსაფრთხო და სწრაფი ჩატვირთვა-გადმოტვირთვა სამაცივრესთან.', phase:'dec', cat:'infra', title:'კომპანიის მოძიება: სამაცივრიდან ჩასასვლელი (ესტაკადა)', start:'2026-12-07', end:'2026-12-24', owner:'', status:'todo', note:'',
       items: it(['გაზომვები','ტრანსპორტის ტიპის გათვალისწინება','შეთავაზებები']) },
-    { id:'t10', phase:'dec', cat:'infra', title:'კომპანიის მოძიება: ყუთებისა და სხვა ინვენტარის საწყობი', start:'2026-12-07', end:'2026-12-24', owner:'', status:'todo', note:'შესაძლებელია ერთ გადახურვაში გაკეთდეს პრეპარატების ოთახთან ერთად',
+    { id:'t10', why:'ყუთები და ინვენტარი მოწესრიგებულია და ყოველთვის ხელმისაწვდომია.', phase:'dec', cat:'infra', title:'კომპანიის მოძიება: ყუთებისა და სხვა ინვენტარის საწყობი', start:'2026-12-07', end:'2026-12-24', owner:'', status:'todo', note:'შესაძლებელია ერთ გადახურვაში გაკეთდეს პრეპარატების ოთახთან ერთად',
       items: it(['ყუთების რაოდენობა და ფართის გამოთვლა','თაროები / სტელაჟები','შეთავაზებები']) },
-    { id:'t11', phase:'dec', cat:'infra', title:'აცილების პრეპარატების ოთახის მომზადება უსაფრთხოების წესებით', start:'2026-12-07', end:'2026-12-24', owner:'', status:'todo', note:'შესაძლებელია ერთ გადახურვაში გაკეთდეს საწყობთან ერთად',
+    { id:'t11', why:'ქიმიური პრეპარატები ინახება უსაფრთხოების წესების დაცვით: დაცულია ხალხიც და პროდუქციაც.', phase:'dec', cat:'infra', title:'აცილების პრეპარატების ოთახის მომზადება უსაფრთხოების წესებით', start:'2026-12-07', end:'2026-12-24', owner:'', status:'todo', note:'შესაძლებელია ერთ გადახურვაში გაკეთდეს საწყობთან ერთად',
       items: it(['ცალკე ჩაკეტილი ოთახი','ვენტილაცია','თაროები (არა ხის) და ჩამოღვრის საწინააღმდეგო ტაფები','ცეცხლმაქრი','დაცვის საშუალებები (ხელთათმანი, რესპირატორი, სათვალე)','გამაფრთხილებელი ნიშნები და წესების დაფა','პრეპარატების აღრიცხვის ჟურნალი','ხელსაბანი / თვალის სარეცხი']) },
-    { id:'t12', phase:'dec', cat:'buy', title:'ინვენტარის ბიუჯეტის გაკეთება', start:'2026-12-01', end:'2026-12-24', owner:'დირექტორი', status:'todo', note:'დეტალები: ქვემოთ, ინვენტარის ბიუჯეტის ცხრილში',
+    { id:'t12', why:'მფლობელებთან შესათანხმებლად: რა უნდა ვიყიდოთ, რამდენი და რა ღირს.', phase:'dec', cat:'buy', title:'ინვენტარის ბიუჯეტის გაკეთება', start:'2026-12-01', end:'2026-12-24', owner:'დირექტორი', status:'todo', note:'დეტალები: ქვემოთ, ინვენტარის ბიუჯეტის ცხრილში',
       items: it(['სასწორები','სეკატორები (ფანცატურები)','კომპიუტერები','სამედიცინო ურნები','გენერატორები','ავეჯი']) },
-    { id:'t13', phase:'jan', cat:'infra', title:'ინფრასტრუქტურის მშენებლობის დაწყება', start:'2027-01-04', end:'2027-01-31', owner:'', status:'todo', note:'',
+    { id:'t13', why:'ყველა ობიექტი მზად უნდა იყოს სეზონის დაწყებამდე.', phase:'jan', cat:'infra', title:'ინფრასტრუქტურის მშენებლობის დაწყება', start:'2027-01-04', end:'2027-01-31', owner:'', status:'todo', note:'',
       items: it(['ავტოსადგომი გადახურვით + სამრეცხაო','სასადილო / დასასვენებელი კარავი','ტუალეტები, აბაზანა, ხელსაბანი','ლოკერები','სამაცივრის ესტაკადა','ყუთების საწყობი + პრეპარატების ოთახი','ინვენტარის შეძენა ბიუჯეტის მიხედვით']) },
-    { id:'t14', phase:'feb', cat:'pick', title:'მკრეფავების მოწვევა, ახალი ინფრასტრუქტურის დათვალიერება და სიების გავლა', start:'2027-02-01', end:'2027-02-28', owner:'', status:'todo', note:'',
+    { id:'t14', why:'მკრეფავები ეცნობიან ახალ პირობებს, ჩვენ ვადასტურებთ, ვინ მუშაობს სეზონზე.', phase:'feb', cat:'pick', title:'მკრეფავების მოწვევა, ახალი ინფრასტრუქტურის დათვალიერება და სიების გავლა', start:'2027-02-01', end:'2027-02-28', owner:'', status:'todo', note:'',
       items: it(['მკრეფავების მოწვევა','ინფრასტრუქტურის დათვალიერება','სიების გადამოწმება']) }
   ],
   inventory: [
@@ -287,7 +359,7 @@ function render(){
   const pct = d => ((d - r0) / DAY) / total * 100;
 
   document.getElementById('range').textContent = `${fmt(RANGE.start)} ${r0.getFullYear()} – ${r1.getDate()} ${MONTHS[r1.getMonth()].slice(0,3)}. ${r1.getFullYear()}`;
-  document.getElementById('updated').textContent = S.updated ? 'განახლდა: ' + new Date(S.updated).toLocaleDateString('ka-GE') : '';
+  const u = document.getElementById('updated'); u.textContent = S.updated ? 'განახლდა: ' + new Date(S.updated).toLocaleDateString('ka-GE') : ''; u.hidden = !S.updated;
 
   // KPIs
   const n = S.tasks.length, done = S.tasks.filter(t => t.status === 'done').length, prog = S.tasks.filter(t => t.status === 'prog').length;
@@ -299,6 +371,17 @@ function render(){
     <div class="card kpi"><small>დასრულებული / მიმდინარე</small><b>${done} / ${prog}</b></div>
     <div class="card kpi"><small>ვადაგადაცილებული</small><b style="color:${late ? '#c2415b' : 'inherit'}">${late}</b></div>
     <div class="card kpi"><small>საერთო პროგრესი</small><b>${Math.round(avg * 100)}%</b><div class="bar"><i style="width:${avg * 100}%"></i></div></div>`;
+
+  let st = '', i = 0;
+  for (const [pk, pl] of Object.entries(PHASES)) {
+    const ts = S.tasks.filter(t => t.phase === pk), info = PHASE_INFO[pk] || {};
+    const pp = ts.length ? ts.reduce((a, t) => a + progress(t), 0) / ts.length : 0;
+    i++;
+    st += ts.length
+      ? `<div class="card stage"><div class="num">ეტაპი ${i}</div><h4>${pl}</h4><div class="goal">${esc(info.goal)}</div><div class="res">${esc(info.res)}</div><div class="bar"><i style="width:${pp * 100}%"></i></div></div>`
+      : `<div class="card stage empty"><div class="num">ეტაპი ${i}</div><h4>${pl}</h4><div class="res">ამოცანები ჯერ არ არის დამატებული.</div></div>`;
+  }
+  document.getElementById('stages').innerHTML = st;
 
   document.getElementById('legend').innerHTML = Object.values(CATS).map(([l, c]) => `<span><i style="background:${c}"></i>${l}</span>`).join('')
     + '<span><i style="background:#c2415b;width:2px"></i>დღეს</span>';
@@ -336,15 +419,17 @@ function render(){
   let h = '';
   for (const [pk, pl] of Object.entries(PHASES)) {
     const ts = S.tasks.filter(t => t.phase === pk).sort((a, b) => a.start.localeCompare(b.start));
-    if (!ts.length) continue;
+    const add = `<div class="addrow"><button data-add="${pk}">+ ამოცანის დამატება (${pl})</button></div>`;
+    if (!ts.length) { h += `<div class="card phase empty"><h3>${pl} <span class="muted">${esc(PHASE_INFO[pk]?.goal)}</span></h3><div class="emptytxt">ამ თვის ამოცანები ჯერ არ არის დამატებული.</div>${add}</div>`; continue; }
     const pp = ts.reduce((a, t) => a + progress(t), 0) / ts.length;
-    h += `<div class="card phase"><h3>${pl} <span class="muted">${ts.length} ამოცანა · ${Math.round(pp * 100)}%</span></h3>`;
+    h += `<div class="card phase"><h3>${pl} <span class="muted">${esc(PHASE_INFO[pk]?.goal)}</span><span class="sp"></span><span class="muted">${ts.length} ამოცანა · ${Math.round(pp * 100)}%</span></h3>`;
     for (const t of ts) {
       h += `<div class="task">
         <div class="stripe" style="background:${CATS[t.cat]?.[1]}"></div>
         <div>
           <div class="t">${esc(t.title)}</div>
           <div class="meta"><span>📅 ${fmt(t.start)} – ${fmt(t.end)}</span><span>${esc(CATS[t.cat]?.[0])}</span>${t.owner ? `<span>👤 ${esc(t.owner)}</span>` : ''}${t.items.length ? `<span>✔ ${t.items.filter(i => i.done).length}/${t.items.length}</span>` : ''}</div>
+          ${t.why ? `<div class="why"><b>რატომ:</b> ${esc(t.why)}</div>` : ''}
           ${t.note ? `<div class="note">${esc(t.note)}</div>` : ''}
           ${t.items.length ? `<ul>${t.items.map((i, k) => `<li class="${i.done ? 'd' : ''}"><label><input type="checkbox" data-t="${t.id}" data-k="${k}" ${i.done ? 'checked' : ''}><span>${esc(i.t)}</span></label></li>`).join('')}</ul>` : ''}
         </div>
@@ -354,7 +439,7 @@ function render(){
         </div>
       </div>`;
     }
-    h += `</div>`;
+    h += add + `</div>`;
   }
   document.getElementById('phases').innerHTML = h;
 
@@ -390,8 +475,9 @@ document.addEventListener('change', e => {
   }
 });
 document.addEventListener('click', e => {
-  const el = e.target.closest('[data-cycle],[data-edit],[data-delinv],.gb');
+  const el = e.target.closest('[data-cycle],[data-edit],[data-delinv],[data-add],.gb');
   if (!el) return;
+  if (el.dataset.add) return openDlg(null, el.dataset.add);
   if (el.dataset.cycle) {
     const t = S.tasks.find(x => x.id === el.dataset.cycle);
     t.status = { todo: 'prog', prog: 'done', done: 'todo' }[t.status];
@@ -407,11 +493,14 @@ const dlg = document.getElementById('dlg'), frm = document.getElementById('frm')
 frm.phase.innerHTML = Object.entries(PHASES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
 frm.cat.innerHTML = Object.entries(CATS).map(([k, v]) => `<option value="${k}">${v[0]}</option>`).join('');
 let editing = null;
-function openDlg(id){
+const PHASE_START = { nov:'2026-11-02', dec:'2026-12-01', jan:'2027-01-04', feb:'2027-02-01', mar:'2027-03-01', apr:'2027-04-01' };
+function openDlg(id, phase){
   editing = id ? S.tasks.find(t => t.id === id) : null;
-  const t = editing || { title:'', phase:'dec', cat:'infra', start:'2026-12-01', end:'2026-12-07', owner:'', status:'todo', note:'', items:[] };
+  const p = phase || 'dec', st = PHASE_START[p];
+  const en = new Date(D(st).getTime() + 6 * DAY).toISOString().slice(0, 10);
+  const t = editing || { title:'', phase:p, cat:'infra', start:st, end:en, owner:'', status:'todo', note:'', why:'', items:[] };
   document.getElementById('dlgTitle').textContent = editing ? 'ამოცანის რედაქტირება' : 'ახალი ამოცანა';
-  for (const f of ['title','phase','cat','start','end','owner','status','note']) frm[f].value = t[f] || '';
+  for (const f of ['title','phase','cat','start','end','owner','status','note','why']) frm[f].value = t[f] || '';
   frm.items.value = t.items.map(i => i.t).join('\n');
   document.getElementById('delBtn').style.display = editing ? '' : 'none';
   dlg.showModal();
@@ -422,7 +511,7 @@ frm.addEventListener('submit', e => {
   const prev = Object.fromEntries((editing?.items || []).map(i => [i.t, i.done]));
   const data = {
     title: frm.title.value.trim(), phase: frm.phase.value, cat: frm.cat.value, start: frm.start.value, end: frm.end.value,
-    owner: frm.owner.value.trim(), status: frm.status.value, note: frm.note.value.trim(),
+    owner: frm.owner.value.trim(), status: frm.status.value, note: frm.note.value.trim(), why: frm.why.value.trim(),
     items: frm.items.value.split('\n').map(s => s.trim()).filter(Boolean).map(t => ({ t, done: !!prev[t] }))
   };
   if (editing) Object.assign(editing, data); else S.tasks.push({ id: 't' + Date.now(), ...data });
