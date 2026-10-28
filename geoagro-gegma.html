@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="ka">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Geo Agro Estate — სამუშაო გეგმა</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f6f2; --surface:#fff; --surface-2:#eef0ea; --line:#dde1d6; --text:#1c2230; --muted:#626b78;
+  --brand:#3b3f8f; --brand-ink:#fff;
+  --c-staff:#3b6fd4; --c-agro:#2f8a4a; --c-infra:#c2782a; --c-buy:#8a4fc2; --c-pick:#c2415b;
+  --done:#2f8a4a; --prog:#c2782a; --todo:#8a93a0;
+  --font:"Noto Sans Georgian",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#12141a;--surface:#1a1d25;--surface-2:#232733;--line:#30354a;--text:#e6e8ee;--muted:#9aa2b1;--brand:#8b90ff;--brand-ink:#0f1020;
+    --c-staff:#6b9bff;--c-agro:#4fbf6f;--c-infra:#e09a4c;--c-buy:#b07ee8;--c-pick:#e76a83;--done:#4fbf6f;--prog:#e09a4c;--todo:#7d8594}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 var(--font)}
+.wrap{max-width:1240px;margin:0 auto;padding:0 16px}
+header.top{background:var(--surface);border-bottom:1px solid var(--line);padding:18px 0}
+header.top .wrap{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+h1{font-size:22px;margin:0}
+h2{font-size:17px;margin:28px 0 12px}
+.sub{color:var(--muted);margin-top:2px}
+.actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:9px;padding:8px 12px;font:inherit;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn.danger{color:#c2415b}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:18px}
+.kpi{padding:12px 14px}
+.kpi small{color:var(--muted);display:block}
+.kpi b{font-size:20px}
+.bar{height:6px;background:var(--surface-2);border-radius:4px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--done)}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin:8px 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+/* Gantt */
+.gantt{overflow-x:auto}
+.g{min-width:900px;display:grid;grid-template-columns:280px 1fr}
+.g .h{position:sticky;top:0;background:var(--surface);z-index:2}
+.g .lab{padding:6px 10px;border-bottom:1px solid var(--line);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.g .lab.ph{font-weight:700;background:var(--surface-2)}
+.g .tl{position:relative;border-bottom:1px solid var(--line);min-height:32px}
+.g .tl.ph{background:var(--surface-2)}
+.months,.weeks{display:flex;position:relative;height:24px}
+.months div,.weeks div{position:absolute;top:0;bottom:0;border-left:1px solid var(--line);font-size:11px;color:var(--muted);padding:3px 4px;white-space:nowrap;overflow:hidden}
+.months div{font-weight:700;color:var(--text);font-size:12px}
+.grid-lines{position:absolute;inset:0;pointer-events:none}
+.grid-lines i{position:absolute;top:0;bottom:0;border-left:1px dashed var(--line)}
+.gb{position:absolute;top:7px;height:18px;border-radius:5px;opacity:.9;cursor:pointer}
+.gb.done{opacity:.45}
+.gb .pr{position:absolute;left:0;top:0;bottom:0;background:rgba(0,0,0,.22);border-radius:5px 0 0 5px}
+.today{position:absolute;top:0;bottom:0;border-left:2px solid #c2415b;z-index:1}
+.today span{position:absolute;top:0;left:3px;font-size:10px;color:#c2415b;font-weight:700}
+
+/* task list */
+.phase{margin-top:14px}
+.phase>h3{font-size:15px;margin:0;padding:12px 14px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+.phase>h3 .muted{font-weight:500;font-size:13px}
+.task{padding:12px 14px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:6px 1fr auto;gap:12px}
+.task:last-child{border-bottom:0}
+.task .stripe{border-radius:3px}
+.task .t{font-weight:600}
+.task .meta{color:var(--muted);font-size:12px;display:flex;gap:12px;flex-wrap:wrap;margin-top:2px}
+.task .note{font-size:13px;margin-top:4px;white-space:pre-wrap}
+.task ul{list-style:none;padding:0;margin:8px 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:2px 16px}
+.task li label{display:flex;gap:7px;align-items:flex-start;cursor:pointer;font-size:13px}
+.task li input{margin-top:3px;accent-color:var(--done)}
+.task li.d span{text-decoration:line-through;color:var(--muted)}
+.task .side{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.pill{font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;color:#fff;white-space:nowrap;border:0;cursor:pointer;font-family:inherit}
+.pill.todo{background:var(--todo)}.pill.prog{background:var(--prog)}.pill.done{background:var(--done)}
+
+/* budget */
+table{width:100%;border-collapse:collapse}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}
+th{color:var(--muted);font-weight:600;background:var(--surface-2)}
+td.n,th.n{text-align:right}
+td input{width:100%;border:1px solid transparent;background:transparent;color:inherit;font:inherit;padding:3px 5px;border-radius:6px}
+td input:hover,td input:focus{border-color:var(--line);background:var(--surface)}
+td input.n{text-align:right}
+tfoot td{font-weight:700}
+
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--text);padding:0;width:min(640px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog form{padding:18px}
+dialog label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:10px 0 3px}
+dialog input,dialog select,dialog textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font:inherit;background:var(--surface);color:var(--text)}
+dialog textarea{min-height:90px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dlg-act{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.dlg-act .sp{flex:1}
+footer{color:var(--muted);font-size:12px;padding:30px 0}
+.print-only{display:none}
+
+@media (max-width:640px){ .task{grid-template-columns:6px 1fr} .task .side{grid-column:2;flex-direction:row;align-items:center} .g{grid-template-columns:180px 1fr} }
+
+@media print{
+  @page{size:A4 landscape;margin:10mm}
+  :root{--bg:#fff;--surface:#fff;--surface-2:#f1f3ee;--line:#d7dbd0;--text:#111;--muted:#555}
+  body{font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .no-print,.actions,.task .side .btn,.btn{display:none!important}
+  .print-only{display:block}
+  header.top{border:0;padding:0 0 6px}
+  .wrap{max-width:none;padding:0}
+  .gantt{overflow:visible}
+  .g{min-width:0;grid-template-columns:230px 1fr}
+  .g .lab{font-size:10px;padding:3px 6px}
+  .g .tl{min-height:22px}
+  .gb{top:4px;height:14px}
+  .card{border-radius:6px;break-inside:avoid}
+  .card.phase{break-inside:auto}
+  .phase>h3{break-after:avoid;padding:8px 10px}
+  .task{break-inside:avoid;padding:7px 10px}
+  .task ul{display:block;columns:3;column-gap:16px}
+  .task li{break-inside:avoid}
+  td input::placeholder{color:transparent}
+  .page-break{break-before:page}
+  h2{margin:14px 0 8px}
+  td input{border:0;padding:0}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div>
+      <h1>Geo Agro Estate — სამუშაო გეგმა-გრაფიკი</h1>
+      <div class="sub">მოცვის პლანტაცია · სეფიეთი, აბაშა · <span id="range"></span></div>
+      <div class="sub">დირექტორი: ლაშა შალამბერიძე · <span id="updated"></span></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="addBtn">+ ამოცანა</button>
+      <button class="btn" id="expBtn">ექსპორტი</button>
+      <button class="btn" id="impBtn">იმპორტი</button>
+      <button class="btn" id="resetBtn">საწყისზე დაბრუნება</button>
+      <button class="btn primary" id="pdfBtn">PDF / ბეჭდვა</button>
+      <input type="file" id="impFile" accept="application/json" hidden>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="kpis" id="kpis"></div>
+
+  <h2>გრაფიკი</h2>
+  <div class="legend" id="legend"></div>
+  <div class="card gantt"><div class="g" id="gantt"></div></div>
+
+  <h2 class="page-break">ამოცანები თვეების მიხედვით</h2>
+  <div id="phases"></div>
+
+  <h2 class="page-break">ინვენტარის ბიუჯეტი</h2>
+  <p class="sub no-print">რაოდენობა და ფასი შეავსე პირდაპირ ცხრილში. ჯამი თავად დაითვლება.</p>
+  <div class="card" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>დასახელება</th><th>შენიშვნა</th><th class="n">რაოდ.</th><th class="n">ერთ. ფასი (₾)</th><th class="n">ჯამი (₾)</th><th class="no-print"></th></tr></thead>
+      <tbody id="budget"></tbody>
+      <tfoot><tr><td colspan="4">სულ</td><td class="n" id="btotal"></td><td class="no-print"></td></tr></tfoot>
+    </table>
+  </div>
+  <p class="no-print"><button class="btn sm" id="addInv">+ პოზიცია</button></p>
+</main>
+<footer class="wrap">Geo Agro Estate · აღრიცხვა: AgroInTechSol (agrointechsol.ge)</footer>
+
+<dialog id="dlg">
+  <form method="dialog" id="frm">
+    <h3 id="dlgTitle" style="margin:0">ამოცანა</h3>
+    <label>დასახელება</label><input name="title" required>
+    <div class="r2">
+      <div><label>თვე / ეტაპი</label><select name="phase"></select></div>
+      <div><label>კატეგორია</label><select name="cat"></select></div>
+    </div>
+    <div class="r2">
+      <div><label>დაწყება</label><input type="date" name="start" required></div>
+      <div><label>დასრულება</label><input type="date" name="end" required></div>
+    </div>
+    <div class="r2">
+      <div><label>პასუხისმგებელი</label><input name="owner"></div>
+      <div><label>სტატუსი</label><select name="status"><option value="todo">არ დაწყებულა</option><option value="prog">მიმდინარე</option><option value="done">დასრულებული</option></select></div>
+    </div>
+    <label>ქვეპუნქტები (თითო ხაზზე ერთი)</label><textarea name="items"></textarea>
+    <label>შენიშვნა</label><textarea name="note" style="min-height:60px"></textarea>
+    <div class="dlg-act">
+      <button type="button" class="btn danger" id="delBtn">წაშლა</button>
+      <span class="sp"></span>
+      <button type="button" class="btn" id="cancelBtn">გაუქმება</button>
+      <button class="btn primary" value="save">შენახვა</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const KEY = 'geoagro_plan_v1';
+const RANGE = { start: '2026-11-02', end: '2027-02-28' };
+const PHASES = {
+  nov: 'ნოემბერი 2026', dec: 'დეკემბერი 2026', jan: 'იანვარი 2027', feb: 'თებერვალი 2027',
+  mar: 'მარტი 2027', apr: 'აპრილი 2027'
+};
+const CATS = {
+  staff: ['პერსონალი', 'var(--c-staff)'],
+  agro:  ['აგრო-სამუშაოები', 'var(--c-agro)'],
+  infra: ['ინფრასტრუქტურა', 'var(--c-infra)'],
+  buy:   ['შესყიდვები / ბიუჯეტი', 'var(--c-buy)'],
+  pick:  ['მოსავალი / მკრეფავები', 'var(--c-pick)']
+};
+const STATUS = { todo: 'არ დაწყებულა', prog: 'მიმდინარე', done: 'დასრულებული' };
+const MONTHS = ['იანვარი','თებერვალი','მარტი','აპრილი','მაისი','ივნისი','ივლისი','აგვისტო','სექტემბერი','ოქტომბერი','ნოემბერი','დეკემბერი'];
+
+const it = arr => arr.map(t => ({ t, done: false }));
+const DEFAULT = {
+  tasks: [
+    { id:'t1', phase:'nov', cat:'staff', title:'პერსონალის მოძიება და დაკომპლექტება', start:'2026-11-09', end:'2026-11-15', owner:'დირექტორი', status:'todo', note:'ნოემბრის მე-2 კვირა',
+      items: it(['საჭირო პოზიციების და რაოდენობის განსაზღვრა','ვაკანსიის გავრცელება','გასაუბრებები','შერჩეულ კანდიდატებთან ხელშეკრულებები','სიის შედგენა (სახელი, ტელეფონი, პირადი №)']) },
+    { id:'t2', phase:'nov', cat:'staff', title:'თანამშრომლებისთვის უნიფორმის მომზადება', start:'2026-11-09', end:'2026-11-30', owner:'', status:'todo', note:'',
+      items: it(['ზომების შეგროვება','მომწოდებლის შერჩევა','ლოგოს/დიზაინის შეთანხმება','შეკვეთა და დარიგება']) },
+    { id:'t3', phase:'nov', cat:'agro', title:'ტრენინგი თანამშრომლებისთვის გასხვლაზე', start:'2026-11-16', end:'2026-11-22', owner:'აგრონომი', status:'todo', note:'ნოემბრის მე-3 კვირა',
+      items: it(['გასხვლის წესები მოცვზე (თეორია)','პრაქტიკა ნაკვეთზე','სეკატორების გამოყენება და დეზინფექცია','უსაფრთხოების ინსტრუქტაჟი']) },
+    { id:'t4', phase:'nov', cat:'agro', title:'ბალახის მოშორების პროცესი', start:'2026-11-23', end:'2026-11-30', owner:'აგრონომი', status:'todo', note:'ნოემბრის მე-4 კვირა',
+      items: [] },
+    { id:'t5', phase:'dec', cat:'agro', title:'გასხვლის სამუშაოების ჩატარება', start:'2026-12-01', end:'2026-12-31', owner:'აგრონომი', status:'todo', note:'დეკემბრის ბოლომდე',
+      items: [] },
+    { id:'t6', phase:'dec', cat:'buy', title:'კომპანიების მოძიება და ფასების დადგენა: ფორმები, ტუალეტები, აბაზანა/საშხაპე, შესანახი ლოკერები', start:'2026-12-01', end:'2026-12-14', owner:'', status:'todo', note:'',
+      items: it(['ფორმები (უნიფორმა)','ბიოტუალეტები','აბაზანა / საშხაპე / ხელსაბანი','შესანახი ლოკერები','კომპანიების ნახვა ადგილზე','ფასების შედარების ცხრილი']) },
+    { id:'t7', phase:'dec', cat:'infra', title:'კომპანიის მოძიება: ავტოსადგომი გადახურვით + Kärcher სამრეცხაო', start:'2026-12-01', end:'2026-12-20', owner:'', status:'todo', note:'',
+      items: it(['სადგომის ზომა და ადგილი','გადახურვის ტიპი','Kärcher სამრეცხაოს წერტილი (წყალი, დრენაჟი, დენი)','3 კომპანიის შეთავაზება']) },
+    { id:'t8', phase:'dec', cat:'infra', title:'კომპანიის მოძიება: დიდი კარავი სასადილოსა და დასასვენებლად, ინფრასტრუქტურით', start:'2026-12-01', end:'2026-12-20', owner:'', status:'todo', note:'',
+      items: it(['კარვის ზომა მკრეფავების რაოდენობაზე','მაგიდები და სკამები','ვენტილატორები / განათება / დენი','საკვების ზონა','3 კომპანიის შეთავაზება']) },
+    { id:'t9', phase:'dec', cat:'infra', title:'კომპანიის მოძიება: სამაცივრიდან ჩასასვლელი (ესტაკადა)', start:'2026-12-07', end:'2026-12-24', owner:'', status:'todo', note:'',
+      items: it(['გაზომვები','ტრანსპორტის ტიპის გათვალისწინება','შეთავაზებები']) },
+    { id:'t10', phase:'dec', cat:'infra', title:'კომპანიის მოძიება: ყუთებისა და სხვა ინვენტარის საწყობი', start:'2026-12-07', end:'2026-12-24', owner:'', status:'todo', note:'შესაძლებელია ერთ გადახურვაში გაკეთდეს პრეპარატების ოთახთან ერთად',
+      items: it(['ყუთების რაოდენობა და ფართის გამოთვლა','თაროები / სტელაჟები','შეთავაზებები']) },
+    { id:'t11', phase:'dec', cat:'infra', title:'აცილების პრეპარატების ოთახის მომზადება უსაფრთხოების წესებით', start:'2026-12-07', end:'2026-12-24', owner:'', status:'todo', note:'შესაძლებელია ერთ გადახურვაში გაკეთდეს საწყობთან ერთად',
+      items: it(['ცალკე ჩაკეტილი ოთახი','ვენტილაცია','თაროები (არა ხის) და ჩამოღვრის საწინააღმდეგო ტაფები','ცეცხლმაქრი','დაცვის საშუალებები (ხელთათმანი, რესპირატორი, სათვალე)','გამაფრთხილებელი ნიშნები და წესების დაფა','პრეპარატების აღრიცხვის ჟურნალი','ხელსაბანი / თვალის სარეცხი']) },
+    { id:'t12', phase:'dec', cat:'buy', title:'ინვენტარის ბიუჯეტის გაკეთება', start:'2026-12-01', end:'2026-12-24', owner:'დირექტორი', status:'todo', note:'დეტალები: ქვემოთ, ინვენტარის ბიუჯეტის ცხრილში',
+      items: it(['სასწორები','სეკატორები (ფანცატურები)','კომპიუტერები','სამედიცინო ურნები','გენერატორები','ავეჯი']) },
+    { id:'t13', phase:'jan', cat:'infra', title:'ინფრასტრუქტურის მშენებლობის დაწყება', start:'2027-01-04', end:'2027-01-31', owner:'', status:'todo', note:'',
+      items: it(['ავტოსადგომი გადახურვით + სამრეცხაო','სასადილო / დასასვენებელი კარავი','ტუალეტები, აბაზანა, ხელსაბანი','ლოკერები','სამაცივრის ესტაკადა','ყუთების საწყობი + პრეპარატების ოთახი','ინვენტარის შეძენა ბიუჯეტის მიხედვით']) },
+    { id:'t14', phase:'feb', cat:'pick', title:'მკრეფავების მოწვევა, ახალი ინფრასტრუქტურის დათვალიერება და სიების გავლა', start:'2027-02-01', end:'2027-02-28', owner:'', status:'todo', note:'',
+      items: it(['მკრეფავების მოწვევა','ინფრასტრუქტურის დათვალიერება','სიების გადამოწმება']) }
+  ],
+  inventory: [
+    { name:'სასწორები', note:'', qty:'', price:'' },
+    { name:'სეკატორები (ფანცატურები)', note:'', qty:'', price:'' },
+    { name:'კომპიუტერები', note:'', qty:'', price:'' },
+    { name:'სამედიცინო ურნები', note:'', qty:'', price:'' },
+    { name:'გენერატორები', note:'', qty:'', price:'' },
+    { name:'ავეჯი', note:'', qty:'', price:'' }
+  ],
+  updated: null
+};
+
+let S = load();
+function load(){
+  try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULT));
+}
+function save(){
+  S.updated = new Date().toISOString();
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {}
+  render();
+}
+
+const D = s => new Date(s + 'T00:00:00');
+const DAY = 864e5;
+const fmt = s => { const d = D(s); return d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0,3) + '.'; };
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const progress = t => t.status === 'done' ? 1 : (t.items.length ? t.items.filter(i => i.done).length / t.items.length : (t.status === 'prog' ? .5 : 0));
+const money = n => n.toLocaleString('ka-GE', { maximumFractionDigits: 2 });
+
+function render(){
+  const r0 = D(RANGE.start), r1 = D(RANGE.end);
+  // range expands to fit any task
+  S.tasks.forEach(t => { if (D(t.end) > r1) r1.setTime(D(t.end).getTime()); });
+  const total = (r1 - r0) / DAY + 1;
+  const pct = d => ((d - r0) / DAY) / total * 100;
+
+  document.getElementById('range').textContent = `${fmt(RANGE.start)} ${r0.getFullYear()} – ${r1.getDate()} ${MONTHS[r1.getMonth()].slice(0,3)}. ${r1.getFullYear()}`;
+  document.getElementById('updated').textContent = S.updated ? 'განახლდა: ' + new Date(S.updated).toLocaleDateString('ka-GE') : '';
+
+  // KPIs
+  const n = S.tasks.length, done = S.tasks.filter(t => t.status === 'done').length, prog = S.tasks.filter(t => t.status === 'prog').length;
+  const avg = n ? S.tasks.reduce((a, t) => a + progress(t), 0) / n : 0;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const late = S.tasks.filter(t => t.status !== 'done' && D(t.end) < today).length;
+  document.getElementById('kpis').innerHTML = `
+    <div class="card kpi"><small>ამოცანები</small><b>${n}</b></div>
+    <div class="card kpi"><small>დასრულებული / მიმდინარე</small><b>${done} / ${prog}</b></div>
+    <div class="card kpi"><small>ვადაგადაცილებული</small><b style="color:${late ? '#c2415b' : 'inherit'}">${late}</b></div>
+    <div class="card kpi"><small>საერთო პროგრესი</small><b>${Math.round(avg * 100)}%</b><div class="bar"><i style="width:${avg * 100}%"></i></div></div>`;
+
+  document.getElementById('legend').innerHTML = Object.values(CATS).map(([l, c]) => `<span><i style="background:${c}"></i>${l}</span>`).join('')
+    + '<span><i style="background:#c2415b;width:2px"></i>დღეს</span>';
+
+  // Gantt header
+  let months = '', weeks = '', lines = '';
+  for (let d = new Date(r0); d <= r1; d.setMonth(d.getMonth() + 1, 1)) {
+    const s = d < r0 ? r0 : new Date(d), e = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    const end = e > r1 ? r1 : e;
+    months += `<div style="left:${pct(s)}%;width:${pct(end) - pct(s) + 100/total}%">${MONTHS[s.getMonth()]} ${s.getFullYear()}</div>`;
+  }
+  for (let d = new Date(r0); d <= r1; d = new Date(d.getTime() + 7 * DAY)) {
+    weeks += `<div style="left:${pct(d)}%;width:${700/total}%">${d.getDate()}</div>`;
+    lines += `<i style="left:${pct(d)}%"></i>`;
+  }
+  const todayLine = today >= r0 && today <= r1 ? `<div class="today" style="left:${pct(today)}%"></div>` : '';
+  let g = `<div class="lab h" style="height:48px;display:flex;align-items:flex-end;color:var(--muted)">ამოცანა</div>
+    <div class="tl h"><div class="months">${months}</div><div class="weeks">${weeks}</div>${today >= r0 && today <= r1 ? `<div class="today" style="left:${pct(today)}%"><span>დღეს</span></div>` : ''}</div>`;
+  for (const [pk, pl] of Object.entries(PHASES)) {
+    const ts = S.tasks.filter(t => t.phase === pk).sort((a, b) => a.start.localeCompare(b.start));
+    if (!ts.length) continue;
+    g += `<div class="lab ph">${pl}</div><div class="tl ph"><div class="grid-lines">${lines}</div>${todayLine}</div>`;
+    for (const t of ts) {
+      const s = D(t.start), e = D(t.end), c = CATS[t.cat]?.[1] || 'gray';
+      g += `<div class="lab" title="${esc(t.title)}">${esc(t.title)}</div>
+        <div class="tl"><div class="grid-lines">${lines}</div>${todayLine}
+          <div class="gb ${t.status === 'done' ? 'done' : ''}" data-id="${t.id}" title="${esc(t.title)} · ${fmt(t.start)} – ${fmt(t.end)}"
+            style="left:${pct(s)}%;width:${Math.max(pct(e) - pct(s) + 100/total, .6)}%;background:${c}"><span class="pr" style="width:${progress(t) * 100}%"></span></div>
+        </div>`;
+    }
+  }
+  document.getElementById('gantt').innerHTML = g;
+
+  // phases
+  let h = '';
+  for (const [pk, pl] of Object.entries(PHASES)) {
+    const ts = S.tasks.filter(t => t.phase === pk).sort((a, b) => a.start.localeCompare(b.start));
+    if (!ts.length) continue;
+    const pp = ts.reduce((a, t) => a + progress(t), 0) / ts.length;
+    h += `<div class="card phase"><h3>${pl} <span class="muted">${ts.length} ამოცანა · ${Math.round(pp * 100)}%</span></h3>`;
+    for (const t of ts) {
+      h += `<div class="task">
+        <div class="stripe" style="background:${CATS[t.cat]?.[1]}"></div>
+        <div>
+          <div class="t">${esc(t.title)}</div>
+          <div class="meta"><span>📅 ${fmt(t.start)} – ${fmt(t.end)}</span><span>${esc(CATS[t.cat]?.[0])}</span>${t.owner ? `<span>👤 ${esc(t.owner)}</span>` : ''}${t.items.length ? `<span>✔ ${t.items.filter(i => i.done).length}/${t.items.length}</span>` : ''}</div>
+          ${t.note ? `<div class="note">${esc(t.note)}</div>` : ''}
+          ${t.items.length ? `<ul>${t.items.map((i, k) => `<li class="${i.done ? 'd' : ''}"><label><input type="checkbox" data-t="${t.id}" data-k="${k}" ${i.done ? 'checked' : ''}><span>${esc(i.t)}</span></label></li>`).join('')}</ul>` : ''}
+        </div>
+        <div class="side">
+          <button class="pill ${t.status}" data-cycle="${t.id}" title="სტატუსის შეცვლა">${STATUS[t.status]}</button>
+          <button class="btn sm" data-edit="${t.id}">რედაქტირება</button>
+        </div>
+      </div>`;
+    }
+    h += `</div>`;
+  }
+  document.getElementById('phases').innerHTML = h;
+
+  // budget
+  let sum = 0;
+  document.getElementById('budget').innerHTML = S.inventory.map((r, k) => {
+    const line = (parseFloat(r.qty) || 0) * (parseFloat(r.price) || 0); sum += line;
+    return `<tr>
+      <td><input data-inv="${k}" data-f="name" value="${esc(r.name)}"></td>
+      <td><input data-inv="${k}" data-f="note" value="${esc(r.note)}" placeholder="მოდელი, მომწოდებელი…"></td>
+      <td class="n" style="width:90px"><input class="n" data-inv="${k}" data-f="qty" value="${esc(r.qty)}" inputmode="decimal"></td>
+      <td class="n" style="width:130px"><input class="n" data-inv="${k}" data-f="price" value="${esc(r.price)}" inputmode="decimal"></td>
+      <td class="n" style="width:130px">${line ? money(line) : '—'}</td>
+      <td class="no-print" style="width:40px"><button class="btn sm danger" data-delinv="${k}" title="წაშლა">✕</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('btotal').textContent = sum ? money(sum) + ' ₾' : '—';
+}
+
+// ---- events ----
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.t) {
+    const t = S.tasks.find(x => x.id === el.dataset.t);
+    t.items[+el.dataset.k].done = el.checked;
+    if (t.items.every(i => i.done)) t.status = 'done';
+    else if (t.items.some(i => i.done)) t.status = 'prog';
+    else if (t.status === 'done') t.status = 'prog';
+    save();
+  } else if (el.dataset.inv) {
+    S.inventory[+el.dataset.inv][el.dataset.f] = el.value.trim();
+    save();
+  }
+});
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-cycle],[data-edit],[data-delinv],.gb');
+  if (!el) return;
+  if (el.dataset.cycle) {
+    const t = S.tasks.find(x => x.id === el.dataset.cycle);
+    t.status = { todo: 'prog', prog: 'done', done: 'todo' }[t.status];
+    save();
+  } else if (el.dataset.edit || el.classList.contains('gb')) {
+    openDlg(el.dataset.edit || el.dataset.id);
+  } else if (el.dataset.delinv) {
+    S.inventory.splice(+el.dataset.delinv, 1); save();
+  }
+});
+
+const dlg = document.getElementById('dlg'), frm = document.getElementById('frm');
+frm.phase.innerHTML = Object.entries(PHASES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
+frm.cat.innerHTML = Object.entries(CATS).map(([k, v]) => `<option value="${k}">${v[0]}</option>`).join('');
+let editing = null;
+function openDlg(id){
+  editing = id ? S.tasks.find(t => t.id === id) : null;
+  const t = editing || { title:'', phase:'dec', cat:'infra', start:'2026-12-01', end:'2026-12-07', owner:'', status:'todo', note:'', items:[] };
+  document.getElementById('dlgTitle').textContent = editing ? 'ამოცანის რედაქტირება' : 'ახალი ამოცანა';
+  for (const f of ['title','phase','cat','start','end','owner','status','note']) frm[f].value = t[f] || '';
+  frm.items.value = t.items.map(i => i.t).join('\n');
+  document.getElementById('delBtn').style.display = editing ? '' : 'none';
+  dlg.showModal();
+}
+frm.addEventListener('submit', e => {
+  if (e.submitter?.value !== 'save') return;
+  if (frm.end.value < frm.start.value) { e.preventDefault(); alert('დასრულება დაწყებამდე ვერ იქნება'); return; }
+  const prev = Object.fromEntries((editing?.items || []).map(i => [i.t, i.done]));
+  const data = {
+    title: frm.title.value.trim(), phase: frm.phase.value, cat: frm.cat.value, start: frm.start.value, end: frm.end.value,
+    owner: frm.owner.value.trim(), status: frm.status.value, note: frm.note.value.trim(),
+    items: frm.items.value.split('\n').map(s => s.trim()).filter(Boolean).map(t => ({ t, done: !!prev[t] }))
+  };
+  if (editing) Object.assign(editing, data); else S.tasks.push({ id: 't' + Date.now(), ...data });
+  save();
+});
+document.getElementById('cancelBtn').onclick = () => dlg.close();
+document.getElementById('delBtn').onclick = () => {
+  if (!editing || !confirm('წავშალო ამოცანა?')) return;
+  S.tasks = S.tasks.filter(t => t !== editing); dlg.close(); save();
+};
+document.getElementById('addBtn').onclick = () => openDlg(null);
+document.getElementById('addInv').onclick = () => { S.inventory.push({ name:'ახალი პოზიცია', note:'', qty:'', price:'' }); save(); };
+document.getElementById('pdfBtn').onclick = () => window.print();
+document.getElementById('resetBtn').onclick = () => {
+  if (!confirm('ყველა ცვლილება წაიშლება და გეგმა საწყის ვერსიას დაუბრუნდება. გავაგრძელო?')) return;
+  S = JSON.parse(JSON.stringify(DEFAULT)); save();
+};
+document.getElementById('expBtn').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' }));
+  a.download = 'geoagro-gegma-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+};
+document.getElementById('impBtn').onclick = () => document.getElementById('impFile').click();
+document.getElementById('impFile').onchange = async e => {
+  try {
+    const d = JSON.parse(await e.target.files[0].text());
+    if (!Array.isArray(d.tasks) || !Array.isArray(d.inventory)) throw 0;
+    S = d; save();
+  } catch { alert('ფაილი ვერ წავიკითხე'); }
+  e.target.value = '';
+};
+
+render();
+</script>
+</body>
+</html>
