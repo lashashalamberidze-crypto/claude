@@ -41,6 +41,8 @@
   .repGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
   @media(max-width:600px){.repGrid{grid-template-columns:repeat(2,1fr)}}
   .repTop{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border-radius:12px;padding:11px 15px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+  .dashGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  @media(max-width:700px){.dashGrid{grid-template-columns:repeat(2,1fr)}}
   .tabs{display:flex;gap:4px;margin-bottom:12px;background:#e2e8f0;padding:4px;border-radius:12px;flex-wrap:wrap}
   .tab{flex:1;min-width:90px;background:transparent;color:#475569;border:none;padding:10px 6px;border-radius:9px;font-size:.82rem;font-weight:700;margin:0;cursor:pointer}
   .tab.active{background:#fff;color:#0369a1;box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -73,10 +75,9 @@
     <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
   </div>
 
-  <div style="font-size:.8rem;font-weight:800;color:#334155;margin:2px 0 7px">📊 საერთო</div>
-  <div class="stats" id="dashTotal" style="margin-bottom:12px"></div>
-  <div style="font-size:.8rem;font-weight:800;color:#334155;margin:4px 0 7px">📅 დღეს — <span id="dashDate"></span></div>
-  <div class="stats" id="dashToday" style="margin-bottom:12px"></div>
+  <div style="font-size:.8rem;font-weight:800;color:#334155;margin:2px 0 7px">📊 დეშბორდი <span id="dashDate" class="muted" style="font-weight:400;font-size:.75rem"></span></div>
+  <div class="dashGrid" id="dashTotal" style="margin-bottom:8px"></div>
+  <div id="dashTodayLine" class="muted" style="font-size:.82rem;margin-bottom:14px"></div>
   <div class="card" style="margin-bottom:14px">
     <details ontoggle="if(this.open)renderAnalysis()">
       <summary style="cursor:pointer;font-weight:800;color:#7c3aed;font-size:.92rem">🔍 დეშბორდი / ანალიზი (საეჭვო + სტატისტიკა)</summary>
@@ -673,7 +674,8 @@ function renderDash(){
   var dd=document.getElementById('dashDate'); if(dd) dd.textContent=td;
   var totEarn=0; Object.keys(EARNMAP).forEach(function(k){ totEarn+=EARNMAP[k]||0; });
   var totBonus=0; Object.keys(BONUSMAP).forEach(function(k){ totBonus+=BONUSMAP[k]||0; });
-  var grand=totEarn+totBonus;
+  var totCarrier=0; Object.keys(CARRPAY).forEach(function(k){ totCarrier+=CARRPAY[k]||0; });   // 🚚 გამომტანის დღიური ხელფასი
+  var grand=totEarn+totBonus+totCarrier;
   document.getElementById('dashTotal').innerHTML=
     stat('s-blue','👥 სულ მკრეფავი',total,'რეგისტრირებული')
    +stat('s-orange','📦 სულ ყუთი',TOTAL_BOX.toLocaleString('en-US'),'ჩაწონვა')
@@ -681,7 +683,8 @@ function renderDash(){
    +stat('s-purple','✅ აქტიური',active,'ვინც აწონა')
    +stat('s-green money','💰 კგ×ფასი',(Math.round(totEarn*100)/100).toLocaleString('en-US')+' ₾','ხელფასი')
    +stat('s-purple money','🎁 ბონუსი','+'+(Math.round(totBonus*100)/100).toLocaleString('en-US')+' ₾','დარიცხული')
-   +stat('s-blue money','💵 სულ გადასახდელი',(Math.round(grand*100)/100).toLocaleString('en-US')+' ₾','ხელფასი+ბონუსი');
+   +stat('s-orange money','🚚 გამომტ. ხელფასი',(Math.round(totCarrier*100)/100).toLocaleString('en-US')+' ₾','დასწრებით')
+   +stat('s-blue money','💵 სულ გადასახდელი',(Math.round(grand*100)/100).toLocaleString('en-US')+' ₾','ხელფასი+ბონუსი+გამომტ.');
   // სამუშაო დღეები + საშუალო
   var dset={}, pdSet={};
   SESSIONS.forEach(function(s){ if(s.date){ dset[s.date]=1; var pk=s.picker_id||('n:'+(s.picker_name||'')); if(pk) pdSet[pk+'|'+s.date]=1; } });
@@ -690,13 +693,9 @@ function renderDash(){
   var avgDay=TOTAL_KG/workDays;                    // საშ. კგ დღეში (ყველა მკრეფავი ერთად)
   var avgPerPickerDay=TOTAL_KG/pickerDays;         // საშ. კგ ერთ მკრეფავზე, ერთ სამუშაო დღეში
   var avgWageDay=totEarn/workDays;                 // საშ. ხელფასი (კგ×ფასი) დღეში
-  document.getElementById('dashToday').innerHTML=
-    stat('s-green','🌾 დღეს კრეფა',fmtKg(TODAY_KG)+' კგ',TODAY_BOX+' ყუთი')
-   +stat('s-orange','📦 დღეს ყუთი',TODAY_BOX,'ჩაწონვა')
-   +stat('s-blue','👷 დღეს მუშახელი',todayWorkers,'მკრეფავი')
-   +stat('s-purple','📈 დღეში საშ. (სულ)',fmtKg(avgDay)+' კგ',workDays+' სამუშაო დღე')
-   +stat('s-green','🧺 მკრეფავზე დღეში',fmtKg(avgPerPickerDay)+' კგ','საშ. ერთ მკრეფავზე / დღეში')
-   +stat('s-blue money','💵 დღეში ხელფასი',(Math.round(avgWageDay*100)/100).toLocaleString('en-US')+' ₾','საშ. '+workDays+' სამუშაო დღეზე');
+  // 📅 დღეს — კომპაქტური ერთ ხაზი (მეორე დეშბორდი აღარ)
+  var _tl=document.getElementById('dashTodayLine');
+  if(_tl) _tl.innerHTML='📅 <b>დღეს</b>: <b style="color:#059669">'+fmtKg(TODAY_KG)+' კგ</b> · 📦 '+TODAY_BOX+' ყუთი · 👷 '+todayWorkers+' მკრეფავი · 📈 საშ. '+fmtKg(avgDay)+' კგ/დღე';
   renderDailyStats();
 }
 function renderAnalysis(){
