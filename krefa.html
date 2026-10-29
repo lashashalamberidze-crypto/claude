@@ -117,7 +117,7 @@
             <button class="sec" style="width:auto;padding:8px 12px" onclick="loadTgLinks().then(renderPickers)">🔄 სტატუსის განახლება</button>
           </div>
           <div style="margin-top:8px">
-            <button class="g" style="width:auto;padding:9px 14px;background:#229ED9" onclick="tgSendQrAll()" title="ყველა დაკავშირებულ მკრეფავს გაუგზავნის მის QR ბარათს სურათად">🏷️ QR ბარათების გაგზავნა (დაკავშირებულებს)</button>
+            <button class="g" style="width:auto;padding:9px 14px;background:#229ED9" onclick="tgSendQrAll()" title="ყველა დაკავშირებულ მკრეფავს უგზავნის მის პირად QR ბარათს (uid) სურათად — რომ ტელეფონიდან ასკანეროს აწონვაზე. ეს არ არის დაკავშირების QR.">🏷️ პირადი QR ბარათის გაგზავნა (დაკავშირებულებს)</button>
           </div>
           <div id="tgStat" class="muted" style="font-size:.8rem;margin-top:8px"></div>
         </div>
@@ -823,7 +823,7 @@ function renderPickers(){
       +'<td>'+esc(p.phone||'—')+(p.phone&&tgLinked(p.phone)?' <span class="badge" style="background:#e1f0fb;color:#229ED9" title="Telegram დაკავშირებულია">✈️</span>':'')+'</td>'
       +'<td><strong>'+fmtKg(pkKg(p))+'</strong></td>'
       +'<td>'+pkBox(p)+'</td>'
-      +'<td style="white-space:nowrap">'+(p.phone&&tgLinked(p.phone)?'<span class="x" title="QR ბარათი Telegram-ზე გაგზავნა" style="cursor:pointer" onclick="tgSendQrOne(\''+esc(p.uid)+'\')">✈️🏷️</span> ':'')+'<span class="x" onclick="deletePicker(\''+esc(p.uid)+'\')">🗑️</span></td></tr>';
+      +'<td style="white-space:nowrap">'+(p.phone&&tgLinked(p.phone)?'<span class="x" title="პირადი QR ბარათი Telegram-ზე გაგზავნა" style="cursor:pointer" onclick="tgSendQrOne(\''+esc(p.uid)+'\')">✈️🏷️</span> ':'')+'<span class="x" onclick="deletePicker(\''+esc(p.uid)+'\')">🗑️</span></td></tr>';
   }).join('');
 }
 
