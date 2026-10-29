@@ -1138,16 +1138,8 @@ function renderReport(){
   var nP=pkList.length||1, avgKg=tKg/nP, avgLari=(tE+bonusTot)/nP;
   var top=pkList.slice().sort(function(a,b){return b.kg-a.kg;})[0];
   function anaCard(c,lbl,val,sub){ return '<div style="background:'+c+';color:#fff;border-radius:11px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.08);min-width:0"><div style="font-size:.7rem;opacity:.92;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+lbl+'</div><div style="font-size:1.12rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+val+'</div>'+(sub?'<div style="font-size:.63rem;opacity:.9;margin-top:2px;line-height:1.25">'+sub+'</div>':'')+'</div>'; }
-  // 6 სიმეტრიული მეტრული ბარათი (3×2 / მობ. 2×3) + 🏆 ტოპ ცალკე ზოლად — რომ არ იყოს არათანაბარი ბოლო მწკრივი
-  var h='<div class="repGrid">'
-    +anaCard('#0ea5e9','🧺 მკრეფავი',nPick,'')
-    +anaCard('#b45309','🚚 გამომტანი',nCarr,'')
-    +anaCard('#ea580c','📦 ყუთი',tBox.toLocaleString('en-US'),Object.keys(palSet).length+' პალეტი')
-    +anaCard('#059669','⚖️ კგ სულ',fmtKg(tKg),'საშ. '+(Math.round(avgKg*10)/10)+' კგ/მკრ.')
-    +anaCard('#16a34a','💰 კგ×ფასი',(Math.round(tE*100)/100).toLocaleString('en-US')+' ₾','')
-    +anaCard('#7c3aed','🎁 ბონუსი','+'+(Math.round(bonusTot*100)/100).toLocaleString('en-US')+' ₾','საშ. '+(Math.round(avgLari*100)/100)+' ₾/კაცი')
-    +'</div>'
-    +(top?('<div class="repTop"><span style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🏆 ტოპ მკრეფავი — '+esc(top.name)+'</span><span style="font-weight:800;font-size:1.05rem;white-space:nowrap">'+fmtKg(top.kg)+' კგ</span></div>'):'');
+  // ქვედა დეშბორდი (ბარათები) ამოღებულია — მხოლოდ ცხრილი. მთავარი დეშბორდი მკრეფავების ტაბზეა.
+  var h='';
   var byP=_reportByPicker(rows);
   var tBon=0; byP.forEach(function(m){ tBon+=m.bonus; });
   h+='<div style="overflow-x:auto"><table><thead><tr><th><input type="checkbox" id="rSelAll" onclick="toggleAllSel(this)"></th><th>მკრეფავი</th><th>დღე</th><th>ყუთი</th><th>კგ</th><th>₾/კგ</th><th>₾</th><th>🎁 ბონ.</th><th>ჯამი ₾</th></tr></thead><tbody>';
