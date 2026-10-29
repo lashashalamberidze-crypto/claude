@@ -136,7 +136,7 @@
       </div>
       <div class="row2" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:8px 10px">
         <div><label>👥 ჯგუფი</label><input id="fGroup" placeholder="მაგ. ბრიგადა №2" list="groupList"><datalist id="groupList"></datalist></div>
-        <div><label>👤 ბრიგადირი / ხელმძღვანელი</label><input id="fBrig" placeholder="ჯგუფის უფროსი"></div>
+        <div><label>👤 ბრიგადირი / ხელმძღვანელი</label><input id="fBrig" placeholder="ჯგუფის უფროსი" list="brigList" oninput="brigFillPhone()"><datalist id="brigList"></datalist></div>
         <div><label>📞 ბრიგადირის ტელეფონი</label><input id="fBrigPhone" inputmode="numeric" placeholder="555000000"></div>
       </div>
       <button class="g" onclick="registerPicker()">✅ დამატება</button>
@@ -271,6 +271,7 @@
         <button class="sec" style="width:auto;padding:9px 13px" onclick="document.getElementById('attDate').value='';renderAttendance()">დღეს</button>
       </div>
       <div class="stats" id="attStats" style="margin-top:12px"></div>
+      <div id="attBrig" style="margin-top:10px"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
         <button class="sec" style="width:auto;padding:8px 13px" onclick="exportAttExcel()">📊 Excel</button>
         <button class="sec" style="width:auto;padding:8px 13px" onclick="printAtt()">🖨️ ბეჭდვა</button>
@@ -774,10 +775,20 @@ async function registerPicker(){
   fillGroupList(); renderDash(); renderPickers();
 }
 
+var BRIGPHONE={};   // ბრიგადირის სახელი → ტელეფონი (ავტო-შევსებისთვის)
 function fillGroupList(){
-  var dl=document.getElementById('groupList'); if(!dl) return;
+  var dl=document.getElementById('groupList');
   var seen={}; PICKERS.forEach(function(p){ var g=(p.group_name||'').trim(); if(g) seen[g]=1; });
-  dl.innerHTML=Object.keys(seen).sort().map(function(g){ return '<option value="'+esc(g)+'">'; }).join('');
+  if(dl) dl.innerHTML=Object.keys(seen).sort().map(function(g){ return '<option value="'+esc(g)+'">'; }).join('');
+  // ── ბრიგადირები (არსებული, უნიკალური) → datalist + ტელეფონის რუკა ──
+  var bl=document.getElementById('brigList'); BRIGPHONE={};
+  var bseen={}; PICKERS.forEach(function(p){ var b=(p.brigadier||'').trim(); if(b){ bseen[b]=1; var ph=(p.brigadier_phone||'').trim(); if(ph && !BRIGPHONE[b]) BRIGPHONE[b]=ph; } });
+  if(bl) bl.innerHTML=Object.keys(bseen).sort().map(function(b){ return '<option value="'+esc(b)+'">'; }).join('');
+}
+// არსებული ბრიგადირის არჩევისას — ტელეფონი ავტომატურად (თუ ცარიელია)
+function brigFillPhone(){
+  var b=(document.getElementById('fBrig').value||'').trim(), ph=document.getElementById('fBrigPhone');
+  if(ph && BRIGPHONE[b] && !ph.value.trim()) ph.value=BRIGPHONE[b];
 }
 function renderPickers(){
   var q=(document.getElementById('pkSearch').value||'').trim().toLowerCase();
@@ -1488,14 +1499,26 @@ function renderAttendance(){
   var date=(document.getElementById('attDate')||{}).value||_today();
   var dayRows=ATT.filter(function(r){ return r.date===date; });
   var g={}, ord=[];
-  dayRows.forEach(function(r){ if(!g[r.picker_uid]){ g[r.picker_uid]={name:r.picker_name,role:r.role,tin:'',tout:''}; ord.push(r.picker_uid); } if(r.type==='in')g[r.picker_uid].tin=r.time; else g[r.picker_uid].tout=r.time; });
+  dayRows.forEach(function(r){ if(!g[r.picker_uid]){ g[r.picker_uid]={uid:r.picker_uid,name:r.picker_name,role:r.role,tin:'',tout:''}; ord.push(r.picker_uid); } if(r.type==='in')g[r.picker_uid].tin=r.time; else g[r.picker_uid].tout=r.time; });
   var list=ord.map(function(u){ return g[u]; });
   var nIn=list.filter(function(x){return x.tin;}).length, nOut=list.filter(function(x){return x.tout;}).length;
   var nPick=list.filter(function(x){return x.role!=='carrier';}).length, nCarr=list.filter(function(x){return x.role==='carrier';}).length;
   var st=document.getElementById('attStats'); if(st) st.innerHTML=stat('s-green','🟢 მოსული',nIn,date)+stat('s-orange','🔴 წასული',nOut,'')+stat('s-blue','🧺 მკრეფავი',nPick,'')+stat('s-purple','🚚 გამომტანი',nCarr,'');
+  renderAttBrig(list);
   var b=document.getElementById('attBody'); if(!b) return;
   if(!list.length){ b.innerHTML='<tr><td colspan="6" class="muted">ამ დღეს არავინ დარეგისტრირდა</td></tr>'; return; }
   b.innerHTML=list.map(function(x,i){ return '<tr><td>'+(i+1)+'</td><td><b>'+esc(x.name)+'</b></td><td>'+(x.role==='carrier'?'<span class="badge b-carry">🚚 გამომტანი</span>':'<span class="badge b-pick">🧺 მკრეფავი</span>')+'</td><td class="ok">'+(x.tin||'—')+'</td><td class="warn">'+(x.tout||'—')+'</td><td></td></tr>'; }).join('');
+}
+// ── რომელი ბრიგადირის ჯგუფი მოვიდა (მხოლოდ მოსულები, ბრიგადირის მიხედვით) ──
+function renderAttBrig(list){
+  var el=document.getElementById('attBrig'); if(!el) return;
+  var byUid={}; (PICKERS||[]).forEach(function(p){ byUid[p.uid]=p; });
+  var G={}, ord=[];
+  list.forEach(function(x){ if(!x.tin) return; var p=byUid[x.uid]||{}; var brig=(p.brigadier||'').trim()||'— ბრიგადირის გარეშე'; if(!G[brig]){ G[brig]={grp:(p.group_name||'').trim(), names:[]}; ord.push(brig); } G[brig].names.push(x.name); });
+  if(!ord.length){ el.innerHTML=''; return; }
+  ord.sort();
+  el.innerHTML='<div style="font-size:.8rem;font-weight:800;color:#334155;margin:4px 0 6px">👤 რომელი ბრიგადირის ჯგუფი მოვიდა</div>'
+    +ord.map(function(k){ var x=G[k]; return '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:9px;padding:7px 10px;margin-bottom:5px"><div style="font-weight:700;color:#0369a1">'+esc(k)+(x.grp?(' <span class="muted" style="font-weight:400">· '+esc(x.grp)+'</span>'):'')+' — <span style="color:#16a34a">'+x.names.length+' მოსული</span></div><div class="muted" style="font-size:.76rem;margin-top:2px">'+x.names.map(function(n){return esc(n);}).join(', ')+'</div></div>'; }).join('');
 }
 function _attDayList(date){
   var dayRows=ATT.filter(function(r){ return r.date===date; });
