@@ -770,9 +770,11 @@ async function registerPicker(){
   }
   if(!saved){ msg.innerHTML='<span class="warn">❌ ნომრის მინიჭება ვერ მოხერხდა — სცადე ხელახლა</span>'; return; }
   PICKERS.push(np);
-  msg.innerHTML='<span class="ok">✅ დაemატა: #'+np.num+' '+esc(pName(np))+'</span>'+(stripped?' <span class="warn">(ჯგუფი ვერ შეინახა — გაუშვი sql/picker_group.sql)</span>':'');
-  ['fFirst','fLast','fId','fPhone','fAddr','fBank','fGroup','fBrig','fBrigPhone'].forEach(function(id){ document.getElementById(id).value=''; });
-  fillGroupList(); renderDash(); renderPickers();
+  var _keptB=(document.getElementById('fBrig').value||'').trim();
+  msg.innerHTML='<span class="ok">✅ დაემატა: #'+np.num+' '+esc(pName(np))+'</span>'+(_keptB?' <span class="muted">· ბრიგადა რჩება: <b>'+esc(_keptB)+'</b> (შეცვალე მხოლოდ საჭიროებისას)</span>':'')+(stripped?' <span class="warn">(ჯგუფი ვერ შეინახა — გაუშვი sql/picker_group.sql)</span>':'');
+  // ჯგუფი/ბრიგადირი/ტელ. რჩება — ზედიზედ ერთი ბრიგადის მკრეფავების დასამატებლად (აღარ იწერება ყოველ ჯერზე)
+  ['fFirst','fLast','fId','fPhone','fAddr','fBank'].forEach(function(id){ document.getElementById(id).value=''; });
+  fillGroupList(); renderDash(); renderPickers(); document.getElementById('fFirst').focus();
 }
 
 var BRIGPHONE={};   // ბრიგადირის სახელი → ტელეფონი (ავტო-შევსებისთვის)
