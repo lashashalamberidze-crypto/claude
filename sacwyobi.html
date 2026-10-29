@@ -149,25 +149,12 @@
   <!-- TABS -->
   <div class="sw-tabs">
     <button class="sw-tab active" onclick="swTab('stock',this)">📦 მარაგი</button>
-    <button class="sw-tab" onclick="swTab('map',this)">🗺️ რუკა</button>
     <button class="sw-tab" onclick="swTab('income',this)">📥 მიღება</button>
     <button class="sw-tab" onclick="swTab('temp',this)">🌡️ ტემპ.</button>
     <button class="sw-tab" onclick="swTab('history',this)">📋 ისტორია</button>
     <button class="sw-tab" onclick="swTab('sales',this)">💰 გაყიდვები</button>
     <button class="sw-tab" onclick="swTab('purchases',this)">🛒 შესყიდვა</button>
     <button class="sw-tab" onclick="swTab('ship',this)">🚚 გამგზავრება</button>
-  </div>
-
-  <!-- ── TAB: MAP (ზედხედი) ── -->
-  <div id="sw-page-map" class="sw-page">
-    <div class="sw-card">
-      <div class="sw-card-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <span>🗺️ მაცივრის ზედხედი — ოთახები</span>
-        <button class="sw-btn sw-btn-gold" id="sw-map-draw" style="padding:6px 13px;font-size:.78rem" onclick="swMapDrawToggle(this)">✏️ ოთახის დახატვა</button>
-      </div>
-      <div class="muted" style="font-size:.78rem;margin-bottom:10px">„ოთახის დახატვა" ჩართე → ბადეზე <b>დააჭირე და გაავლე</b> → ოთახი დაიხატება → დაარქვი ნომერი. მზა ოთახზე დაჭერით — ნომერი/წაშლა. (კგ თითო ოთახზე — შემდეგ ეტაპზე, პალეტების მოთავსების შემდეგ.)</div>
-      <div id="sw-map-wrap" onpointerdown="swMapDown(event)" onpointermove="swMapMove(event)" onpointerup="swMapUp(event)" onpointerleave="swMapUp(event)" style="touch-action:none"></div>
-    </div>
   </div>
 
   <!-- ── TAB: STOCK ── -->
@@ -786,10 +773,9 @@ function swTab(id, el){
   if(el) el.classList.add('active');
   else {
     const tabs = document.querySelectorAll('.sw-tab');
-    const map = {stock:0,map:1,income:2,temp:3,history:4,sales:5,purchases:6,ship:7};
+    const map = {stock:0,income:1,temp:2,history:3,sales:4,purchases:5,ship:6};
     if(map[id]!==undefined && tabs[map[id]]) tabs[map[id]].classList.add('active');
   }
-  if(id==='map')       swRenderMap();
   if(id==='stock')     swRenderStock();
   if(id==='history')   swRenderHistory();
   if(id==='temp')      swRenderTempLog();

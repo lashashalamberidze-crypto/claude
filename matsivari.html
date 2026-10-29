@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏭 მაცივარი</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;background:#eef3f9;color:#13293d;padding:14px;max-width:900px;margin:0 auto}
+  h1{font-size:1.15rem;margin:6px 0}
+  .card{background:#fff;border:1px solid #dde8f5;border-radius:14px;padding:16px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  label{display:block;font-size:.8rem;font-weight:600;color:#45617d;margin:8px 0 4px}
+  input,select{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:1rem;background:#fff}
+  input:focus,select:focus{outline:none;border-color:#0369a1}
+  button{background:#0369a1;color:#fff;border:none;padding:10px 15px;border-radius:10px;font-size:.92rem;font-weight:700;cursor:pointer}
+  button.gold{background:#f59e0b}button.green{background:#059669}button.sec{background:#fff;color:#0369a1;border:1.5px solid #0369a1}
+  button:active{transform:scale(.98)}
+  .err{color:#dc2626;font-size:.82rem;margin-top:8px}
+  .muted{font-size:.8rem;color:#5b7695}
+  .netbar{text-align:center;font-size:.74rem;font-weight:700;padding:5px;border-radius:8px;margin-bottom:10px;background:#dcfce7;color:#166534}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid #dde8f5;margin-bottom:18px;overflow-x:auto}
+  .tab{padding:10px 18px;font-size:.82rem;font-weight:600;color:#2a5a8a;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+  .tab.active{color:#f59e0b;border-bottom-color:#f59e0b}
+  .panel{display:none}.panel.active{display:block}
+  .ct{font-size:1rem;font-weight:800;color:#13293d;margin-bottom:6px}
+  .soon{text-align:center;padding:30px 14px;color:#5b7695}
+  .soon .ico{width:56px;height:56px;border-radius:50%;background:#fef3c7;color:#b45309;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 12px}
+  .hd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+</style></head>
+<body>
+
+<div id="loginCard" class="card" style="max-width:380px;margin:40px auto">
+  <h1>🏭 მაცივარი — შესვლა</h1>
+  <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
+  <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
+  <button onclick="doLogin()" style="width:100%;margin-top:12px">შესვლა</button>
+  <div id="loginErr" class="err"></div>
+  <div class="muted" style="margin-top:10px">იგივე მონაცემები რითაც აპში შედიხარ.</div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="netbar">🌐 ონლაინ</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <h1>🏭 მაცივარი</h1>
+    <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-t="map" onclick="switchTab('map')">🗺️ რუკა</button>
+    <button class="tab" data-t="income" onclick="switchTab('income')">📥 მიღება</button>
+    <button class="tab" data-t="stock" onclick="switchTab('stock')">📦 ოთახების მარაგი</button>
+  </div>
+
+  <div class="panel active" id="p-map">
+    <div class="card">
+      <div class="hd">
+        <span class="ct">🗺️ მაცივრის ზედხედი — ოთახები</span>
+        <button class="gold" id="mapDraw" style="padding:7px 13px;font-size:.8rem" onclick="mapDrawToggle(this)">✏️ ოთახის დახატვა</button>
+      </div>
+      <div class="muted" style="margin-bottom:10px">„ოთახის დახატვა" ჩართე → ბადეზე <b>დააჭირე და გაავლე</b> → ოთახი დაიხატება → დაარქვი ნომერი. მზა ოთახზე დაჭერით — ნომერი/წაშლა. (კგ თითო ოთახზე — „მიღების" ეტაპზე.)</div>
+      <div id="mapWrap" onpointerdown="mapDown(event)" onpointermove="mapMove(event)" onpointerup="mapUp(event)" onpointerleave="mapUp(event)" style="touch-action:none"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-income">
+    <div class="card"><div class="soon"><div class="ico">📥</div>
+      <div style="font-size:1.05rem;font-weight:800;margin-bottom:6px">პალეტის მიღება <span style="font-size:.7rem;background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px">ეტაპი 2</span></div>
+      <div class="muted" style="line-height:1.6">ასკანერებ პალეტის QR-ს → ირჩევ ოთახს → პალეტი მოთავსდება (კგ კრეფიდან ავტომატურად). დაემატება მალე.</div>
+    </div></div>
+  </div>
+
+  <div class="panel" id="p-stock">
+    <div class="card"><div class="soon"><div class="ico">📦</div>
+      <div style="font-size:1.05rem;font-weight:800;margin-bottom:6px">ოთახების მარაგი <span style="font-size:.7rem;background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px">ეტაპი 2</span></div>
+      <div class="muted" style="line-height:1.6">რომელი პალეტი რომელ ოთახშია, რამდენი კგ. მიღების შემდეგ ჩაირთვება.</div>
+    </div></div>
+  </div>
+</div>
+
+<script>
+const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
+let sb=null, uid=null;
+function getSb(){ if(sb) return sb; try{ if(window.supabase&&supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
+function esc(t){ return String(t==null?'':t).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+
+async function doLogin(){
+  var e=document.getElementById('email').value.trim(), p=document.getElementById('pass').value, err=document.getElementById('loginErr');
+  err.textContent=''; var c=getSb(); if(!c){ err.textContent='ბიბლიოთეკა ვერ ჩაიტვირთა.'; return; }
+  try{ var r=await c.auth.signInWithPassword({email:e,password:p}); if(r.error){ err.textContent='❌ '+r.error.message; return; } uid=r.data.user.id; showApp(r.data.user.email); }
+  catch(ex){ err.textContent='❌ '+(ex.message||ex); }
+}
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+async function showApp(email){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('whoami').textContent=email||'—';
+  await loadRooms(); renderMap();
+}
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-t')===t); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.toggle('active', p.id==='p-'+t); });
+  if(t==='map') renderMap();
+}
+
+// ═══ 🗺️ ოთახების ზედხედი (cold_rooms — საერთო user_settings) ═══
+var COLS=12, ROWS=8, CELL=46, ROOMS=[], _draw=false, _drag=null;
+function roomKg(no){ return 0; }   // ეტაპი 2: ოთახში მოთავსებული პალეტების ჯამური კგ
+async function loadRooms(){
+  var s=getSb();
+  try{ if(s&&uid){ var r=await s.from('user_settings').select('sval').eq('user_id',uid).eq('skey','cold_rooms').maybeSingle(); if(r&&r.data&&r.data.sval){ ROOMS=JSON.parse(r.data.sval)||[]; return; } } }catch(e){}
+  try{ ROOMS=JSON.parse(localStorage.getItem('cold_rooms')||'[]')||[]; }catch(e){ ROOMS=[]; }
+}
+function saveRooms(){
+  try{ localStorage.setItem('cold_rooms', JSON.stringify(ROOMS)); }catch(e){}
+  var s=getSb(); try{ if(s&&uid) s.from('user_settings').upsert({user_id:uid,skey:'cold_rooms',sval:JSON.stringify(ROOMS),updated_at:new Date().toISOString()},{onConflict:'user_id,skey'}); }catch(e){}
+}
+function mapDrawToggle(btn){ _draw=!_draw; btn.textContent=_draw?'✏️ ხატვა ჩართულია — გეჭიროს და გაავლე':'✏️ ოთახის დახატვა'; btn.className=_draw?'green':'gold'; renderMap(); }
+function _cell(e){ var svg=document.getElementById('mapSvg'); if(!svg) return null; var rc=svg.getBoundingClientRect(); var x=Math.floor((e.clientX-rc.left)/rc.width*COLS), y=Math.floor((e.clientY-rc.top)/rc.height*ROWS); return {x:Math.max(0,Math.min(COLS-1,x)), y:Math.max(0,Math.min(ROWS-1,y))}; }
+function _updatePrev(){ var p=document.getElementById('mapPrev'); if(!p) return; if(!_drag){ p.style.display='none'; return; } var x=Math.min(_drag.x0,_drag.x1), y=Math.min(_drag.y0,_drag.y1), w=Math.abs(_drag.x1-_drag.x0)+1, h=Math.abs(_drag.y1-_drag.y0)+1; p.setAttribute('x',x*CELL+3); p.setAttribute('y',y*CELL+3); p.setAttribute('width',w*CELL-6); p.setAttribute('height',h*CELL-6); p.style.display=''; }
+function mapDown(e){ if(!_draw) return; e.preventDefault(); var c=_cell(e); if(!c) return; _drag={x0:c.x,y0:c.y,x1:c.x,y1:c.y}; _updatePrev(); }
+function mapMove(e){ if(!_draw||!_drag) return; var c=_cell(e); if(!c) return; _drag.x1=c.x; _drag.y1=c.y; _updatePrev(); }
+function mapUp(e){ if(!_draw||!_drag) return; var d=_drag; _drag=null;
+  var x=Math.min(d.x0,d.x1), y=Math.min(d.y0,d.y1), w=Math.abs(d.x1-d.x0)+1, h=Math.abs(d.y1-d.y0)+1;
+  var nextNo=ROOMS.reduce(function(m,r){ var n=parseInt(r.no,10); return (!isNaN(n)&&n>=m)?n+1:m; },1);
+  var no=prompt('ოთახის ნომერი/სახელი:', String(nextNo));
+  if(no!=null){ no=String(no).trim()||String(nextNo); ROOMS.push({no:no,x:x,y:y,w:w,h:h}); saveRooms(); }
+  renderMap();
+}
+function roomClick(i){ if(_draw) return; var r=ROOMS[i]; if(!r) return;
+  var a=prompt('ოთახი „'+r.no+'"\nახალი ნომერი (ცარიელი = უცვლელი), ან „DEL" წასაშლელად:',''); if(a==null) return; a=a.trim();
+  if(a.toUpperCase()==='DEL'){ if(confirm('ოთახი '+r.no+' წაიშალოს?')){ ROOMS.splice(i,1); saveRooms(); renderMap(); } return; }
+  if(a){ r.no=a; saveRooms(); renderMap(); }
+}
+function renderMap(){
+  var wrap=document.getElementById('mapWrap'); if(!wrap) return;
+  var W=COLS*CELL, H=ROWS*CELL, i;
+  var s='<svg id="mapSvg" viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:'+W+'px;border:1px solid #cdddee;border-radius:10px;background:#f6fafe;touch-action:none;cursor:'+(_draw?'crosshair':'pointer')+'">';
+  for(i=0;i<=COLS;i++) s+='<line x1="'+(i*CELL)+'" y1="0" x2="'+(i*CELL)+'" y2="'+H+'" stroke="#e3edf7"/>';
+  for(i=0;i<=ROWS;i++) s+='<line x1="0" y1="'+(i*CELL)+'" x2="'+W+'" y2="'+(i*CELL)+'" stroke="#e3edf7"/>';
+  ROOMS.forEach(function(r,idx){ var cx=r.x*CELL+r.w*CELL/2, cy=r.y*CELL+r.h*CELL/2, kg=roomKg(r.no);
+    s+='<g onclick="roomClick('+idx+')" style="cursor:pointer"><rect x="'+(r.x*CELL+3)+'" y="'+(r.y*CELL+3)+'" width="'+(r.w*CELL-6)+'" height="'+(r.h*CELL-6)+'" rx="8" fill="#dbeafe" stroke="#0369a1" stroke-width="1.5"/>'
+      +'<text x="'+cx+'" y="'+(cy-2)+'" text-anchor="middle" font-size="15" font-weight="800" fill="#0369a1">'+esc(r.no)+'</text>'
+      +'<text x="'+cx+'" y="'+(cy+15)+'" text-anchor="middle" font-size="11" fill="#2a5a8a">'+(Math.round(kg*10)/10)+' კგ</text></g>';
+  });
+  s+='<rect id="mapPrev" style="display:none" rx="8" fill="#bbf7d0" fill-opacity="0.5" stroke="#059669" stroke-width="1.5" stroke-dasharray="5 4"/>';
+  s+='</svg><div class="muted" style="margin-top:8px">ოთახები: <b>'+ROOMS.length+'</b>'+(ROOMS.length?' · ოთახზე დაჭერით — ნომერი/წაშლა':'')+'</div>';
+  wrap.innerHTML=s;
+}
+
+getSb();
+(async function(){ try{ var s=await sb.auth.getSession(); if(s&&s.data&&s.data.session&&s.data.session.user){ uid=s.data.session.user.id; showApp(s.data.session.user.email); } }catch(e){} })();
+</script>
+</body></html>
