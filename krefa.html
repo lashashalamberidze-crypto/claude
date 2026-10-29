@@ -269,6 +269,10 @@
       <label>📷 დააწკაპუნე აქ და ასკანერე QR ბარათი:</label>
       <input id="attScan" placeholder="ასკანერე QR ან აკრიფე ნომერი…" autocomplete="off" onkeydown="if(event.key==='Enter'){attRecord(this.value);this.value='';}">
       <div id="attFlash" style="font-size:.85rem;margin-top:6px;min-height:20px;color:#16a34a"></div>
+      <div class="row2" style="margin-top:8px;align-items:flex-end;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:8px 10px">
+        <div><label style="margin:0 0 3px">🚚 გამომტანის დღიური ხელფასი (₾)</label><input id="carrDaily" inputmode="decimal" placeholder="მაგ. 50" onchange="saveCarrierDaily(this.value)"></div>
+        <div class="muted" style="font-size:.74rem;flex:1">მოსვლის სკანზე ავტომატურად ეწერება. ნახევარი დღე → ცხრილში ✏️ კორექცია.</div>
+      </div>
       <div class="row2" style="margin-top:6px;align-items:flex-end">
         <div><label>თარიღი</label><input type="date" id="attDate" style="width:auto" onchange="renderAttendance()"></div>
         <button class="sec" style="width:auto;padding:9px 13px" onclick="document.getElementById('attDate').value='';renderAttendance()">დღეს</button>
@@ -279,7 +283,7 @@
         <button class="sec" style="width:auto;padding:8px 13px" onclick="exportAttExcel()">📊 Excel</button>
         <button class="sec" style="width:auto;padding:8px 13px" onclick="printAtt()">🖨️ ბეჭდვა</button>
       </div>
-      <div style="overflow-x:auto;margin-top:6px"><table><thead><tr><th>#</th><th>სახელი</th><th>როლი</th><th>🟢 მოსვ.</th><th>🔴 წასვ.</th><th></th></tr></thead><tbody id="attBody"><tr><td colspan="6" class="muted">ჯერ არავინ დარეგისტრირდა</td></tr></tbody></table></div>
+      <div style="overflow-x:auto;margin-top:6px"><table><thead><tr><th>#</th><th>სახელი</th><th>როლი</th><th>🟢 მოსვ.</th><th>🔴 წასვ.</th><th>💵 ₾</th></tr></thead><tbody id="attBody"><tr><td colspan="6" class="muted">ჯერ არავინ დარეგისტრირდა</td></tr></tbody></table></div>
     </div>
   </div>
 
@@ -339,6 +343,8 @@ async function showApp(email){
   await loadBonuses();
   await loadSmsMap();
   await loadAttendance();
+  await loadCarrierPay();
+  await loadCarrierDaily();
   await loadPlantation();
   await loadTgLinks();
   await tgLoadMode();
@@ -639,6 +645,13 @@ async function loadSessions(){
     if(x.date===td){ TODAY_KG+=w; TODAY_BOX++; }
   });
 }
+// ── 🚚 გამომტანის დღიური ფიქსირებული ხელფასი ──
+var CARRPAY={}, CARRIER_DAILY=0;   // CARRPAY['uid|date']=თანხა · CARRIER_DAILY=გლობ. დღიური
+async function loadCarrierPay(){ CARRPAY={}; try{ var r=await sb.from('krepa_carrier_pay').select('carrier_uid,date,amount').eq('user_id',uid); if(!r.error){ (r.data||[]).forEach(function(x){ CARRPAY[String(x.carrier_uid)+'|'+(x.date||'')]=(+x.amount||0); }); } }catch(e){} }
+async function loadCarrierDaily(){ try{ var r=await sb.from('user_settings').select('sval').eq('user_id',uid).eq('skey','carrier_daily').maybeSingle(); if(r&&r.data&&r.data.sval!=null) CARRIER_DAILY=parseFloat(r.data.sval)||0; }catch(e){} var el=document.getElementById('carrDaily'); if(el) el.value=CARRIER_DAILY||''; }
+function saveCarrierDaily(v){ CARRIER_DAILY=parseFloat(v)||0; try{ if(sb&&uid) sb.from('user_settings').upsert({user_id:uid,skey:'carrier_daily',sval:String(CARRIER_DAILY),updated_at:new Date().toISOString()},{onConflict:'user_id,skey'}); }catch(e){} }
+async function carrierPaySet(cuid,date,amount){ var a=Math.round((+amount||0)*100)/100; CARRPAY[cuid+'|'+date]=a; try{ await sb.from('krepa_carrier_pay').upsert({user_id:uid,carrier_uid:cuid,date:date,amount:a,updated_at:new Date().toISOString()},{onConflict:'user_id,carrier_uid,date'}); }catch(e){} renderAttendance(); }
+function editCarrierPay(cuid,date){ var cur=CARRPAY[cuid+'|'+date]; var v=prompt('🚚 გამომტანის ხელფასი ამ დღეს (₾) — ნახევარი დღე/კორექცია:', (cur!=null?cur:CARRIER_DAILY)); if(v==null) return; carrierPaySet(cuid,date,parseFloat(v)||0); }
 async function loadBonuses(){ BONUSMAP={}; BONUSBYDATE={}; try{ var r=await sb.from('krepa_bonuses').select('picker_uid,bonus_date,amount').eq('user_id',uid); if(!r.error){ (r.data||[]).forEach(function(x){ var k=String(x.picker_uid); BONUSMAP[k]=(BONUSMAP[k]||0)+(+x.amount||0); BONUSBYDATE[k+'|'+(x.bonus_date||'')]=(BONUSBYDATE[k+'|'+(x.bonus_date||'')]||0)+(+x.amount||0); }); } }catch(e){} }
 async function loadPayroll(){ PAYMAP={}; try{ var r=await sb.from('krepa_payroll').select('picker_uid,amount').eq('user_id',uid); if(!r.error){ (r.data||[]).forEach(function(x){ PAYMAP[String(x.picker_uid)]=(+x.amount||0); }); } }catch(e){} }
 async function loadSmsMap(){ SMSMAP={}; var from=0,STEP=1000; try{ while(true){ var r=await sb.from('sms_log').select('picker_id,picker_name,status').eq('user_id',uid).range(from,from+STEP-1); if(r.error)break; var d=r.data||[]; d.forEach(function(x){ var k=x.picker_id||('n:'+(x.picker_name||'')); if(!SMSMAP[k])SMSMAP[k]={sent:0,deliv:0,fail:0}; var s=SMSMAP[k]; if(x.status==='failed')s.fail++; else s.sent++; if(x.status==='delivered')s.deliv++; }); if(d.length<STEP)break; from+=STEP; if(from>100000)break; } }catch(e){} }
@@ -1499,6 +1512,14 @@ async function attRecord(raw){
     else { var rec={ id:'att_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), user_id:uid, picker_uid:p.uid, picker_name:pName(p), role:p.role||'picker', type:attMode, date:date, time:time, ts:now.toISOString() }; ATT.push(rec); await sb.from('attendance').upsert(rec,{onConflict:'id'}); }
   }catch(e){ if(fl){ fl.textContent='❌ '+(e.message||e); fl.style.color='#dc2626'; } return; }
   if(fl){ fl.textContent=(attMode==='in'?'🟢 მოსვლა':'🔴 წასვლა')+': '+(p.role==='carrier'?'🚚':'🧺')+' '+pName(p)+' · '+time; fl.style.color='#16a34a'; }
+  // 🚚 გამომტანი + მოსვლა → ავტომ. დღის ფიქსირებული ხელფასი (თუ ჯერ არ არის ჩაწერილი)
+  if(attMode==='in' && p.role==='carrier'){
+    var _k=p.uid+'|'+date;
+    if(CARRPAY[_k]==null){
+      if(CARRIER_DAILY>0){ carrierPaySet(p.uid,date,CARRIER_DAILY); if(fl) fl.textContent+=' · 💵 +'+CARRIER_DAILY+'₾'; }
+      else if(fl){ fl.textContent+=' · ⚠️ დღიური ხელფასი ჯერ არ მითითებულა'; }
+    }
+  }
   renderAttendance();
 }
 function renderAttendance(){
@@ -1509,11 +1530,12 @@ function renderAttendance(){
   var list=ord.map(function(u){ return g[u]; });
   var nIn=list.filter(function(x){return x.tin;}).length, nOut=list.filter(function(x){return x.tout;}).length;
   var nPick=list.filter(function(x){return x.role!=='carrier';}).length, nCarr=list.filter(function(x){return x.role==='carrier';}).length;
-  var st=document.getElementById('attStats'); if(st) st.innerHTML=stat('s-green','🟢 მოსული',nIn,date)+stat('s-orange','🔴 წასული',nOut,'')+stat('s-blue','🧺 მკრეფავი',nPick,'')+stat('s-purple','🚚 გამომტანი',nCarr,'');
+  var carrPayTot=0; list.forEach(function(x){ if(x.role==='carrier'){ var a=CARRPAY[x.uid+'|'+date]; if(a!=null) carrPayTot+=a; } });
+  var st=document.getElementById('attStats'); if(st) st.innerHTML=stat('s-green','🟢 მოსული',nIn,date)+stat('s-orange','🔴 წასული',nOut,'')+stat('s-blue','🧺 მკრეფავი',nPick,'')+stat('s-purple','🚚 გამომტანი',nCarr,'')+(nCarr?stat('s-green money','💵 გამომტ. ხელფასი',(Math.round(carrPayTot*100)/100).toLocaleString('en-US')+' ₾','დღეს'):'');
   renderAttBrig(list);
   var b=document.getElementById('attBody'); if(!b) return;
   if(!list.length){ b.innerHTML='<tr><td colspan="6" class="muted">ამ დღეს არავინ დარეგისტრირდა</td></tr>'; return; }
-  b.innerHTML=list.map(function(x,i){ return '<tr><td>'+(i+1)+'</td><td><b>'+esc(x.name)+'</b></td><td>'+(x.role==='carrier'?'<span class="badge b-carry">🚚 გამომტანი</span>':'<span class="badge b-pick">🧺 მკრეფავი</span>')+'</td><td class="ok">'+(x.tin||'—')+'</td><td class="warn">'+(x.tout||'—')+'</td><td></td></tr>'; }).join('');
+  b.innerHTML=list.map(function(x,i){ var _cp=(x.role==='carrier')?('<span style="cursor:pointer" onclick="editCarrierPay(\''+esc(x.uid)+'\',\''+date+'\')" title="რედაქტირება (ნახევარი დღე)"><b style="color:#16a34a">'+((CARRPAY[x.uid+'|'+date]!=null)?CARRPAY[x.uid+'|'+date]:0)+'</b> ₾ ✏️</span>'):''; return '<tr><td>'+(i+1)+'</td><td><b>'+esc(x.name)+'</b></td><td>'+(x.role==='carrier'?'<span class="badge b-carry">🚚 გამომტანი</span>':'<span class="badge b-pick">🧺 მკრეფავი</span>')+'</td><td class="ok">'+(x.tin||'—')+'</td><td class="warn">'+(x.tout||'—')+'</td><td>'+_cp+'</td></tr>'; }).join('');
 }
 // ── რომელი ბრიგადირის ჯგუფი მოვიდა (მხოლოდ მოსულები, ბრიგადირის მიხედვით) ──
 function renderAttBrig(list){

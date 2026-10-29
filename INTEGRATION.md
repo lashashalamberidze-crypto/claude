@@ -66,6 +66,14 @@ ROW:<row_id>
 - `attendance`: `id, user_id, picker_uid, picker_name, role, type(მოსვლა/წასვლა), date, time, ts`
 - `sacwyobi_shipments`: `id, user_id, date, trailer, driver, dest, pallets, gross, net, note`
 
+## 🚚 გამომტანის დღიური ხელფასი
+- გლობალური ფიქსირებული დღიური თანხა: `user_settings` skey=`carrier_daily`.
+- ცხრილი `krepa_carrier_pay` (`user_id, carrier_uid, date, amount`, PK სამივეზე) — `sql/carrier_pay.sql`.
+- `krefa` რეგისტრაციაში: გამომტანის **მოსვლის** QR-სკანზე → ავტომ. ჩაიწერება იმ დღის `carrier_daily` (`attRecord` → `carrierPaySet`).
+- ინდივ. კორექცია (ნახევარი დღე): ცხრილში ✏️ (`editCarrierPay`).
+- ჩანს: რეგისტრაციის სტატ-ბარათი „💵 გამომტ. ხელფასი" + ცხრილის სვეტი.
+- ⏳ TODO: ანგარიშის/Excel-ის ჯამებში ჩართვა.
+
 ## 📨 შეტყობინებები
 - Telegram: `telegram-send` ფუნქცია → დაკავშირებულ მკრეფავს. ლოგი `sms_log` (`channel='telegram'`).
 - SMS: `smsSend` (proxy). ტესტ-რეჟიმი: `window.__NOTIFY_OFF=true` → არავის არ მიდის.
@@ -77,4 +85,4 @@ ROW:<row_id>
 - ანგარიშებში/Excel-ში ბრიგადირი/ჯგუფი ჩანს მკრეფავთან.
 
 ---
-_ბოლო განახლება: 2026-10-29 — awonva სკანის ფიქსი, უნიკალური ყუთის სტიკერი, პალეტის ფორმატის გაერთიანება, ბრიგადირი (datalist + „ვინ მოვიდა")._
+_ბოლო განახლება: 2026-10-29 — awonva სკანის ფიქსი, უნიკალური ყუთის სტიკერი, პალეტის ფორმატი, ბრიგადირი (datalist + „ვინ მოვიდა"), ანგარიშის დეშბორდი სიმეტრიული, გამომტანის დღიური ხელფასი (ავტო მოსვლის სკანზე)._
