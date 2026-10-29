@@ -149,12 +149,25 @@
   <!-- TABS -->
   <div class="sw-tabs">
     <button class="sw-tab active" onclick="swTab('stock',this)">📦 მარაგი</button>
+    <button class="sw-tab" onclick="swTab('map',this)">🗺️ რუკა</button>
     <button class="sw-tab" onclick="swTab('income',this)">📥 მიღება</button>
     <button class="sw-tab" onclick="swTab('temp',this)">🌡️ ტემპ.</button>
     <button class="sw-tab" onclick="swTab('history',this)">📋 ისტორია</button>
     <button class="sw-tab" onclick="swTab('sales',this)">💰 გაყიდვები</button>
     <button class="sw-tab" onclick="swTab('purchases',this)">🛒 შესყიდვა</button>
     <button class="sw-tab" onclick="swTab('ship',this)">🚚 გამგზავრება</button>
+  </div>
+
+  <!-- ── TAB: MAP (ზედხედი) ── -->
+  <div id="sw-page-map" class="sw-page">
+    <div class="sw-card">
+      <div class="sw-card-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <span>🗺️ მაცივრის ზედხედი — ოთახები</span>
+        <button class="sw-btn sw-btn-gold" id="sw-map-draw" style="padding:6px 13px;font-size:.78rem" onclick="swMapDrawToggle(this)">✏️ ოთახის დახატვა</button>
+      </div>
+      <div class="muted" style="font-size:.78rem;margin-bottom:10px">„ოთახის დახატვა" ჩართე → ბადეზე <b>დააჭირე და გაავლე</b> → ოთახი დაიხატება → დაარქვი ნომერი. მზა ოთახზე დაჭერით — ნომერი/წაშლა. (კგ თითო ოთახზე — შემდეგ ეტაპზე, პალეტების მოთავსების შემდეგ.)</div>
+      <div id="sw-map-wrap" onpointerdown="swMapDown(event)" onpointermove="swMapMove(event)" onpointerup="swMapUp(event)" onpointerleave="swMapUp(event)" style="touch-action:none"></div>
+    </div>
   </div>
 
   <!-- ── TAB: STOCK ── -->
@@ -773,9 +786,10 @@ function swTab(id, el){
   if(el) el.classList.add('active');
   else {
     const tabs = document.querySelectorAll('.sw-tab');
-    const map = {stock:0,income:1,temp:2,history:3,sales:4,purchases:5,ship:6};
+    const map = {stock:0,map:1,income:2,temp:3,history:4,sales:5,purchases:6,ship:7};
     if(map[id]!==undefined && tabs[map[id]]) tabs[map[id]].classList.add('active');
   }
+  if(id==='map')       swRenderMap();
   if(id==='stock')     swRenderStock();
   if(id==='history')   swRenderHistory();
   if(id==='temp')      swRenderTempLog();
@@ -795,6 +809,55 @@ function swNotify(msg, isErr){
   setTimeout(()=>n.classList.remove('show'), 3200);
 }
 window.swNotify = swNotify;
+
+// ═══════════ 🗺️ მაცივრის ზედხედი — ოთახები (ეტაპი 1) ═══════════
+var SW_COLS=12, SW_ROWS=8, SW_CELL=46, SW_ROOMS=[], _swRoomsLoaded=false, _swDraw=false, _swDrag=null;
+function _swEsc(t){ return String(t==null?'':t).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+function swRoomKg(no){ return 0; }   // ეტაპი 2: ოთახში მოთავსებული პალეტების ჯამური კგ
+async function swLoadRooms(){
+  var s=getSb();
+  try{ if(s&&uid){ var r=await s.from('user_settings').select('sval').eq('user_id',uid).eq('skey','cold_rooms').maybeSingle(); if(r&&r.data&&r.data.sval){ SW_ROOMS=JSON.parse(r.data.sval)||[]; _swRoomsLoaded=true; return; } } }catch(e){}
+  try{ SW_ROOMS=JSON.parse(localStorage.getItem('cold_rooms')||'[]')||[]; }catch(e){ SW_ROOMS=[]; }
+  _swRoomsLoaded=true;
+}
+function swSaveRooms(){
+  try{ localStorage.setItem('cold_rooms', JSON.stringify(SW_ROOMS)); }catch(e){}
+  var s=getSb(); try{ if(s&&uid) s.from('user_settings').upsert({user_id:uid,skey:'cold_rooms',sval:JSON.stringify(SW_ROOMS),updated_at:new Date().toISOString()},{onConflict:'user_id,skey'}); }catch(e){}
+}
+function swMapDrawToggle(btn){ _swDraw=!_swDraw; btn.textContent=_swDraw?'✏️ ხატვა ჩართულია — გეჭიროს და გაავლე':'✏️ ოთახის დახატვა'; btn.classList.toggle('sw-btn-green',_swDraw); _swMapRender(); }
+function _swCell(e){ var svg=document.getElementById('sw-map-svg'); if(!svg) return null; var rc=svg.getBoundingClientRect(); var x=Math.floor((e.clientX-rc.left)/rc.width*SW_COLS), y=Math.floor((e.clientY-rc.top)/rc.height*SW_ROWS); return {x:Math.max(0,Math.min(SW_COLS-1,x)), y:Math.max(0,Math.min(SW_ROWS-1,y))}; }
+function _swUpdatePrev(){ var p=document.getElementById('sw-map-prev'); if(!p) return; if(!_swDrag){ p.style.display='none'; return; } var x=Math.min(_swDrag.x0,_swDrag.x1), y=Math.min(_swDrag.y0,_swDrag.y1), w=Math.abs(_swDrag.x1-_swDrag.x0)+1, h=Math.abs(_swDrag.y1-_swDrag.y0)+1; p.setAttribute('x',x*SW_CELL+3); p.setAttribute('y',y*SW_CELL+3); p.setAttribute('width',w*SW_CELL-6); p.setAttribute('height',h*SW_CELL-6); p.style.display=''; }
+function swMapDown(e){ if(!_swDraw) return; e.preventDefault(); var c=_swCell(e); if(!c) return; _swDrag={x0:c.x,y0:c.y,x1:c.x,y1:c.y}; _swUpdatePrev(); }
+function swMapMove(e){ if(!_swDraw||!_swDrag) return; var c=_swCell(e); if(!c) return; _swDrag.x1=c.x; _swDrag.y1=c.y; _swUpdatePrev(); }
+function swMapUp(e){ if(!_swDraw||!_swDrag) return; var d=_swDrag; _swDrag=null;
+  var x=Math.min(d.x0,d.x1), y=Math.min(d.y0,d.y1), w=Math.abs(d.x1-d.x0)+1, h=Math.abs(d.y1-d.y0)+1;
+  var nextNo=SW_ROOMS.reduce(function(m,r){ var n=parseInt(r.no,10); return (!isNaN(n)&&n>=m)?n+1:m; },1);
+  var no=prompt('ოთახის ნომერი/სახელი:', String(nextNo));
+  if(no!=null){ no=String(no).trim()||String(nextNo); SW_ROOMS.push({no:no,x:x,y:y,w:w,h:h}); swSaveRooms(); }
+  _swMapRender();
+}
+function swRoomClick(i){ if(_swDraw) return; var r=SW_ROOMS[i]; if(!r) return;
+  var a=prompt('ოთახი „'+r.no+'"\nახალი ნომერი (ცარიელი = უცვლელი), ან „DEL" წასაშლელად:',''); if(a==null) return; a=a.trim();
+  if(a.toUpperCase()==='DEL'){ if(confirm('ოთახი '+r.no+' წაიშალოს?')){ SW_ROOMS.splice(i,1); swSaveRooms(); _swMapRender(); } return; }
+  if(a){ r.no=a; swSaveRooms(); _swMapRender(); }
+}
+async function swRenderMap(){ if(!_swRoomsLoaded){ await swLoadRooms(); } _swMapRender(); }
+function _swMapRender(){
+  var wrap=document.getElementById('sw-map-wrap'); if(!wrap) return;
+  var W=SW_COLS*SW_CELL, H=SW_ROWS*SW_CELL, i;
+  var s='<svg id="sw-map-svg" viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:'+W+'px;border:1px solid #cdddee;border-radius:10px;background:#f6fafe;touch-action:none;cursor:'+(_swDraw?'crosshair':'pointer')+'">';
+  for(i=0;i<=SW_COLS;i++) s+='<line x1="'+(i*SW_CELL)+'" y1="0" x2="'+(i*SW_CELL)+'" y2="'+H+'" stroke="#e3edf7"/>';
+  for(i=0;i<=SW_ROWS;i++) s+='<line x1="0" y1="'+(i*SW_CELL)+'" x2="'+W+'" y2="'+(i*SW_CELL)+'" stroke="#e3edf7"/>';
+  SW_ROOMS.forEach(function(r,idx){ var cx=r.x*SW_CELL+r.w*SW_CELL/2, cy=r.y*SW_CELL+r.h*SW_CELL/2, kg=swRoomKg(r.no);
+    s+='<g onclick="swRoomClick('+idx+')" style="cursor:pointer"><rect x="'+(r.x*SW_CELL+3)+'" y="'+(r.y*SW_CELL+3)+'" width="'+(r.w*SW_CELL-6)+'" height="'+(r.h*SW_CELL-6)+'" rx="8" fill="#dbeafe" stroke="#0369a1" stroke-width="1.5"/>'
+      +'<text x="'+cx+'" y="'+(cy-2)+'" text-anchor="middle" font-size="15" font-weight="800" fill="#0369a1" font-family="system-ui">'+_swEsc(r.no)+'</text>'
+      +'<text x="'+cx+'" y="'+(cy+15)+'" text-anchor="middle" font-size="11" fill="#2a5a8a" font-family="system-ui">'+(Math.round(kg*10)/10)+' კგ</text></g>';
+  });
+  s+='<rect id="sw-map-prev" style="display:none" rx="8" fill="#bbf7d0" fill-opacity="0.5" stroke="#059669" stroke-width="1.5" stroke-dasharray="5 4"/>';
+  s+='</svg><div class="muted" style="font-size:.76rem;margin-top:8px">ოთახები: <b>'+SW_ROOMS.length+'</b>'+(SW_ROOMS.length?' · ოთახზე დაჭერით — ნომერი/წაშლა':'')+'</div>';
+  wrap.innerHTML=s;
+}
+window.swMapDrawToggle=swMapDrawToggle; window.swMapDown=swMapDown; window.swMapMove=swMapMove; window.swMapUp=swMapUp; window.swRoomClick=swRoomClick; window.swRenderMap=swRenderMap;
 
 // ── STATS ──
 function swUpdateStats(){
