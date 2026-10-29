@@ -183,7 +183,7 @@ function _renderRoomModal(){
     +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><span class="pill">📦 '+kg+' კგ</span><span class="pill">🧺 '+bx+' ყუთი</span><span class="pill">🌡️ '+(tp?((+tp.temp)+'°C'):'—')+'</span></div>'
     // პალეტის სკანი
     +'<label>📷 პალეტის სკანი / კოდი</label>'
-    +'<input id="rmScan" placeholder="PAL001 — დაასკანერე ან აკრიფე + Enter" autocomplete="off" onkeydown="if(event.key===\'Enter\'){roomScanPallet(this.value);this.value=\'\';}">'
+    +'<div class="row2"><input id="rmScan" placeholder="PAL001 — სკანი ან აკრიფე" autocomplete="off" onkeydown="if(event.key===\'Enter\'){roomScanPallet(this.value);this.value=\'\';}"><button class="green" style="flex:0 0 auto;white-space:nowrap" onclick="var i=document.getElementById(\'rmScan\');roomScanPallet(i.value);i.value=\'\';">➕ დამატება</button></div>'
     +'<div id="rmScanMsg" class="muted" style="margin-top:4px"></div>'
     // ხელით
     +'<label style="margin-top:12px">✏️ ხელით შეყვანა</label>'
