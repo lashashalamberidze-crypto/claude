@@ -1,0 +1,74 @@
+# AgroInTechSol — მოდულების დამაკავშირებელი კონტრაქტები
+
+> ეს ფაილი ინახავს „ხელშეკრულებებს" მოდულებს შორის — რა ფორმატებია, ვინ რას ბეჭდავს/კითხულობს/წერს.
+> **ცვლილების შეტანამდე წაიკითხე. ცვლილების შემდეგ განაახლე.**
+> deploy-ში არ იტვირთება (`*.md` გამორიცხულია `deploy.yml`-ში).
+
+## მოდულები (ფაილები)
+| ფაილი | დანიშნულება |
+|---|---|
+| `index.html` | მთავარი აპი (dashboard, ზონირება, ძველი per-box სტიკერები) |
+| `krefa.html` | **მკრეფავების მოდული** — მკრეფავი/გამომტანი, QR სტიკერები, ბრიგადირი, ანგარიში, რეგისტრაცია, შეტყობინებები |
+| `awonva.html` | **აწონვა** — ყუთის სკანი + წონა → `harvest_sessions` |
+| `shemowmeba.html` | **ყუთის/პალეტის შემოწმება** — სკანით შემოწმება, პალეტზე მიბმა, კოდის გასწორება |
+| `sacwyobi.html` | საწყობი/სამაცივრე, გამგზავრება (shipments) |
+| `inventari.html` | ინვენტარი |
+
+## 🔑 კოდის ფორმატები (ყველა მოდულმა უნდა დაიცვას)
+
+### ყუთის სტიკერი (QR)
+```
+uid|თარიღი|რიგი|კვარტალი|ყუთი#|shortCode
+მაგ:  P1730…|2026-10-29|||001|AB7K9M
+```
+- **უნიკალურია თითო ყუთზე** (`shortCode` არ მეორდება).
+- ბოლო სეგმენტი (`|`-ის მიხედვით) = `shortCode` — ეს იკითხება ყველგან (`lastSeg()`).
+- პირველი სეგმენტი = მკრეფავის `uid` — აქედან ცნობენ მკრეფავს (`resolveByAny`).
+- **ბეჭდავს:** `krefa.html → genBoxStickers()` (აგრეთვე `index.html → generateStickers()`).
+- **კითხულობს/ინახავს:** `awonva.html` (აწონვისას → `harvest_sessions.code`=fullCode, `.short_code`=shortCode).
+- **კითხულობს:** `shemowmeba.html` (`lastSeg`/`short_code`-ით).
+
+### პალეტის კოდი (QR)
+```
+PAL001            ← krefa-ს ახალი ფორმატი (pref + ციფრები)
+PAL-######-####   ← ძველი ფორმატი (ჯერ კიდევ ვალიდურია)
+```
+- **`palOk()` იღებს ორივეს:** `/^PAL-\d{6}-\d{4}$/i || /^[A-Z]{2,6}\d{1,6}$/i`.
+- **ბეჭდავს:** `krefa.html → genPalletQr()` (`PAL`+ციფრები).
+- **კითხულობს:** `awonva.html`, `shemowmeba.html`.
+
+### რიგის კოდი (QR)
+```
+ROW:<row_id>
+```
+- **ბეჭდავს:** `krefa.html → genRowQr()`.
+- **კითხულობს:** `awonva.html`, `shemowmeba.html` (აყენებს ზონა/რიგს).
+
+### მკრეფავის QR / იდენტიფიკაცია
+- მკრეფავის ბარათი QR = `uid`. `resolveByAny` პოულობს `uid`-ით ან `short_code`-ით.
+- ახალ მკრეფავს: `short_code = uid` (default).
+
+## ⚖️ აწონვის ლოგიკა (awonva.html)
+- სკანი (სტიკერი `|`-ით) → ინახება **ზუსტად** დასკანერებული `shortCode`. `entry_mode='სკანი'`.
+- უსტიკერო → `genCode()` ახალი კოდი, ჩანს დიდად, ამწონველი აწერს ყუთს. `entry_mode='ხელით'`.
+- #️⃣ ნუმერაცია → `ნომერი-თარიღი-რიგი`.
+- ⚠️ **აღარ არის** 📦 „პალეტით" ტაბი (წონას შემთხვევით არიგებდა — ამოღებულია).
+
+## 📦 პალეტზე მიბმა (shemowmeba.html → „პალეტის გასწორება")
+- ასკანერებ პალეტს (`palOk`) → ასკანერებ ყუთებს → `harvest_sessions.pallet_code`-ს სვამს `id`-ით.
+- პალეტის სკანი → `loadPalletContents()` აჩვენებს ვისი/რამდენი კგ (რეალური წონით).
+
+## 🗄️ ბაზის ცხრილები (ძირითადი ველები)
+- `krepa_pickers`: `uid, user_id, num, name/firstName/lastName, phone, id(პ/ნ), address, bank, short_code, role('picker'|'carrier'), group_name, brigadier, brigadier_phone`
+- `harvest_sessions`: `id, user_id, picker_id(uid), picker_name, phone, code, short_code, pallet_code, weight/kg, price, earned, date, time, row_num, quarter, entry_mode, source`
+- `telegram_links`: `user_id, phone, chat_id, name` · `telegram_prefs`: `user_id, mode(off|daily|each)`
+- `sms_log`: `+ channel('sms'|'telegram')`
+- `attendance`: `id, user_id, picker_uid, picker_name, role, type(მოსვლა/წასვლა), date, time, ts`
+- `sacwyobi_shipments`: `id, user_id, date, trailer, driver, dest, pallets, gross, net, note`
+
+## 📨 შეტყობინებები
+- Telegram: `telegram-send` ფუნქცია → დაკავშირებულ მკრეფავს. ლოგი `sms_log` (`channel='telegram'`).
+- SMS: `smsSend` (proxy). ტესტ-რეჟიმი: `window.__NOTIFY_OFF=true` → არავის არ მიდის.
+
+---
+_ბოლო განახლება: 2026-10-29 — awonva სკანის ფიქსი, უნიკალური ყუთის სტიკერი, პალეტის ფორმატის გაერთიანება._
