@@ -117,8 +117,8 @@
     </div>
   </div>
 
-  <!-- STATS (colorful gradient cards) -->
-  <div class="sw-stats">
+  <!-- STATS (colorful gradient cards) — ძველი; ახალ გაყიდვას თავისი სტატი აქვს -->
+  <div class="sw-stats" style="display:none">
     <div class="stat s-green">
       <div class="lbl">🧊 სულ მარაგი (კგ)</div>
       <div class="val" id="sw-total-kg">0</div>
@@ -147,15 +147,20 @@
 
   <!-- TABS -->
   <div class="sw-tabs">
-    <button class="sw-tab active" onclick="swTab('stock',this)">📦 მარაგი</button>
-    <button class="sw-tab" onclick="swTab('history',this)">📋 ისტორია</button>
-    <button class="sw-tab" onclick="swTab('sales',this)">💰 გაყიდვები</button>
+    <button class="sw-tab active" onclick="swTab('newsale',this)">💰 გაყიდვა</button>
     <button class="sw-tab" onclick="swTab('purchases',this)">🛒 შესყიდვა</button>
     <button class="sw-tab" onclick="swTab('ship',this)">🚚 გამგზავრება</button>
+    <button class="sw-tab" onclick="swTab('sales',this)">📒 ძველი გაყიდვა</button>
+    <button class="sw-tab" onclick="swTab('history',this)">📋 ისტორია</button>
+  </div>
+
+  <!-- ── TAB: NEW SALE (💰 გაყიდვა — რეალიზაცია) ── -->
+  <div id="sw-page-newsale" class="sw-page active">
+    <div class="sw-card"><div id="cs-body"><div class="muted">იტვირთება…</div></div></div>
   </div>
 
   <!-- ── TAB: STOCK ── -->
-  <div id="sw-page-stock" class="sw-page active">
+  <div id="sw-page-stock" class="sw-page">
     <div class="sw-card">
       <div class="sw-card-title" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <span>📦 მიმდინარე მარაგი — რა დევს მაცივარში</span>
@@ -738,6 +743,7 @@ async function initSacwyobiFromHub(){
     }catch(_e){ console.warn('initSacwyobi cloud', _e); }
   }
   swUpdateStats(); swRenderStock(); swRenderTempLog(); swRenderHistory(); swBuildContactLists();
+  try{ await csLoadAll(); csRender(); }catch(e){ console.warn('cs load', e); }
   // auto-fill old sale/purchase prices from gv_* + load remembered contacts, then re-render
   swRenderShip();
   // auto-fill old sale/purchase prices from gv_* + load remembered contacts, then re-render
@@ -770,9 +776,10 @@ function swTab(id, el){
   if(el) el.classList.add('active');
   else {
     const tabs = document.querySelectorAll('.sw-tab');
-    const map = {stock:0,history:1,sales:2,purchases:3,ship:4};
+    const map = {newsale:0,purchases:1,ship:2,sales:3,history:4,stock:9};
     if(map[id]!==undefined && tabs[map[id]]) tabs[map[id]].classList.add('active');
   }
+  if(id==='newsale')   csRender();
   if(id==='stock')     swRenderStock();
   if(id==='history')   swRenderHistory();
   if(id==='temp')      swRenderTempLog();
@@ -792,6 +799,74 @@ function swNotify(msg, isErr){
   setTimeout(()=>n.classList.remove('show'), 3200);
 }
 window.swNotify = swNotify;
+
+// ═══════════ 💰 ახალი გაყიდვა (რეალიზაცია) — პირდაპირი + მაცივრიდან → ვალი ═══════════
+var CS_STOCK=[], CS_SALES=[], CS_ROOMS=[];
+function csEsc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function _csToday(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function csRoomKg(no){ var k=0; CS_STOCK.forEach(function(x){ if(String(x.room_no)===String(no)) k+=(+x.kg||0); }); return Math.round(k*10)/10; }
+async function csLoadAll(){
+  var s=getSb(); if(!s||!uid) return;
+  try{ var r=await s.from('cold_stock').select('*').eq('user_id',uid); if(!r.error) CS_STOCK=r.data||[]; }catch(e){}
+  try{ var r2=await s.from('cold_sales').select('*').eq('user_id',uid).order('date',{ascending:false}); if(!r2.error) CS_SALES=r2.data||[]; }catch(e){}
+  try{ var r3=await s.from('user_settings').select('sval').eq('user_id',uid).eq('skey','cold_rooms').maybeSingle(); if(r3&&r3.data&&r3.data.sval) CS_ROOMS=JSON.parse(r3.data.sval)||[]; }catch(e){}
+}
+function csRender(){
+  var el=document.getElementById('cs-body'); if(!el) return;
+  var totKg=0,totAmt=0,totPaid=0; CS_SALES.forEach(function(x){ totKg+=(+x.kg||0); totAmt+=(+x.amount||0); totPaid+=(+x.paid_amount||0); });
+  var owed=totAmt-totPaid;
+  var byB={}; CS_SALES.forEach(function(x){ var b=(x.buyer||'—'); if(!byB[b])byB[b]={amt:0,paid:0}; byB[b].amt+=(+x.amount||0); byB[b].paid+=(+x.paid_amount||0); });
+  var debt=Object.keys(byB).map(function(b){ return {b:b,d:byB[b].amt-byB[b].paid}; }).filter(function(x){ return x.d>0.009; }).sort(function(a,b){ return b.d-a.d; });
+  var h='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">'
+    +'<div class="stat s-green" style="flex:1;min-width:120px"><div class="lbl">📤 გაყიდული კგ</div><div class="val">'+totKg.toFixed(1)+'</div></div>'
+    +'<div class="stat s-blue money" style="flex:1;min-width:120px"><div class="lbl">💰 შემოსავალი ₾</div><div class="val">'+totAmt.toFixed(0)+'</div></div>'
+    +'<div class="stat s-red money" style="flex:1;min-width:120px"><div class="lbl">🔴 ვალი (მოსაცემი) ₾</div><div class="val">'+owed.toFixed(0)+'</div></div></div>';
+  h+='<button class="sw-btn sw-btn-gold" onclick="csNewSale()">➕ ახალი გაყიდვა</button>';
+  if(debt.length){ h+='<div style="margin-top:14px"><div class="sw-card-title">🔴 ვალები (მოსაცემი)</div><div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>მყიდველი</th><th>ვალი ₾</th></tr></thead><tbody>'+debt.map(function(x){ return '<tr><td><b>'+csEsc(x.b)+'</b></td><td style="color:#dc2626;font-weight:800">'+x.d.toFixed(2)+'</td></tr>'; }).join('')+'</tbody></table></div></div>'; }
+  h+='<div style="margin-top:14px"><div class="sw-card-title">💰 გაყიდვები</div><div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>თარიღი</th><th>მყიდველი</th><th>რა</th><th>კგ</th><th>₾/კგ</th><th>სულ ₾</th><th>გადახდ.</th><th>ვალი</th><th></th></tr></thead><tbody>';
+  if(!CS_SALES.length){ h+='<tr><td colspan="9" class="sw-empty">— გაყიდვა არ არის —</td></tr>'; }
+  else CS_SALES.forEach(function(x){ var d=(+x.amount||0)-(+x.paid_amount||0); h+='<tr><td>'+csEsc(x.date||'')+'</td><td><b>'+csEsc(x.buyer||'—')+'</b></td><td>'+(x.source==='cold'?('🏭 ოთ.'+csEsc(x.room_no||'')):('🧺 '+csEsc(x.product||'პირდ.')))+'</td><td>'+(Math.round((+x.kg||0)*10)/10)+'</td><td>'+(+x.price||0)+'</td><td><b>'+(Math.round((+x.amount||0)*100)/100)+'</b></td><td style="color:#16a34a">'+(Math.round((+x.paid_amount||0)*100)/100)+'</td><td style="color:'+(d>0.009?'#dc2626':'#16a34a')+';font-weight:700">'+(d>0.009?d.toFixed(2):'✓')+'</td><td><span style="cursor:pointer;color:#dc2626" onclick="csDelSale(\''+csEsc(x.id)+'\')">🗑️</span></td></tr>'; });
+  h+='</tbody></table></div></div>';
+  el.innerHTML=h;
+}
+function csNewSale(){
+  var ov=document.createElement('div'); ov.id='csModal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:flex-start;justify-content:center;z-index:99999;padding:16px;overflow:auto';
+  var roomOpts=CS_ROOMS.map(function(r){ return '<option value="'+csEsc(r.no)+'">ოთახი '+csEsc(r.no)+' ('+csRoomKg(r.no)+' კგ)</option>'; }).join('')||'<option value="">— ოთახი არ არის —</option>';
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;margin:auto;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.25)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-size:1.05rem;color:#0369a1">➕ ახალი გაყიდვა</b><button class="sw-btn sw-btn-outline" style="padding:5px 11px" onclick="document.getElementById(\'csModal\').remove()">✕</button></div>'
+    +'<label>მყიდველი</label><input id="cs-buyer" placeholder="სახელი / კომპანია">'
+    +'<label style="margin-top:8px">წყარო</label><div style="display:flex;gap:8px"><label style="flex:1;display:flex;align-items:center;gap:6px;font-weight:600"><input type="radio" name="cs-src" value="direct" checked onchange="csSrcToggle()" style="width:auto"> 🧺 პირდაპირი</label><label style="flex:1;display:flex;align-items:center;gap:6px;font-weight:600"><input type="radio" name="cs-src" value="cold" onchange="csSrcToggle()" style="width:auto"> 🏭 მაცივრიდან</label></div>'
+    +'<div id="cs-direct"><label style="margin-top:8px">პროდუქტი</label><input id="cs-product" placeholder="მაგ. მოცვი"></div>'
+    +'<div id="cs-cold" style="display:none"><label style="margin-top:8px">ოთახი</label><select id="cs-room">'+roomOpts+'</select></div>'
+    +'<div style="display:flex;gap:8px;margin-top:8px"><div style="flex:1"><label>კგ</label><input id="cs-kg" type="number" step="0.1" placeholder="კგ" oninput="csCalc()"></div><div style="flex:1"><label>ფასი ₾/კგ</label><input id="cs-price" type="number" step="0.01" placeholder="₾/კგ" oninput="csCalc()"></div></div>'
+    +'<div style="display:flex;gap:8px;margin-top:8px"><div style="flex:1"><label>სულ ₾</label><input id="cs-amount" type="number" readonly style="background:#f1f5f9"></div><div style="flex:1"><label>გადახდილი ₾</label><input id="cs-paid" type="number" step="0.01" placeholder="0 = ვალში"></div></div>'
+    +'<button class="sw-btn sw-btn-green" style="width:100%;margin-top:12px" onclick="csConfirm()">✅ ჩაწერე გაყიდვა</button>'
+    +'<div id="cs-msg" style="font-size:.82rem;margin-top:8px"></div></div>';
+  document.body.appendChild(ov);
+}
+function csCalc(){ var kg=parseFloat(document.getElementById('cs-kg').value)||0, p=parseFloat(document.getElementById('cs-price').value)||0; document.getElementById('cs-amount').value=(Math.round(kg*p*100)/100)||''; }
+function csSrcToggle(){ var cold=document.querySelector('input[name="cs-src"]:checked').value==='cold'; document.getElementById('cs-cold').style.display=cold?'':'none'; document.getElementById('cs-direct').style.display=cold?'none':''; }
+async function csConfirm(){
+  var buyer=(document.getElementById('cs-buyer').value||'').trim(), src=document.querySelector('input[name="cs-src"]:checked').value;
+  var kg=parseFloat(document.getElementById('cs-kg').value)||0, price=parseFloat(document.getElementById('cs-price').value)||0, paid=parseFloat(document.getElementById('cs-paid').value)||0, msg=document.getElementById('cs-msg');
+  if(kg<=0){ msg.innerHTML='<span style="color:#dc2626">ჩაწერე კგ</span>'; return; }
+  var amount=Math.round(kg*price*100)/100, room='', product='';
+  if(src==='cold'){ room=document.getElementById('cs-room').value; if(!room){ msg.innerHTML='<span style="color:#dc2626">აირჩიე ოთახი</span>'; return; } var avail=csRoomKg(room); if(kg>avail+0.01){ msg.innerHTML='<span style="color:#dc2626">ოთახ '+room+'-ში მხოლოდ '+avail+' კგ-ია</span>'; return; } await csSubtractRoom(room,kg); }
+  else { product=(document.getElementById('cs-product').value||'').trim(); }
+  var rec={ id:'sale_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), user_id:uid, date:_csToday(), buyer:buyer, source:src, room_no:room, product:product, boxes:0, kg:kg, price:price, amount:amount, paid_amount:paid, note:'' };
+  CS_SALES.unshift(rec); var s=getSb(); try{ await s.from('cold_sales').upsert(rec,{onConflict:'id'}); }catch(e){}
+  var m=document.getElementById('csModal'); if(m) m.remove(); csRender();
+}
+async function csSubtractRoom(room,kg){
+  var entries=CS_STOCK.filter(function(x){ return String(x.room_no)===String(room); }).sort(function(a,b){ return (a.created_at||'')<(b.created_at||'')?-1:1; });
+  var remain=kg, s=getSb();
+  for(var i=0;i<entries.length && remain>0.001;i++){ var e=entries[i]; var take=Math.min(+e.kg||0, remain); e.kg=Math.round(((+e.kg||0)-take)*10)/10; remain-=take;
+    try{ if(e.kg<=0.001){ await s.from('cold_stock').delete().eq('user_id',uid).eq('id',e.id); CS_STOCK=CS_STOCK.filter(function(x){return x.id!==e.id;}); } else { await s.from('cold_stock').update({kg:e.kg}).eq('user_id',uid).eq('id',e.id); } }catch(ex){}
+  }
+}
+async function csDelSale(id){ if(!confirm('გაყიდვა წაიშალოს? (მარაგი არ დაბრუნდება)')) return; CS_SALES=CS_SALES.filter(function(x){ return x.id!==id; }); var s=getSb(); try{ await s.from('cold_sales').delete().eq('user_id',uid).eq('id',id); }catch(e){} csRender(); }
+window.csNewSale=csNewSale; window.csSrcToggle=csSrcToggle; window.csCalc=csCalc; window.csConfirm=csConfirm; window.csDelSale=csDelSale; window.csRender=csRender;
 
 // ═══════════ 🗺️ მაცივრის ზედხედი — ოთახები (ეტაპი 1) ═══════════
 var SW_COLS=12, SW_ROWS=8, SW_CELL=46, SW_ROOMS=[], _swRoomsLoaded=false, _swDraw=false, _swDrag=null;
