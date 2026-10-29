@@ -105,8 +105,9 @@
   </div>
 
   <div class="tabs">
-    <button class="tab" data-t="hand"   onclick="switchTab('hand')"><span class="ic">✋</span>ხელით</button>
-    <button class="tab" data-t="pallet" onclick="switchTab('pallet')"><span class="ic">📦</span>პალეტით</button>
+    <button class="tab" data-t="hand"   onclick="switchTab('hand')"><span class="ic">✋</span>სკანი+წონა</button>
+    <!-- 📦 „პალეტით" ტაბი ამოღებულია — წონას შემთხვევით არიგებდა (გამოგონილი კგ).
+         პალეტზე მიბმა ხდება ცალკე, სამაცივრეში (shemowmeba.html → „პალეტის გასწორება"). -->
     <button class="tab" data-t="num"    onclick="switchTab('num')"><span class="ic">#️⃣</span>ნუმერაცია</button>
     <button class="tab" data-t="auto"   onclick="switchTab('auto')"><span class="ic">⚡</span>ავტომატ.</button>
   </div>
@@ -114,7 +115,7 @@
   <div class="panel" id="p-hand">
     <div class="card">
       <h2>✋ ხელით / სკანერით</h2>
-      <label>📷 სკანი — მკრეფავი / პალეტი / რიგი</label>
+      <label>📷 ასკანერე ყუთის სტიკერი (QR) — ან მკრეფავი / რიგი</label>
       <input id="hScan" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="დაასკანერე ან აკრიფე კოდი…" onkeydown="if(event.key==='Enter')handScan()">
       <div id="hScanMsg" class="muted" style="margin-top:4px"></div>
 
@@ -224,13 +225,15 @@ let sb=null, uid=null, PICKERS=[], NUMMAP={}, activeTab='num', TG_MODE='off';
 let boxes=[], lastW=[], queue=[], syncing=false, feed=[], numSeq={}, dedup={}, BLOCKS=[], ROWS=[], committedPallets={}, palCommitting=false;
 let smsSentBoxes={}, SMSCFG=null;
 let palPend={picker:null,quarter:'',row:'',_label:'',_isScan:false,_raw:''};
-let hChosen=null;
+let hChosen=null, hBox=null;   // hBox = ბოლო დასკანერებული ყუთის სტიკერის კოდი {code,short}
 
 function getSb(){ if(sb) return sb; try{ if(window.supabase && supabase.createClient){ sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return sb; }
 function _uuid(){ return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);}); }
 function _today(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 function _time(){ var d=new Date(); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2); }
 function genCode(){ var cs='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',c=''; for(var i=0;i<6;i++) c+=cs[Math.floor(Math.random()*cs.length)]; return c; }
+// ყუთის სტიკერის QR: uid|თარიღი|რიგი|კვარტ|ყუთი#|shortCode — ბოლო სეგმენტი = shortCode (ის იკითხება შემოწმებაშიც/პალეტზეც)
+function lastSeg(s){ var n=String(s==null?'':s).trim(); if(n.indexOf('|')>=0){ var p=n.split('|'); return p[p.length-1]; } return n; }
 function normPhone(p){ var d=String(p||'').replace(/\D/g,''); if(!d) return ''; if(d.indexOf('995')===0) return d; if(d.length===9) return '995'+d; return d; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function stat(cls,lbl,val,sub){ return '<div class="stat '+cls+'"><div class="lbl">'+lbl+'</div><div class="val">'+val+'</div><div class="sub">'+(sub||'')+'</div></div>'; }
@@ -359,7 +362,7 @@ function handSearch(){
 }
 function handPick(idx){ handPickObj(PICKERS[idx]); }
 function handPickObj(p){
-  if(!p) return; hChosen=p; document.getElementById('hRes').innerHTML=''; document.getElementById('hSearch').value='';
+  if(!p) return; hChosen=p; hBox=null; document.getElementById('hRes').innerHTML=''; document.getElementById('hSearch').value='';
   document.getElementById('hChosen').innerHTML='<div class="pkbox"><span class="no">'+(p.num!=null?('#'+p.num):'—')+'</span><span class="nm">'+esc(pName(p))+'</span><span class="x" onclick="hChosen=null;document.getElementById(\'hChosen\').innerHTML=\'\'">✕</span></div>';
 }
 function hValPal(){ var v=document.getElementById('hPal').value.trim(), el=document.getElementById('hPalVal'); if(!v){ el.innerHTML=''; return; } el.innerHTML=palOk(v)?'<span class="ok">✅ სწორი პალეტი</span>':'<span class="warn">❌ ფორმატი: PAL-XXXXXX-XXXX</span>'; }
@@ -373,7 +376,10 @@ function handScan(){
       msg.innerHTML='<span class="ok">📍 '+esc(bn)+' / '+esc(rw.name)+'</span>'; }
     else msg.innerHTML='<span class="warn">რიგი ვერ მოიძებნა</span>'; return; }
   var res=resolveByAny(raw);
-  if(res){ handPickObj(res.p); msg.innerHTML='<span class="ok">👤 '+(res.p.num!=null?('#'+res.p.num+' '):'')+esc(pName(res.p))+'</span>'; }
+  if(res){ handPickObj(res.p);
+    // თუ ნამდვილი ყუთის სტიკერია (შეიცავს '|') — დავიმახსოვროთ მისი კოდი, რომ აწონვისას ზუსტად ის ჩაიწეროს
+    if(raw.indexOf('|')>=0){ hBox={code:raw, short:lastSeg(raw)}; }
+    msg.innerHTML='<span class="ok">👤 '+(res.p.num!=null?('#'+res.p.num+' '):'')+esc(pName(res.p))+(hBox?(' · 📦 <b>'+esc(hBox.short)+'</b>'):'')+'</span>'; }
   else msg.innerHTML='<span class="warn">ვერ მოიძებნა: '+esc(raw)+'</span>';
 }
 function prevHand(){ _prev('hWeight','hPrev'); }
@@ -413,10 +419,22 @@ function handAdd(){
   var pal=''; // #3: პალეტი მხოლოდ „პალეტით" რეჟიმში — ხელით აწონვას პალეტი აღარ ერთვის
   var zid=document.getElementById('hZone').value, row=document.getElementById('hRow').value;
   var zb=BLOCKS.find(function(b){ return String(b.id)===String(zid); }), zone=zb?zb.name:'';
-  var c=genCode();
-  pushRecord({ code:c, short_code:c, picker:hChosen, weight:w, row_num:row, quarter:zone, pallet:pal, entry_mode:'ხელით' });
+  // ── კოდი: თუ ყუთის სტიკერი დასკანერდა — ზუსტად ის კოდი ინახება (იგივე იკითხება პალეტზე/შემოწმებაში).
+  //    თუ არა (უსტიკერო) — გენერირდება ახალი, ეკრანზე ჩანს დიდად და ამწონველმა უნდა დააწეროს ყუთს. ──
+  var code, shortc, mode, manual=false;
+  if(hBox && hBox.short){ code=hBox.code; shortc=hBox.short; mode='სკანი'; }
+  else { shortc=genCode(); code=shortc; mode='ხელით'; manual=true; }
+  pushRecord({ code:code, short_code:shortc, picker:hChosen, weight:w, row_num:row, quarter:zone, pallet:pal, entry_mode:mode });
   var _net=Math.max(0,Math.round((w-tare())*100)/100);
-  msg.innerHTML='<span class="ok">✅ დაემატა: '+esc(pName(hChosen))+' · ბრუტო '+w.toFixed(2)+' → სუფთა '+_net.toFixed(2)+' კგ'+(pal?(' · '+esc(pal)):'')+(zone?(' · '+esc(zone)+(row?('/'+esc(row)):'')):'')+'</span>';
+  if(manual){
+    msg.innerHTML='<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:10px;color:#92400e">'
+      +'<b>⚠️ უსტიკერო — დააწერე/დააკარი ყუთს ეს კოდი:</b>'
+      +'<div style="font-size:1.6rem;font-weight:800;letter-spacing:3px;font-family:monospace;margin:4px 0;color:#0f172a">'+esc(shortc)+'</div>'
+      +'<div style="font-size:.82rem">'+esc(pName(hChosen))+' · სუფთა <b>'+_net.toFixed(2)+'</b> კგ'+(zone?(' · '+esc(zone)+(row?('/'+esc(row)):'')):'')+'</div></div>';
+  } else {
+    msg.innerHTML='<span class="ok">✅ დაემატა: '+esc(pName(hChosen))+' · 📦 <b>'+esc(shortc)+'</b> · ბრუტო '+w.toFixed(2)+' → სუფთა '+_net.toFixed(2)+' კგ'+(zone?(' · '+esc(zone)+(row?('/'+esc(row)):'')):'')+'</span>';
+  }
+  hBox=null;   // კოდი გამოყენდა — შემდეგი ყუთისთვის ახალი სკანი იქნება საჭირო
   document.getElementById('hWeight').value=''; prevHand();
 }
 
