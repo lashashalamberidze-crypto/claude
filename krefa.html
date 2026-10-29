@@ -168,7 +168,7 @@
     </div>
     <div class="card qrsub" id="q-box">
       <h2>🧺 მკრეფავის სტიკერები (A4)</h2>
-      <div class="muted" style="font-size:.82rem;margin-bottom:8px">QR = მკრეფავის ვინაობა (ეკვრება ყუთს). სტიკერზე: სახელი, გვარი, ტელეფონი, პ/ნ. რიგი ცალკე QR-ია (🗺️ ტაბი).</div>
+      <div class="muted" style="font-size:.82rem;margin-bottom:8px"><b>თითო სტიკერი უნიკალურია</b> — თითო ყუთს თავისი QR + კოდი. ეკვრება ყუთს, აწონვისას სკანდება (მკრეფავიც ცნობა QR-იდან). რიგი ცალკე QR-ია (🗺️ ტაბი).</div>
       <div class="row2">
         <div><label>მკრეფავი</label><input id="qbPicker" placeholder="🔎 სახელი ან №…" list="qbList"><datalist id="qbList"></datalist></div>
         <div><label>რაოდენობა (ცალი)</label><input id="qbCount" inputmode="numeric" value="24"></div>
@@ -1540,6 +1540,12 @@ function _qrPrintGrid(title,cells){
   h+='</div></body></html>';
   w.document.write(h); w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} },700);
 }
+// უნიკალური shortCode (6 სიმბ.) — არ მეორდება ამ ბეჭდვაში და ლოკალურ რუკაშიც (its_uid)
+function _krGenShort(used, map){
+  var cs='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', c;
+  do { c=''; for(var j=0;j<6;j++) c+=cs[Math.floor(Math.random()*cs.length)]; } while(used[c] || (map&&map[c]));
+  return c;
+}
 async function genBoxStickers(){
   var msg=document.getElementById('qbMsg');
   var q=(document.getElementById('qbPicker').value||'').trim();
@@ -1549,8 +1555,19 @@ async function genBoxStickers(){
   if(n>240 && !confirm(n+' სტიკერი — დიდი რაოდენობაა. გავაგრძელო?')) return;
   var fmt=(document.getElementById('qbFmt')||{}).value||'24';
   var cfg = (fmt==='40') ? {cols:4,w:48,h:27,qr:22,name:8,info:6,pg:'6mm 3mm'} : {cols:3,w:70,h:35,qr:30,name:11,info:8,pg:'8.5mm 0'};
-  msg.innerHTML='<span class="muted">ვქმნი QR-ს…</span>';
-  var img=await qrDataUrl(p.uid,150);
+  msg.innerHTML='<span class="muted">ვქმნი უნიკალურ QR-ებს…</span>';
+  // ── თითო ყუთს თავისი უნიკალური კოდი: uid|თარიღი|||ყუთი#|shortCode (იგივე ფორმატი, რასაც awonva/shemowmeba კითხულობს) ──
+  var today=_today();
+  var used={}, map=null; try{ map=JSON.parse(localStorage.getItem('its_uid')||'{}')||{}; }catch(e){ map={}; }
+  var items=[];
+  for(var i=1;i<=n;i++){
+    var sc=_krGenShort(used, map); used[sc]=1;
+    var fullCode=p.uid+'|'+today+'|||'+('00'+i).slice(-3)+'|'+sc;
+    map[sc]=fullCode;
+    var img=await qrDataUrl(fullCode,150);
+    items.push({img:img, sc:sc});
+  }
+  try{ localStorage.setItem('its_uid', JSON.stringify(map)); }catch(e){}
   var w=window.open('','_blank'); if(!w){ msg.innerHTML='<span class="warn">popup დაბლოკილია</span>'; return; }
   var css='@page{size:A4 portrait;margin:'+cfg.pg+'}*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif}'
     +'.sheet{width:210mm;display:grid;grid-template-columns:repeat('+cfg.cols+','+cfg.w+'mm);justify-content:center}'
@@ -1560,17 +1577,17 @@ async function genBoxStickers(){
     +'.info-side{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4mm;text-align:center;height:100%}'
     +'.sn{font-size:'+cfg.name+'pt;font-weight:800;color:#000;line-height:1.05;margin:0;word-break:break-word}'
     +'.si{font-size:'+cfg.info+'pt;color:#000;margin:0;font-weight:600}'
-    +'.snum{font-size:'+cfg.info+'pt;font-weight:800;color:#0369a1;margin:0}';
-  var cell='<div class="qr-sticker"><div class="qr-side">'+(img?('<img src="'+img+'">'):'QR')+'</div>'
+    +'.snum{font-size:'+cfg.info+'pt;font-weight:800;color:#0369a1;margin:0}'
+    +'.scode{font-size:'+cfg.name+'pt;font-weight:800;color:#0369a1;font-family:monospace;letter-spacing:.5px;margin:0}';
+  var cells=items.map(function(c){ return '<div class="qr-sticker"><div class="qr-side">'+(c.img?('<img src="'+c.img+'">'):'QR')+'</div>'
     +'<div class="info-side">'+(p.num!=null?('<div class="snum">#'+p.num+'</div>'):'')
     +'<div class="sn">'+esc(pName(p))+'</div>'
     +'<div class="si">📞 '+esc(p.phone||'—')+'</div>'
-    +'<div class="si">პ/ნ: '+esc(p.id||p.personal_id||'—')+'</div>'
-    +'</div></div>';
-  var cells=''; for(var i=0;i<n;i++) cells+=cell;
+    +'<div class="scode">'+esc(c.sc)+'</div>'
+    +'</div></div>'; }).join('');
   w.document.write('<html><head><meta charset="utf-8"><title>სტიკერები — '+esc(pName(p))+'</title><style>'+css+'</style></head><body><div class="sheet">'+cells+'</div></body></html>');
   w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} },500);
-  msg.innerHTML='<span class="ok">✅ '+n+' სტიკერი (A4 · '+fmt+'/გვერდი)</span>';
+  msg.innerHTML='<span class="ok">✅ '+n+' უნიკალური სტიკერი (A4 · '+fmt+'/გვერდი)</span>';
 }
 function _printStickerSheet(title,fmt,cells){
   var cfg = (fmt==='40') ? {cols:4,w:48,h:27,qr:22,big:9,small:7,pg:'6mm 3mm'} : {cols:3,w:70,h:35,qr:30,big:13,small:9,pg:'8.5mm 0'};

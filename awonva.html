@@ -369,7 +369,7 @@ function hValPal(){ var v=document.getElementById('hPal').value.trim(), el=docum
 function handScan(){
   var raw=document.getElementById('hScan').value.trim(), msg=document.getElementById('hScanMsg');
   if(!raw) return; document.getElementById('hScan').value='';
-  if(/^PAL-\d{6}-\d{4}$/i.test(raw)){ msg.innerHTML='<span class="warn">📦 პალეტი მხოლოდ „პალეტით" რეჟიმშია — გადადი იმ ტაბზე</span>'; return; }
+  if(palOk(raw)){ msg.innerHTML='<span class="warn">📦 ეს პალეტის კოდია — აწონვაში არ იკითხება. პალეტზე მიბმა ხდება სამაცივრეში (შემოწმება → პალეტის გასწორება).</span>'; return; }
   if(/^ROW:/i.test(raw)){ var rid=raw.slice(4); var rw=ROWS.find(function(x){ return String(x.id)===String(rid); });
     if(rw){ document.getElementById('hZone').value=rw.block_id; fillRows(); document.getElementById('hRow').value=rw.name;
       var bn=(BLOCKS.find(function(b){return String(b.id)===String(rw.block_id);})||{}).name||'';
@@ -550,7 +550,7 @@ function renderSeason(){
     +stat('s-purple money','💰 ₾ სულ',(Math.round(season.gel*100)/100).toLocaleString('en-US')+' ₾','კგ×ფასი');
 }
 
-function palOk(v){ return /^PAL-\d{6}-\d{4}$/i.test((v||'').trim()); }
+function palOk(v){ v=(v||'').toString().trim(); return /^PAL-\d{6}-\d{4}$/i.test(v) || /^[A-Z]{2,6}\d{1,6}$/i.test(v); }  // ძველი PAL-######-#### ან krefa-ს PAL001
 function valPal(){ var v=document.getElementById('palIn').value.trim(), el=document.getElementById('palVal'); if(!v){ el.innerHTML=''; return; } el.innerHTML=palOk(v)?'<span class="ok">✅ სწორი პალეტი</span>':'<span class="warn">❌ ფორმატი: PAL-XXXXXX-XXXX</span>'; }
 function resolveByAny(raw){
   var v=String(raw||'').trim(); if(!v) return null;

@@ -344,7 +344,7 @@ document.addEventListener('keydown',function(e){
     }
   }, true);
 })();
-function palOk(v){ return /^PAL-\d{6}-\d{4}$/i.test((v||'').toString().trim()); }
+function palOk(v){ v=(v||'').toString().trim(); return /^PAL-\d{6}-\d{4}$/i.test(v) || /^[A-Z]{2,6}\d{1,6}$/i.test(v); }  // ძველი PAL-######-#### ან krefa-ს PAL001
 function setPallet(code){
   var v=(code||'').toString().trim().toUpperCase();
   var msg=document.getElementById('assignMsg');
