@@ -800,7 +800,7 @@ function swNotify(msg, isErr){
 window.swNotify = swNotify;
 
 // ═══════════ 💰 ახალი გაყიდვა (რეალიზაცია) — პირდაპირი + მაცივრიდან → ვალი ═══════════
-var CS_STOCK=[], CS_SALES=[], CS_ROOMS=[];
+var CS_STOCK=[], CS_SALES=[], CS_ROOMS=[], CS_BUYERS=[];
 function csEsc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function _csToday(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 function csRoomKg(no){ var k=0; CS_STOCK.forEach(function(x){ if(String(x.room_no)===String(no)) k+=(+x.kg||0); }); return Math.round(k*10)/10; }
@@ -809,7 +809,10 @@ async function csLoadAll(){
   try{ var r=await s.from('cold_stock').select('*').eq('user_id',uid); if(!r.error) CS_STOCK=r.data||[]; }catch(e){}
   try{ var r2=await s.from('cold_sales').select('*').eq('user_id',uid).order('date',{ascending:false}); if(!r2.error) CS_SALES=r2.data||[]; }catch(e){}
   try{ var r3=await s.from('user_settings').select('sval').eq('user_id',uid).eq('skey','cold_rooms').maybeSingle(); if(r3&&r3.data&&r3.data.sval) CS_ROOMS=JSON.parse(r3.data.sval)||[]; }catch(e){}
+  try{ var r4=await s.from('user_settings').select('sval').eq('user_id',uid).eq('skey','sale_buyers').maybeSingle(); if(r4&&r4.data&&r4.data.sval) CS_BUYERS=JSON.parse(r4.data.sval)||[]; }catch(e){}
 }
+function csSaveBuyers(){ var s=getSb(); try{ if(s&&uid) s.from('user_settings').upsert({user_id:uid,skey:'sale_buyers',sval:JSON.stringify(CS_BUYERS),updated_at:new Date().toISOString()},{onConflict:'user_id,skey'}); }catch(e){} }
+function csAddBuyerName(name){ name=(name||'').trim(); if(!name) return; if(!CS_BUYERS.some(function(b){return (b.name||'').toLowerCase()===name.toLowerCase();})){ CS_BUYERS.push({name:name,phone:'',note:''}); csSaveBuyers(); } }
 function csRender(){
   var el=document.getElementById('cs-body'); if(!el) return;
   var totKg=0,totAmt=0,totPaid=0; CS_SALES.forEach(function(x){ totKg+=(+x.kg||0); totAmt+=(+x.amount||0); totPaid+=(+x.paid_amount||0); });
@@ -820,7 +823,7 @@ function csRender(){
     +'<div class="stat s-green" style="flex:1;min-width:120px"><div class="lbl">📤 გაყიდული კგ</div><div class="val">'+totKg.toFixed(1)+'</div></div>'
     +'<div class="stat s-blue money" style="flex:1;min-width:120px"><div class="lbl">💰 შემოსავალი ₾</div><div class="val">'+totAmt.toFixed(0)+'</div></div>'
     +'<div class="stat s-red money" style="flex:1;min-width:120px"><div class="lbl">🔴 ვალი (მოსაცემი) ₾</div><div class="val">'+owed.toFixed(0)+'</div></div></div>';
-  h+='<button class="sw-btn sw-btn-gold" onclick="csNewSale()">➕ ახალი გაყიდვა</button>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="sw-btn sw-btn-gold" onclick="csNewSale()">➕ ახალი გაყიდვა</button><button class="sw-btn sw-btn-outline" onclick="csBuyersModal()">👥 მყიდველები ('+CS_BUYERS.length+')</button></div>';
   if(debt.length){ h+='<div style="margin-top:14px"><div class="sw-card-title">🔴 ვალები (მოსაცემი)</div><div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>მყიდველი</th><th>ვალი ₾</th></tr></thead><tbody>'+debt.map(function(x){ return '<tr><td><b>'+csEsc(x.b)+'</b></td><td style="color:#dc2626;font-weight:800">'+x.d.toFixed(2)+'</td></tr>'; }).join('')+'</tbody></table></div></div>'; }
   h+='<div style="margin-top:14px"><div class="sw-card-title">💰 გაყიდვები</div><div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>თარიღი</th><th>მყიდველი</th><th>რა</th><th>კგ</th><th>₾/კგ</th><th>სულ ₾</th><th>გადახდ.</th><th>ვალი</th><th></th></tr></thead><tbody>';
   if(!CS_SALES.length){ h+='<tr><td colspan="9" class="sw-empty">— გაყიდვა არ არის —</td></tr>'; }
@@ -834,7 +837,7 @@ function csNewSale(){
   var roomOpts=CS_ROOMS.map(function(r){ return '<option value="'+csEsc(r.no)+'">ოთახი '+csEsc(r.no)+' ('+csRoomKg(r.no)+' კგ)</option>'; }).join('')||'<option value="">— ოთახი არ არის —</option>';
   ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;margin:auto;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.25)">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-size:1.05rem;color:#0369a1">➕ ახალი გაყიდვა</b><button class="sw-btn sw-btn-outline" style="padding:5px 11px" onclick="document.getElementById(\'csModal\').remove()">✕</button></div>'
-    +'<label>მყიდველი</label><input id="cs-buyer" placeholder="სახელი / კომპანია">'
+    +'<label>მყიდველი</label><input id="cs-buyer" list="cs-buyer-list" placeholder="აირჩიე ან ჩაწერე ახალი"><datalist id="cs-buyer-list">'+CS_BUYERS.map(function(b){ return '<option value="'+csEsc(b.name)+'">'; }).join('')+'</datalist>'
     +'<label style="margin-top:8px">წყარო</label><div style="display:flex;gap:8px"><label style="flex:1;display:flex;align-items:center;gap:6px;font-weight:600"><input type="radio" name="cs-src" value="direct" checked onchange="csSrcToggle()" style="width:auto"> 🧺 პირდაპირი</label><label style="flex:1;display:flex;align-items:center;gap:6px;font-weight:600"><input type="radio" name="cs-src" value="cold" onchange="csSrcToggle()" style="width:auto"> 🏭 მაცივრიდან</label></div>'
     +'<div id="cs-direct"><label style="margin-top:8px">პროდუქტი</label><input id="cs-product" placeholder="მაგ. მოცვი"></div>'
     +'<div id="cs-cold" style="display:none"><label style="margin-top:8px">ოთახი</label><select id="cs-room">'+roomOpts+'</select></div>'
@@ -861,6 +864,7 @@ async function csConfirm(){
   var logi=[]; if(driver)logi.push('მძღ: '+driver); if(car)logi.push('მანქ: '+car); if(dest)logi.push('→ '+dest);
   var note=(logi.length?('🚚 '+logi.join(' · ')):'')+(freeNote?((logi.length?' | ':'')+freeNote):'');
   var rec={ id:'sale_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), user_id:uid, date:_csToday(), buyer:buyer, source:src, room_no:room, product:product, boxes:0, kg:kg, price:price, amount:amount, paid_amount:paid, note:note };
+  if(buyer) csAddBuyerName(buyer);
   CS_SALES.unshift(rec); var s=getSb(); try{ await s.from('cold_sales').upsert(rec,{onConflict:'id'}); }catch(e){}
   var m=document.getElementById('csModal'); if(m) m.remove(); csRender();
 }
@@ -872,6 +876,34 @@ async function csSubtractRoom(room,kg){
   }
 }
 async function csDelSale(id){ if(!confirm('გაყიდვა წაიშალოს? (მარაგი არ დაბრუნდება)')) return; CS_SALES=CS_SALES.filter(function(x){ return x.id!==id; }); var s=getSb(); try{ await s.from('cold_sales').delete().eq('user_id',uid).eq('id',id); }catch(e){} csRender(); }
+// ── მყიდველების ცნობარი ──
+function csBuyersModal(){
+  var ov=document.createElement('div'); ov.id='csBuyModal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:flex-start;justify-content:center;z-index:99999;padding:16px;overflow:auto';
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;margin:auto;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.25)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-size:1.05rem;color:#0369a1">👥 მყიდველები</b><button class="sw-btn sw-btn-outline" style="padding:5px 11px" onclick="document.getElementById(\'csBuyModal\').remove()">✕</button></div>'
+    +'<div style="display:flex;gap:8px"><input id="csb-name" placeholder="სახელი / კომპანია" style="flex:2"><input id="csb-phone" placeholder="ტელ. (ნ.ა.)" style="flex:1"></div>'
+    +'<button class="sw-btn sw-btn-green" style="width:100%;margin-top:8px" onclick="csAddBuyer()">➕ დამატება</button>'
+    +'<div id="csb-list" style="margin-top:12px"></div></div>';
+  document.body.appendChild(ov); csBuyRender();
+}
+function csBuyRender(){
+  var el=document.getElementById('csb-list'); if(!el) return;
+  if(!CS_BUYERS.length){ el.innerHTML='<div class="muted" style="text-align:center;padding:10px">— მყიდველი არ არის —</div>'; return; }
+  el.innerHTML='<div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>სახელი</th><th>ტელ.</th><th></th></tr></thead><tbody>'
+    +CS_BUYERS.map(function(b,i){ return '<tr><td><b>'+csEsc(b.name)+'</b></td><td class="muted">'+csEsc(b.phone||'')+'</td><td><span style="cursor:pointer;color:#dc2626" onclick="csDelBuyer('+i+')">🗑️</span></td></tr>'; }).join('')
+    +'</tbody></table></div>';
+}
+function csAddBuyer(){ var n=(document.getElementById('csb-name').value||'').trim(), p=(document.getElementById('csb-phone').value||'').trim(); if(!n) return;
+  var ex=CS_BUYERS.find(function(b){return (b.name||'').toLowerCase()===n.toLowerCase();}); if(ex){ ex.phone=p||ex.phone; } else { CS_BUYERS.push({name:n,phone:p,note:''}); }
+  csSaveBuyers(); document.getElementById('csb-name').value=''; document.getElementById('csb-phone').value=''; csBuyRender(); }
+function csDelBuyer(i){ CS_BUYERS.splice(i,1); csSaveBuyers(); csBuyRender(); }
+async function csEditPaid(id){ var x=CS_SALES.find(function(s){return s.id===id;}); if(!x) return;
+  var amt=+x.amount||0, cur=+x.paid_amount||0; var v=prompt('გადახდილი თანხა ₾ (სულ '+amt.toFixed(2)+' ₾):', cur); if(v===null) return;
+  var p=parseFloat(v)||0; x.paid_amount=p; var s=getSb(); try{ await s.from('cold_sales').update({paid_amount:p}).eq('user_id',uid).eq('id',id); }catch(e){}
+  csRender(); var hp=document.getElementById('sw-page-history'); if(hp&&hp.classList.contains('active')) swRenderHistory(); }
+async function csDelSaleH(id){ await csDelSale(id); swRenderHistory(); }
+window.csBuyersModal=csBuyersModal; window.csAddBuyer=csAddBuyer; window.csDelBuyer=csDelBuyer; window.csEditPaid=csEditPaid; window.csDelSaleH=csDelSaleH;
 window.csNewSale=csNewSale; window.csSrcToggle=csSrcToggle; window.csCalc=csCalc; window.csConfirm=csConfirm; window.csDelSale=csDelSale; window.csRender=csRender;
 
 // ═══════════ 🗺️ მაცივრის ზედხედი — ოთახები (ეტაპი 1) ═══════════
@@ -1277,13 +1309,21 @@ function swRenderHistory(){
   const tbody = swEl('sw-hist-tbody'); if(!tbody) return;
   const from = (swEl('sw-hist-from')||{}).value||'';
   const to   = (swEl('sw-hist-to')||{}).value||'';
-  let ops = [...swOps].reverse();
+  // ახალი რეალიზაციის გაყიდვები (cold_sales) — ისტორიაში out-ოპერაციებად
+  const csOps = (typeof CS_SALES!=='undefined'?CS_SALES:[]).map(function(x){
+    return { id:x.id, _cs:true, type:'out', date:x.date||'', time:x.date||'',
+      product: x.source==='cold' ? ('🏭 ოთ.'+(x.room_no||'')) : (x.product||'პირდაპირი'),
+      lot:'', kg:+x.kg||0, buyer:x.buyer||'—', section:'',
+      amount:+x.amount||0, paid_amount:+x.paid_amount||0, note:x.note||'' };
+  });
+  let ops = [...swOps].reverse().concat(csOps);
+  ops.sort(function(a,b){ return (a.date||'')<(b.date||'')?1:((a.date||'')>(b.date||'')?-1:0); });
   if(from) ops = ops.filter(o=>o.date>=from);
   if(to)   ops = ops.filter(o=>o.date<=to);
   // outstanding summary — Σ(amount - paid_amount) over out-ops still owing
   const sumEl = swEl('sw-unpaid-sum');
   if(sumEl){
-    const outs = swOps.filter(o=>o.type==='out');
+    const outs = swOps.filter(o=>o.type==='out').concat(csOps);
     if(!outs.length){ sumEl.innerHTML=''; }
     else{
       let outstanding=0, priced=0, unpriced=0;
@@ -1302,7 +1342,18 @@ function swRenderHistory(){
   if(!ops.length){ tbody.innerHTML='<tr><td colspan="8" class="sw-empty">— ისტ. ცარიელია —</td></tr>'; return; }
   tbody.innerHTML = ops.slice(0,100).map(o=>{
     let payCell = '<span class="muted">—</span>';
-    if(o.type==='out'){
+    if(o._cs){
+      const sid=safeAttr(o.id), amt=+o.amount||0, pa=+o.paid_amount||0, rem=+(amt-pa).toFixed(2);
+      const kgv=+o.kg||0, unit = kgv>0 ? swMoney(amt/kgv) : '—';
+      const priceNote = amt>0 ? '<div class="muted" style="font-size:.68rem;margin-top:3px">'+swMoney(amt)+' ₾ · '+unit+' ₾/კგ</div>' : '';
+      let badge;
+      if(amt<=0) badge='<span style="color:#0369a1;font-size:.74rem;font-weight:600;cursor:pointer;text-decoration:underline dotted" onclick="csEditPaid(\''+sid+'\')">💰 ფასი +</span>';
+      else if(pa>=amt) badge='<span class="sw-badge" style="background:rgba(16,185,129,.12);color:#059669;border:1px solid rgba(16,185,129,.2);cursor:pointer" onclick="csEditPaid(\''+sid+'\')" title="გადახდის რედაქტირება">🟢 გადახდილი</span>';
+      else if(pa>0) badge='<span class="sw-badge" style="background:rgba(245,158,11,.12);color:#b45309;border:1px solid rgba(245,158,11,.25);cursor:pointer" onclick="csEditPaid(\''+sid+'\')" title="გადახდის რედაქტირება">🟡 ნაწილობრივი · დარჩა '+swMoney(rem)+' ₾</span>';
+      else badge='<span class="sw-badge" style="background:rgba(239,68,68,.1);color:#dc2626;border:1px solid rgba(239,68,68,.2);cursor:pointer" onclick="csEditPaid(\''+sid+'\')" title="გადახდის რედაქტირება">🔴 გადაუხდელი · '+swMoney(amt)+' ₾</span>';
+      payCell = badge + priceNote;
+    }
+    else if(o.type==='out'){
       const sid=safeAttr(o.id);
       if(o.amount!=null && +o.amount>0){
         const amt=+o.amount, pa=+o.paid_amount||0, rem=+(amt-pa).toFixed(2);
@@ -1330,7 +1381,7 @@ function swRenderHistory(){
     <td style="font-family:'Space Mono',monospace;color:#d97706">${(+o.kg||0).toFixed(1)}</td>
     <td class="muted">${safeText(o.buyer||o.section||'—')}</td>
     <td>${payCell}</td>
-    <td class="muted">${safeText(o.note||'—')} <button onclick="swDeleteOp('${safeAttr(o.id)}')" style="margin-left:6px;background:none;border:none;cursor:pointer;color:#ef4444;font-size:.95rem" title="წაშლა">🗑</button></td>
+    <td class="muted">${safeText(o.note||'—')} <button onclick="${o._cs?`csDelSaleH('${safeAttr(o.id)}')`:`swDeleteOp('${safeAttr(o.id)}')`}" style="margin-left:6px;background:none;border:none;cursor:pointer;color:#ef4444;font-size:.95rem" title="წაშლა">🗑</button></td>
   </tr>`;
   }).join('');
 }
