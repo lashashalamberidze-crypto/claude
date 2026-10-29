@@ -114,7 +114,6 @@
   <div class="sw-header" style="justify-content:flex-end">
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="sw-btn sw-btn-outline" onclick="swExportExcel()">📥 Excel ანგარიში</button>
-      <button class="sw-btn sw-btn-gold" onclick="swTab('income',null)">+ მიღება</button>
     </div>
   </div>
 
@@ -132,7 +131,7 @@
       <div class="lbl">📤 გატანილი (კგ)</div>
       <div class="val" id="sw-out-total">0</div>
     </div>
-    <div class="stat s-purple">
+    <div class="stat s-purple" style="display:none">
       <div class="lbl">🌡️ ტემპ. ახლა</div>
       <div class="val" id="sw-temp-cur">—°C</div>
     </div>
@@ -149,8 +148,6 @@
   <!-- TABS -->
   <div class="sw-tabs">
     <button class="sw-tab active" onclick="swTab('stock',this)">📦 მარაგი</button>
-    <button class="sw-tab" onclick="swTab('income',this)">📥 მიღება</button>
-    <button class="sw-tab" onclick="swTab('temp',this)">🌡️ ტემპ.</button>
     <button class="sw-tab" onclick="swTab('history',this)">📋 ისტორია</button>
     <button class="sw-tab" onclick="swTab('sales',this)">💰 გაყიდვები</button>
     <button class="sw-tab" onclick="swTab('purchases',this)">🛒 შესყიდვა</button>
@@ -773,7 +770,7 @@ function swTab(id, el){
   if(el) el.classList.add('active');
   else {
     const tabs = document.querySelectorAll('.sw-tab');
-    const map = {stock:0,income:1,temp:2,history:3,sales:4,purchases:5,ship:6};
+    const map = {stock:0,history:1,sales:2,purchases:3,ship:4};
     if(map[id]!==undefined && tabs[map[id]]) tabs[map[id]].classList.add('active');
   }
   if(id==='stock')     swRenderStock();
