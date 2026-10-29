@@ -812,7 +812,7 @@ async function csLoadAll(){
   try{ var r4=await s.from('user_settings').select('sval').eq('user_id',uid).eq('skey','sale_buyers').maybeSingle(); if(r4&&r4.data&&r4.data.sval) CS_BUYERS=JSON.parse(r4.data.sval)||[]; }catch(e){}
 }
 function csSaveBuyers(){ var s=getSb(); try{ if(s&&uid) s.from('user_settings').upsert({user_id:uid,skey:'sale_buyers',sval:JSON.stringify(CS_BUYERS),updated_at:new Date().toISOString()},{onConflict:'user_id,skey'}); }catch(e){} }
-function csAddBuyerName(name){ name=(name||'').trim(); if(!name) return; if(!CS_BUYERS.some(function(b){return (b.name||'').toLowerCase()===name.toLowerCase();})){ CS_BUYERS.push({name:name,phone:'',note:''}); csSaveBuyers(); } }
+function csAddBuyerName(name){ name=(name||'').trim(); if(!name) return; if(!CS_BUYERS.some(function(b){return (b.name||'').toLowerCase()===name.toLowerCase();})){ CS_BUYERS.push({name:name,id_num:'',contact:'',phone:'',email:'',address:'',note:''}); csSaveBuyers(); } }
 function csRender(){
   var el=document.getElementById('cs-body'); if(!el) return;
   var totKg=0,totAmt=0,totPaid=0; CS_SALES.forEach(function(x){ totKg+=(+x.kg||0); totAmt+=(+x.amount||0); totPaid+=(+x.paid_amount||0); });
@@ -876,34 +876,52 @@ async function csSubtractRoom(room,kg){
   }
 }
 async function csDelSale(id){ if(!confirm('გაყიდვა წაიშალოს? (მარაგი არ დაბრუნდება)')) return; CS_SALES=CS_SALES.filter(function(x){ return x.id!==id; }); var s=getSb(); try{ await s.from('cold_sales').delete().eq('user_id',uid).eq('id',id); }catch(e){} csRender(); }
-// ── მყიდველების ცნობარი ──
+// ── მყიდველების ცნობარი (სრული პროფილი) ──
+var _csBuyEdit=-1;
 function csBuyersModal(){
   var ov=document.createElement('div'); ov.id='csBuyModal';
   ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:flex-start;justify-content:center;z-index:99999;padding:16px;overflow:auto';
-  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;margin:auto;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.25)">'
+  _csBuyEdit=-1;
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:540px;width:100%;margin:auto;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.25)">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-size:1.05rem;color:#0369a1">👥 მყიდველები</b><button class="sw-btn sw-btn-outline" style="padding:5px 11px" onclick="document.getElementById(\'csBuyModal\').remove()">✕</button></div>'
-    +'<div style="display:flex;gap:8px"><input id="csb-name" placeholder="სახელი / კომპანია" style="flex:2"><input id="csb-phone" placeholder="ტელ. (ნ.ა.)" style="flex:1"></div>'
-    +'<button class="sw-btn sw-btn-green" style="width:100%;margin-top:8px" onclick="csAddBuyer()">➕ დამატება</button>'
-    +'<div id="csb-list" style="margin-top:12px"></div></div>';
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><div style="flex:2;min-width:160px"><label>სახელი / კომპანია *</label><input id="csb-name" placeholder="შპს ..."></div><div style="flex:1;min-width:120px"><label>საიდ. კოდი</label><input id="csb-id" placeholder="4040..."></div></div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><div style="flex:1;min-width:150px"><label>საკონტაქტო პირი</label><input id="csb-contact" placeholder="სახელი გვარი"></div><div style="flex:1;min-width:120px"><label>ტელეფონი</label><input id="csb-phone" placeholder="5xx xx xx xx"></div></div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><div style="flex:1;min-width:150px"><label>ელ. ფოსტა</label><input id="csb-email" placeholder="mail@..."></div><div style="flex:1;min-width:150px"><label>მისამართი</label><input id="csb-addr" placeholder="ქალაქი, ქუჩა"></div></div>'
+    +'<div style="margin-top:6px"><label>შენიშვნა</label><input id="csb-note" placeholder="ნ.ა."></div>'
+    +'<button id="csb-save-btn" class="sw-btn sw-btn-green" style="width:100%;margin-top:10px" onclick="csAddBuyer()">➕ დამატება</button>'
+    +'<div id="csb-list" style="margin-top:14px"></div></div>';
   document.body.appendChild(ov); csBuyRender();
 }
 function csBuyRender(){
   var el=document.getElementById('csb-list'); if(!el) return;
   if(!CS_BUYERS.length){ el.innerHTML='<div class="muted" style="text-align:center;padding:10px">— მყიდველი არ არის —</div>'; return; }
-  el.innerHTML='<div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>სახელი</th><th>ტელ.</th><th></th></tr></thead><tbody>'
-    +CS_BUYERS.map(function(b,i){ return '<tr><td><b>'+csEsc(b.name)+'</b></td><td class="muted">'+csEsc(b.phone||'')+'</td><td><span style="cursor:pointer;color:#dc2626" onclick="csDelBuyer('+i+')">🗑️</span></td></tr>'; }).join('')
+  el.innerHTML='<div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>სახელი / საიდ.</th><th>კონტაქტი</th><th></th></tr></thead><tbody>'
+    +CS_BUYERS.map(function(b,i){
+      var sub=[]; if(b.id_num)sub.push('ს/კ '+csEsc(b.id_num)); if(b.address)sub.push(csEsc(b.address));
+      var con=[]; if(b.contact)con.push(csEsc(b.contact)); if(b.phone)con.push('📞 '+csEsc(b.phone)); if(b.email)con.push('✉️ '+csEsc(b.email));
+      return '<tr><td><b>'+csEsc(b.name)+'</b>'+(sub.length?'<div class="muted" style="font-size:.68rem">'+sub.join(' · ')+'</div>':'')+'</td>'
+        +'<td class="muted" style="font-size:.74rem">'+(con.join('<br>')||'—')+'</td>'
+        +'<td style="white-space:nowrap"><span style="cursor:pointer;color:#0369a1;margin-right:8px" onclick="csEditBuyer('+i+')">✏️</span><span style="cursor:pointer;color:#dc2626" onclick="csDelBuyer('+i+')">🗑️</span></td></tr>';
+    }).join('')
     +'</tbody></table></div>';
 }
-function csAddBuyer(){ var n=(document.getElementById('csb-name').value||'').trim(), p=(document.getElementById('csb-phone').value||'').trim(); if(!n) return;
-  var ex=CS_BUYERS.find(function(b){return (b.name||'').toLowerCase()===n.toLowerCase();}); if(ex){ ex.phone=p||ex.phone; } else { CS_BUYERS.push({name:n,phone:p,note:''}); }
-  csSaveBuyers(); document.getElementById('csb-name').value=''; document.getElementById('csb-phone').value=''; csBuyRender(); }
-function csDelBuyer(i){ CS_BUYERS.splice(i,1); csSaveBuyers(); csBuyRender(); }
+function _csBuyForm(){ return { name:(document.getElementById('csb-name').value||'').trim(), id_num:(document.getElementById('csb-id').value||'').trim(), contact:(document.getElementById('csb-contact').value||'').trim(), phone:(document.getElementById('csb-phone').value||'').trim(), email:(document.getElementById('csb-email').value||'').trim(), address:(document.getElementById('csb-addr').value||'').trim(), note:(document.getElementById('csb-note').value||'').trim() }; }
+function _csBuyClear(){ ['csb-name','csb-id','csb-contact','csb-phone','csb-email','csb-addr','csb-note'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=''; }); _csBuyEdit=-1; var b=document.getElementById('csb-save-btn'); if(b){ b.textContent='➕ დამატება'; b.classList.remove('sw-btn-gold'); b.classList.add('sw-btn-green'); } }
+function csAddBuyer(){ var f=_csBuyForm(); if(!f.name) return;
+  if(_csBuyEdit>=0){ CS_BUYERS[_csBuyEdit]=f; }
+  else { var ex=CS_BUYERS.findIndex(function(b){return (b.name||'').toLowerCase()===f.name.toLowerCase();}); if(ex>=0) CS_BUYERS[ex]=f; else CS_BUYERS.push(f); }
+  csSaveBuyers(); _csBuyClear(); csBuyRender(); }
+function csEditBuyer(i){ var b=CS_BUYERS[i]; if(!b) return; _csBuyEdit=i;
+  document.getElementById('csb-name').value=b.name||''; document.getElementById('csb-id').value=b.id_num||''; document.getElementById('csb-contact').value=b.contact||''; document.getElementById('csb-phone').value=b.phone||''; document.getElementById('csb-email').value=b.email||''; document.getElementById('csb-addr').value=b.address||''; document.getElementById('csb-note').value=b.note||'';
+  var sb=document.getElementById('csb-save-btn'); if(sb){ sb.textContent='💾 შენახვა'; sb.classList.remove('sw-btn-green'); sb.classList.add('sw-btn-gold'); }
+  var m=document.getElementById('csBuyModal'); if(m) m.scrollTop=0; }
+function csDelBuyer(i){ CS_BUYERS.splice(i,1); csSaveBuyers(); _csBuyClear(); csBuyRender(); }
 async function csEditPaid(id){ var x=CS_SALES.find(function(s){return s.id===id;}); if(!x) return;
   var amt=+x.amount||0, cur=+x.paid_amount||0; var v=prompt('გადახდილი თანხა ₾ (სულ '+amt.toFixed(2)+' ₾):', cur); if(v===null) return;
   var p=parseFloat(v)||0; x.paid_amount=p; var s=getSb(); try{ await s.from('cold_sales').update({paid_amount:p}).eq('user_id',uid).eq('id',id); }catch(e){}
   csRender(); var hp=document.getElementById('sw-page-history'); if(hp&&hp.classList.contains('active')) swRenderHistory(); }
 async function csDelSaleH(id){ await csDelSale(id); swRenderHistory(); }
-window.csBuyersModal=csBuyersModal; window.csAddBuyer=csAddBuyer; window.csDelBuyer=csDelBuyer; window.csEditPaid=csEditPaid; window.csDelSaleH=csDelSaleH;
+window.csBuyersModal=csBuyersModal; window.csAddBuyer=csAddBuyer; window.csDelBuyer=csDelBuyer; window.csEditBuyer=csEditBuyer; window.csEditPaid=csEditPaid; window.csDelSaleH=csDelSaleH;
 window.csNewSale=csNewSale; window.csSrcToggle=csSrcToggle; window.csCalc=csCalc; window.csConfirm=csConfirm; window.csDelSale=csDelSale; window.csRender=csRender;
 
 // ═══════════ 🗺️ მაცივრის ზედხედი — ოთახები (ეტაპი 1) ═══════════
