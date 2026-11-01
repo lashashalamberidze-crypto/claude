@@ -1428,8 +1428,9 @@ function distView(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));if
   const invCard=dinvs.length?('<div style="margin:8px 0 10px"><div style="font-weight:800;color:#0B6B3C;font-size:13px;margin-bottom:6px">📦 წაღებები (ინვოისები) — '+dinvs.length+'</div><div class="scroll"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#eef5f1;color:#333"><th style="padding:6px;text-align:left">თარიღი/№</th><th style="padding:6px;text-align:right">კგ</th><th style="padding:6px;text-align:right">ღირ. ₾</th><th style="padding:6px;text-align:right">გადახდ. ₾</th><th style="padding:6px;text-align:right">დარჩ. ₾</th><th style="padding:6px;text-align:left">შენიშვნა</th></tr></thead><tbody>'+invRows+'</tbody></table></div></div>'):'';
   const pend=distInvoicesFor(id).filter(v=>!(v.extra||{}).dispensed);
   const pendCard=pend.length?('<div style="background:#fff4e6;color:#a5591a;border-radius:8px;padding:8px 10px;font-size:11.5px;margin-bottom:10px;font-weight:700">📋 ჯერ არ არის გატანილი (არ ითვლება): '+pend.map(v=>esc(v.no||'—')+' · '+fmtNum(invWeightKg(v))+'კგ · '+money(+v.grand||0)+'₾').join(' · ')+' — მონიშნე 📦 სიაში</div>'):'';
+  const invNo2=iid=>{const v=(INVOICES||[]).find(x=>String(x.id)===String(iid));return v?(v.no||v.date||''):'';};
   const pays=Array.isArray(d.payments)?d.payments.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))):[];
-  const payCard=pays.length?('<div style="margin:0 0 10px"><div style="font-weight:800;color:#0B6B3C;font-size:13px;margin-bottom:6px">💰 ჩარიცხვები — '+pays.length+'</div>'+pays.map(p=>'<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 2px;border-bottom:1px dashed #eef1ef"><span>'+esc(p.date||'')+(p.note?' · <span class="muted">'+esc(p.note)+'</span>':'')+'</span><b style="color:#0B6B3C">'+money(p.amount)+' ₾</b></div>').join('')+'<div style="font-size:10.5px;color:#8a939c;margin-top:4px">ℹ️ ჩარიცხვა ნაწილდება ძველი ინვოისიდან ახლისკენ — ზედა ცხრილში „გადახდ." სვეტი აჩვენებს რომელ ინვოისს მოხვდა.</div></div>'):'';
+  const payCard=pays.length?('<div style="margin:0 0 10px"><div style="font-weight:800;color:#0B6B3C;font-size:13px;margin-bottom:6px">💰 ჩარიცხვები — '+pays.length+'</div>'+pays.map(p=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;padding:4px 2px;border-bottom:1px dashed #eef1ef"><span>'+esc(p.date||'')+(p.inv?' · <span style="background:#eef4ff;color:#2b6cb0;font-weight:800;font-size:10.5px;border-radius:5px;padding:1px 6px">📄 '+esc(invNo2(p.inv))+'</span>':' · <span style="color:#8a939c;font-size:11px">ავტომ. (ძველი ჯერ)</span>')+(p.note?' · <span class="muted">'+esc(p.note)+'</span>':'')+'</span><b style="color:#0B6B3C;white-space:nowrap">'+money(p.amount)+' ₾</b></div>').join('')+'<div style="font-size:10.5px;color:#8a939c;margin-top:4px">ℹ️ 📄 = კონკრეტულ ინვოისზე მიმაგრებული. „ავტომ." → ძველი ინვოისიდან ახლისკენ ნაწილდება.</div></div>'):'';
   const row=(l,v)=>v?('<div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px dashed #eef1ef"><div style="flex:0 0 150px;font-weight:800;color:#5c6b62;font-size:12.5px">'+l+'</div><div style="flex:1;font-size:13.5px">'+esc(v)+'</div></div>'):'';
   const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
   const created=d.created_at?(''+d.created_at).slice(0,10):'';
@@ -1442,13 +1443,49 @@ function distView(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));if
     row('🛒 გაყიდვის არხი',d.channel)+row('🚚 ტრანსპორტი',d.transport)+row('📦 თვიური შესყ.',d.monthly)+row('💼 გამოცდილება',d.experience)+
     row('📞 ტელეფონი',d.phone)+row('სხვა კონტაქტი',d.contact2)+row('📝 შენიშვნა',d.note)+row('📅 განაცხადი',created)+
     (d.lat!=null&&d.lng!=null?row('🗺 კოორდინატები',(+d.lat)+', '+(+d.lng)):'')+
-    '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'+(d.approved?'':'<button class="dbtn" id="dvApprove">✅ დამტკიცება</button>')+'<button class="dbtn v" id="dvEdit">✏ რედაქტირება</button>'+(d.phone?'<a class="dbtn line" href="tel:'+esc((''+d.phone).replace(/\s/g,''))+'">📞 დარეკვა</a>':'')+'<button class="dbtn line" id="dvClose2">დახურვა</button></div></div>';
+    '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'+(d.approved?'':'<button class="dbtn" id="dvApprove">✅ დამტკიცება</button>')+'<button class="dbtn v" id="dvEdit">✏ რედაქტირება</button>'+(DISTRIBUTORS.length>1?'<button class="dbtn line" id="dvMerge" style="border-color:#c9701a;color:#a5591a">🔗 გაერთიანება</button>':'')+(d.phone?'<a class="dbtn line" href="tel:'+esc((''+d.phone).replace(/\s/g,''))+'">📞 დარეკვა</a>':'')+'<button class="dbtn line" id="dvClose2">დახურვა</button></div></div>';
   document.body.appendChild(ov);const q=s=>ov.querySelector(s);
   q('#dvClose').onclick=q('#dvClose2').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove();};
   q('#dvEdit').onclick=()=>{ov.remove();distEdit(id);};
+  if(q('#dvMerge'))q('#dvMerge').onclick=()=>{ov.remove();distMergePick(id);};
   if(q('#dvApprove'))q('#dvApprove').onclick=async()=>{try{const {error}=await sb.from('distributors').update({approved:true}).eq('id',id);if(error)throw error;d.approved=true;ov.remove();await loadDistrib();renderDist();}catch(e){alert('ვერ დამტკიცდა: '+(e.message||e));}};
 }
 function distEdit(id){distForm(id);}
+// 🔗 ორი დისტრიბუტორის გაერთიანება (დუბლიკატის მონაცემები → მთავარზე, დუბლი იშლება)
+function distMergePick(keepId){const keep=DISTRIBUTORS.find(x=>String(x.id)===String(keepId));if(!keep)return;
+  const others=DISTRIBUTORS.filter(x=>String(x.id)!==String(keepId));
+  if(!others.length){alert('სხვა დისტრიბუტორი არ არის.');return;}
+  const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:10000;padding:20px;overflow:auto';
+  const opts=others.map(x=>{const inv=distInvoicesFor(x.id).length;const pay=Array.isArray(x.payments)?x.payments.length:0;return '<option value="'+esc(x.id)+'"'+((x.idc&&keep.idc&&String(x.idc)===String(keep.idc))?' selected':'')+'>'+esc(x.name||'—')+(x.idc?' · ს/კ '+esc(x.idc):'')+(x.phone?' · '+esc(x.phone):'')+' · '+inv+' ინვ. · '+pay+' ჩარიცხ.</option>';}).join('');
+  ov.innerHTML='<div class="card" style="max-width:520px;width:100%"><div style="display:flex;justify-content:space-between"><h2>🔗 გაერთიანება — '+esc(keep.name||'—')+'</h2><button class="smini" id="mgClose">✕</button></div>'+
+    '<p class="muted" style="font-size:12.5px">აირჩიე <b>დუბლიკატი</b> (იგივე პირი). მისი ინვოისები, ჩარიცხვები, გატანები და მყიდველები გადმოვა <b>„'+esc(keep.name||'—')+'"</b>-ზე, დუბლიკატი კი <b>წაიშლება</b>. ვალი/ჯამები ავტომატურად გაერთიანდება.</p>'+
+    '<label style="margin-top:6px;display:block">დუბლიკატი (წასაშლელი)</label><select id="mgDup" style="width:100%">'+opts+'</select>'+
+    '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="dbtn danger" id="mgGo">🔗 გააერთიანე & წაშალე დუბლი</button><button class="dbtn line" id="mgCancel">გაუქმება</button></div><div id="mgMsg" style="margin-top:8px;font-size:12.5px"></div></div>';
+  document.body.appendChild(ov);const q=s=>ov.querySelector(s);
+  const close=()=>ov.remove();q('#mgClose').onclick=close;q('#mgCancel').onclick=close;ov.onclick=e=>{if(e.target===ov)close();};
+  q('#mgGo').onclick=async()=>{const dupId=q('#mgDup').value;if(!dupId){q('#mgMsg').innerHTML='<span style="color:#b00020">აირჩიე დუბლიკატი</span>';return;}
+    if(!confirm('გავაერთიანო?\n„'+distName(dupId)+'" წაიშლება და მისი ყველაფერი გადმოვა „'+(keep.name||'—')+'"-ზე.\nეს შეუქცევადია.'))return;
+    const btn=q('#mgGo');btn.disabled=true;btn.textContent='⏳ ვაერთიანებ…';
+    try{await distMergeDo(keepId,dupId);close();renderDist();}
+    catch(e){q('#mgMsg').innerHTML='<span style="color:#b00020">ვერ გაერთიანდა: '+esc(e.message||e)+'</span>';btn.disabled=false;btn.textContent='🔗 გააერთიანე & წაშალე დუბლი';}};
+}
+async function distMergeDo(keepId,dupId){
+  // 1) ინვოისები — distributor_id გადავიდეს keep-ზე
+  const dupInvs=(INVOICES||[]).filter(v=>String((v.extra||{}).distributor_id||'')===String(dupId));
+  for(const v of dupInvs){const ex=Object.assign({},v.extra||{});ex.distributor_id=keepId;const {error}=await sb.from('invoices').update({extra:ex}).eq('id',v.id);if(error)throw error;v.extra=ex;}
+  // 2) გატანები/რეპორტები/ჯავშნები — bulk reassign (ცხრილი თუ არ არის, გამოვტოვოთ)
+  try{await sb.from('dist_pickups').update({distributor_id:keepId}).eq('distributor_id',dupId);}catch(e){}
+  try{await sb.from('dist_sales').update({distributor_id:keepId}).eq('distributor_id',dupId);}catch(e){}
+  try{await sb.from('bookings').update({distributor_id:keepId}).eq('distributor_id',dupId);}catch(e){}
+  // 3) ჩარიცხვები (payments) — გაერთიანება keep-ზე
+  const keep=DISTRIBUTORS.find(x=>String(x.id)===String(keepId))||{};
+  const dup=DISTRIBUTORS.find(x=>String(x.id)===String(dupId))||{};
+  const mergedPays=(Array.isArray(keep.payments)?keep.payments:[]).concat(Array.isArray(dup.payments)?dup.payments:[]);
+  const r=await sbUpdateSafe('distributors',{payments:mergedPays,paid:mergedPays.reduce((s,p)=>s+(+p.amount||0),0)},keepId,['payments']);if(r.error)throw r.error;
+  // 4) დუბლიკატის წაშლა
+  const {error}=await sb.from('distributors').delete().eq('id',dupId);if(error)throw error;
+  await loadDistrib();
+}
 const CTYPES=['ფიზიკური პირი','ინდ. მეწარმე','შპს'];
 const CHANNELS=['მაღაზიაში','თვითონ ვავრცელებ','ორივე'];
 const TRANSPORTS=['ჩემი ტრანსპორტი','საწყობიდან','მიწოდება'];
