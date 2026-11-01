@@ -1406,12 +1406,27 @@ function distView(id){const d=DISTRIBUTORS.find(x=>String(x.id)===String(id));if
   const costKg=(+bset(d).costKg)||1.8;
   const takenKg=distTakenKgFor(id), takenVal=distTakenFor(id), paidVal=distDepositsFor(id), debtVal=distDebtFor(id);
   const paidKg=costKg>0?paidVal/costKg:0, debtKg=costKg>0?debtVal/costKg:0;
+  // 📦 წაღებები (გატანილი ინვოისები) — თითო ინვოისზე: გადახდილი (FIFO) / დარჩენილი / შენიშვნა
+  const dinvs=distTakenInvoicesFor(id).slice().sort((a,b)=>((a.date||'').localeCompare(b.date||''))||String(a.no||'').localeCompare(String(b.no||'')));
+  const invRows=dinvs.map(v=>{const g=+v.grand||0,pd=invPaidEffective(v),rem=Math.max(0,g-pd);const st=invStatusEff(v);const note=(v.extra||{}).note||'';const stc=st==='paid'?'#0B6B3C':st==='part'?'#c9701a':'#b00020';
+    return '<tr><td style="padding:6px">'+esc(v.date||'')+(v.no?'<div class="muted" style="font-size:10px">'+esc(v.no)+'</div>':'')+'</td>'+
+      '<td style="padding:6px;text-align:right">'+fmtNum(invWeightKg(v))+'</td>'+
+      '<td style="padding:6px;text-align:right">'+money(g)+'</td>'+
+      '<td style="padding:6px;text-align:right;color:#0B6B3C">'+money(pd)+'</td>'+
+      '<td style="padding:6px;text-align:right;font-weight:800;color:'+stc+'">'+money(rem)+'</td>'+
+      '<td style="padding:6px;font-size:11px;color:#5c6b62">'+(note?'📝 '+esc(note):'')+'</td></tr>';}).join('');
+  const invCard=dinvs.length?('<div style="margin:8px 0 10px"><div style="font-weight:800;color:#0B6B3C;font-size:13px;margin-bottom:6px">📦 წაღებები (ინვოისები) — '+dinvs.length+'</div><div class="scroll"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#eef5f1;color:#333"><th style="padding:6px;text-align:left">თარიღი/№</th><th style="padding:6px;text-align:right">კგ</th><th style="padding:6px;text-align:right">ღირ. ₾</th><th style="padding:6px;text-align:right">გადახდ. ₾</th><th style="padding:6px;text-align:right">დარჩ. ₾</th><th style="padding:6px;text-align:left">შენიშვნა</th></tr></thead><tbody>'+invRows+'</tbody></table></div></div>'):'';
+  const pend=distInvoicesFor(id).filter(v=>!(v.extra||{}).dispensed);
+  const pendCard=pend.length?('<div style="background:#fff4e6;color:#a5591a;border-radius:8px;padding:8px 10px;font-size:11.5px;margin-bottom:10px;font-weight:700">📋 ჯერ არ არის გატანილი (არ ითვლება): '+pend.map(v=>esc(v.no||'—')+' · '+fmtNum(invWeightKg(v))+'კგ · '+money(+v.grand||0)+'₾').join(' · ')+' — მონიშნე 📦 სიაში</div>'):'';
+  const pays=Array.isArray(d.payments)?d.payments.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))):[];
+  const payCard=pays.length?('<div style="margin:0 0 10px"><div style="font-weight:800;color:#0B6B3C;font-size:13px;margin-bottom:6px">💰 ჩარიცხვები — '+pays.length+'</div>'+pays.map(p=>'<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 2px;border-bottom:1px dashed #eef1ef"><span>'+esc(p.date||'')+(p.note?' · <span class="muted">'+esc(p.note)+'</span>':'')+'</span><b style="color:#0B6B3C">'+money(p.amount)+' ₾</b></div>').join('')+'<div style="font-size:10.5px;color:#8a939c;margin-top:4px">ℹ️ ჩარიცხვა ნაწილდება ძველი ინვოისიდან ახლისკენ — ზედა ცხრილში „გადახდ." სვეტი აჩვენებს რომელ ინვოისს მოხვდა.</div></div>'):'';
   const row=(l,v)=>v?('<div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px dashed #eef1ef"><div style="flex:0 0 150px;font-weight:800;color:#5c6b62;font-size:12.5px">'+l+'</div><div style="flex:1;font-size:13.5px">'+esc(v)+'</div></div>'):'';
   const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;z-index:9999;padding:20px;overflow:auto';
   const created=d.created_at?(''+d.created_at).slice(0,10):'';
   ov.innerHTML='<div class="card" style="max-width:560px;width:100%;max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:flex-start"><h2>👁 '+esc(d.name||'—')+' '+(d.approved?'<span class="dtag ok">✅ დამტკიცებული</span>':'<span class="dtag wait">⏳ განსახილველი</span>')+'</h2><button class="smini" id="dvClose">✕</button></div>'+
     '<div class="salkpi" style="margin:10px 0"><div class="skpi" style="border-color:#c9701a"><div class="l">⚖️ წაღებული კგ</div><div class="v" style="font-size:17px;color:#c9701a">'+fmtNum(takenKg)+'</div></div><div class="skpi green"><div class="l">✅ დაფარული კგ</div><div class="v" style="font-size:17px;color:#0B6B3C">'+fmtNum(Math.round(paidKg))+'</div></div><div class="skpi amber"><div class="l">⏳ დარჩა კგ</div><div class="v" style="font-size:17px;color:#c9701a">'+fmtNum(Math.round(debtKg))+'</div></div><div class="skpi red"><div class="l">ვალი ₾</div><div class="v" style="font-size:17px">'+money(debtVal)+'</div></div></div>'+
     '<div class="salkpi" style="margin:0 0 8px"><div class="skpi blue"><div class="l">ღირებულება ₾</div><div class="v" style="font-size:15px;color:#2b6cb0">'+money(takenVal)+'</div></div><div class="skpi green"><div class="l">ჩარიცხული ₾</div><div class="v" style="font-size:15px;color:#0B6B3C">'+money(paidVal)+'</div></div></div>'+
+    pendCard+invCard+payCard+
     row('პირის ტიპი',d.company_type)+row('კომპანია',d.company)+row('პ/ნ ან ს/კ',d.idc)+row('მაღაზიის სახელი',d.shop_name)+
     row('რეგიონი',d.region)+row('მუნიციპალიტეტი',d.municipality)+row('მისამართი',d.address)+
     row('🛒 გაყიდვის არხი',d.channel)+row('🚚 ტრანსპორტი',d.transport)+row('📦 თვიური შესყ.',d.monthly)+row('💼 გამოცდილება',d.experience)+
