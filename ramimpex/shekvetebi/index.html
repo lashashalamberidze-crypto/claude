@@ -866,7 +866,8 @@ function invTotals(){let sub=0;invDraft.forEach(l=>sub+=l.price*l.qty);const vat
   return {sub,vat,brandAmt:bAmt,transAmt:tAmt,grand:sub+bAmt+tAmt};}
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
 function invSeqOf(no){const s=(''+(no||''));const last=s.split('-').pop().replace(/\D/g,'');const n=parseInt(last,10);return isNaN(n)?0:n;}
-function nextInvSeq(){let mx=0;(INVOICES||[]).forEach(v=>{const n=invSeqOf(v.no);if(n>mx)mx=n;});return mx+1;}
+// ყველაზე დაბალი თავისუფალი ნომერი — წაშლისას ხვრელი ივსება, საცდელები (demo) ნომერს არ იკავებენ
+function nextInvSeq(){const used={};(INVOICES||[]).forEach(v=>{if((v.extra||{}).demo)return;const n=invSeqOf(v.no);if(n>0)used[n]=1;});let s=1;while(used[s])s++;return s;}
 function dirPrefix(dir){if(dir==='ანთრაციტის ბრიკეტი')return 'ANT';if(dir==='კუთხოვანი დამცავები')return 'EDG';if(/პიცის/.test(dir))return 'PIZ';if(/სამედიცინო|Safety/.test(dir))return 'MED';if(dir)return 'BOX';return 'RI';}
 function invPrefix(){if(!invDraft.length)return 'RI';const uniq=[];invDraft.forEach(l=>{const p=dirPrefix((byCode(l.code)||{}).dir||'');if(uniq.indexOf(p)<0)uniq.push(p);});return uniq.length===1?uniq[0]:'RI';}
 function makeInvNo(prefix,seq){return (prefix||'RI')+'-'+('000'+seq).slice(-4);}
@@ -912,7 +913,8 @@ function renderInvoice(){
   $('iClear').onclick=()=>{invDraft=[];editingInvId=null;invVatIncl=false;invDemo=false;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iPhone','iAddr','iEmail','iNo','brandAmt','transAmt','iMinQty','iNote','iTranspNo'].forEach(id=>{if($(id))$(id).value='';});if($('iTransp'))$('iTransp').checked=false;if($('iNeedWaybill'))$('iNeedWaybill').checked=false;if($('iLegalF'))$('iLegalF').checked=true;if($('iLegalT'))$('iLegalT').checked=false;if($('iCTretail'))$('iCTretail').checked=true;if($('iDistWrap'))$('iDistWrap').style.display='none';if($('iDistSel'))$('iDistSel').value='';if($('iRegion'))$('iRegion').value='';fillMuni('','');renderInvLines();};
   ['brandAmt','transAmt'].forEach(id=>$(id).oninput=renderInvLines);
   if($('iVat'))$('iVat').onchange=()=>{invVatIncl=$('iVat').checked;updInvTotals();};
-  if($('iDemo'))$('iDemo').onchange=()=>{invDemo=$('iDemo').checked;};
+  if($('iDemo'))$('iDemo').onchange=()=>{invDemo=$('iDemo').checked;const no=$('iNo');if(no){if(invDemo){no.value='';no.disabled=true;no.placeholder='— (საცდელი, ნომრის გარეშე)';}else{no.disabled=false;no.placeholder='ავტომ.';if(!editingInvId)no.value=nextInvNo();}}};
+  if($('iDemo')&&$('iDemo').checked&&$('iNo')){$('iNo').value='';$('iNo').disabled=true;$('iNo').placeholder='— (საცდელი, ნომრის გარეშე)';}
   if($('iRegion'))$('iRegion').onchange=()=>fillMuni($('iRegion').value,'');
   // № ხელით შეიცვლება (წინა თარიღით/ჩავარდნილი ნომრით ინვოისისთვის) — თარიღის ცვლა № აღარ გადააწერს
   renderInvLines();
@@ -1589,14 +1591,14 @@ function renderInvLines(){
   tb.querySelectorAll('input[data-p]').forEach(inp=>inp.oninput=()=>{const i=+inp.dataset.p;invDraft[i].price=parseFloat(inp.value)||0;invDraft[i].priceEdited=true;updInvRow(i,inp);});
   tb.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{invDraft.splice(+b.dataset.x,1);renderInvLines();});
   updInvTotals();
-  if(!editingInvId){const no=$('iNo');if(no){const seq=invSeqOf(no.value)||nextInvSeq();no.value=makeInvNo(invPrefix(),seq);}}
+  if(!editingInvId){const no=$('iNo');if(no){const demo=($('iDemo')&&$('iDemo').checked)||invDemo;if(demo){no.value='';no.disabled=true;no.placeholder='— (საცდელი, ნომრის გარეშე)';}else{no.disabled=false;const seq=invSeqOf(no.value)||nextInvSeq();no.value=makeInvNo(invPrefix(),seq);}}}
 }
 function updInvTotals(){const t=invTotals();$('tSub').textContent=money(t.sub)+' ₾';$('tGrand').textContent=money(t.grand)+' ₾';
   if($('tSubL'))$('tSubL').textContent=invVatIncl?'ქვეჯამი (დღგ-ით)':'ქვეჯამი';
   if(invVatIncl){if($('tVatL'))$('tVatL').textContent='მ.შ. დღგ 18%';if($('tVat'))$('tVat').textContent=money(t.vat)+' ₾';}
   else{if($('tVatL'))$('tVatL').textContent='დღგ';if($('tVat'))$('tVat').textContent='დღგ-ს გარეშე';}}
 function updInvRow(i,inp){const l=invDraft[i];const tr=inp.closest('tr');if(tr){const s=tr.querySelector('.sum');if(s)s.textContent=money(l.price*l.qty);}updInvTotals();}
-function currentInv(){const t=invTotals();return {no:$('iNo').value,date:$('iDate').value||todayStr(),cust:$('iCust').value,idc:$('iId').value,phone:($('iPhone')?$('iPhone').value:''),
+function currentInv(){const t=invTotals();const _demo=($('iDemo')?$('iDemo').checked:invDemo);return {no:(_demo?'':$('iNo').value),date:$('iDate').value||todayStr(),cust:$('iCust').value,idc:$('iId').value,phone:($('iPhone')?$('iPhone').value:''),
   lines:invDraft.map(l=>{const p=byCode(l.code)||{};return {code:l.code,name:l.name||p.name,size:l.size||p.size,ply:l.ply||'',brand:l.brand||'',pack:l.pack||'',tier:l.tier||null,color:p.color,price:l.price,priceEdited:!!l.priceEdited,qty:l.qty,min:(l.min!=null?l.min:''),img:pubImg(l.code)};}),
   sub:t.sub,vat:t.vat,extra:{brandAmt:t.brandAmt,transAmt:t.transAmt,note:($('iNote')?$('iNote').value:''),minQty:($('iMinQty')?$('iMinQty').value:''),vatIncl:invVatIncl,demo:($('iDemo')?$('iDemo').checked:invDemo),transp:($('iTransp')?$('iTransp').checked:false),transpNo:($('iTranspNo')?$('iTranspNo').value:''),legal:!!($('iLegalT')&&$('iLegalT').checked),needWaybill:($('iNeedWaybill')?$('iNeedWaybill').checked:false),custType:(($('iCTdist')&&$('iCTdist').checked)?'dist':'retail'),distributor_id:(($('iCTdist')&&$('iCTdist').checked&&$('iDistSel'))?$('iDistSel').value:''),addr:($('iAddr')?$('iAddr').value:''),email:($('iEmail')?$('iEmail').value:''),region:($('iRegion')?$('iRegion').value:''),municipality:($('iMuni')?$('iMuni').value:'')},grand:t.grand};}
 async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}const inv=currentInv();
