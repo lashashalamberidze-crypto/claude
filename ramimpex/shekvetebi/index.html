@@ -1647,7 +1647,7 @@ function renderInvList(){ // ledger refresh (KPIs + rows)
       '</div>';
     return '<tr><td>'+esc(inv.date||'')+'</td><td><b>'+esc(inv.no||'—')+'</b></td>'+
       '<td>'+esc(inv.cust||'—')+(inv.idc?'<div class="muted" style="font-size:10px">ს.კ. '+esc(inv.idc)+'</div>':'')+(invLoc(inv)?'<div class="muted" style="font-size:10.5px;color:#2b6cb0;font-weight:700">📍 '+esc(invLoc(inv))+'</div>':'')+(inv.phone?'<div class="muted" style="font-size:10px">📞 '+esc(inv.phone)+'</div>':'')+badges+'</td>'+
-      '<td>'+invProdSummary(inv)+'</td>'+
+      '<td>'+invProdSummary(inv)+(ex.note?'<div style="margin-top:4px;background:#fffdf0;border:1px dashed #e6c200;border-radius:6px;padding:3px 7px;font-size:11px;color:#8a6a00;max-width:240px">📝 '+esc(ex.note)+'</div>':'')+'</td>'+
       '<td class="right">'+(invWeightKg(inv)>0?('<b>'+fmtNum(invWeightKg(inv))+'</b> კგ'):'<span class="muted">—</span>')+'</td>'+
       '<td class="right"><b>'+money(g)+'</b></td>'+
       '<td class="right">'+money(pd)+'</td>'+
