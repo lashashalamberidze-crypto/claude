@@ -987,6 +987,8 @@ function retailSoldQty(dir){let q=0;(INVOICES||[]).forEach(v=>{if(invIsDist(v))r
 function distSoldQty(dir){let q=0;(INVOICES||[]).forEach(v=>{const ex=v.extra||{};if(!invIsDist(v)||!ex.dispensed)return;q+=invLineQtyDir(v,dir);});return q;}   // დისტრ. გატანილი
 function stockQtyDir(dir){let k=0;Object.keys(STOCK||{}).forEach(c=>{if(STOCK[c]==null)return;const cdir=saleDirOf(c,(byCode(c)||{}).dir||'');const match=(dir&&dir!=='all')?(cdir===dir):isBriket(c);if(match)k+=(+STOCK[c]||0);});return k;}   // მარაგში დარჩენილი
 function distDashAgg(dir){let taken=0,paid=0,debt=0;(DISTRIBUTORS||[]).forEach(d=>{if(dir&&dir!=='all'&&(d.product||'ანთრაციტის ბრიკეტი')!==dir)return;taken+=distTakenFor(d.id);paid+=distDepositsFor(d.id);debt+=distDebtFor(d.id);});return {taken,paid,debt};}
+// 🎁 საცდელად/სადემონსტრაციოდ წაღებული (გატანილი დემო ინვოისები)
+function demoDispensed(dir){let kg=0,val=0,n=0;(INVOICES||[]).forEach(v=>{const ex=v.extra||{};if(!ex.demo||!ex.dispensed)return;const q=invLineQtyDir(v,dir);if(q<=0)return;kg+=q;val+=(+v.grand||0);n++;});return {kg,val,n};}
 function comboDashHTML(){const dir=IL_DIR;const dd=SAL_DIRS.find(x=>x[0]===dir);
   const dlabel=(dir&&dir!=='all'&&dd)?(dd[2]+' '+dd[1]):'ყველა მიმართულება';
   const isBrik=(!dir||dir==='all'||dir==='ანთრაციტის ბრიკეტი');const u=isBrik?' კგ':' ცალ';
@@ -1006,6 +1008,7 @@ function comboDashHTML(){const dir=IL_DIR;const dd=SAL_DIRS.find(x=>x[0]===dir);
     block('🛒 საცალო',rt.T,rt.P,rt.due,rKg,'')+
     block('🚚 დისტრიბუცია',da.taken,da.paid,da.debt,dKg,'')+
     block('📊 ჯამი — საცალო + დისტრიბუცია',rt.T+da.taken,rt.P+da.paid,rt.due+da.debt,rKg+dKg,totExtra)+
+    (function(){const dm=demoDispensed(dir);return dm.kg>0?('<div style="margin-top:2px;background:#fdf3e9;border:1px solid #f0d6b8;border-radius:10px;padding:9px 13px;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span style="font-size:22px">🎁</span><div><div style="font-weight:800;color:#a5591a;font-size:13.5px">საცდელად / სადემონსტრაციოდ წაღებული: '+fmtNum(dm.kg)+u+'</div><div class="muted" style="font-size:11.5px">'+dm.n+' საცდელი ინვოისი · ფასად ~'+money(dm.val)+' ₾ · მოგება/ვალში არ ითვლება, მაგრამ მარაგს უკვე გამოაკლდა</div></div></div>'):'';})()+
     '</div></div>';
 }
 function wirePL(rerender){const rr=rerender||renderSales;
