@@ -686,7 +686,7 @@ function renderCat(){
         '<button class="btn sm" data-inv="'+idx+'" data-tier="3" title="დაამატე ფიქს. ფასით — '+briketTierLabel(3)+' (ბიგ-ბეგი)" style="background:#7a3b00;color:#fff;font-weight:800;font-size:11px;padding:4px 7px;white-space:nowrap">＋ '+briketTierLabel(3)+' · '+(+b.p3)+'₾</button>'+
         '</div>';})()):('<button class="btn sm" data-inv="'+idx+'" title="დაამატე არჩეულებში — მერე ზემოთ დააჭირე შეკვეთა/შეთავაზება" style="background:#0B6B3C;color:#fff;font-weight:800">＋ დამატება</button>');
       rh+='<tr'+trStyle+'><td style="white-space:nowrap">'+_addCell+'</td><td>'+pos+'</td><td><input value="'+esc(ruCode(it.code))+'" style="width:64px" data-f="code" data-i="'+idx+'"></td>'+
-        '<td><input value="'+esc(it.name||'')+'" style="min-width:120px" data-f="name" data-i="'+idx+'">'+(it.pack?'<div class="muted" style="font-size:9px;margin-top:1px">📦 '+esc(it.pack)+'</div>':'')+'<input value="'+esc(it.note||'')+'" placeholder="📝 შენიშვნა (მხოლოდ აქ)" title="შიდა შენიშვნა — ჩანს მხოლოდ კატალოგში, ინვოისში არა" style="display:block;min-width:120px;margin-top:3px;background:#FFFDF0;border:1px dashed #E6C200;border-radius:6px;font-size:11px;padding:3px 6px" data-f="note" data-i="'+idx+'"></td>'+
+        '<td><input value="'+esc(it.name||'')+'" style="min-width:120px" data-f="name" data-i="'+idx+'">'+(it.pack?'<div class="muted" style="font-size:9px;margin-top:1px">📦 '+esc(it.pack)+'</div>':'')+'<input value="'+esc(it.note||'')+'" placeholder="📝 შენიშვნა (მხოლოდ აქ)" title="შიდა შენიშვნა — ჩანს მხოლოდ კატალოგში, ინვოისში არა" style="display:block;min-width:120px;margin-top:3px;background:#FFFDF0;border:1px dashed #E6C200;border-radius:6px;font-size:11px;padding:3px 6px" data-f="note" data-i="'+idx+'"><input type="number" step="1" value="'+(it.pallet!=null&&it.pallet!==''?it.pallet:'')+'" placeholder="🟫 პადონზე (ცალი)" title="რამდენი ცალი ეტევა ერთ პადონზე (პალეტზე)" style="display:block;min-width:120px;margin-top:3px;background:#F3F7FF;border:1px dashed #9db8e0;border-radius:6px;font-size:11px;padding:3px 6px;text-align:right" data-f="pallet" data-i="'+idx+'"></td>'+
         '<td><input value="'+esc(it.size||'')+'" style="width:82px" data-f="size" data-i="'+idx+'"></td>'+
         '<td><input value="'+esc(it.mark||'')+'" style="width:50px" data-f="mark" data-i="'+idx+'"></td>'+
         (showPly?'<td><input value="'+esc(it.ply||'')+'" placeholder="3/5" title="რამდენ შრიანი" style="width:52px" data-f="ply" data-i="'+idx+'"></td>':'')+
@@ -714,7 +714,7 @@ function renderCat(){
     rowsHost.innerHTML=rh||'<tr><td colspan="30" class="empty">ვერ მოიძებნა</td></tr>';
     rowsHost.querySelectorAll('input[data-f]').forEach(inp=>inp.onchange=()=>{const it=d.items[+inp.dataset.i];const f=inp.dataset.f;
       if(f==='rub'){it[f]=inp.value===''?0:(parseFloat(inp.value)||0);}
-      else if(f==='pfinal'||f==='cap'){it[f]=inp.value===''?'':(parseFloat(inp.value)||0);if(f==='cap')pushCapacity(it.code,it.cap);}
+      else if(f==='pfinal'||f==='cap'||f==='pallet'){it[f]=inp.value===''?'':(parseFloat(inp.value)||0);if(f==='cap')pushCapacity(it.code,it.cap);}
       else if(f==='code'){it.code=latCode(inp.value.trim());}
       else{it[f]=inp.value;}
       saveDirs();paintRows();});
