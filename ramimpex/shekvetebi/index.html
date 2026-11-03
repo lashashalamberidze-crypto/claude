@@ -601,6 +601,35 @@ async function ensureDirs(){
       if(!plain.items.some(x=>x&&x.code===it.code))plain.items.push(it);
       plain._mkPatch3=true;
     }}catch(e){}
+  // ერთჯერადი: არტურას (WhatsApp) ყუთები — ცალკე კატეგორია, ფერით მონიშნული (isNew)
+  try{ if(!result.some(g=>g&&g.id==='arturbox')){
+    const AR=[
+      {code:'AR-01',name:'პიცის ყუთი',size:'350×280×195',mark:'Т-24К В',ply:'3',color:'თეთრი',rub:27.83,cap:34500,note:'🍕 პიცა · ბრენდირებული · ფურაში 34500',isNew:true},
+      {code:'AR-02',name:'პიცის ყუთი',size:'350×280×195',mark:'П-32К СЕ',ply:'5',color:'თეთრი',rub:39.73,cap:20700,note:'🍕 პიცა · 5-შრ · ფურაში 20700',isNew:true},
+      {code:'AR-03',name:'ფუნდუკის ყუთი',size:'384×212×445',mark:'Т-24К В',ply:'3',color:'მუყაოს ფერი',rub:34.51,cap:24000,note:'🌰 ფუნდუკი · ფურაში 24000',isNew:true},
+      {code:'AR-04',name:'ფუნდუკის ყუთი',size:'384×212×445',mark:'П-32К СЕ',ply:'5',color:'მუყაოს ფერი',rub:50.31,cap:14400,note:'🌰 ფუნდუკი · 5-შრ · ფურაში 14400',isNew:true},
+      {code:'AR-05',name:'გოფროლანგარი',size:'560×385×160',mark:'П-34К СЕ',ply:'5',color:'მუყაოს ფერი',rub:69,cap:12600,pallet:450,note:'🍎 ვაშლის · ხელის · УП 1200×920',isNew:true},
+      {code:'AR-06',name:'გოფროლანგარი',size:'470×310×230',mark:'П-33К СЕ',ply:'5',color:'მუყაოს ფერი',rub:58.68,note:'🍎 ვაშლის · ბეჭდვის გარეშე',isNew:true},
+      {code:'AR-07',name:'გოფროლანგარი',size:'385×292×170',mark:'П-34К СЕ',ply:'5',color:'მუყაოს ფერი',rub:35.89,cap:26000,pallet:900,note:'🍎 თვითგატანა · УП 1216×800',isNew:true},
+      {code:'AR-08',name:'გოფროლანგარი',size:'568×368×95',mark:'П-35К СЕ',ply:'5',color:'მუყაოს ფერი',rub:55.93,note:'🍎 ლანგარი',isNew:true},
+      {code:'AR-09',name:'გოფროყუთი — სახურავი',size:'493×383×165',mark:'Т-24 В',ply:'3',color:'თეთრი',rub:24.53,pallet:1500,note:'სახურავი · УП 1218×912',isNew:true},
+      {code:'AR-10',name:'გოფროყუთი — ძირი',size:'480×370×160',mark:'П-34К ВС',ply:'5',color:'მუყაოს ფერი',rub:39,pallet:720,note:'ძირი · УП 1222×890',isNew:true},
+      {code:'AR-11',name:'გოფროყუთი',size:'320×550×170',mark:'Т-23К В',ply:'3',color:'მუყაოს ფერი',rub:32.96,cap:21750,note:'ფურაში 21750',isNew:true},
+      {code:'AR-12',name:'გოფროყუთი',size:'360×550×190',mark:'Т-23К В',ply:'3',color:'მუყაოს ფერი',rub:36.27,cap:21000,note:'ფურაში 21000',isNew:true},
+      {code:'AR-13',name:'გოფროყუთი',size:'400×250×200',mark:'Т-22К В',ply:'3',color:'მუყაოს ფერი',rub:20.71,cap:36000,pallet:1500,note:'პადონი 1350×950 · ფურაში 36000',isNew:true},
+      {code:'AR-14',name:'გოფროყუთი',size:'400×300×280',mark:'Т-22К В',ply:'3',color:'მუყაოს ფერი',rub:27.03,cap:24750,pallet:750,note:'პადონი 1210×800 · ფურაში 24750',isNew:true},
+      {code:'AR-15',name:'გოფროყუთი',size:'350×250×250',mark:'Т-22К В',ply:'3',color:'მუყაოს ფერი',rub:21.17,cap:33000,pallet:1500,note:'პადონი 1250×1050 · ფურაში 33000',isNew:true},
+      {code:'AR-16',name:'გოფროყუთი',size:'250×200×180',mark:'Т-22К В',ply:'3',color:'მუყაოს ფერი',rub:14.31,cap:63000,pallet:2250,note:'პადონი 1200×950 · ფურაში 63000',isNew:true},
+      {code:'AR-17',name:'გოფროყუთი',size:'336×276×127',mark:'Т-23К В',ply:'3',color:'მუყაოს ფერი',rub:23.25,cap:34500,note:'ფურაში 34500',isNew:true},
+      {code:'AR-18',name:'გოფროყუთი',size:'330×235×127',mark:'Т-23К В',ply:'3',color:'მუყაოს ფერი',rub:21.71,cap:45000,note:'ფურაში 45000',isNew:true},
+      {code:'AR-19',name:'სამედიცინო ყუთი',size:'150×150×80',mark:'Т-23К В',ply:'3',color:'მუყაოს ფერი',rub:7.72,cap:131250,pallet:5250,note:'💉 სამედიცინო · მინ. 10500 ცალი · УП 1254×880',isNew:true},
+      {code:'AR-20',name:'სამედიცინო ყუთი (5-შრ)',size:'',mark:'',ply:'5',color:'მუყაოს ფერი',rub:28.2,cap:39600,note:'💉 სამედიცინო · 5-შრ · ფურაში 39600',isNew:true}
+    ];
+    result.push({id:'arturbox',dir:'მუყაოს ყუთები',name:'📦 არტურა — ახალი ყუთები',tag:'ar',mode:'calc',hasSetka:false,
+      note:'არტურას (WhatsApp) შეთავაზებიდან ამოღებული ყუთები. ფასები რუბლში. 🟧 ნარინჯისფერი მწკრივები = ახალი ჩასმული — გადაამოწმე/დააზუსტე ფასი/ზომა/მოგება.',
+      params:{usdRub:85,usdGel:2.61,transpUsd:1500,container:20000,contFlat:500,conting:0.05,profit:0.25,vat:0.18,step:0.05},
+      items:AR,_arturV1:true});
+  }}catch(e){}
   // ერთჯერადი: ანთრაციტი ტონა→კგ + „ინდუსტრიული" (2.2 ₾)
   try{const ant=result.find(g=>g&&g.dir==='ანთრაციტის ბრიკეტი');
     if(ant&&!ant._antKg){ant.params=ant.params||{};
@@ -662,7 +691,7 @@ function renderCat(){
      '<button class="btn danger sm" id="cartClr" style="display:none">გასუფთავება</button>'+
      '<span class="muted" style="font-size:11px">მონიშნე რამდენიმე პროდუქტი სიაში „＋ დამატება"-თი, მერე ამ ღილაკით ერთხელ გადადი და აირჩიე შეკვეთა ან ფასების შეთავაზება (JPG).</span></div>';
   h+='<div class="row" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><button class="btn line sm" data-add>+ პროდუქტის დამატება</button><button class="btn sm" data-addcat style="background:#0B6B3C;color:#fff">📂 ახალი კატეგორია</button><button class="btn line sm" id="catDet" title="აჩვენე/დამალე დათვლის დეტალური სვეტები">🔎 დეტალები</button><input id="cq" placeholder="🔍 ძებნა კოდით/ზომით (ამ ჯგუფში)" style="max-width:280px"><span class="muted" style="align-self:center;font-size:11.5px">🔵 დოლარი · 🟢 ფასი ₾ (ავტო) · 🟡 ხელით</span></div>';
-  h+='<div class="scroll"><table id="catTbl" class="simple"><thead><tr><th title="დაამატე შეკვეთა/ფასებში">➕</th><th>№</th><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>მარკა</th>'+plyTh+'<th>ფერი</th><th class="right">RUB</th><th class="right" title="რამდენი ეტევა კონტეინერში">კონტ. ცალი</th><th class="right usdcol">ყუთი $</th>'+(d.hasSetka?'<th class="right usdcol">სეტკა $</th>':'')+'<th class="right usdcol">ტრანსპ $</th><th class="right usdcol" title="კონტ. ხარჯი ₾ ÷ კონტ.ცალი ($)">კონტ.₾ $</th><th class="right costcol" title="თვითღირებულება: ყუთი+ტრანსპ+კონტ. ($)">თვითღ. $</th><th class="right costcol" title="თვითღირებულება (₾)">თვითღ. ₾</th><th class="right usdcol" title="გაუთვალისწინებელი">+გაუთ. $</th><th class="right usdcol">მოგება $</th><th class="right usdcol" title="დღგ — გასაყიდ ფასზე (ბოლოს)">დღგ $</th><th class="right totcol">ჯამი $</th><th class="right totcol">ჯამი ₾</th><th class="right finalcol">ფასი ₾ (ავტო)</th><th class="right finalcol">ფასი $ (ავტო)</th><th class="right detcol" title="შემოტანისას გადახდილი დღგ — გიბრუნდება (18% × საქონელი+ტრანსპ, ₾)">💧 დასაბრ. დღგ ₾</th><th class="right" title="რეალური ხარჯი / თვითღირებულება 1 ცალზე (დღგ-ს გარეშე, ვინაიდან დღგ ბრუნდება): ყუთი+სეტკა+ტრანსპ+კონტ., ₾" style="background:#fff2d9;color:#8a5a00">🧾 რეალ. ხარჯი ₾</th><th class="right" title="სუფთა მოგება = გასაყიდი ფასი÷1.18 (დღგ-ს გარეშე) − რეალური ხარჯი">💰 სუფთა მოგება ₾</th><th class="right" title="მოგება 1 სავსე კონტეინერზე = სუფთა მოგება × კონტ. ცალი">📦 მოგება/კონტ. ₾</th><th class="right">ფასი ₾ (ხელით)</th><th class="right">ფასი $ (ხელით)</th><th title="მომხმარებლის საიტზე გამოჩენა + ფოტოები">🌐 საიტზე</th><th></th></tr></thead><tbody id="catRows"></tbody></table></div></div>';
+  h+='<div class="scroll"><table id="catTbl" class="simple"><thead><tr><th title="დაამატე შეკვეთა/ფასებში">➕</th><th>№</th><th>კოდი</th><th>დასახელება</th><th>ზომა</th><th>მარკა</th>'+plyTh+'<th>ფერი</th><th class="right">RUB</th><th class="right" title="რამდენი ეტევა კონტეინერში">კონტ. ცალი</th><th class="right" title="რამდენი ცალი ეტევა ერთ პალეტზე (პადონზე)" style="background:#eef4ff;color:#2b6cb0">🟫 პალეტზე</th><th class="right usdcol">ყუთი $</th>'+(d.hasSetka?'<th class="right usdcol">სეტკა $</th>':'')+'<th class="right usdcol">ტრანსპ $</th><th class="right usdcol" title="კონტ. ხარჯი ₾ ÷ კონტ.ცალი ($)">კონტ.₾ $</th><th class="right costcol" title="თვითღირებულება: ყუთი+ტრანსპ+კონტ. ($)">თვითღ. $</th><th class="right costcol" title="თვითღირებულება (₾)">თვითღ. ₾</th><th class="right usdcol" title="გაუთვალისწინებელი">+გაუთ. $</th><th class="right usdcol">მოგება $</th><th class="right usdcol" title="დღგ — გასაყიდ ფასზე (ბოლოს)">დღგ $</th><th class="right totcol">ჯამი $</th><th class="right totcol">ჯამი ₾</th><th class="right finalcol">ფასი ₾ (ავტო)</th><th class="right finalcol">ფასი $ (ავტო)</th><th class="right detcol" title="შემოტანისას გადახდილი დღგ — გიბრუნდება (18% × საქონელი+ტრანსპ, ₾)">💧 დასაბრ. დღგ ₾</th><th class="right" title="რეალური ხარჯი / თვითღირებულება 1 ცალზე (დღგ-ს გარეშე, ვინაიდან დღგ ბრუნდება): ყუთი+სეტკა+ტრანსპ+კონტ., ₾" style="background:#fff2d9;color:#8a5a00">🧾 რეალ. ხარჯი ₾</th><th class="right" title="სუფთა მოგება = გასაყიდი ფასი÷1.18 (დღგ-ს გარეშე) − რეალური ხარჯი">💰 სუფთა მოგება ₾</th><th class="right" title="მოგება 1 სავსე კონტეინერზე = სუფთა მოგება × კონტ. ცალი">📦 მოგება/კონტ. ₾</th><th class="right">ფასი ₾ (ხელით)</th><th class="right">ფასი $ (ხელით)</th><th title="მომხმარებლის საიტზე გამოჩენა + ფოტოები">🌐 საიტზე</th><th></th></tr></thead><tbody id="catRows"></tbody></table></div></div>';
   body.innerHTML=h;
   const rowsHost=$('catRows');
   function paintRows(){
@@ -678,7 +707,7 @@ function renderCat(){
       const c=calcRow(d,it);
       const gel=d.params.usdGel||0;
       const priceKnown=((it.pfinal!=null&&it.pfinal!==''&&+it.pfinal>0)||(+it.rub>0)); // ფასი იდენტიფიცირებულია
-      const trStyle=priceKnown?' style="background:#eefaf1"':''; // ღია მწვანე — ძალიან მკრთალი
+      const trStyle=it.isNew?' style="background:#ffe9d6"':(priceKnown?' style="background:#eefaf1"':''); // 🆕 ნარინჯისფერი = ახალი ჩასმული (არტურა); მწვანე = ფასი ცნობილია
       const _brikRow=(d.dir==='ანთრაციტის ბრიკეტი');
       const _addCell=_brikRow?((function(){const b=brikTiers();return '<div style="display:flex;flex-direction:column;gap:3px">'+
         '<button class="btn sm" data-inv="'+idx+'" data-tier="1" title="დაამატე ფიქს. ფასით — '+briketTierLabel(1)+'" style="background:#0B6B3C;color:#fff;font-weight:800;font-size:11px;padding:4px 7px;white-space:nowrap">＋ '+briketTierLabel(1)+' · '+(+b.p1)+'₾</button>'+
@@ -686,13 +715,14 @@ function renderCat(){
         '<button class="btn sm" data-inv="'+idx+'" data-tier="3" title="დაამატე ფიქს. ფასით — '+briketTierLabel(3)+' (ბიგ-ბეგი)" style="background:#7a3b00;color:#fff;font-weight:800;font-size:11px;padding:4px 7px;white-space:nowrap">＋ '+briketTierLabel(3)+' · '+(+b.p3)+'₾</button>'+
         '</div>';})()):('<button class="btn sm" data-inv="'+idx+'" title="დაამატე არჩეულებში — მერე ზემოთ დააჭირე შეკვეთა/შეთავაზება" style="background:#0B6B3C;color:#fff;font-weight:800">＋ დამატება</button>');
       rh+='<tr'+trStyle+'><td style="white-space:nowrap">'+_addCell+'</td><td>'+pos+'</td><td><input value="'+esc(ruCode(it.code))+'" style="width:64px" data-f="code" data-i="'+idx+'"></td>'+
-        '<td><input value="'+esc(it.name||'')+'" style="min-width:120px" data-f="name" data-i="'+idx+'">'+(it.pack?'<div class="muted" style="font-size:9px;margin-top:1px">📦 '+esc(it.pack)+'</div>':'')+'<input value="'+esc(it.note||'')+'" placeholder="📝 შენიშვნა (მხოლოდ აქ)" title="შიდა შენიშვნა — ჩანს მხოლოდ კატალოგში, ინვოისში არა" style="display:block;min-width:120px;margin-top:3px;background:#FFFDF0;border:1px dashed #E6C200;border-radius:6px;font-size:11px;padding:3px 6px" data-f="note" data-i="'+idx+'"><input type="number" step="1" value="'+(it.pallet!=null&&it.pallet!==''?it.pallet:'')+'" placeholder="🟫 პადონზე (ცალი)" title="რამდენი ცალი ეტევა ერთ პადონზე (პალეტზე)" style="display:block;min-width:120px;margin-top:3px;background:#F3F7FF;border:1px dashed #9db8e0;border-radius:6px;font-size:11px;padding:3px 6px;text-align:right" data-f="pallet" data-i="'+idx+'"></td>'+
+        '<td><input value="'+esc(it.name||'')+'" style="min-width:120px" data-f="name" data-i="'+idx+'">'+(it.pack?'<div class="muted" style="font-size:9px;margin-top:1px">📦 '+esc(it.pack)+'</div>':'')+'<input value="'+esc(it.note||'')+'" placeholder="📝 შენიშვნა (მხოლოდ აქ)" title="შიდა შენიშვნა — ჩანს მხოლოდ კატალოგში, ინვოისში არა" style="display:block;min-width:120px;margin-top:3px;background:#FFFDF0;border:1px dashed #E6C200;border-radius:6px;font-size:11px;padding:3px 6px" data-f="note" data-i="'+idx+'"></td>'+
         '<td><input value="'+esc(it.size||'')+'" style="width:82px" data-f="size" data-i="'+idx+'"></td>'+
         '<td><input value="'+esc(it.mark||'')+'" style="width:50px" data-f="mark" data-i="'+idx+'"></td>'+
         (showPly?'<td><input value="'+esc(it.ply||'')+'" placeholder="3/5" title="რამდენ შრიანი" style="width:52px" data-f="ply" data-i="'+idx+'"></td>':'')+
         '<td><input value="'+esc(it.color||'')+'" style="width:50px" data-f="color" data-i="'+idx+'"></td>'+
         '<td class="right"><input type="number" step="0.01" value="'+(it.rub!=null?it.rub:'')+'" style="width:58px" data-f="rub" data-i="'+idx+'"></td>'+
         '<td class="right capcol"><input type="number" step="1" placeholder="ცალი" title="რამდენი ეტევა კონტეინერში (ინდივიდ.)" value="'+(it.cap!=null&&it.cap!==''?it.cap:'')+'" style="width:60px" data-f="cap" data-i="'+idx+'"></td>'+
+        '<td class="right"><input type="number" step="1" placeholder="—" title="რამდენი ცალი ეტევა ერთ პალეტზე" value="'+(it.pallet!=null&&it.pallet!==''?it.pallet:'')+'" style="width:60px;background:#f3f7ff;border-color:#bcd0ef" data-f="pallet" data-i="'+idx+'"></td>'+
         '<td class="right usdcol">'+c.box.toFixed(4)+'</td>'+(d.hasSetka?'<td class="right usdcol">'+c.setka.toFixed(4)+'</td>':'')+
         '<td class="right usdcol">'+c.transp.toFixed(4)+'</td>'+
         '<td class="right usdcol">'+c.contU.toFixed(4)+'</td>'+
@@ -711,7 +741,7 @@ function renderCat(){
         '<td class="right" style="white-space:nowrap">'+(function(){const pr=PUB[it.code];const on=!!pr;const n=on&&pr.images?pr.images.length:0;return '<button class="btn '+(on?'':'line')+' sm" data-media="'+idx+'" title="ფოტოები / საიტზე გამოჩენა" style="'+(on?'background:#0B6B3C;color:#fff':'')+'">'+(on?'🌐':'⊕')+(n?' 🖼'+n:'')+'</button>';})()+'</td>'+
         '<td class="right"><button class="btn danger sm" data-del="'+idx+'">✕</button></td></tr>';
     });
-    rowsHost.innerHTML=rh||'<tr><td colspan="30" class="empty">ვერ მოიძებნა</td></tr>';
+    rowsHost.innerHTML=rh||'<tr><td colspan="31" class="empty">ვერ მოიძებნა</td></tr>';
     rowsHost.querySelectorAll('input[data-f]').forEach(inp=>inp.onchange=()=>{const it=d.items[+inp.dataset.i];const f=inp.dataset.f;
       if(f==='rub'){it[f]=inp.value===''?0:(parseFloat(inp.value)||0);}
       else if(f==='pfinal'||f==='cap'||f==='pallet'){it[f]=inp.value===''?'':(parseFloat(inp.value)||0);if(f==='cap')pushCapacity(it.code,it.cap);}
