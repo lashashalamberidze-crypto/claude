@@ -629,11 +629,35 @@ async function loadCatalog(){
   curGid=curGid||DIRS[0].id;
   renderCat();
 }
+function exportCatalogXls(){
+  if(!window.XLSX||!window.XLSX.utils){alert('Excel ბიბლიოთეკა ვერ ჩაიტვირთა — სცადე ინტერნეტით');return;}
+  const XLSX=window.XLSX;
+  const header=['კატეგორია','კოდი','დასახელება','ზომა','მარკა','შრე','ფერი','RUB','კონტ.ცალი','პალეტზე','თვითღირ.₾ (დღგ-ს გარ.)','ფასი ₾ (ავტო)','ფასი $ (ავტო)','ფასი ₾ (ხელით)','სუფთა მოგება ₾','შენიშვნა'];
+  const aoa=[['RAM IMPEX — სრული კატალოგი · '+todayStr()],[],header];
+  let n=0;
+  (DIRS||[]).forEach(d=>{(d.items||[]).forEach(it=>{if(!it)return;n++;let c={};try{c=calcRow(d,it);}catch(e){}
+    const gel=+d.params.usdGel||0;const landedGel=(c.landed||0)*gel;const priceAuto=+c.price||0;
+    const priceManual=(it.pfinal!=null&&it.pfinal!=='')?+it.pfinal:'';
+    const eff=(priceManual!==''?priceManual:priceAuto);const vr=1+(+d.params.vat||0);const net=vr?(eff/vr-landedGel):0;
+    aoa.push([d.name,ruCode(it.code),it.name||'',it.size||'',it.mark||'',it.ply||'',it.color||'',+it.rub||0,
+      (it.cap!=null&&it.cap!==''?+it.cap:(+d.params.container||'')),(it.pallet!=null&&it.pallet!==''?+it.pallet:''),
+      Math.round(landedGel*100)/100,Math.round(priceAuto*100)/100,gel?Math.round(priceAuto/gel*100)/100:'',priceManual,
+      Math.round(net*100)/100,it.note||'']);
+  });});
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[{wch:24},{wch:10},{wch:20},{wch:15},{wch:11},{wch:5},{wch:13},{wch:9},{wch:10},{wch:9},{wch:14},{wch:12},{wch:12},{wch:12},{wch:14},{wch:34}];
+  // რიცხვითი სვეტები
+  const numCols=[7,8,9,10,11,12,13,14];
+  for(let r=3;r<aoa.length;r++){numCols.forEach(cc=>{const ref=XLSX.utils.encode_cell({r,c:cc});if(ws[ref]&&ws[ref].v!==''&&ws[ref].v!=null){ws[ref].t='n';}});}
+  const wbk=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wbk,ws,'კატალოგი');
+  try{XLSX.writeFile(wbk,'RAM_IMPEX_katalogi_'+todayStr()+'.xlsx');}catch(e){alert('ვერ შეიქმნა: '+(e.message||e));}
+}
 function renderCat(){
   // ახალი პარამეტრების ნაგულისხმევი მნიშვნელობები (ძველ მონაცემებზეც)
   DIRS.forEach(x=>{if(x.params){if(x.params.contFlat==null)x.params.contFlat=500;if(x.params.conting==null)x.params.conting=0.05;}});
   const g=curGroup(),curdir=g.dir;
-  catEl.innerHTML='<div class="dirtabs" id="dirTabs"></div><div class="subtabs" id="subTabs"></div><div id="catBody"></div>';
+  catEl.innerHTML='<div style="display:flex;justify-content:flex-end;margin:0 0 8px"><button class="btn a sm" id="catXlsAll" style="background:#1D7A46;color:#fff">📊 სრული კატალოგი — Excel</button></div><div class="dirtabs" id="dirTabs"></div><div class="subtabs" id="subTabs"></div><div id="catBody"></div>';
+  if($('catXlsAll'))$('catXlsAll').onclick=exportCatalogXls;
   const dt=$('dirTabs');
   directions().forEach(dn=>{let cnt=0;DIRS.forEach(x=>{if(x.dir===dn)cnt+=x.items.length;});
     const b=document.createElement('button');b.className='dirbtn'+(dn===curdir?' on':'');b.textContent=dn+' · '+cnt;
