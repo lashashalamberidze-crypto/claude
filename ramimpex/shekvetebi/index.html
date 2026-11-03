@@ -550,7 +550,7 @@ async function ensureDirs(){
   // STORED data is the source of truth — ALL edits (names, sizes, prices, added/removed items) persist.
   // We only: (1) add SEED groups that don't exist yet, (2) drop stale groups (fixes duplicates).
   // ერთჯერადი გასუფთავება: ძველი ტორტის ყუთების ვერსია (cakebox, ფასების გარეშე) → ამოვიღოთ, ახალი seed (cakebox2) ჩაჯდეს
-  const stored=((data&&data.dirs)||[]).filter(g=>!(g&&g.id==='cakebox'));
+  const stored=((data&&data.dirs)||[]).filter(g=>!(g&&(g.id==='cakebox'||g.id==='arturbox')));
   const byId={}, byName={};
   stored.forEach(g=>{if(!g)return; if(g.id&&!byId[g.id])byId[g.id]=g; if(g.name&&!byName[g.name])byName[g.name]=g;});
   const used=new Set(); const result=[];
@@ -601,35 +601,6 @@ async function ensureDirs(){
       if(!plain.items.some(x=>x&&x.code===it.code))plain.items.push(it);
       plain._mkPatch3=true;
     }}catch(e){}
-  // ერთჯერადი: არტურას (WhatsApp) ყუთები — ცალკე კატეგორია, ფერით მონიშნული (isNew)
-  try{ if(!result.some(g=>g&&g.id==='arturbox')){
-    const AR=[
-      {code:'AR-01',name:'პიცის ყუთი',size:'350×280×195',mark:'Т-24К В',ply:'3',color:'თეთრი',rub:27.83,cap:34500,note:'🍕 პიცა · ბრენდირებული · ფურაში 34500',isNew:true},
-      {code:'AR-02',name:'პიცის ყუთი',size:'350×280×195',mark:'П-32К СЕ',ply:'5',color:'თეთრი',rub:39.73,cap:20700,note:'🍕 პიცა · 5-შრ · ფურაში 20700',isNew:true},
-      {code:'AR-03',name:'ფუნდუკის ყუთი',size:'384×212×445',mark:'Т-24К В',ply:'3',color:'მუყაოს ფერი',rub:34.51,cap:24000,note:'🌰 ფუნდუკი · ფურაში 24000',isNew:true},
-      {code:'AR-04',name:'ფუნდუკის ყუთი',size:'384×212×445',mark:'П-32К СЕ',ply:'5',color:'მუყაოს ფერი',rub:50.31,cap:14400,note:'🌰 ფუნდუკი · 5-შრ · ფურაში 14400',isNew:true},
-      {code:'AR-05',name:'გოფროლანგარი',size:'560×385×160',mark:'П-34К СЕ',ply:'5',color:'მუყაოს ფერი',rub:69,cap:12600,pallet:450,note:'🍎 ვაშლის · ხელის · УП 1200×920',isNew:true},
-      {code:'AR-06',name:'გოფროლანგარი',size:'470×310×230',mark:'П-33К СЕ',ply:'5',color:'მუყაოს ფერი',rub:58.68,note:'🍎 ვაშლის · ბეჭდვის გარეშე',isNew:true},
-      {code:'AR-07',name:'გოფროლანგარი',size:'385×292×170',mark:'П-34К СЕ',ply:'5',color:'მუყაოს ფერი',rub:35.89,cap:26000,pallet:900,note:'🍎 თვითგატანა · УП 1216×800',isNew:true},
-      {code:'AR-08',name:'გოფროლანგარი',size:'568×368×95',mark:'П-35К СЕ',ply:'5',color:'მუყაოს ფერი',rub:55.93,note:'🍎 ლანგარი',isNew:true},
-      {code:'AR-09',name:'გოფროყუთი — სახურავი',size:'493×383×165',mark:'Т-24 В',ply:'3',color:'თეთრი',rub:24.53,pallet:1500,note:'სახურავი · УП 1218×912',isNew:true},
-      {code:'AR-10',name:'გოფროყუთი — ძირი',size:'480×370×160',mark:'П-34К ВС',ply:'5',color:'მუყაოს ფერი',rub:39,pallet:720,note:'ძირი · УП 1222×890',isNew:true},
-      {code:'AR-11',name:'გოფროყუთი',size:'320×550×170',mark:'Т-23К В',ply:'3',color:'მუყაოს ფერი',rub:32.96,cap:21750,note:'ფურაში 21750',isNew:true},
-      {code:'AR-12',name:'გოფროყუთი',size:'360×550×190',mark:'Т-23К В',ply:'3',color:'მუყაოს ფერი',rub:36.27,cap:21000,note:'ფურაში 21000',isNew:true},
-      {code:'AR-13',name:'გოფროყუთი',size:'400×250×200',mark:'Т-22К В',ply:'3',color:'მუყაოს ფერი',rub:20.71,cap:36000,pallet:1500,note:'პადონი 1350×950 · ფურაში 36000',isNew:true},
-      {code:'AR-14',name:'გოფროყუთი',size:'400×300×280',mark:'Т-22К В',ply:'3',color:'მუყაოს ფერი',rub:27.03,cap:24750,pallet:750,note:'პადონი 1210×800 · ფურაში 24750',isNew:true},
-      {code:'AR-15',name:'გოფროყუთი',size:'350×250×250',mark:'Т-22К В',ply:'3',color:'მუყაოს ფერი',rub:21.17,cap:33000,pallet:1500,note:'პადონი 1250×1050 · ფურაში 33000',isNew:true},
-      {code:'AR-16',name:'გოფროყუთი',size:'250×200×180',mark:'Т-22К В',ply:'3',color:'მუყაოს ფერი',rub:14.31,cap:63000,pallet:2250,note:'პადონი 1200×950 · ფურაში 63000',isNew:true},
-      {code:'AR-17',name:'გოფროყუთი',size:'336×276×127',mark:'Т-23К В',ply:'3',color:'მუყაოს ფერი',rub:23.25,cap:34500,note:'ფურაში 34500',isNew:true},
-      {code:'AR-18',name:'გოფროყუთი',size:'330×235×127',mark:'Т-23К В',ply:'3',color:'მუყაოს ფერი',rub:21.71,cap:45000,note:'ფურაში 45000',isNew:true},
-      {code:'AR-19',name:'სამედიცინო ყუთი',size:'150×150×80',mark:'Т-23К В',ply:'3',color:'მუყაოს ფერი',rub:7.72,cap:131250,pallet:5250,note:'💉 სამედიცინო · მინ. 10500 ცალი · УП 1254×880',isNew:true},
-      {code:'AR-20',name:'სამედიცინო ყუთი (5-შრ)',size:'',mark:'',ply:'5',color:'მუყაოს ფერი',rub:28.2,cap:39600,note:'💉 სამედიცინო · 5-შრ · ფურაში 39600',isNew:true}
-    ];
-    result.push({id:'arturbox',dir:'მუყაოს ყუთები',name:'📦 არტურა — ახალი ყუთები',tag:'ar',mode:'calc',hasSetka:false,
-      note:'არტურას (WhatsApp) შეთავაზებიდან ამოღებული ყუთები. ფასები რუბლში. 🟧 ნარინჯისფერი მწკრივები = ახალი ჩასმული — გადაამოწმე/დააზუსტე ფასი/ზომა/მოგება.',
-      params:{usdRub:85,usdGel:2.61,transpUsd:1500,container:20000,contFlat:500,conting:0.05,profit:0.25,vat:0.18,step:0.05},
-      items:AR,_arturV1:true});
-  }}catch(e){}
   // ერთჯერადი: ანთრაციტი ტონა→კგ + „ინდუსტრიული" (2.2 ₾)
   try{const ant=result.find(g=>g&&g.dir==='ანთრაციტის ბრიკეტი');
     if(ant&&!ant._antKg){ant.params=ant.params||{};
