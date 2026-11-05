@@ -1,5 +1,5 @@
 # ============================================================================
-# სავაჭრო ბოტი — დღეში ერთხელ, ბირჟის დახურვამდე ბოლო 45 წთ-ში (კომპიუტერი არ სჭირდება)
+# სავაჭრო ბოტი — დღეში ორჯერ ამოწმებს (GitHub ხშირად აგვიანებს, ამიტომ ბოტი ნებისმიერ დროს მუშაობს)
 #
 # საჭიროა 2 secret (GitHub → Settings → Secrets and variables → Actions):
 #   ALPACA_API_KEY     — Alpaca Paper API Key
@@ -14,16 +14,12 @@ name: Trading bot
 
 on:
   schedule:
-    # 15:15/15:30/15:45 ნიუ-იორკის დროით: ზაფხულში 19:xx UTC, ზამთარში 20:xx UTC.
-    # სამი ცდა — თუ GitHub ერთს დააგვიანებს, მეორე დაფარავს. ბოტი თავად ამოწმებს
-    # დახურვამდე დროს და ორჯერ ერთსა და იმავეს არ ყიდულობს.
-    - cron: "15,30,45 19,20 * * 1-5"
-  workflow_dispatch:      # Actions ტაბში ხელით გაშვების ღილაკი
-    inputs:
-      force:
-        description: "ვაჭრობა ახლავე (დახურვამდე ლოდინის გარეშე, ბირჟა ღია უნდა იყოს)"
-        type: boolean
-        default: false
+    # 13:17 UTC (ნიუ-იორკში გახსნამდე — ორდერი შესრულდება გახსნისას) და 17:47 UTC (სარეზერვო).
+    # სიგნალი ბოლო დასრულებული დღის ფასითაა, ამიტომ დაგვიანება საშიში არ არის;
+    # ორჯერ გაშვებისას ერთსა და იმავეს ორჯერ არ ყიდულობს.
+    - cron: "17 13 * * *"
+    - cron: "47 17 * * *"
+  workflow_dispatch: {}   # Actions ტაბში ხელით გაშვების ღილაკი
 
 concurrency:
   group: trading-bot
@@ -42,7 +38,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - run: python bot.py ${{ inputs.force && '--force' || '' }}
+      - run: python bot.py
         env:
           ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
           ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}

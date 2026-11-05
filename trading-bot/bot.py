@@ -6,18 +6,21 @@
   - ფასი < 200-დღიანი საშუალო - BUFFER_PCT% და პოზიცია გვაქვს → ყიდის.
   ზღვარი იცავს ხშირი ყიდვა-გაყიდვისგან, როცა ფასი საშუალოს გარშემო "ცეკვავს".
 
-ბოტი ვაჭრობს ბირჟის დახურვამდე ბოლო WINDOW_MINUTES წუთში (GitHub Actions უშვებს სამუშაო
-დღეებში რამდენჯერმე, .github/workflows/trading-bot.yml — თუ ერთი დააგვიანდა, მეორე დაფარავს).
+სიგნალი ითვლება ბოლო **დასრულებული** დღის დახურვის ფასით, ამიტომ ბოტს ნებისმიერ დროს
+შეუძლია გაშვება (GitHub-ის schedule ხშირად საათობით აგვიანებს). ბირჟა თუ დახურულია,
+ორდერი რიგში დგება და სრულდება შემდეგ გახსნაზე. დღეში რამდენჯერმე გაშვება უსაფრთხოა:
+მიმდინარე ორდერის მქონე აქციას ტოვებს, ხოლო ნაყიდს ხელახლა არ ყიდულობს.
 ეხება მხოლოდ STOCKS სიის აქციებს — ხელით ნაყიდ სხვა აქციებს არ ყიდის.
 
 Telegram (არასავალდებულო): TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID → მესიჯი ყოველ ყიდვა/გაყიდვაზე,
-შეცდომაზე და პარასკევს კვირის შეჯამება.
+შეცდომაზე და შაბათს კვირის შეჯამება.
 """
 import json
 import os
 import sys
 import urllib.request
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import MarketOrderRequest, GetOrdersRequest
@@ -31,7 +34,6 @@ STOCKS = ["AAPL", "MSFT", "NVDA", "SPY", "QQQ", "AMZN", "GOOGL", "META"]
 DOLLARS_PER_TRADE = 1000      # თითო აქციაზე რამდენი $
 TREND_DAYS = 200              # გრძელვადიანი საშუალო (დღეები)
 BUFFER_PCT = 2.0              # ზღვარი საშუალოს ზემოთ/ქვემოთ (%)
-WINDOW_MINUTES = 45           # დახურვამდე რამდენ წუთში შეუძლია ვაჭრობა
 
 # ლოკალურად გაშვებისას Key-ებს კითხულობს .env ფაილიდან (GitHub-ზე — Secrets-დან)
 _env = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
@@ -48,6 +50,7 @@ PAPER = os.environ.get("ALPACA_PAPER", "true").lower() != "false"
 TG_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TG_CHAT = os.environ.get("TELEGRAM_CHAT_ID")
 
+NY = ZoneInfo("America/New_York")
 _messages = []  # ამ გაშვების მნიშვნელოვანი მოვლენები Telegram-ისთვის
 
 
@@ -70,7 +73,7 @@ def telegram(text):
         print(f"Telegram შეცდომა: {e}", flush=True)
 
 
-def run_once(force=False):
+def run_once():
     if not API_KEY or not SECRET_KEY:
         sys.exit("ALPACA_API_KEY / ALPACA_SECRET_KEY არ არის მითითებული.")
 
@@ -78,13 +81,11 @@ def run_once(force=False):
     data = StockHistoricalDataClient(API_KEY, SECRET_KEY)
 
     clock = trading.get_clock()
-    if not clock.is_open:
-        log("ბირჟა დახურულია — არაფერს ვაკეთებ.")
-        return
-    to_close = (clock.next_close - clock.timestamp).total_seconds() / 60
-    if to_close > WINDOW_MINUTES and not force:
-        log(f"დახურვამდე {to_close:.0f} წთ — ჯერ ადრეა (ვამოწმებ ბოლო {WINDOW_MINUTES} წთ-ში).")
-        return
+    now_ny = clock.timestamp.astimezone(NY)
+    today_ny = now_ny.date()
+    # დღევანდელი დღე დასრულებულად ითვლება მხოლოდ დახურვის (16:00 NY) შემდეგ
+    today_done = not clock.is_open and (now_ny.hour, now_ny.minute) >= (16, 5)
+    log(f"ბირჟა {'ღიაა' if clock.is_open else 'დახურულია — ორდერები შესრულდება შემდეგ გახსნაზე'}")
 
     account = trading.get_account()
     cash = float(account.cash)
@@ -92,6 +93,9 @@ def run_once(force=False):
         f"| ნაღდი: ${cash:,.2f}")
 
     positions = {p.symbol: p for p in trading.get_all_positions()}
+    for p in positions.values():
+        log(f"  • {p.symbol}: ${float(p.market_value):,.2f} ({float(p.unrealized_pl):+,.2f}$ / "
+            f"{float(p.unrealized_plpc) * 100:+.2f}%)")
     # ჯერ შეუსრულებელი ორდერები — რომ ერთი და იგივე ორჯერ არ ვიყიდოთ/გავყიდოთ
     pending = {o.symbol for o in trading.get_orders(GetOrdersRequest(status=QueryOrderStatus.OPEN))}
 
@@ -105,7 +109,9 @@ def run_once(force=False):
             if symbol in pending:
                 log(f"{symbol}: ორდერი უკვე მიმდინარეობს — ვტოვებ")
                 continue
-            closes = [b.close for b in bars.get(symbol, [])]
+            # მხოლოდ დასრულებული დღეები (დღევანდელი, ჯერ დაუსრულებელი დღე არ ითვლება)
+            closes = [b.close for b in bars.get(symbol, [])
+                      if today_done or b.timestamp.astimezone(NY).date() < today_ny]
             if len(closes) < TREND_DAYS:
                 log(f"{symbol}: მონაცემები საკმარისი არ არის ({len(closes)})", notify=True)
                 continue
@@ -137,8 +143,8 @@ def run_once(force=False):
         except Exception as e:  # ერთი სიმბოლოს შეცდომამ დანარჩენი არ გააჩეროს
             log(f"⚠️ {symbol}: შეცდომა — {e}", notify=True)
 
-    # პარასკევს, ბოლო გაშვებისას — კვირის შეჯამება
-    if clock.timestamp.weekday() == 4 and to_close <= 20:
+    # შაბათს, დილის გაშვებისას — კვირის შეჯამება
+    if now_ny.weekday() == 5 and clock.timestamp.hour < 16:
         account = trading.get_account()
         equity, last = float(account.equity), float(account.last_equity)
         lines = [f"📊 კვირის შეჯამება ({'PAPER' if PAPER else 'LIVE'})",
@@ -153,7 +159,7 @@ def run_once(force=False):
 
 if __name__ == "__main__":
     try:
-        run_once(force="--force" in sys.argv)
+        run_once()
     except Exception as e:
         telegram(f"⚠️ სავაჭრო ბოტი: შეცდომა — {e}")
         raise

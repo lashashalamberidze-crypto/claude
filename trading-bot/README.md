@@ -1,6 +1,6 @@
 # სავაჭრო ბოტი (Alpaca Paper Trading)
 
-დღეში ერთხელ (დახურვამდე ბოლო 45 წთ-ში) ამოწმებს 8 აქციას: ფასი > 200-დღიანი საშუალო +2% → ყიდულობს, < საშუალო -2% → ყიდის. Telegram: secrets `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`. Backtest: `python backtest.py`.
+დღეში ორჯერ (ნებისმიერ დროს, ბოლო დასრულებული დღის ფასით) ამოწმებს 8 აქციას: ფასი > 200-დღიანი საშუალო +2% → ყიდულობს, < საშუალო -2% → ყიდის. Telegram: secrets `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`. Backtest: `python backtest.py`.
 ნაგულისხმევად მუშაობს **მხოლოდ ვირტუალურ ფულზე** (`ALPACA_PAPER=true`).
 
 ## გაშვება GitHub-ზე (24/7, კომპიუტერის გარეშე)
@@ -13,7 +13,7 @@
 ```
 pip install -r requirements.txt
 copy .env.example .env      # ჩაწერე Key-ები
-python bot.py --force
+python bot.py
 ```
 
 ## პარამეტრები (`bot.py` თავში)
