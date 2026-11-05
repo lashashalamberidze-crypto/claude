@@ -10,7 +10,8 @@
 შეუძლია გაშვება (GitHub-ის schedule ხშირად საათობით აგვიანებს). ბირჟა თუ დახურულია,
 ორდერი რიგში დგება და სრულდება შემდეგ გახსნაზე. დღეში რამდენჯერმე გაშვება უსაფრთხოა:
 მიმდინარე ორდერის მქონე აქციას ტოვებს, ხოლო ნაყიდს ხელახლა არ ყიდულობს.
-ეხება მხოლოდ STOCKS სიის აქციებს — ხელით ნაყიდ სხვა აქციებს არ ყიდის.
+ეხება მხოლოდ STOCKS სიის აქციებს (და ყიდის RETIRED სიიდან დარჩენილებს) — ხელით ნაყიდ სხვა
+აქციებს არ ყიდის.
 
 Telegram (არასავალდებულო): TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID → მესიჯი ყოველ ყიდვა/გაყიდვაზე,
 შეცდომაზე და შაბათს კვირის შეჯამება.
@@ -30,7 +31,11 @@ from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame
 
 # ---- პარამეტრები (შეგიძლია შეცვალო) ----
-STOCKS = ["AAPL", "MSFT", "NVDA", "SPY", "QQQ", "AMZN", "GOOGL", "META"]
+# შერეული სია სხვადასხვა სექტორიდან (ტექნოლოგია, ჯანდაცვა, ენერგეტიკა, ბანკი, მომხმარებელი) —
+# compare.py-ში ძველ "ტექნოლოგიურ" სიაზე 2.5-ჯერ ნაკლები ჩავარდნა ჰქონდა
+STOCKS = ["AAPL", "MSFT", "AMZN", "JNJ", "XOM", "JPM", "KO", "WMT"]
+# ძველი სიიდან ამოღებული — თუ ასეთი პოზიცია დარჩა, ბოტი ყიდის
+RETIRED = ["NVDA", "SPY", "QQQ", "GOOGL", "META"]
 DOLLARS_PER_TRADE = 1000      # თითო აქციაზე რამდენი $
 TREND_DAYS = 200              # გრძელვადიანი საშუალო (დღეები)
 BUFFER_PCT = 2.0              # ზღვარი საშუალოს ზემოთ/ქვემოთ (%)
@@ -98,6 +103,16 @@ def run_once():
             f"{float(p.unrealized_plpc) * 100:+.2f}%)")
     # ჯერ შეუსრულებელი ორდერები — რომ ერთი და იგივე ორჯერ არ ვიყიდოთ/გავყიდოთ
     pending = {o.symbol for o in trading.get_orders(GetOrdersRequest(status=QueryOrderStatus.OPEN))}
+
+    for symbol in RETIRED:
+        if symbol in positions and symbol not in pending:
+            try:
+                pos = positions[symbol]
+                trading.close_position(symbol)
+                log(f"🔴 გაყიდვა {symbol} — სიიდან ამოღებულია ({float(pos.unrealized_pl):+,.2f}$ / "
+                    f"{float(pos.unrealized_plpc) * 100:+.2f}%)", notify=True)
+            except Exception as e:
+                log(f"⚠️ {symbol}: შეცდომა — {e}", notify=True)
 
     start = datetime.now(timezone.utc) - timedelta(days=int(TREND_DAYS * 1.6))
     bars = data.get_stock_bars(StockBarsRequest(
