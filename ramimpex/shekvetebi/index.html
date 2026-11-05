@@ -804,7 +804,7 @@ function openProdMedia(d,it,after){
 async function pushCapacity(code,cap){try{if(cap===''||cap==null){await sb.from('capacity').delete().eq('code',code);}else{await sb.from('capacity').upsert({code,cap:cap,updated_at:new Date().toISOString()},{onConflict:'code'});}}catch(e){/* table optional */}}
 
 /* ===================== INVOICE ===================== */
-let invDraft=[], INVOICES=[], editingInvId=null, IL_DIR='all', invVatIncl=false, invDemo=false, STOCK={};
+let invDraft=[], INVOICES=[], editingInvId=null, IL_DIR='all', invVatIncl=true, invDemo=false, STOCK={};
 function unitOf(code){return isBriket(code)?'კგ':'ცალ.';}
 async function loadStock(){try{const {data}=await sb.from('stock').select('*');STOCK={};(data||[]).forEach(r=>{STOCK[r.code]=+r.qty||0;});}catch(e){STOCK={};}}
 // შენახული ინვოისის ჩატვირთვა რედაქტირებისთვის
@@ -845,7 +845,7 @@ function editInvoice(inv){
 // შეკვეთიდან ავტომატურად ინვოისის აწყობა
 async function invoiceFromOrder(o){
   try{await ensureDirs();}catch(e){alert('კატალოგი ვერ ჩაიტვირთა: '+(e.message||e));return;}
-  invVatIncl=false;invDemo=false;
+  invVatIncl=true;invDemo=false;
   invDraft=(o.items||[]).filter(it=>it&&it.code).map(it=>{const p=byCode(it.code);return {code:it.code,price:(p&&p.price!=null)?p.price:0,qty:parseInt(it.qty)||1,name:it.name||(p&&p.name)||'',size:it.size||(p&&p.size)||'',ply:it.ply||(p&&p.ply)||'',pack:it.pack||'',packSet:!!it.pack,tier:it.tier||0,min:'3000'};});
   // ინვოისის ტაბზე გადასვლა
   $('tabbar').querySelectorAll('.tb').forEach(x=>x.classList.remove('on'));
@@ -935,7 +935,7 @@ function renderInvoice(){
   $('iOffer').onclick=()=>{if(!invDraft.length){alert('ჯერ დაამატე პროდუქტი');return;}makeOfferJPG();};
   $('iToOrders').onclick=addDraftToOrders;
   $('iSave').onclick=saveInvoice;
-  $('iClear').onclick=()=>{invDraft=[];editingInvId=null;invVatIncl=false;invDemo=false;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iPhone','iAddr','iEmail','iNo','brandAmt','transAmt','iMinQty','iNote','iTranspNo'].forEach(id=>{if($(id))$(id).value='';});if($('iTransp'))$('iTransp').checked=false;if($('iNeedWaybill'))$('iNeedWaybill').checked=false;if($('iLegalF'))$('iLegalF').checked=true;if($('iLegalT'))$('iLegalT').checked=false;if($('iCTretail'))$('iCTretail').checked=true;if($('iDistWrap'))$('iDistWrap').style.display='none';if($('iDistSel'))$('iDistSel').value='';if($('iRegion'))$('iRegion').value='';fillMuni('','');renderInvLines();};
+  $('iClear').onclick=()=>{invDraft=[];editingInvId=null;invVatIncl=true;invDemo=false;const eb=$('editBanner');if(eb)eb.style.display='none';['iCust','iId','iPhone','iAddr','iEmail','iNo','brandAmt','transAmt','iMinQty','iNote','iTranspNo'].forEach(id=>{if($(id))$(id).value='';});if($('iTransp'))$('iTransp').checked=false;if($('iNeedWaybill'))$('iNeedWaybill').checked=false;if($('iLegalF'))$('iLegalF').checked=true;if($('iLegalT'))$('iLegalT').checked=false;if($('iCTretail'))$('iCTretail').checked=true;if($('iDistWrap'))$('iDistWrap').style.display='none';if($('iDistSel'))$('iDistSel').value='';if($('iRegion'))$('iRegion').value='';fillMuni('','');renderInvLines();};
   ['brandAmt','transAmt'].forEach(id=>$(id).oninput=renderInvLines);
   if($('iVat'))$('iVat').onchange=()=>{invVatIncl=$('iVat').checked;updInvTotals();};
   if($('iDemo'))$('iDemo').onchange=()=>{invDemo=$('iDemo').checked;const no=$('iNo');if(no){if(invDemo){no.value='';no.disabled=true;no.placeholder='— (საცდელი, ნომრის გარეშე)';}else{no.disabled=false;no.placeholder='ავტომ.';if(!editingInvId)no.value=nextInvNo();}}};
@@ -1639,7 +1639,7 @@ async function saveInvoice(){if(!invDraft.length){alert('ჯერ დაამ�
     INVOICES=INVOICES.filter(x=>String(x.id)!==String(inv.id));
     INVOICES.unshift(Object.assign({created_at:new Date().toISOString()},inv));
     alert((isEdit?'განახლდა ✔':'შენახულია ✔ — დაემატა გაყიდვებში')+'  სულ: '+money(inv.grand)+' ₾');
-    invDraft=[];editingInvId=null;invVatIncl=false;invDemo=false;const eb=$('editBanner');if(eb)eb.style.display='none';
+    invDraft=[];editingInvId=null;invVatIncl=true;invDemo=false;const eb=$('editBanner');if(eb)eb.style.display='none';
     ['iCust','iId','iPhone','iAddr','iEmail','iNo','brandAmt','transAmt','iMinQty','iNote','iTranspNo'].forEach(id=>{if($(id))$(id).value='';});if($('iTransp'))$('iTransp').checked=false;if($('iNeedWaybill'))$('iNeedWaybill').checked=false;if($('iLegalF'))$('iLegalF').checked=true;if($('iLegalT'))$('iLegalT').checked=false;if($('iCTretail'))$('iCTretail').checked=true;if($('iDistWrap'))$('iDistWrap').style.display='none';if($('iDistSel'))$('iDistSel').value='';if($('iRegion'))$('iRegion').value='';fillMuni('','');renderInvLines();renderInvList();}
   catch(e){alert('ვერ შეინახა: '+(e.message||e)+'\n(თუ paid/status/docs სვეტების შეცდომაა — გაუშვი sql/invoices_upgrade.sql)');}
 }
