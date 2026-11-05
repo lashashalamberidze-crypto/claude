@@ -20,9 +20,9 @@ from backtest import fetch, COST, WARMUP_DAYS
 
 YEARS = float(sys.argv[1]) if len(sys.argv) > 1 else 5
 LISTS = {
-    "ახლანდელი 8 (ძირითადად ტექნოლოგიები)": bot.STOCKS,
+    "ძველი 8 (ძირითადად ტექნოლოგიები)": ["AAPL", "MSFT", "NVDA", "SPY", "QQQ", "AMZN", "GOOGL", "META"],
     "სექტორების ETF-ები": ["SPY", "XLK", "XLV", "XLF", "XLE", "XLP", "XLI", "XLY", "XLU"],
-    "შერეული აქციები": ["AAPL", "MSFT", "AMZN", "JNJ", "XOM", "JPM", "KO", "WMT"],
+    "შერეული აქციები (ახლანდელი)": bot.STOCKS,
 }
 
 
