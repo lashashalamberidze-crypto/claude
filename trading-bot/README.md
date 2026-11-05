@@ -18,3 +18,8 @@ python bot.py
 
 ## პარამეტრები (`bot.py` თავში)
 `STOCKS`, `DOLLARS_PER_TRADE`, `TREND_DAYS`, `BUFFER_PCT`.
+
+## საიმედო განრიგი (Supabase)
+GitHub-ის schedule ხშირად აგვიანებს ან ტოვებს გაშვებას. `sql/trading_bot_cron.sql` Supabase-ის
+pg_cron-ით ზუსტ დროზე უშვებს ბოტს. საჭიროა GitHub fine-grained token (მხოლოდ ეს რეპო,
+Actions: Read and write) — ინახება Supabase Vault-ში.
