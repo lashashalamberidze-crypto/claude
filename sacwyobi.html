@@ -1592,9 +1592,10 @@ function swRenderHistory(){
   const to   = (swEl('sw-hist-to')||{}).value||'';
   // ახალი რეალიზაციის გაყიდვები (cold_sales) — ისტორიაში out-ოპერაციებად
   const csOps = (typeof CS_SALES!=='undefined'?CS_SALES:[]).map(function(x){
-    return { id:x.id, _cs:true, type:'out', date:x.date||'', time:x.date||'',
-      product: x.source==='cold' ? ('🏭 ოთ.'+(x.room_no||'')) : (x.product||'პირდაპირი'),
-      lot:'', kg:+x.kg||0, buyer:x.buyer||'—', section:'',
+    var wo=(x.source==='writeoff');
+    return { id:x.id, _cs:true, _wo:wo, type:'out', date:x.date||'', time:x.date||'',
+      product: wo ? ('📤 ჩამოწერა'+(x.room_no?(' · ოთ.'+x.room_no):'')) : (x.source==='cold' ? ('🏭 ოთ.'+(x.room_no||'')) : (x.product||'პირდაპირი')),
+      lot:'', kg:+x.kg||0, buyer: wo ? 'ჩამოწერა' : (x.buyer||'—'), section:'',
       amount:+x.amount||0, paid_amount:+x.paid_amount||0, note:x.note||'' };
   });
   let ops = [...swOps].reverse().concat(csOps);
@@ -1604,7 +1605,7 @@ function swRenderHistory(){
   // outstanding summary — Σ(amount - paid_amount) over out-ops still owing
   const sumEl = swEl('sw-unpaid-sum');
   if(sumEl){
-    const outs = swOps.filter(o=>o.type==='out').concat(csOps);
+    const outs = swOps.filter(o=>o.type==='out').concat(csOps.filter(o=>!o._wo));
     if(!outs.length){ sumEl.innerHTML=''; }
     else{
       let outstanding=0, priced=0, unpriced=0;
@@ -1623,7 +1624,10 @@ function swRenderHistory(){
   if(!ops.length){ tbody.innerHTML='<tr><td colspan="8" class="sw-empty">— ისტ. ცარიელია —</td></tr>'; return; }
   tbody.innerHTML = ops.slice(0,100).map(o=>{
     let payCell = '<span class="muted">—</span>';
-    if(o._cs){
+    if(o._wo){
+      payCell = '<span class="sw-badge" style="background:rgba(100,116,139,.12);color:#475569;border:1px solid rgba(100,116,139,.2)">📤 ჩამოწერა</span>';
+    }
+    else if(o._cs){
       const sid=safeAttr(o.id), amt=+o.amount||0, pa=+o.paid_amount||0, rem=+(amt-pa).toFixed(2);
       const kgv=+o.kg||0, unit = kgv>0 ? swMoney(amt/kgv) : '—';
       const priceNote = amt>0 ? '<div class="muted" style="font-size:.68rem;margin-top:3px">'+swMoney(amt)+' ₾ · '+unit+' ₾/კგ</div>' : '';
