@@ -151,10 +151,40 @@
   <!-- TABS -->
   <div class="sw-tabs">
     <button class="sw-tab active" onclick="swTab('newsale',this)">💰 გაყიდვა</button>
+    <button class="sw-tab" onclick="swTab('mstock',this)">🏭 მარაგი/ოთახები</button>
+    <button class="sw-tab" onclick="swTab('mtemp',this)">🌡️ ტემპერატურა</button>
     <button class="sw-tab" onclick="swTab('purchases',this)">🛒 შესყიდვა</button>
     <button class="sw-tab" onclick="swTab('sales',this)">📒 ძველი გაყიდვა</button>
     <button class="sw-tab" onclick="swTab('history',this)">📋 ისტორია</button>
   </div>
+
+  <!-- ── TAB: COLD STORAGE (მარაგი/ოთახები) ── -->
+  <div id="sw-page-mstock" class="sw-page">
+    <div class="sw-card">
+      <div class="sw-card-title" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span>🗺️ მაცივრის ზედხედი</span><button class="sw-btn sw-btn-gold" id="mzDrawBtn" style="padding:6px 13px" onclick="mzDrawToggle(this)">✏️ ოთახის დახატვა</button></div>
+      <div class="muted" style="margin-bottom:10px;font-size:.82rem">ხატვა: ბადეზე დააჭირე და გაავლე → ოთახი. ჩვეულებრივ: ოთახზე დააჭირე → შიგთავსი.</div>
+      <div id="mzMapWrap" onpointerdown="mzDown(event)" onpointermove="mzMove(event)" onpointerup="mzUp(event)" onpointerleave="mzUp(event)" style="touch-action:none"></div>
+    </div>
+    <div class="sw-card">
+      <div class="sw-card-title">📦 ოთახების მარაგი — სად რა დევს</div>
+      <div id="mzStockBody"><div class="muted">— ცარიელია —</div></div>
+    </div>
+  </div>
+
+  <!-- ── TAB: TEMPERATURE ── -->
+  <div id="sw-page-mtemp" class="sw-page">
+    <div class="sw-card">
+      <div class="sw-card-title">🌡️ ტემპერატურის ჩაწერა</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div><label>ოთახი</label><select id="mzTempRoom"></select></div>
+        <div><label>ტემპ. °C</label><input id="mzTempVal" type="number" step="0.1" placeholder="2.5"></div>
+        <button class="sw-btn sw-btn-green" onclick="mzRecordTemp()">✅ ჩაწერე</button>
+      </div>
+      <div id="mzTempBody" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div id="mzRoomModal"></div>
 
   <!-- ── TAB: NEW SALE (💰 გაყიდვა — რეალიზაცია) ── -->
   <div id="sw-page-newsale" class="sw-page active">
@@ -746,7 +776,7 @@ async function initSacwyobiFromHub(){
     }catch(_e){ console.warn('initSacwyobi cloud', _e); }
   }
   swUpdateStats(); swRenderStock(); swRenderTempLog(); swRenderHistory(); swBuildContactLists();
-  try{ await csLoadAll(); csDashboard(); csRender(); }catch(e){ console.warn('cs load', e); }
+  try{ await csLoadAll(); await mzLoadTemp(); csDashboard(); csRender(); }catch(e){ console.warn('cs load', e); }
   // auto-fill old sale/purchase prices from gv_* + load remembered contacts, then re-render
   swRenderShip();
   // auto-fill old sale/purchase prices from gv_* + load remembered contacts, then re-render
@@ -779,9 +809,11 @@ function swTab(id, el){
   if(el) el.classList.add('active');
   else {
     const tabs = document.querySelectorAll('.sw-tab');
-    const map = {newsale:0,purchases:1,sales:2,history:3,ship:8,stock:9};
+    const map = {newsale:0,mstock:1,mtemp:2,purchases:3,sales:4,history:5,ship:8,stock:9};
     if(map[id]!==undefined && tabs[map[id]]) tabs[map[id]].classList.add('active');
   }
+  if(id==='mstock')    { mzRenderMap(); mzRenderStock(); }
+  if(id==='mtemp')     mzRenderTempTab();
   if(id==='newsale')   csRender();
   if(id==='stock')     swRenderStock();
   if(id==='history')   swRenderHistory();
@@ -833,6 +865,113 @@ function csDashboard(){
     +'</div>';
   el.innerHTML=h;
 }
+// ═══════════ 🏭 მაცივარი — ოთახები / მარაგი / ტემპერატურა (matsivari-დან) ═══════════
+var MZ_TEMP=[], mzCols=12, mzRows=8, mzCell=46, mzDraw=false, mzDrag=null, mzCurRoom=null, mzCurIdx=null;
+async function mzLoadTemp(){ MZ_TEMP=[]; var s=getSb(); try{ if(s&&uid){ var r=await s.from('cold_temp').select('*').eq('user_id',uid).order('at',{ascending:false}).limit(2000); if(!r.error) MZ_TEMP=r.data||[]; } }catch(e){} }
+function mzSaveRooms(){ try{ localStorage.setItem('cold_rooms', JSON.stringify(CS_ROOMS)); }catch(e){} var s=getSb(); try{ if(s&&uid) s.from('user_settings').upsert({user_id:uid,skey:'cold_rooms',sval:JSON.stringify(CS_ROOMS),updated_at:new Date().toISOString()},{onConflict:'user_id,skey'}); }catch(e){} }
+function mzRoomKg(no){ var k=0; CS_STOCK.forEach(function(x){ if(String(x.room_no)===String(no)) k+=(+x.kg||0); }); return Math.round(k*10)/10; }
+function mzRoomBoxes(no){ var b=0; CS_STOCK.forEach(function(x){ if(String(x.room_no)===String(no)) b+=(+x.boxes||0); }); return b; }
+function mzRoomStock(no){ return CS_STOCK.filter(function(x){ return String(x.room_no)===String(no); }); }
+function mzRoomTemp(no){ for(var i=0;i<MZ_TEMP.length;i++){ if(String(MZ_TEMP[i].room_no)===String(no)) return MZ_TEMP[i]; } return null; }
+function mzDrawToggle(btn){ mzDraw=!mzDraw; btn.textContent=mzDraw?'✏️ ხატვა ჩართულია — გეჭიროს და გაავლე':'✏️ ოთახის დახატვა'; btn.classList.toggle('sw-btn-green',mzDraw); btn.classList.toggle('sw-btn-gold',!mzDraw); mzRenderMap(); }
+function mzCellAt(e){ var svg=document.getElementById('mzMapSvg'); if(!svg) return null; var rc=svg.getBoundingClientRect(); var x=Math.floor((e.clientX-rc.left)/rc.width*mzCols), y=Math.floor((e.clientY-rc.top)/rc.height*mzRows); return {x:Math.max(0,Math.min(mzCols-1,x)), y:Math.max(0,Math.min(mzRows-1,y))}; }
+function mzUpdatePrev(){ var p=document.getElementById('mzMapPrev'); if(!p) return; if(!mzDrag){ p.style.display='none'; return; } var x=Math.min(mzDrag.x0,mzDrag.x1), y=Math.min(mzDrag.y0,mzDrag.y1), w=Math.abs(mzDrag.x1-mzDrag.x0)+1, h=Math.abs(mzDrag.y1-mzDrag.y0)+1; p.setAttribute('x',x*mzCell+3); p.setAttribute('y',y*mzCell+3); p.setAttribute('width',w*mzCell-6); p.setAttribute('height',h*mzCell-6); p.style.display=''; }
+function mzDown(e){ if(!mzDraw) return; e.preventDefault(); var c=mzCellAt(e); if(!c) return; mzDrag={x0:c.x,y0:c.y,x1:c.x,y1:c.y}; mzUpdatePrev(); }
+function mzMove(e){ if(!mzDraw||!mzDrag) return; var c=mzCellAt(e); if(!c) return; mzDrag.x1=c.x; mzDrag.y1=c.y; mzUpdatePrev(); }
+function mzUp(e){ if(!mzDraw||!mzDrag) return; var d=mzDrag; mzDrag=null;
+  var x=Math.min(d.x0,d.x1), y=Math.min(d.y0,d.y1), w=Math.abs(d.x1-d.x0)+1, h=Math.abs(d.y1-d.y0)+1;
+  var nextNo=CS_ROOMS.reduce(function(m,r){ var n=parseInt(r.no,10); return (!isNaN(n)&&n>=m)?n+1:m; },1);
+  var no=prompt('ოთახის ნომერი/სახელი:', String(nextNo));
+  if(no!=null){ no=String(no).trim()||String(nextNo); CS_ROOMS.push({no:no,x:x,y:y,w:w,h:h}); mzSaveRooms(); }
+  mzRenderMap();
+}
+function mzRoomClick(i){ if(mzDraw) return; var r=CS_ROOMS[i]; if(r) mzOpenRoom(r.no,i); }
+function mzRenderMap(){
+  var wrap=document.getElementById('mzMapWrap'); if(!wrap) return;
+  var W=mzCols*mzCell, H=mzRows*mzCell, i;
+  var s='<svg id="mzMapSvg" viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:'+W+'px;border:1px solid #cdddee;border-radius:10px;background:#f6fafe;touch-action:none;cursor:'+(mzDraw?'crosshair':'pointer')+'">';
+  for(i=0;i<=mzCols;i++) s+='<line x1="'+(i*mzCell)+'" y1="0" x2="'+(i*mzCell)+'" y2="'+H+'" stroke="#e3edf7"/>';
+  for(i=0;i<=mzRows;i++) s+='<line x1="0" y1="'+(i*mzCell)+'" x2="'+W+'" y2="'+(i*mzCell)+'" stroke="#e3edf7"/>';
+  CS_ROOMS.forEach(function(r,idx){ var cx=r.x*mzCell+r.w*mzCell/2, cy=r.y*mzCell+r.h*mzCell/2, kg=mzRoomKg(r.no), tp=mzRoomTemp(r.no), hasKg=kg>0;
+    s+='<g onclick="mzRoomClick('+idx+')" style="cursor:pointer"><rect x="'+(r.x*mzCell+3)+'" y="'+(r.y*mzCell+3)+'" width="'+(r.w*mzCell-6)+'" height="'+(r.h*mzCell-6)+'" rx="8" fill="'+(hasKg?'#dcfce7':'#dbeafe')+'" stroke="'+(hasKg?'#059669':'#0369a1')+'" stroke-width="1.5"/>'
+      +'<text x="'+cx+'" y="'+(cy-4)+'" text-anchor="middle" font-size="15" font-weight="800" fill="#0f172a">'+csEsc(r.no)+'</text>'
+      +'<text x="'+cx+'" y="'+(cy+12)+'" text-anchor="middle" font-size="11" fill="#2a5a8a">'+kg+' კგ</text>'
+      +(tp?('<text x="'+cx+'" y="'+(cy+25)+'" text-anchor="middle" font-size="10" fill="#b45309">🌡️ '+(+tp.temp)+'°</text>'):'')+'</g>';
+  });
+  s+='<rect id="mzMapPrev" style="display:none" rx="8" fill="#bbf7d0" fill-opacity="0.5" stroke="#059669" stroke-width="1.5" stroke-dasharray="5 4"/>';
+  s+='</svg><div class="muted" style="margin-top:8px">ოთახები: <b>'+CS_ROOMS.length+'</b> · ჯამი: <b>'+CS_STOCK.reduce(function(a,x){return a+(+x.kg||0);},0).toFixed(1)+' კგ</b>'+(CS_ROOMS.length?' · ოთახზე დააჭირე — შიგთავსი':'')+'</div>';
+  wrap.innerHTML=s;
+}
+function mzOpenRoom(no,idx){ mzCurRoom=no; mzCurIdx=idx; mzRenderRoomModal(); }
+function mzCloseRoom(){ document.getElementById('mzRoomModal').innerHTML=''; mzCurRoom=null; }
+function mzRenderRoomModal(){
+  var no=mzCurRoom; if(no==null) return;
+  var items=mzRoomStock(no), tp=mzRoomTemp(no), kg=mzRoomKg(no), bx=mzRoomBoxes(no);
+  var rows = items.length ? items.map(function(x){ return '<tr><td>'+(x.kind==='pallet'?('📦 '+csEsc(x.pallet_code||'პალეტი')):('✏️ '+csEsc(x.product||'ხელით')))+'</td><td>'+(x.boxes||0)+'</td><td><b>'+(Math.round((+x.kg||0)*10)/10)+'</b></td><td><span style="cursor:pointer;color:#dc2626" onclick="mzDelStock(\''+csEsc(x.id)+'\')">🗑️</span></td></tr>'; }).join('') : '<tr><td colspan="4" class="muted">— ცარიელია —</td></tr>';
+  var h='<div style="position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:flex-start;justify-content:center;z-index:99999;padding:16px;overflow:auto" onclick="if(event.target===this)mzCloseRoom()"><div style="background:#fff;border-radius:16px;max-width:480px;width:100%;margin:auto;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.3)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:1.05rem;color:#0369a1">🚪 ოთახი '+csEsc(no)+'</b><button class="sw-btn sw-btn-outline" style="padding:5px 11px" onclick="mzCloseRoom()">✕</button></div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><span style="background:#f0f9ff;border-radius:7px;padding:4px 10px;font-size:.82rem">📦 '+kg+' კგ</span><span style="background:#f0f9ff;border-radius:7px;padding:4px 10px;font-size:.82rem">🧺 '+bx+' ყუთი</span><span style="background:#fff7ed;border-radius:7px;padding:4px 10px;font-size:.82rem">🌡️ '+(tp?((+tp.temp)+'°C'):'—')+'</span></div>'
+    +'<label>📷 პალეტის სკანი / კოდი</label>'
+    +'<div style="display:flex;gap:8px"><input id="mzScan" placeholder="PAL001" autocomplete="off" onkeydown="if(event.key===\'Enter\'){mzScanPallet(this.value);this.value=\'\';}"><button class="sw-btn sw-btn-green" style="white-space:nowrap" onclick="var i=document.getElementById(\'mzScan\');mzScanPallet(i.value);i.value=\'\';">➕</button></div>'
+    +'<div id="mzScanMsg" class="muted" style="margin-top:4px"></div>'
+    +'<label style="margin-top:12px">✏️ ხელით შეყვანა</label>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="mzMproduct" placeholder="პროდუქტი" style="flex:2;min-width:120px"><input id="mzMboxes" type="number" placeholder="ყუთი" style="flex:1;min-width:70px"><input id="mzMkg" type="number" step="0.1" placeholder="კგ" style="flex:1;min-width:70px"></div>'
+    +'<button class="sw-btn sw-btn-outline" style="width:100%;margin-top:8px" onclick="mzAddManual()">➕ დამატება ხელით</button>'
+    +'<label style="margin-top:12px">🌡️ ტემპერატურა</label>'
+    +'<div style="display:flex;gap:8px"><input id="mzRmTemp" type="number" step="0.1" placeholder="°C"><button class="sw-btn sw-btn-gold" style="white-space:nowrap" onclick="mzRoomRecordTemp()">✅ ჩაწერე</button></div>'
+    +'<div class="sw-card-title" style="margin-top:14px">შიგთავსი</div>'
+    +'<div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>რა</th><th>ყუთი</th><th>კგ</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+    +'<div style="display:flex;gap:8px;margin-top:14px;border-top:1px solid #eef2f7;padding-top:10px"><button class="sw-btn sw-btn-outline" style="flex:1" onclick="mzRoomRename()">✏️ ნომერი</button><button class="sw-btn" style="flex:1;background:#fee2e2;color:#dc2626" onclick="mzRoomDelete()">🗑️ წაშლა</button></div>'
+    +'</div></div>';
+  document.getElementById('mzRoomModal').innerHTML=h;
+}
+async function mzScanPallet(code){
+  code=String(code||'').trim().toUpperCase(); var msg=document.getElementById('mzScanMsg'); if(!code) return;
+  if(CS_STOCK.find(function(x){ return x.kind==='pallet' && String(x.pallet_code||'').toUpperCase()===code; })){ if(msg) msg.innerHTML='<span style="color:#dc2626">🚫 ეს პალეტი უკვე მოთავსებულია</span>'; return; }
+  if(msg) msg.innerHTML='🔎 ვეძებ პალეტს…';
+  var s=getSb(), kg=0, boxes=0;
+  try{ var r=await s.from('harvest_sessions').select('weight').eq('user_id',uid).eq('pallet_code',code); if(!r.error){ (r.data||[]).forEach(function(x){ kg+=(+x.weight||0); boxes++; }); } }catch(e){}
+  if(!boxes){ if(msg) msg.innerHTML='<span style="color:#b45309">⚠️ ამ პალეტზე ყუთი ვერ მოიძებნა — გამოიყენე ხელით.</span>'; return; }
+  await mzAddStock({ room_no:mzCurRoom, kind:'pallet', pallet_code:code, product:'', boxes:boxes, kg:Math.round(kg*10)/10, note:'', date:_csToday() });
+  if(msg) msg.innerHTML='<span style="color:#16a34a">✅ '+code+' — '+boxes+' ყუთი · '+Math.round(kg*10)/10+' კგ</span>';
+  mzRefreshAll();
+}
+async function mzAddManual(){
+  var pr=(document.getElementById('mzMproduct').value||'').trim(), bx=parseFloat(document.getElementById('mzMboxes').value)||0, kg=parseFloat(document.getElementById('mzMkg').value)||0;
+  if(kg<=0 && bx<=0){ return; }
+  await mzAddStock({ room_no:mzCurRoom, kind:'manual', pallet_code:'', product:pr, boxes:bx, kg:Math.round(kg*10)/10, note:'', date:_csToday() });
+  mzRefreshAll();
+}
+async function mzAddStock(obj){ obj.id='cs_'+Date.now()+'_'+Math.random().toString(36).slice(2,6); obj.user_id=uid; CS_STOCK.push(obj); var s=getSb(); try{ await s.from('cold_stock').upsert(obj,{onConflict:'id'}); }catch(e){} }
+async function mzDelStock(id){ if(!confirm('ჩანაწერი წაიშალოს?')) return; CS_STOCK=CS_STOCK.filter(function(x){ return x.id!==id; }); var s=getSb(); try{ await s.from('cold_stock').delete().eq('user_id',uid).eq('id',id); }catch(e){} mzRefreshAll(); }
+async function mzRoomRecordTemp(){ var t=parseFloat(document.getElementById('mzRmTemp').value); if(isNaN(t)){ return; } await mzSaveTemp(mzCurRoom,t); document.getElementById('mzRmTemp').value=''; mzRefreshAll(); }
+async function mzSaveTemp(no,t){ var rec={ id:'cs_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), user_id:uid, room_no:String(no), temp:t, at:new Date().toISOString() }; MZ_TEMP.unshift(rec); var s=getSb(); try{ await s.from('cold_temp').upsert(rec,{onConflict:'id'}); }catch(e){} }
+function mzRoomRename(){ var r=CS_ROOMS[mzCurIdx]; if(!r) return; var a=prompt('ოთახის ახალი ნომერი:', r.no); if(a==null) return; a=a.trim(); if(a){ r.no=a; mzCurRoom=a; mzSaveRooms(); mzRefreshAll(); } }
+function mzRoomDelete(){ var r=CS_ROOMS[mzCurIdx]; if(!r) return; if(!confirm('ოთახი '+r.no+' წაიშალოს? (შიგთავსი ბაზაში დარჩება)')) return; CS_ROOMS.splice(mzCurIdx,1); mzSaveRooms(); mzCloseRoom(); mzRenderMap(); }
+function mzRefreshAll(){ mzRenderMap(); if(mzCurRoom!=null) mzRenderRoomModal(); mzRenderStock(); try{ csDashboard(); }catch(e){} }
+function mzRenderStock(){
+  var el=document.getElementById('mzStockBody'); if(!el) return;
+  if(!CS_STOCK.length){ el.innerHTML='<div class="muted">— ცარიელია. ოთახზე დააჭირე რუკაზე და დაამატე. —</div>'; return; }
+  var byRoom={}, ord=[]; CS_STOCK.forEach(function(x){ var k=String(x.room_no); if(!byRoom[k]){ byRoom[k]={kg:0,bx:0,items:[]}; ord.push(k); } byRoom[k].kg+=(+x.kg||0); byRoom[k].bx+=(+x.boxes||0); byRoom[k].items.push(x); });
+  ord.sort(function(a,b){ return (parseInt(a,10)||0)-(parseInt(b,10)||0); });
+  var h='';
+  ord.forEach(function(k){ var g=byRoom[k];
+    h+='<div style="margin-top:10px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden"><div style="background:#f6fafe;padding:8px 11px;font-weight:800;color:#0369a1;display:flex;justify-content:space-between"><span>🚪 ოთახი '+csEsc(k)+'</span><span>'+(Math.round(g.kg*10)/10)+' კგ · '+g.bx+' ყუთი</span></div>';
+    h+='<div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>რა</th><th>ყუთი</th><th>კგ</th><th>თარიღი</th></tr></thead><tbody>';
+    g.items.forEach(function(x){ h+='<tr><td>'+(x.kind==='pallet'?('📦 '+csEsc(x.pallet_code||'')):('✏️ '+csEsc(x.product||'ხელით')))+'</td><td>'+(x.boxes||0)+'</td><td><b>'+(Math.round((+x.kg||0)*10)/10)+'</b></td><td class="muted">'+csEsc(x.date||'')+'</td></tr>'; });
+    h+='</tbody></table></div></div>';
+  });
+  h+='<div style="margin-top:10px;font-weight:800;color:#13293d">სულ: '+CS_STOCK.reduce(function(a,x){return a+(+x.kg||0);},0).toFixed(1)+' კგ · '+CS_STOCK.reduce(function(a,x){return a+(+x.boxes||0);},0)+' ყუთი</div>';
+  el.innerHTML=h;
+}
+function mzRenderTempTab(){
+  var sel=document.getElementById('mzTempRoom'); if(sel) sel.innerHTML=CS_ROOMS.map(function(r){ return '<option value="'+csEsc(r.no)+'">ოთახი '+csEsc(r.no)+'</option>'; }).join('');
+  var el=document.getElementById('mzTempBody'); if(!el) return;
+  var cur='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+CS_ROOMS.map(function(r){ var t=mzRoomTemp(r.no); return '<span style="background:'+(t?'#fff7ed':'#f1f5f9')+';color:'+(t?'#b45309':'#64748b')+';border-radius:7px;padding:4px 10px;font-size:.82rem">ოთახი '+csEsc(r.no)+': '+(t?((+t.temp)+'°C'):'—')+'</span>'; }).join('')+'</div>';
+  var log = MZ_TEMP.slice(0,100).map(function(x){ var tm=''; try{ tm=new Date(x.at).toLocaleString('ka-GE',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(e){} return '<tr><td>ოთახი '+csEsc(x.room_no)+'</td><td><b>'+(+x.temp)+'°C</b></td><td class="muted">'+tm+'</td></tr>'; }).join('');
+  el.innerHTML=cur+'<div class="sw-card-title" style="font-size:.9rem">ჟურნალი</div><div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>ოთახი</th><th>ტემპ.</th><th>დრო</th></tr></thead><tbody>'+(log||'<tr><td colspan="3" class="muted">— ჯერ არ არის —</td></tr>')+'</tbody></table></div>';
+}
+async function mzRecordTemp(){ var no=(document.getElementById('mzTempRoom')||{}).value, t=parseFloat(document.getElementById('mzTempVal').value); if(!no||isNaN(t)){ return; } await mzSaveTemp(no,t); document.getElementById('mzTempVal').value=''; mzRenderTempTab(); mzRenderMap(); }
 function csRender(){
   var el=document.getElementById('cs-body'); if(!el) return;
   var totKg=0,totAmt=0,totPaid=0; CS_SALES.forEach(function(x){ totKg+=(+x.kg||0); totAmt+=(+x.amount||0); totPaid+=(+x.paid_amount||0); });
