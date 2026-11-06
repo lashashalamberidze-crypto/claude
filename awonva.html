@@ -87,9 +87,14 @@
   <div class="qbar" id="qbar"></div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v25</span></h1>
+    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v26</span></h1>
     <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
-    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
+    <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
+    <div id="roleBar" style="justify-content:flex-end;margin:6px 0 0">
+      <span class="who" id="roleWho">👑 მფლობელი</span>
+      <button class="admin-only" onclick="weighersModal()">👤 ამწონველები</button>
+      <button onclick="switchUser()">🔄 შეცვლა</button>
+    </div></div>
   </div>
 
   <div style="font-size:.8rem;font-weight:800;color:#334155;margin:2px 0 7px">📊 სეზონის ჯამი <span class="muted" id="dsSub" style="font-weight:400;font-size:.75rem"></span></div>
@@ -97,12 +102,6 @@
   <div style="font-size:.8rem;font-weight:800;color:#334155;margin:4px 0 7px">📅 დღეს — <span id="dtDate"></span></div>
   <div class="stats" id="awTodayStats" style="margin-bottom:6px"></div>
   <div class="muted" id="dtPending" style="font-size:.74rem;margin-bottom:12px"></div>
-
-  <div id="roleBar">
-    <span class="who" id="roleWho">👑 მფლობელი</span>
-    <button class="admin-only" onclick="weighersModal()">👤 ამწონველები</button>
-    <button onclick="switchUser()">🔄 შეცვლა</button>
-  </div>
 
   <div class="card admin-only">
     <div class="cfgbar">
