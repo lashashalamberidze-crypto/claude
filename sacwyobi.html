@@ -1046,13 +1046,13 @@ function mzRefreshAll(){ mzRenderMap(); if(mzCurRoom!=null) mzRenderRoomModal();
 function mzRenderStock(){
   var el=document.getElementById('mzStockBody'); if(!el) return;
   if(!CS_STOCK.length){ el.innerHTML='<div class="muted">— ცარიელია. ოთახზე დააჭირე რუკაზე და დაამატე. —</div>'; return; }
-  var byRoom={}, ord=[]; CS_STOCK.forEach(function(x){ var k=String(x.room_no); if(!byRoom[k]){ byRoom[k]={kg:0,bx:0,items:[]}; ord.push(k); } byRoom[k].kg+=(+x.kg||0); byRoom[k].bx+=(+x.boxes||0); byRoom[k].items.push(x); });
-  ord.sort(function(a,b){ return (parseInt(a,10)||0)-(parseInt(b,10)||0); });
+  var byRoom={}, ord=[]; CS_STOCK.forEach(function(x){ var k=String(x.room_no||''); if(!byRoom[k]){ byRoom[k]={kg:0,bx:0,items:[]}; ord.push(k); } byRoom[k].kg+=(+x.kg||0); byRoom[k].bx+=(+x.boxes||0); byRoom[k].items.push(x); });
+  ord.sort(function(a,b){ if(a==='') return 1; if(b==='') return -1; return (parseInt(a,10)||0)-(parseInt(b,10)||0); });
   var h='';
-  ord.forEach(function(k){ var g=byRoom[k];
-    h+='<div style="margin-top:10px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden"><div style="background:#f6fafe;padding:8px 11px;font-weight:800;color:#0369a1;display:flex;justify-content:space-between"><span>🚪 ოთახი '+csEsc(k)+'</span><span>'+(Math.round(g.kg*10)/10)+' კგ · '+g.bx+' ყუთი</span></div>';
-    h+='<div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>რა</th><th>ყუთი</th><th>კგ</th><th>თარიღი</th></tr></thead><tbody>';
-    g.items.forEach(function(x){ h+='<tr><td>'+(x.kind==='pallet'?('📦 '+csEsc(x.pallet_code||'')):('✏️ '+csEsc(x.product||'ხელით')))+'</td><td>'+(x.boxes||0)+'</td><td><b>'+(Math.round((+x.kg||0)*10)/10)+'</b></td><td class="muted">'+csEsc(x.date||'')+'</td></tr>'; });
+  ord.forEach(function(k){ var g=byRoom[k]; var isU=(k===''); var hdrBg=isU?'#fff7ed':'#f6fafe', hdrCol=isU?'#b45309':'#0369a1', hdrTxt=isU?'📦 ოთახის გარეშე (დასაწყობებელი)':('🚪 ოთახი '+csEsc(k));
+    h+='<div style="margin-top:10px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden"><div style="background:'+hdrBg+';padding:8px 11px;font-weight:800;color:'+hdrCol+';display:flex;justify-content:space-between"><span>'+hdrTxt+'</span><span>'+(Math.round(g.kg*10)/10)+' კგ · '+g.bx+' ყუთი</span></div>';
+    h+='<div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>საქონელი</th><th>ყუთი</th><th>კგ</th><th>თარიღი</th><th></th></tr></thead><tbody>';
+    g.items.forEach(function(x){ h+='<tr><td>'+(x.kind==='pallet'?('📦 '+csEsc(x.pallet_code||'')):('✏️ '+csEsc(x.product||'ხელით')))+(x.note?('<div style="font-size:.66rem;color:#94a3b8;font-weight:400">'+csEsc(x.note)+'</div>'):'')+'</td><td>'+(x.boxes||0)+'</td><td><b>'+(Math.round((+x.kg||0)*10)/10)+'</b></td><td class="muted">'+csEsc(x.date||'')+'</td><td style="text-align:right"><span style="cursor:pointer;color:#dc2626" title="წაშლა" onclick="mzDelStock(\''+csEsc(x.id)+'\')">🗑️</span></td></tr>'; });
     h+='</tbody></table></div></div>';
   });
   h+='<div style="margin-top:10px;font-weight:800;color:#13293d">სულ: '+CS_STOCK.reduce(function(a,x){return a+(+x.kg||0);},0).toFixed(1)+' კგ · '+CS_STOCK.reduce(function(a,x){return a+(+x.boxes||0);},0)+' ყუთი</div>';
@@ -2045,9 +2045,9 @@ function swConfirmNewPurchase(){
   swSave();
   // remember supplier details in gv_suppliers (so the act's გამყიდველი is complete next time)
   if(supplier) swUpsertSupplier(supplier, supIdnum, supPhone, supAddr);
-  // 🏭 თუ ოთახი აირჩა → მარაგში (cold_stock) მოთავსდეს
-  if(roomNo && _sb && uid){
-    var _cs={ id:'cs_'+now+'_'+Math.random().toString(36).slice(2,6), user_id:uid, room_no:roomNo, kind:'manual', pallet_code:'', product:product, boxes:0, kg:kg, note:'შესყიდვა'+(supplier?(' · '+supplier):''), date:swDate() };
+  // 🏭 შესყიდული ყოველთვის → მარაგში (cold_stock). ოთახი არჩევითია (თუ ცარიელია → „ოთახის გარეშე")
+  if(_sb && uid){
+    var _cs={ id:'cs_'+now+'_'+Math.random().toString(36).slice(2,6), user_id:uid, room_no:(roomNo||''), kind:'manual', pallet_code:'', product:product, boxes:0, kg:kg, note:'შესყიდვა'+(supplier?(' · '+supplier):''), date:swDate() };
     try{ if(typeof CS_STOCK!=='undefined') CS_STOCK.push(_cs); _sb.from('cold_stock').upsert(_cs,{onConflict:'id'}); }catch(e){}
     try{ csDashboard(); if(typeof mzRenderStock==='function') mzRenderStock(); if(typeof mzRenderMap==='function') mzRenderMap(); }catch(e){}
   }
