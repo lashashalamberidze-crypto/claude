@@ -172,7 +172,7 @@
       </div>
       <button class="sw-btn sw-btn-gold" style="width:100%;margin-top:10px" onclick="csWriteoff()">📤 ჩამოწერა + აქტი</button>
       <div id="wo-msg" style="font-size:.85rem;margin-top:8px"></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="sw-btn sw-btn-outline" onclick="csExcelFor('woff')">📊 Excel</button><button class="sw-btn sw-btn-outline" onclick="csPdfFor('woff')">📕 PDF</button></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;justify-content:flex-end"><button class="sw-btn sw-btn-outline" onclick="csExcelFor('woff')">📊 Excel</button><button class="sw-btn sw-btn-outline" onclick="csPdfFor('woff')">📕 PDF</button></div>
       <div id="wo-list" style="margin-top:14px"></div>
     </div>
   </div>
@@ -199,7 +199,7 @@
         <div><label>ტემპ. °C</label><input id="mzTempVal" type="number" step="0.1" placeholder="2.5"></div>
         <button class="sw-btn sw-btn-green" onclick="mzRecordTemp()">✅ ჩაწერე</button>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="sw-btn sw-btn-outline" onclick="csExcelFor('temp')">📊 Excel</button><button class="sw-btn sw-btn-outline" onclick="csPdfFor('temp')">📕 PDF</button></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;justify-content:flex-end"><button class="sw-btn sw-btn-outline" onclick="csExcelFor('temp')">📊 Excel</button><button class="sw-btn sw-btn-outline" onclick="csPdfFor('temp')">📕 PDF</button></div>
       <div id="mzTempBody" style="margin-top:12px"></div>
     </div>
   </div>
@@ -290,12 +290,16 @@
         <span>📋 ოპერაციების ისტორია</span>
         <span id="sw-unpaid-sum" style="font-size:.72rem;font-weight:600;letter-spacing:0;text-transform:none"></span>
       </div>
-      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-        <input type="date" id="sw-hist-from" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
-        <input type="date" id="sw-hist-to" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
-        <button class="sw-btn sw-btn-outline" onclick="swRenderHistory()">🔍 ფილტრი</button>
-        <button class="sw-btn sw-btn-outline" onclick="csExcelFor('hist')">📊 Excel</button>
-        <button class="sw-btn sw-btn-outline" onclick="csPdfFor('hist')">📕 PDF</button>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;justify-content:space-between;align-items:center">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <input type="date" id="sw-hist-from" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
+          <input type="date" id="sw-hist-to" style="padding:8px 12px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.8rem;outline:none">
+          <button class="sw-btn sw-btn-outline" onclick="swRenderHistory()">🔍 ფილტრი</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="sw-btn sw-btn-outline" onclick="csExcelFor('hist')">📊 Excel</button>
+          <button class="sw-btn sw-btn-outline" onclick="csPdfFor('hist')">📕 PDF</button>
+        </div>
       </div>
       <div class="sw-table-wrap">
         <table class="sw-table">
@@ -1074,9 +1078,9 @@ function csRender(){
   var owed=totAmt-totPaid;
   var byB={}; _sales.forEach(function(x){ var b=(x.buyer||'—'); if(!byB[b])byB[b]={amt:0,paid:0}; byB[b].amt+=(+x.amount||0); byB[b].paid+=(+x.paid_amount||0); });
   var debt=Object.keys(byB).map(function(b){ return {b:b,d:byB[b].amt-byB[b].paid}; }).filter(function(x){ return x.d>0.009; }).sort(function(a,b){ return b.d-a.d; });
-  var h='<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="sw-btn sw-btn-gold" onclick="csNewSale()">➕ ახალი გაყიდვა</button><button class="sw-btn sw-btn-outline" onclick="csBuyersModal()">👥 მყიდველები ('+CS_BUYERS.length+')</button><button class="sw-btn sw-btn-outline" onclick="csExcelFor(\'sales\')">📊 Excel</button><button class="sw-btn sw-btn-outline" onclick="csPdfFor(\'sales\')">📕 PDF</button></div>';
+  var h='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center"><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="sw-btn sw-btn-gold" onclick="csNewSale()">➕ ახალი გაყიდვა</button><button class="sw-btn sw-btn-outline" onclick="csBuyersModal()">👥 მყიდველები ('+CS_BUYERS.length+')</button></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="sw-btn sw-btn-outline" onclick="csExcelFor(\'sales\')">📊 Excel</button><button class="sw-btn sw-btn-outline" onclick="csPdfFor(\'sales\')">📕 PDF</button></div></div>';
   if(debt.length){ h+='<div style="margin-top:14px"><div class="sw-card-title">🔴 ვალები (მოსაცემი)</div><div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>მყიდველი</th><th>ვალი ₾</th></tr></thead><tbody>'+debt.map(function(x){ return '<tr><td><b>'+csEsc(x.b)+'</b></td><td style="color:#dc2626;font-weight:800">'+x.d.toFixed(2)+'</td></tr>'; }).join('')+'</tbody></table></div></div>'; }
-  h+='<div style="margin-top:14px"><div class="sw-card-title">💰 გაყიდვები</div><div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>თარიღი</th><th>მყიდველი</th><th>რა</th><th>კგ</th><th>₾/კგ</th><th>სულ ₾</th><th>გადახდ.</th><th>ვალი</th><th>სტატუსი</th><th></th></tr></thead><tbody>';
+  h+='<div style="margin-top:14px"><div class="sw-card-title">💰 გაყიდვები</div><div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>თარიღი</th><th>მყიდველი</th><th>საქონელი</th><th>კგ</th><th>₾/კგ</th><th>სულ ₾</th><th>გადახდ.</th><th>ვალი</th><th>სტატუსი</th><th></th></tr></thead><tbody>';
   if(!_sales.length){ h+='<tr><td colspan="10" class="sw-empty">— გაყიდვა არ არის —</td></tr>'; }
   else _sales.forEach(function(x){ var d=(+x.amount||0)-(+x.paid_amount||0); var payBtn=(d>0.009?'<span style="cursor:pointer;color:#16a34a;margin-right:8px" title="გადახდის ჩაწერა" onclick="csPay(\''+csEsc(x.id)+'\')">💵</span>':''); h+='<tr><td>'+csEsc(x.date||'')+'</td><td><b>'+csEsc(x.buyer||'—')+'</b>'+(x.note?'<div style="font-size:.68rem;color:#64748b;font-weight:400">'+csEsc(x.note)+'</div>':'')+'</td><td>'+(x.source==='cold'?('🏭 ოთ.'+csEsc(x.room_no||'')):('🧺 '+csEsc(x.product||'პირდ.')))+'</td><td>'+(Math.round((+x.kg||0)*10)/10)+'</td><td>'+(+x.price||0)+'</td><td><b>'+(Math.round((+x.amount||0)*100)/100)+'</b></td><td style="color:#16a34a">'+(Math.round((+x.paid_amount||0)*100)/100)+'</td><td style="color:'+(d>0.009?'#dc2626':'#16a34a')+';font-weight:700;cursor:'+(d>0.009?'pointer':'default')+'" '+(d>0.009?'title="გადახდის ჩაწერა" onclick="csPay(\''+csEsc(x.id)+'\')"':'')+'>'+(d>0.009?d.toFixed(2):'✓')+'</td><td>'+csPayBadge(x)+'</td><td style="white-space:nowrap">'+payBtn+'<span style="cursor:pointer;color:#dc2626" onclick="csDelSale(\''+csEsc(x.id)+'\')">🗑️</span></td></tr>'; });
   h+='</tbody></table></div></div>';
