@@ -334,6 +334,7 @@ async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} loca
 
 async function showApp(email){
   document.getElementById('loginCard').style.display='none';
+  try{ var _g=getSb(); if(_g&&uid){ var _gm=await _g.from('farm_members').select('member_uid').eq('member_uid',uid).maybeSingle(); if(_gm&&_gm.data){ location.replace('awonva.html'); return; } } }catch(e){}
   document.getElementById('app').style.display='block';
   document.getElementById('whoami').textContent=email||'—';
   updateNet();

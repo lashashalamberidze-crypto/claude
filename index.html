@@ -2943,6 +2943,9 @@ async function sbLogin(email, pass) {
   if(error) throw error;
   const uid = data.user.id;
 
+  // ამწონველი (farm_members) → მხოლოდ აწონვა
+  try{ const { data: _fm } = await _sb.from('farm_members').select('member_uid').eq('member_uid', uid).maybeSingle(); if(_fm){ location.replace('awonva.html'); await new Promise(()=>{}); } }catch(e){}
+
   // Load user profile from DB
   const { data: profile, error: pErr } = await _sb.from('users').select('*').eq('id', uid).single();
   if(pErr) throw pErr;
@@ -2968,6 +2971,7 @@ async function sbGetSession() {
   const { data } = await _sb.auth.getSession();
   if(!data.session) return null;
   const uid = data.session.user.id;
+  try{ const { data: _fm } = await _sb.from('farm_members').select('member_uid').eq('member_uid', uid).maybeSingle(); if(_fm){ location.replace('awonva.html'); await new Promise(()=>{}); } }catch(e){}
   const { data: profile } = await _sb.from('users').select('*').eq('id', uid).single();
   if(!profile) return null;
   return {

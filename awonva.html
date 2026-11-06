@@ -87,7 +87,7 @@
   <div class="qbar" id="qbar"></div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v28</span></h1>
+    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v29</span></h1>
     <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
     <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
     <div id="roleBar" style="justify-content:flex-end;margin:6px 0 0">
@@ -240,7 +240,7 @@
 const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
 let sb=null, uid=null, PICKERS=[], NUMMAP={}, activeTab='num', TG_MODE='off', handManSeq=0;
 // ── როლები: ადმინი (ყველაფერი) / ამწონველი (მხოლოდ წონა) ──
-var CUR_ROLE='admin', CUR_WEIGHER='', WEIGHERS=[], ADMIN_PIN='', _noWeigherCol=false, DEVID='';
+var CUR_ROLE='admin', CUR_WEIGHER='', WEIGHERS=[], ADMIN_PIN='', _noWeigherCol=false, DEVID='', AUTH_UID='', MEMBERS=[];
 try{ DEVID=localStorage.getItem('aw_devid')||''; if(!DEVID){ DEVID=Math.random().toString(36).slice(2,4).toUpperCase(); localStorage.setItem('aw_devid',DEVID); } }catch(e){ DEVID='XX'; }
 let boxes=[], lastW=[], queue=[], syncing=false, feed=[], numSeq={}, dedup={}, BLOCKS=[], ROWS=[], committedPallets={}, palCommitting=false;
 let smsSentBoxes={}, SMSCFG=null;
@@ -278,10 +278,19 @@ async function doLogin(){
 }
 async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
 
+// ── ფერმის ამოცნობა: მფლობელი თუ ამწონველი (farm_members) ──
+async function resolveFarm(){
+  AUTH_UID=uid; CUR_ROLE='admin'; CUR_WEIGHER='';
+  try{ var r=await sb.from('farm_members').select('owner_uid,name').eq('member_uid',AUTH_UID).maybeSingle();
+    if(r&&r.data&&r.data.owner_uid){ uid=r.data.owner_uid; CUR_ROLE='weigher'; CUR_WEIGHER=r.data.name||'ამწონველი'; }
+  }catch(e){}
+}
 async function showApp(email){
   document.getElementById('loginCard').style.display='none';
   document.getElementById('app').style.display='block';
-  document.getElementById('whoami').textContent=email||'—';
+  await resolveFarm();            // uid → ფერმის მფლობელის id (ამწონველზე)
+  applyRole();
+  document.getElementById('whoami').textContent=(CUR_ROLE==='weigher'?('⚖️ '+CUR_WEIGHER):(email||'—'));
   var a=document.getElementById('archiveDate'); if(a && !a.value) a.value=_today();
   var sd=document.getElementById('smsDate'); if(sd && !sd.value) sd.value=_today();
   var dm=document.getElementById('dsmsDate'); if(dm && !dm.value) dm.value=_today();
@@ -291,12 +300,11 @@ async function showApp(email){
   window.addEventListener('offline',updateNet);
   try{ queue=(await idbGet('queue'))||[]; }catch(e){ queue=[]; }
   await loadSettings();
-  await loadRoleCfg(); initRole();
   await loadPickers();
   await loadZones();
   switchTab('num');
   renderQueue(); renderFeed(); refreshDayTotal(); fetchSeason(true);
-  if(CUR_ROLE==='admin' && !document.getElementById('roleGate')) showStartCheck();
+  if(CUR_ROLE==='admin') showStartCheck();
   if(navigator.onLine) syncQueue();
 }
 
@@ -407,37 +415,52 @@ function gateEnter(id){
   else { var w=WEIGHERS.find(function(x){return x.id===id;})||{}; CUR_ROLE='weigher'; CUR_WEIGHER=w.name||''; try{ sessionStorage.setItem('aw_role',id); sessionStorage.setItem('aw_wname',CUR_WEIGHER); }catch(e){} }
   applyRole(); var g=document.getElementById('roleGate'); if(g) g.remove();
 }
-function switchUser(){ try{ sessionStorage.removeItem('aw_role'); sessionStorage.removeItem('aw_wname'); }catch(e){} roleGate(); }
-// ── ამწონველების მართვა (ადმინი) ──
+function switchUser(){ doLogout(); }   // სხვა მომხმარებლით შესვლა = გასვლა → ლოგინი
+// ── ამწონველების მართვა (მფლობელი): რეალური Supabase ანგარიში email+პაროლით ──
 function weighersModal(){
   if(CUR_ROLE!=='admin') return;
   var ov=document.createElement('div'); ov.id='wgModal'; ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.6);display:flex;align-items:flex-start;justify-content:center;z-index:100000;padding:16px;overflow:auto';
   ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;margin:auto;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.3)">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:1.05rem;color:#0369a1">👤 ამწონველები</b><button class="sec" style="width:auto;padding:5px 11px" onclick="document.getElementById(\'wgModal\').remove()">✕</button></div>'
-    +'<div style="display:flex;gap:8px"><input id="wgName" placeholder="სახელი"><input id="wgPin" placeholder="PIN" inputmode="numeric" style="max-width:110px"></div>'
-    +'<button class="g" style="margin-top:8px;width:100%" onclick="wgAdd()">➕ დამატება</button>'
-    +'<div id="wgList" style="margin-top:12px"></div>'
-    +'<hr style="margin:14px 0;border:none;border-top:1px solid #e2e8f0">'
-    +'<label>👑 მფლობელის PIN '+(ADMIN_PIN?'<span class="ok" style="font-size:.76rem">(დაყენებულია)</span>':'<span class="warn" style="font-size:.76rem">(ჯერ არ არის)</span>')+'</label>'
-    +'<div style="display:flex;gap:8px"><input id="wgAdminPin" placeholder="ახალი PIN" inputmode="numeric"><button class="sec" style="width:auto;padding:9px 14px" onclick="wgSaveAdminPin()">💾</button></div>'
-    +'<div class="muted" style="font-size:.76rem;margin-top:4px">მფლობელის PIN იცავს პარამეტრებს/SMS-ს. ამწონველები მხოლოდ წონიან.</div>'
+    +'<div class="muted" style="font-size:.78rem;margin-bottom:8px">შექმენი ამწონველის ანგარიში — ის შევა <b>თავისი email/პაროლით</b> და ნახავს მხოლოდ აწონვას.</div>'
+    +'<input id="wgName" placeholder="სახელი (მაგ. გიორგი)">'
+    +'<input id="wgEmail" placeholder="email" type="email" autocapitalize="off" style="margin-top:6px">'
+    +'<input id="wgPass" placeholder="პაროლი (მინ. 6 სიმბოლო)" style="margin-top:6px">'
+    +'<button class="g" style="margin-top:8px;width:100%" onclick="wgAdd()">➕ ამწონველის შექმნა</button>'
+    +'<div id="wgMsg" style="font-size:.82rem;margin-top:6px"></div>'
+    +'<div id="wgList" style="margin-top:12px">იტვირთება…</div>'
     +'</div>';
-  document.body.appendChild(ov); wgRender();
+  document.body.appendChild(ov); wgLoad();
+}
+async function wgLoad(){
+  try{ var r=await sb.from('farm_members').select('*').eq('owner_uid',uid).order('created_at',{ascending:true}); MEMBERS=(r&&r.data)||[]; }catch(e){ MEMBERS=[]; }
+  wgRender();
 }
 function wgRender(){ var el=document.getElementById('wgList'); if(!el) return;
-  if(!WEIGHERS.length){ el.innerHTML='<div class="muted" style="text-align:center;padding:8px">— ჯერ არავინ —</div>'; return; }
-  el.innerHTML='<table><thead><tr><th>სახელი</th><th>PIN</th><th></th></tr></thead><tbody>'+WEIGHERS.map(function(w,i){ return '<tr><td><b>'+esc(w.name)+'</b></td><td class="muted">'+esc(w.pin||'—')+'</td><td><span style="cursor:pointer;color:#dc2626" onclick="wgDel('+i+')">🗑️</span></td></tr>'; }).join('')+'</tbody></table>';
+  if(!MEMBERS.length){ el.innerHTML='<div class="muted" style="text-align:center;padding:8px">— ჯერ არავინ —</div>'; return; }
+  el.innerHTML='<table><thead><tr><th>სახელი</th><th>email</th><th></th></tr></thead><tbody>'+MEMBERS.map(function(m){ return '<tr><td><b>'+esc(m.name||'—')+'</b></td><td class="muted" style="font-size:.74rem">'+esc(m.email||'')+'</td><td><span style="cursor:pointer;color:#dc2626" onclick="wgDel(\''+esc(m.id)+'\')">🗑️</span></td></tr>'; }).join('')+'</tbody></table>';
 }
-async function wgAdd(){ var n=(document.getElementById('wgName').value||'').trim(), p=(document.getElementById('wgPin').value||'').trim(); if(!n){ return; }
-  WEIGHERS.push({id:'w'+Date.now().toString(36),name:n,pin:p});
-  var res=await saveWeighers();
-  if(!res.ok){ WEIGHERS.pop(); alert('❌ ვერ შეინახა ღრუბელში: '+res.err); return; }
-  document.getElementById('wgName').value=''; document.getElementById('wgPin').value=''; wgRender(); }
-async function wgDel(i){ if(!confirm('ამწონველი წაიშალოს?')) return; var bak=WEIGHERS.slice(); WEIGHERS.splice(i,1);
-  var res=await saveWeighers(); if(!res.ok){ WEIGHERS=bak; alert('❌ ვერ წაიშალა: '+res.err); return; } wgRender(); }
-async function wgSaveAdminPin(){ var v=(document.getElementById('wgAdminPin').value||'').trim(); if(!v) return;
-  var res=await saveAdminPinCloud(v); if(!res.ok){ alert('❌ ვერ შეინახა: '+res.err); return; }
-  ADMIN_PIN=v; document.getElementById('wgAdminPin').value=''; var m=document.getElementById('wgModal'); if(m) m.remove(); alert('✅ მფლობელის PIN შენახულია'); }
+async function wgAdd(){
+  var n=(document.getElementById('wgName').value||'').trim(), em=(document.getElementById('wgEmail').value||'').trim().toLowerCase(), pw=(document.getElementById('wgPass').value||''), msg=document.getElementById('wgMsg');
+  if(!n){ msg.innerHTML='<span class="warn">ჩაწერე სახელი</span>'; return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ msg.innerHTML='<span class="warn">არასწორი email</span>'; return; }
+  if(pw.length<6){ msg.innerHTML='<span class="warn">პაროლი მინ. 6 სიმბოლო</span>'; return; }
+  msg.innerHTML='<span class="muted">⏳ ვქმნი ანგარიშს…</span>';
+  // ცალკე Supabase client — რომ მფლობელი არ გამოვიდეს სისტემიდან
+  var prov=null; try{ prov=supabase.createClient(SB_URL,SB_KEY,{auth:{storageKey:'prov_'+Date.now(),persistSession:false,autoRefreshToken:false}}); }catch(e){ msg.innerHTML='<span class="warn">client ვერ შეიქმნა</span>'; return; }
+  var su; try{ su=await prov.auth.signUp({email:em,password:pw}); }catch(e){ msg.innerHTML='<span class="warn">❌ '+esc(e.message||String(e))+'</span>'; return; }
+  if(su.error){ msg.innerHTML='<span class="warn">❌ '+esc(su.error.message)+'</span>'; return; }
+  var mid=su.data&&su.data.user&&su.data.user.id;
+  if(!mid){ msg.innerHTML='<span class="warn">❌ ანგარიში ვერ შეიქმნა (შეამოწმე „Confirm email" გამორთვა)</span>'; return; }
+  try{ await prov.auth.signOut(); }catch(e){}
+  try{ var r=await sb.from('farm_members').insert({owner_uid:uid,member_uid:mid,name:n,email:em,role:'weigher'}); if(r.error){ msg.innerHTML='<span class="warn">❌ ბმა ვერ შეიქმნა: '+esc(r.error.message)+'</span>'; return; } }catch(e){ msg.innerHTML='<span class="warn">❌ '+esc(e.message||String(e))+'</span>'; return; }
+  document.getElementById('wgName').value=''; document.getElementById('wgEmail').value=''; document.getElementById('wgPass').value='';
+  msg.innerHTML='<span class="ok">✅ შეიქმნა — ამწონველი შედის ამ email/პაროლით</span>';
+  wgLoad();
+}
+async function wgDel(id){ if(!confirm('ამწონველის წვდომა მოიხსნას? (ანგარიში რჩება, მაგრამ ფერმას ვეღარ ხედავს)')) return;
+  try{ var r=await sb.from('farm_members').delete().eq('id',id).eq('owner_uid',uid); if(r.error){ alert('❌ '+r.error.message); return; } }catch(e){ alert('❌ '+(e.message||e)); return; }
+  wgLoad(); }
 function saveSetting(key,val){
   try{ localStorage.setItem(key,val); }catch(e){}
   if(key==='its_box_w'){

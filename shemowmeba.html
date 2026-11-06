@@ -223,6 +223,7 @@ async function doLogin(){
 async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
 function showApp(){
   document.getElementById('loginCard').style.display='none';
+  try{ if(sb&&uid){ sb.from('farm_members').select('member_uid').eq('member_uid',uid).maybeSingle().then(function(r){ if(r&&r.data) location.replace('awonva.html'); },function(){}); } }catch(e){}
   document.getElementById('app').style.display='block';
   updateNet(); renderDlStatus(); renderQueue(); focus1();
   if(sb){ sb.auth.getUser().then(({data})=>{ var em=(data&&data.user&&data.user.email)||'-'; var el=document.getElementById('whoami'); if(el) el.textContent=em; }).catch(function(){}); }
