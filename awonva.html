@@ -87,7 +87,7 @@
   <div class="qbar" id="qbar"></div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v27</span></h1>
+    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v28</span></h1>
     <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
     <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
     <div id="roleBar" style="justify-content:flex-end;margin:6px 0 0">
@@ -348,17 +348,22 @@ function palTareW(){ var v=parseFloat((document.getElementById('cfgPalW')||{}).v
 
 // ═══════════ 👤 როლები: ადმინი / ამწონველი ═══════════
 async function loadRoleCfg(){
-  var gotW=false;
+  ADMIN_PIN=''; WEIGHERS=[];   // წყარო = ღრუბელი (user_settings), localStorage არ გამოიყენება
   try{ if(sb&&uid){ var r=await sb.from('user_settings').select('skey,sval').eq('user_id',uid).in('skey',['admin_pin','weighers']);
-    if(!r.error&&r.data){ r.data.forEach(function(x){ if(x.skey==='admin_pin') ADMIN_PIN=x.sval||''; if(x.skey==='weighers'){ try{ WEIGHERS=JSON.parse(x.sval||'[]')||[]; gotW=true; }catch(e){ WEIGHERS=[]; } } }); }
+    if(!r.error&&r.data){ r.data.forEach(function(x){ if(x.skey==='admin_pin') ADMIN_PIN=x.sval||''; if(x.skey==='weighers'){ try{ WEIGHERS=JSON.parse(x.sval||'[]')||[]; }catch(e){ WEIGHERS=[]; } } }); }
   } }catch(e){}
-  // fallback — localStorage (თუ ბაზამ ვერ მოასწრო/ვერ ჩაწერა, ამწონველი არ დაიკარგოს)
-  if(!gotW || !WEIGHERS.length){ try{ var ls=JSON.parse(localStorage.getItem('weighers')||'[]')||[]; if(ls.length) WEIGHERS=ls; }catch(e){} }
-  if(!ADMIN_PIN){ try{ var ap=localStorage.getItem('admin_pin')||''; if(ap) ADMIN_PIN=ap; }catch(e){} }
 }
 async function saveWeighers(){
-  try{ localStorage.setItem('weighers', JSON.stringify(WEIGHERS)); }catch(e){}
-  if(sb&&uid){ try{ await sb.from('user_settings').upsert({user_id:uid,skey:'weighers',sval:JSON.stringify(WEIGHERS),updated_at:new Date().toISOString()},{onConflict:'user_id,skey'}); }catch(e){} }
+  if(!(sb&&uid)) return {ok:false,err:'ინტერნეტი/სესია არ არის'};
+  try{ var r=await sb.from('user_settings').upsert({user_id:uid,skey:'weighers',sval:JSON.stringify(WEIGHERS),updated_at:new Date().toISOString()},{onConflict:'user_id,skey'});
+    if(r.error) return {ok:false,err:r.error.message}; return {ok:true};
+  }catch(e){ return {ok:false,err:(e.message||String(e))}; }
+}
+async function saveAdminPinCloud(v){
+  if(!(sb&&uid)) return {ok:false,err:'ინტერნეტი/სესია არ არის'};
+  try{ var r=await sb.from('user_settings').upsert({user_id:uid,skey:'admin_pin',sval:v,updated_at:new Date().toISOString()},{onConflict:'user_id,skey'});
+    if(r.error) return {ok:false,err:r.error.message}; return {ok:true};
+  }catch(e){ return {ok:false,err:(e.message||String(e))}; }
 }
 function applyRole(){
   var isW=(CUR_ROLE==='weigher');
@@ -423,9 +428,16 @@ function wgRender(){ var el=document.getElementById('wgList'); if(!el) return;
   if(!WEIGHERS.length){ el.innerHTML='<div class="muted" style="text-align:center;padding:8px">— ჯერ არავინ —</div>'; return; }
   el.innerHTML='<table><thead><tr><th>სახელი</th><th>PIN</th><th></th></tr></thead><tbody>'+WEIGHERS.map(function(w,i){ return '<tr><td><b>'+esc(w.name)+'</b></td><td class="muted">'+esc(w.pin||'—')+'</td><td><span style="cursor:pointer;color:#dc2626" onclick="wgDel('+i+')">🗑️</span></td></tr>'; }).join('')+'</tbody></table>';
 }
-function wgAdd(){ var n=(document.getElementById('wgName').value||'').trim(), p=(document.getElementById('wgPin').value||'').trim(); if(!n){ return; } WEIGHERS.push({id:'w'+Date.now().toString(36),name:n,pin:p}); saveWeighers(); document.getElementById('wgName').value=''; document.getElementById('wgPin').value=''; wgRender(); }
-function wgDel(i){ if(!confirm('ამწონველი წაიშალოს?')) return; WEIGHERS.splice(i,1); saveWeighers(); wgRender(); }
-function wgSaveAdminPin(){ var v=(document.getElementById('wgAdminPin').value||'').trim(); if(!v) return; ADMIN_PIN=v; saveSetting('admin_pin',v); document.getElementById('wgAdminPin').value=''; var m=document.getElementById('wgModal'); if(m) m.remove(); alert('✅ მფლობელის PIN შენახულია'); }
+async function wgAdd(){ var n=(document.getElementById('wgName').value||'').trim(), p=(document.getElementById('wgPin').value||'').trim(); if(!n){ return; }
+  WEIGHERS.push({id:'w'+Date.now().toString(36),name:n,pin:p});
+  var res=await saveWeighers();
+  if(!res.ok){ WEIGHERS.pop(); alert('❌ ვერ შეინახა ღრუბელში: '+res.err); return; }
+  document.getElementById('wgName').value=''; document.getElementById('wgPin').value=''; wgRender(); }
+async function wgDel(i){ if(!confirm('ამწონველი წაიშალოს?')) return; var bak=WEIGHERS.slice(); WEIGHERS.splice(i,1);
+  var res=await saveWeighers(); if(!res.ok){ WEIGHERS=bak; alert('❌ ვერ წაიშალა: '+res.err); return; } wgRender(); }
+async function wgSaveAdminPin(){ var v=(document.getElementById('wgAdminPin').value||'').trim(); if(!v) return;
+  var res=await saveAdminPinCloud(v); if(!res.ok){ alert('❌ ვერ შეინახა: '+res.err); return; }
+  ADMIN_PIN=v; document.getElementById('wgAdminPin').value=''; var m=document.getElementById('wgModal'); if(m) m.remove(); alert('✅ მფლობელის PIN შენახულია'); }
 function saveSetting(key,val){
   try{ localStorage.setItem(key,val); }catch(e){}
   if(key==='its_box_w'){
