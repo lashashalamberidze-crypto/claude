@@ -99,29 +99,6 @@
   </div>
 
   <div class="panel active" id="p-pickers">
-    <div class="card" id="tgConnectCard" style="border:1.5px solid #229ED9">
-      <h2 style="color:#229ED9">🔗 Telegram-ის დაკავშირება (მკრეფავებისთვის)</h2>
-      <div class="muted" style="font-size:.85rem;line-height:1.55;margin-bottom:10px">
-        მკრეფავმა დაასკანეროს ქვემოთ QR (ან გახსნას ბმული) → დააჭიროს <b>Start</b> → <b>„📱 ნომრის გაზიარება"</b>.
-        ამის შემდეგ შეტყობინებები (აწონვა, დღის ჯამი) <b>უფასოდ Telegram-ზე</b> მიუვა — SMS-ის გარეშე.
-      </div>
-      <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center">
-        <div id="tgQr" style="background:#fff;padding:8px;border-radius:10px;border:1px solid #e2e8f0"></div>
-        <div style="flex:1;min-width:220px">
-          <label>ბმული (გაუზიარე მკრეფავებს):</label>
-          <input id="tgLink" readonly onclick="this.select()" style="font-size:.78rem">
-          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-            <button class="sec" style="width:auto;padding:8px 12px" onclick="tgCopyLink()">📋 ბმულის კოპირება</button>
-            <button class="sec" style="width:auto;padding:8px 12px" onclick="tgPrintQr()">🖨️ QR ბეჭდვა</button>
-            <button class="sec" style="width:auto;padding:8px 12px" onclick="loadTgLinks().then(renderPickers)">🔄 სტატუსის განახლება</button>
-          </div>
-          <div style="margin-top:8px">
-            <button class="g" style="width:auto;padding:9px 14px;background:#229ED9" onclick="tgSendQrAll()" title="ყველა დაკავშირებულ მკრეფავს უგზავნის მის პირად QR ბარათს (uid) სურათად — რომ ტელეფონიდან ასკანეროს აწონვაზე. ეს არ არის დაკავშირების QR.">🏷️ პირადი QR ბარათის გაგზავნა (დაკავშირებულებს)</button>
-          </div>
-          <div id="tgStat" class="muted" style="font-size:.8rem;margin-top:8px"></div>
-        </div>
-      </div>
-    </div>
     <div class="card">
       <h2>➕ მკრეფავის დამატება</h2>
       <div class="row2">
