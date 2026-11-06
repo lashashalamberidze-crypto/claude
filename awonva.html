@@ -571,21 +571,26 @@ function renderSeason(){
 
 var COLD_ROOMS=[];
 async function loadColdRooms(){
-  try{ if(sb&&uid){ var r=await sb.from('user_settings').select('sval').eq('user_id',uid).eq('skey','cold_rooms').maybeSingle(); if(r&&r.data&&r.data.sval){ COLD_ROOMS=JSON.parse(r.data.sval)||[]; } } }catch(e){ COLD_ROOMS=[]; }
+  var got=false, s=getSb();
+  try{ if(s&&uid){ var r=await s.from('user_settings').select('sval').eq('user_id',uid).eq('skey','cold_rooms').maybeSingle(); if(r&&r.data&&r.data.sval){ COLD_ROOMS=JSON.parse(r.data.sval)||[]; got=COLD_ROOMS.length>0; } } }catch(e){}
+  // fallback — matsivari localStorage-შიც ინახავს (იგივე origin)
+  if(!got){ try{ var ls=JSON.parse(localStorage.getItem('cold_rooms')||'[]')||[]; if(ls.length){ COLD_ROOMS=ls; got=true; } }catch(e){} }
+  // fallback 2 — თუ layout არ არის, ავიღოთ ოთახები უკვე არსებული მარაგიდან
+  if(!got){ try{ if(s&&uid){ var r2=await s.from('cold_stock').select('room_no').eq('user_id',uid); if(r2&&r2.data){ var seen={},arr=[]; r2.data.forEach(function(x){ var n=String(x.room_no||'').trim(); if(n&&!seen[n]){ seen[n]=1; arr.push({no:n}); } }); if(arr.length) COLD_ROOMS=arr; } } }catch(e){} }
 }
 function palFillRoomsSelect(){
   var sel=document.getElementById('palRoom'); if(!sel) return;
   var cur=sel.value;
+  if(!COLD_ROOMS.length){ sel.innerHTML='<option value="">— ჯერ დახატე ოთახები მაცივრის მოდულში —</option>'; return; }
   sel.innerHTML='<option value="">— ოთახში არ შევიდეს —</option>'+COLD_ROOMS.map(function(r){ return '<option value="'+esc(r.no)+'">ოთახი '+esc(r.no)+'</option>'; }).join('');
   if(cur) sel.value=cur;
 }
 async function openPalModal(){
   var m=document.getElementById('palModal'); if(!m) return;
   var pwi=document.getElementById('palW'); if(pwi && !pwi.value) pwi.value=palTareW();
-  if(!COLD_ROOMS.length) await loadColdRooms();
-  palFillRoomsSelect();
   m.classList.add('open');
   var pi=document.getElementById('palIn'); if(pi){ try{ pi.focus(); }catch(e){} }
+  await loadColdRooms(); palFillRoomsSelect();
 }
 function closePalModal(){ var m=document.getElementById('palModal'); if(m) m.classList.remove('open'); }
 window.openPalModal=openPalModal; window.closePalModal=closePalModal;
