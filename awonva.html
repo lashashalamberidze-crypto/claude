@@ -61,6 +61,11 @@
   .s-orange{background:linear-gradient(135deg,#f59e0b,#ea580c)}
   .s-purple{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}
   @media(max-width:480px){.stats{grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px}.stat{padding:11px 12px}.stat .val{font-size:1.28rem}.stat.money .val{font-size:1.06rem}.stat .lbl{font-size:.7rem}}
+  .pal-modal{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:9999;display:none;align-items:flex-start;justify-content:center;padding:14px;overflow:auto}
+  .pal-modal.open{display:flex}
+  .pal-modal-inner{background:#f1f5f9;border-radius:16px;max-width:560px;width:100%;margin:auto;padding:14px;box-shadow:0 12px 48px rgba(0,0,0,.3)}
+  .pal-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;position:sticky;top:0}
+  .pal-x{background:#fff;border:1.5px solid #cbd5e1;border-radius:10px;width:38px;height:38px;font-size:1.1rem;cursor:pointer;color:#475569}
 </style></head>
 <body>
 
@@ -93,6 +98,7 @@
     <div class="cfgbar">
       <div class="fld"><label>ფასი, ₾/კგ</label><input id="cfgPrice" type="number" step="0.01" onchange="saveSetting('its_price',this.value);prevAll()"></div>
       <div class="fld"><label>ტარა, კგ</label><input id="cfgTare" type="number" step="0.01" onchange="saveSetting('its_box_w',this.value);prevAll()"></div>
+      <div class="fld"><label>პალეტის წონა, კგ</label><input id="cfgPalW" type="number" step="0.1" placeholder="23" onchange="saveSetting('its_pallet_w',this.value)"></div>
       <div class="fld" style="max-width:120px">
         <label>SMS</label>
         <label class="switch" style="padding:9px 6px;border:1.5px solid #cbd5e1;border-radius:10px;justify-content:center">
@@ -106,8 +112,7 @@
 
   <div class="tabs">
     <button class="tab" data-t="hand"   onclick="switchTab('hand')"><span class="ic">✋</span>სკანი+წონა</button>
-    <!-- 📦 „პალეტით" ტაბი ამოღებულია — წონას შემთხვევით არიგებდა (გამოგონილი კგ).
-         პალეტზე მიბმა ხდება ცალკე, სამაცივრეში (shemowmeba.html → „პალეტის გასწორება"). -->
+    <button class="tab" onclick="openPalModal()"><span class="ic">📦</span>პალეტზე</button>
     <button class="tab" data-t="num"    onclick="switchTab('num')"><span class="ic">#️⃣</span>ნუმერაცია</button>
     <button class="tab" data-t="auto"   onclick="switchTab('auto')"><span class="ic">⚡</span>ავტომატ.</button>
   </div>
@@ -138,12 +143,15 @@
     </div>
   </div>
 
-  <div class="panel" id="p-pallet">
+  <div id="palModal" class="pal-modal"><div class="pal-modal-inner">
+    <div class="pal-modal-head"><h2 style="margin:0;font-size:1.05rem">📦 პალეტზე აწონვა</h2><button class="pal-x" onclick="closePalModal()">✕</button></div>
     <div class="card">
       <h2>📦 პალეტი</h2>
       <label>პალეტი (სკანერი აკრეფს)</label>
       <input id="palIn" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="PAL-XXXXXX-XXXX" oninput="valPal()">
       <div id="palVal" style="font-size:.8rem;margin-top:4px"></div>
+      <label style="margin-top:10px">🏭 ოთახი მაცივარში <span class="muted">(არჩევითი — ჩაწერისას პალეტი ოთახში მოთავსდება)</span></label>
+      <select id="palRoom"><option value="">— ოთახში არ შევიდეს —</option></select>
     </div>
     <div class="card">
       <h2>ყუთის დამატება</h2>
@@ -182,7 +190,7 @@
       <button class="g" onclick="palCommit()" style="margin-top:12px">✅ დაადასტურე და ჩაწერე</button>
       <div id="palConf" style="font-size:.85rem;margin-top:8px"></div>
     </div>
-  </div>
+  </div></div>
 
   <div class="panel" id="p-num">
     <div class="card">
@@ -308,7 +316,7 @@ async function loadSettings(){
   // წყარო = ღრუბელი (user_settings). localStorage მხოლოდ offline-fallback ქეშია,
   // და მხოლოდ მაშინ იკითხება, თუ ღრუბელი მიუწვდომელია.
   var cloud={};
-  try{ var r=await sb.from('user_settings').select('skey,sval').eq('user_id',uid).in('skey',['its_price','its_box_w','its_sms_config','tg_notify_mode']);
+  try{ var r=await sb.from('user_settings').select('skey,sval').eq('user_id',uid).in('skey',['its_price','its_box_w','its_pallet_w','its_sms_config','tg_notify_mode']);
     if(!r.error && r.data){ r.data.forEach(function(x){ if(x.skey==='tg_notify_mode'){ TG_MODE=x.sval||'off'; return; } cloud[x.skey]=x.sval; try{ localStorage.setItem(x.skey,x.sval); }catch(e){} }); }
     else if(r.error){ console.warn('[loadSettings]', r.error); }
   }catch(e){ console.warn('[loadSettings]', e); }
@@ -316,10 +324,14 @@ async function loadSettings(){
   if(cloud.its_sms_config!=null){ try{ SMSCFG=JSON.parse(cloud.its_sms_config)||{}; }catch(e){ SMSCFG=null; } }
   var pr = (cloud.its_price!=null) ? cloud.its_price : (localStorage.getItem('its_price')||'1.2');
   var tr = (cloud.its_box_w!=null) ? cloud.its_box_w : (localStorage.getItem('its_box_w')||'0.7');
+  var pw = (cloud.its_pallet_w!=null) ? cloud.its_pallet_w : (localStorage.getItem('its_pallet_w')||'23');
   document.getElementById('cfgPrice').value=pr;
   document.getElementById('cfgTare').value =tr;
+  var cpw=document.getElementById('cfgPalW'); if(cpw) cpw.value=pw;
+  var pwi=document.getElementById('palW'); if(pwi) pwi.value=pw;
   var ts=document.getElementById('tareShow'); if(ts) ts.textContent=tare().toFixed(2);
 }
+function palTareW(){ var v=parseFloat((document.getElementById('cfgPalW')||{}).value || localStorage.getItem('its_pallet_w') || '23'); return isNaN(v)?23:v; }
 function saveSetting(key,val){
   try{ localStorage.setItem(key,val); }catch(e){}
   if(key==='its_box_w'){
@@ -550,6 +562,26 @@ function renderSeason(){
     +stat('s-purple money','💰 ₾ სულ',(Math.round(season.gel*100)/100).toLocaleString('en-US')+' ₾','კგ×ფასი');
 }
 
+var COLD_ROOMS=[];
+async function loadColdRooms(){
+  try{ if(sb&&uid){ var r=await sb.from('user_settings').select('sval').eq('user_id',uid).eq('skey','cold_rooms').maybeSingle(); if(r&&r.data&&r.data.sval){ COLD_ROOMS=JSON.parse(r.data.sval)||[]; } } }catch(e){ COLD_ROOMS=[]; }
+}
+function palFillRoomsSelect(){
+  var sel=document.getElementById('palRoom'); if(!sel) return;
+  var cur=sel.value;
+  sel.innerHTML='<option value="">— ოთახში არ შევიდეს —</option>'+COLD_ROOMS.map(function(r){ return '<option value="'+esc(r.no)+'">ოთახი '+esc(r.no)+'</option>'; }).join('');
+  if(cur) sel.value=cur;
+}
+async function openPalModal(){
+  var m=document.getElementById('palModal'); if(!m) return;
+  var pwi=document.getElementById('palW'); if(pwi && !pwi.value) pwi.value=palTareW();
+  if(!COLD_ROOMS.length) await loadColdRooms();
+  palFillRoomsSelect();
+  m.classList.add('open');
+  var pi=document.getElementById('palIn'); if(pi){ try{ pi.focus(); }catch(e){} }
+}
+function closePalModal(){ var m=document.getElementById('palModal'); if(m) m.classList.remove('open'); }
+window.openPalModal=openPalModal; window.closePalModal=closePalModal;
 function palOk(v){ v=(v||'').toString().trim(); return /^PAL-\d{6}-\d{4}$/i.test(v) || /^[A-Z]{2,6}\d{1,6}$/i.test(v); }  // ძველი PAL-######-#### ან krefa-ს PAL001
 function valPal(){ var v=document.getElementById('palIn').value.trim(), el=document.getElementById('palVal'); if(!v){ el.innerHTML=''; return; } el.innerHTML=palOk(v)?'<span class="ok">✅ სწორი პალეტი</span>':'<span class="warn">❌ ფორმატი: PAL-XXXXXX-XXXX</span>'; }
 function resolveByAny(raw){
@@ -673,7 +705,15 @@ async function palCommit(){
   }
   committedPallets[pal]=1;
   await saveQueue();
-  msg.innerHTML='<span class="ok">✅ '+boxes.length+' ყუთი ჩაიდო რიგში → '+pal+(navigator.onLine?'. ვასინქრონებ...':' (ოფლაინ).')+'</span>';
+  // ── 🏭 ოთახში მოთავსება (მაცივარი) — თუ არჩეულია ოთახი ──
+  var _room=(document.getElementById('palRoom')||{}).value||'', _roomTxt='';
+  if(_room && sb && uid){
+    var _net=0; for(var _j=0;_j<lastW.length;_j++) _net+=lastW[_j]; _net=Math.round(_net*10)/10;
+    try{ await sb.from('cold_stock').insert({ id:'cs_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), user_id:uid, room_no:_room, kind:'pallet', pallet_code:pal, product:'', boxes:boxes.length, kg:_net, note:'აწონვიდან', date:d });
+      _roomTxt=' · 🏭 ოთახი '+_room;
+    }catch(e){ console.warn('[cold_stock]',e); _roomTxt=' · ⚠️ ოთახში ვერ ჩაიწერა'; }
+  }
+  msg.innerHTML='<span class="ok">✅ '+boxes.length+' ყუთი ჩაიდო რიგში → '+pal+_roomTxt+(navigator.onLine?'. ვასინქრონებ...':' (ოფლაინ).')+'</span>';
   boxes=[]; lastW=[]; renderPalBoxes(); document.getElementById('palResultCard').style.display='none';
   document.getElementById('palTotal').value=''; document.getElementById('palIn').value=''; document.getElementById('palVal').innerHTML='';
   dedup={}; // ახალი პალეტისთვის სკან-დუბლის ცხრილი იწმინდება
