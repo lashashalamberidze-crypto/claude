@@ -229,7 +229,7 @@
 
 <script>
 const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
-let sb=null, uid=null, PICKERS=[], NUMMAP={}, activeTab='num', TG_MODE='off';
+let sb=null, uid=null, PICKERS=[], NUMMAP={}, activeTab='num', TG_MODE='off', handManSeq=0;
 let boxes=[], lastW=[], queue=[], syncing=false, feed=[], numSeq={}, dedup={}, BLOCKS=[], ROWS=[], committedPallets={}, palCommitting=false;
 let smsSentBoxes={}, SMSCFG=null;
 let palPend={picker:null,quarter:'',row:'',_label:'',_isScan:false,_raw:''};
@@ -435,7 +435,14 @@ function handAdd(){
   //    თუ არა (უსტიკერო) — გენერირდება ახალი, ეკრანზე ჩანს დიდად და ამწონველმა უნდა დააწეროს ყუთს. ──
   var code, shortc, mode, manual=false;
   if(hBox && hBox.short){ code=hBox.code; shortc=hBox.short; mode='სკანი'; }
-  else { shortc=genCode(); code=shortc; mode='ხელით'; manual=true; }
+  else {
+    // უსტიკერო (სახელით): კოდში ჩაიდება იგივე მკრეფავის uid, რაც სკანზე/krefa-ს სტიკერზე —
+    // მკრეფავის კოდი ყველგან ერთი ფორმატია: uid|თარიღი|||ყუთი#|shortCode
+    shortc=genCode();
+    var _hu=(hChosen && hChosen.uid!=null) ? String(hChosen.uid).trim() : '';
+    code = _hu ? (_hu+'|'+_today()+'|||'+('00'+(++handManSeq)).slice(-3)+'|'+shortc) : shortc;
+    mode='ხელით'; manual=true;
+  }
   pushRecord({ code:code, short_code:shortc, picker:hChosen, weight:w, row_num:row, quarter:zone, pallet:pal, entry_mode:mode });
   var _net=Math.max(0,Math.round((w-tare())*100)/100);
   if(manual){
@@ -698,7 +705,8 @@ async function palCommit(){
   var d=_today(), tm=_time(), pr=price();
   for(var i=0;i<boxes.length;i++){ var b=boxes[i], w=lastW[i];
     var _lc=b.labelCode||'', code, shortc;
-    if(_lc){ code=_lc; var seg=_lc.split('|'); shortc=seg[seg.length-1]; } else { code=genCode(); shortc=code; }
+    if(_lc){ code=_lc; var seg=_lc.split('|'); shortc=seg[seg.length-1]; }
+    else { shortc=genCode(); var _bu=(b.uid!=null?String(b.uid).trim():''); code=_bu?(_bu+'|'+d+'|||'+('00'+(i+1)).slice(-3)+'|'+shortc):shortc; }
     queue.push({ id:_uuid(), code:code, short_code:shortc, picker_name:b.picker, picker_id:b.uid||'', phone:b.phone||'',
       pallet_code:pal, weight:w, kg:w, price:pr, date:d, time:tm, row_num:(b.row&&b.row!=='—'?b.row:''), quarter:b.quarter||'',
       earned:Math.round(w*pr*100)/100, sms:smsOn&&!!b.phone, entry_mode:'პალეტი' });
