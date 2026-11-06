@@ -1176,20 +1176,53 @@ async function csEditPaid(id){ var x=CS_SALES.find(function(s){return s.id===id;
   var amt=+x.amount||0, cur=+x.paid_amount||0; var v=prompt('გადახდილი თანხა ₾ (სულ '+amt.toFixed(2)+' ₾):', cur); if(v===null) return;
   var p=parseFloat(v)||0; x.paid_amount=p; var s=getSb(); try{ await s.from('cold_sales').update({paid_amount:p}).eq('user_id',uid).eq('id',id); }catch(e){}
   csRender(); var hp=document.getElementById('sw-page-history'); if(hp&&hp.classList.contains('active')) swRenderHistory(); }
-// 💵 გადახდის ჩაწერა — სრული ან ნაწილობრივი (ემატება უკვე გადახდილს)
-async function csPay(id){ var x=CS_SALES.find(function(s){return s.id===id;}); if(!x) return;
-  var amt=+x.amount||0, cur=+x.paid_amount||0, rem=+(amt-cur).toFixed(2);
-  if(rem<=0.009){ alert('✅ უკვე სრულად გადახდილია ('+amt.toFixed(2)+' ₾)'); return; }
-  var v=prompt('💵 გადახდის ჩაწერა\n\nმყიდველი: '+(x.buyer||'—')+'\nსულ: '+amt.toFixed(2)+' ₾\nგადახდილი: '+cur.toFixed(2)+' ₾\nდარჩენილი (ვალი): '+rem.toFixed(2)+' ₾\n\nშეიყვანე ახლა გადახდილი თანხა ₾\n(ცარიელი = სრული '+rem.toFixed(2)+' ₾):', '');
-  if(v===null) return;
-  var add=(String(v).trim()==='')?rem:(parseFloat(v)||0);
-  if(add<=0){ alert('თანხა არასწორია'); return; }
-  var np=+(cur+add).toFixed(2); if(np>amt) np=amt;
-  x.paid_amount=np; var s=getSb(); try{ await s.from('cold_sales').update({paid_amount:np}).eq('user_id',uid).eq('id',id); }catch(e){}
-  var nr=+(amt-np).toFixed(2);
-  csRender(); var hp=document.getElementById('sw-page-history'); if(hp&&hp.classList.contains('active')) swRenderHistory();
-  alert(nr<=0.009?('✅ სრულად გადახდილია ('+amt.toFixed(2)+' ₾)'):('🟡 ნაწილობრივ — გადაიხადა '+add.toFixed(2)+' ₾, დარჩა '+nr.toFixed(2)+' ₾'));
+// 💰 ფასი / გადახდა — მოდალი (შესყიდვის სტილში, რედაქტირებით)
+function csPay(id){ var x=CS_SALES.find(function(s){return s.id===id;}); if(!x) return;
+  var kgv=+x.kg||0;
+  var curAmt=(x.amount!=null && +x.amount>0)?+x.amount:null;
+  var curPaid=+x.paid_amount||0;
+  var curUnit=(curAmt!=null && kgv>0)?+(curAmt/kgv).toFixed(2):(+x.price||'');
+  var what = (x.source==='cold') ? ('🏭 ოთ.'+(x.room_no||'')) : (x.product||'პირდაპირი');
+  var ex=document.getElementById('cs-pay-modal'); if(ex) ex.remove();
+  var bg=document.createElement('div'); bg.id='cs-pay-modal'; bg.className='sw-modal-bg';
+  bg.innerHTML=''
+    +'<div class="sw-modal">'
+    +'<button onclick="document.getElementById(\'cs-pay-modal\').remove()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer">✕</button>'
+    +'<div style="font-size:1rem;font-weight:600;color:#1e3a5f;margin-bottom:4px">💰 ფასი / გადახდა</div>'
+    +'<div class="muted" style="margin-bottom:16px"><span class="sw-lot-tag">'+csEsc(what)+'</span> '+kgv.toFixed(1)+' კგ'+(x.buyer?(' · '+csEsc(x.buyer)):'')+'</div>'
+    +'<input type="hidden" id="csp-kgval" value="'+kgv+'">'
+    +'<div class="sw-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">'
+    +'<div class="sw-field"><label>ფასი ₾/კგ</label><input type="number" id="csp-price" value="'+curUnit+'" placeholder="0.00" min="0" step="0.01" oninput="cspCalc()"></div>'
+    +'<div class="sw-field"><label>თანხა ₾ (სულ)</label><input type="number" id="csp-amount" value="'+(curAmt!=null?curAmt:'')+'" placeholder="0.00" min="0" step="0.01"></div>'
+    +'<div class="sw-field full"><label>გადახდილი ₾ (სულ მიღებული)</label><input type="number" id="csp-paidamt" value="'+(curPaid||'')+'" placeholder="0.00" min="0" step="0.01"></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap">'
+    +'<button class="sw-btn sw-btn-outline" style="font-size:.72rem;padding:6px 12px" onclick="var a=document.getElementById(\'csp-amount\'),p=document.getElementById(\'csp-paidamt\');if(a&&p)p.value=a.value;">✓ სრულად</button>'
+    +'</div>'
+    +'<div style="display:flex;gap:10px;margin-top:8px">'
+    +'<button class="sw-btn sw-btn-gold" style="flex:1" onclick="csPaySave(\''+csEsc(id)+'\')">💾 შენახვა</button>'
+    +'<button class="sw-btn sw-btn-outline" style="flex:1" onclick="document.getElementById(\'cs-pay-modal\').remove()">გაუქმება</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(bg);
 }
+function cspCalc(){ var kgv=+((document.getElementById('csp-kgval')||{}).value)||0; var prE=document.getElementById('csp-price'), amE=document.getElementById('csp-amount'); if(!prE||!amE) return; var pr=parseFloat(prE.value); if(kgv>0 && !isNaN(pr) && pr>=0){ amE.value=+(kgv*pr).toFixed(2); } }
+async function csPaySave(id){ var x=CS_SALES.find(function(s){return s.id===id;}); if(!x) return;
+  var kgv=+x.kg||0;
+  var amount=parseFloat((document.getElementById('csp-amount')||{}).value);
+  var paidAmt=parseFloat((document.getElementById('csp-paidamt')||{}).value);
+  if(isNaN(amount)) amount=0; if(amount<0) amount=0;
+  if(isNaN(paidAmt)||paidAmt<0) paidAmt=0;
+  if(amount>0 && paidAmt>amount) paidAmt=amount;
+  var price=(amount>0 && kgv>0)?+(amount/kgv).toFixed(4):(+x.price||0);
+  x.amount=amount; x.paid_amount=+paidAmt.toFixed(2); x.price=price;
+  var s=getSb(); try{ await s.from('cold_sales').update({amount:x.amount, paid_amount:x.paid_amount, price:x.price}).eq('user_id',uid).eq('id',id); }catch(e){}
+  var m=document.getElementById('cs-pay-modal'); if(m) m.remove();
+  csRender(); var hp=document.getElementById('sw-page-history'); if(hp&&hp.classList.contains('active')) swRenderHistory();
+  var rem=+(amount-x.paid_amount).toFixed(2);
+  swNotify(amount<=0?'💾 შენახულია':(rem<=0.009?'🟢 სრულად გადახდილია':'🟡 დარჩა '+rem.toFixed(2)+' ₾'));
+}
+window.cspCalc=cspCalc; window.csPaySave=csPaySave;
 // გადახდის სტატუს-ბეჯი — იგივე ლოგიკა რაც შესყიდვაში (swPayBadge)
 function csPayBadge(x){ var sid=csEsc(x.id);
   var amt=+x.amount||0, pa=+x.paid_amount||0;
@@ -1649,10 +1682,10 @@ function swRenderHistory(){
       const kgv=+o.kg||0, unit = kgv>0 ? swMoney(amt/kgv) : '—';
       const priceNote = amt>0 ? '<div class="muted" style="font-size:.68rem;margin-top:3px">'+swMoney(amt)+' ₾ · '+unit+' ₾/კგ</div>' : '';
       let badge;
-      if(amt<=0) badge='<span style="color:#0369a1;font-size:.74rem;font-weight:600;cursor:pointer;text-decoration:underline dotted" onclick="csEditPaid(\''+sid+'\')">💰 ფასი +</span>';
-      else if(pa>=amt) badge='<span class="sw-badge" style="background:rgba(16,185,129,.12);color:#059669;border:1px solid rgba(16,185,129,.2);cursor:pointer" onclick="csEditPaid(\''+sid+'\')" title="გადახდის რედაქტირება">🟢 გადახდილი</span>';
-      else if(pa>0) badge='<span class="sw-badge" style="background:rgba(245,158,11,.12);color:#b45309;border:1px solid rgba(245,158,11,.25);cursor:pointer" onclick="csEditPaid(\''+sid+'\')" title="გადახდის რედაქტირება">🟡 ნაწილობრივი · დარჩა '+swMoney(rem)+' ₾</span>';
-      else badge='<span class="sw-badge" style="background:rgba(239,68,68,.1);color:#dc2626;border:1px solid rgba(239,68,68,.2);cursor:pointer" onclick="csEditPaid(\''+sid+'\')" title="გადახდის რედაქტირება">🔴 გადაუხდელი · '+swMoney(amt)+' ₾</span>';
+      if(amt<=0) badge='<span style="color:#0369a1;font-size:.74rem;font-weight:600;cursor:pointer;text-decoration:underline dotted" onclick="csPay(\''+sid+'\')">💰 ფასი +</span>';
+      else if(pa>=amt) badge='<span class="sw-badge" style="background:rgba(16,185,129,.12);color:#059669;border:1px solid rgba(16,185,129,.2);cursor:pointer" onclick="csPay(\''+sid+'\')" title="გადახდის რედაქტირება">🟢 გადახდილი</span>';
+      else if(pa>0) badge='<span class="sw-badge" style="background:rgba(245,158,11,.12);color:#b45309;border:1px solid rgba(245,158,11,.25);cursor:pointer" onclick="csPay(\''+sid+'\')" title="გადახდის რედაქტირება">🟡 ნაწილობრივი · დარჩა '+swMoney(rem)+' ₾</span>';
+      else badge='<span class="sw-badge" style="background:rgba(239,68,68,.1);color:#dc2626;border:1px solid rgba(239,68,68,.2);cursor:pointer" onclick="csPay(\''+sid+'\')" title="გადახდის რედაქტირება">🔴 გადაუხდელი · '+swMoney(amt)+' ₾</span>';
       payCell = badge + priceNote;
     }
     else if(o.type==='out'){
