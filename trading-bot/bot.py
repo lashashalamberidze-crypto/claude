@@ -40,6 +40,10 @@ RETIRED = ["NVDA", "SPY", "QQQ", "GOOGL", "META"]
 DOLLARS_PER_TRADE = 1000      # თითო აქციაზე რამდენი $
 TREND_DAYS = 200              # გრძელვადიანი საშუალო (დღეები)
 BUFFER_PCT = 2.0              # ზღვარი საშუალოს ზემოთ/ქვემოთ (%)
+# საწყისი თანხა — შეჯამებაში მთლიანი მოგება/ზარალი ამასთან შედარებით ითვლება.
+# ნამდვილ ანგარიშზე გადასვლისას GitHub-ზე INITIAL_CAPITAL secret/variable-ით შეცვალე.
+INITIAL_CAPITAL = float(os.environ.get("INITIAL_CAPITAL") or 100_000)
+PROFIT_ALERT = 50             # ამაზე მეტ მოგებაზე შეჯამება გეტყვის, რომ შეგიძლია გაიტანო ($)
 
 # ლოკალურად გაშვებისას Key-ებს კითხულობს .env ფაილიდან (GitHub-ზე — Secrets-დან)
 _env = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
@@ -84,6 +88,26 @@ def telegram(text):
     return False
 
 
+def profit_lines(account):
+    """მთლიანი მოგება/ზარალი საწყის თანხასთან შედარებით + გატანის შეხსენება."""
+    equity, cash = float(account.equity), float(account.cash)
+    profit = equity - INITIAL_CAPITAL
+    lines = [f"სულ: {profit:+,.2f}$ ({profit / INITIAL_CAPITAL * 100:+.2f}%) "
+             f"საწყის ${INITIAL_CAPITAL:,.0f}-თან შედარებით"]
+    if profit >= PROFIT_ALERT:
+        lines += ["", f"💰 მოგებაში ხარ! გატანა შეგიძლია დაახლოებით ${min(profit, cash):,.2f}-ის "
+                      "(ნაღდი ფულიდან — აქციების გაყიდვა არ სჭირდება)."]
+        if PAPER:
+            lines.append("ეს ვირტუალური ფულია — ნამდვილ ანგარიშზე ასეთ დროს გატანა "
+                         "ბროკერის საიტზე ხელით ხდება.")
+        else:
+            lines.append("გატანა: ბროკერის საიტზე → Banking/Transfers → Withdraw. "
+                         "გატანის შემდეგ INITIAL_CAPITAL შეამცირე იმავე თანხით.")
+    elif profit < 0:
+        lines.append("ჯერ ზარალშია — გატანა არ ღირს, ბოტი აგრძელებს.")
+    return lines
+
+
 def telegram_test():
     """სატესტო მესიჯი ანგარიშის მიმდინარე მდგომარეობით (ვაჭრობის გარეშე)."""
     if not (TG_TOKEN and TG_CHAT):
@@ -92,7 +116,7 @@ def telegram_test():
     account = trading.get_account()
     lines = ["✅ სავაჭრო ბოტი დაკავშირებულია Telegram-თან!", "",
              f"ანგარიში ({'PAPER' if PAPER else 'LIVE'}): ${float(account.equity):,.2f}",
-             f"ნაღდი: ${float(account.cash):,.2f}"]
+             f"ნაღდი: ${float(account.cash):,.2f}"] + profit_lines(account) + [""]
     for p in trading.get_all_positions():
         lines.append(f"• {p.symbol}: {float(p.unrealized_pl):+,.2f}$ ({float(p.unrealized_plpc) * 100:+.2f}%)")
     lines += ["", "ამიერიდან მოგწერ ყიდვა/გაყიდვისას, შეცდომისას და შაბათს — კვირის შეჯამებას."]
@@ -187,7 +211,7 @@ def run_once():
         equity, last = float(account.equity), float(account.last_equity)
         lines = [f"📊 კვირის შეჯამება ({'PAPER' if PAPER else 'LIVE'})",
                  f"ანგარიში: ${equity:,.2f} (დღეს {equity - last:+,.2f}$)",
-                 f"ნაღდი: ${float(account.cash):,.2f}"]
+                 f"ნაღდი: ${float(account.cash):,.2f}"] + profit_lines(account) + [""]
         for p in trading.get_all_positions():
             if p.symbol in STOCKS:
                 lines.append(f"• {p.symbol}: {float(p.unrealized_pl):+,.2f}$ "

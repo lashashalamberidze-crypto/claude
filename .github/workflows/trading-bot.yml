@@ -52,3 +52,4 @@ jobs:
           ALPACA_PAPER: "true"
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          INITIAL_CAPITAL: ${{ vars.INITIAL_CAPITAL }}   # ცარიელი = 100000
