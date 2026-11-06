@@ -87,7 +87,7 @@
   <div class="qbar" id="qbar"></div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v33</span></h1>
+    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v34</span></h1>
     <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
     <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
     <div id="roleBar" style="justify-content:flex-end;margin:6px 0 0">
@@ -973,7 +973,7 @@ window.smsJournalView=async function(){
   var ov=document.createElement('div'); ov.id='smsJModal';
   ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.6);display:flex;align-items:flex-start;justify-content:center;z-index:100000;padding:16px;overflow:auto';
   ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:720px;width:100%;padding:16px;box-shadow:0 10px 40px rgba(0,0,0,.3)">'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:1.05rem;font-weight:800;color:#0369a1">📋 SMS ჟურნალი</div><button onclick="document.getElementById(\'smsJModal\').remove()" style="border:none;background:#f1f5f9;border-radius:8px;padding:6px 11px;cursor:pointer">✕</button></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:1.05rem;font-weight:800;color:#0369a1">📋 SMS ჟურნალი</div><div style="display:flex;gap:6px"><button onclick="smsJPrint()" style="border:1.5px solid #0369a1;background:#eff6ff;color:#0369a1;border-radius:8px;padding:6px 11px;cursor:pointer;font-family:inherit;font-weight:700">🖨️ ბეჭდვა</button><button onclick="document.getElementById(\'smsJModal\').remove()" style="border:none;background:#f1f5f9;border-radius:8px;padding:6px 11px;cursor:pointer">✕</button></div></div>'
     +'<div id="smsJBody" style="font-size:.85rem;color:#475569">⏳ იტვირთება...</div></div>';
   document.body.appendChild(ov);
   ov.addEventListener('click',function(e){ if(e.target===ov) ov.remove(); });
@@ -1027,6 +1027,38 @@ window.smsJournalView=async function(){
   }catch(e){ body.textContent='❌ '+(e.message||e); }
 };
 
+// 🖨️ SMS ჟურნალის ბეჭდვა — ჯამები + თარიღების მიხედვით + დეტალები
+window.smsJPrint=function(){
+  var rows=(window._smsJRows||[]).slice();
+  if(!rows.length){ alert('ჟურნალი ცარიელია.'); return; }
+  // მიმდინარე ფილტრი (ძებნა/თარიღი) გავითვალისწინოთ
+  var q=((document.getElementById('smsJSearch')||{}).value||'').trim().toLowerCase();
+  var from=(document.getElementById('smsJFrom')||{}).value||'', to=(document.getElementById('smsJTo')||{}).value||'';
+  rows=rows.filter(function(r){ var dt=r.date||''; var ds=((r.picker_name||'')+' '+(r.phone||'')).toLowerCase(); return (!q||ds.indexOf(q)>=0)&&(!from||dt>=from)&&(!to||dt<=to); });
+  if(!rows.length){ alert('ფილტრით ჩანაწერი არ მოიძებნა.'); return; }
+  var tot={n:0,kg:0,gel:0,sent:0,fail:0}, byd={};
+  rows.forEach(function(r){ var s=String(r.status||''); tot.n++; tot.kg+=(+r.kg||0); tot.gel+=(+r.gel||0);
+    if(s.indexOf('fail')>=0) tot.fail++; else if(s.indexOf('sent')>=0||s.indexOf('deliver')>=0) tot.sent++;
+    var d=r.date||'—'; if(!byd[d]) byd[d]={n:0,kg:0,gel:0}; byd[d].n++; byd[d].kg+=(+r.kg||0); byd[d].gel+=(+r.gel||0); });
+  var period = (from||to) ? ((from||'…')+' — '+(to||'…')) : 'ყველა თარიღი';
+  var dts=Object.keys(byd).sort().reverse();
+  var w=window.open('','_blank'); if(!w){ alert('popup დაბლოკილია'); return; }
+  var css='body{font-family:system-ui,Arial,sans-serif;margin:24px;color:#0f172a}h1{font-size:18px;margin:0 0 2px}.sub{color:#64748b;font-size:12px;margin-bottom:14px}'
+    +'.sum{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}.sum div{border:1px solid #cbd5e1;border-radius:8px;padding:8px 14px}.sum b{font-size:18px;display:block}'
+    +'table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}th,td{border:1px solid #cbd5e1;padding:5px 8px;text-align:left}th{background:#0369a1;color:#fff}td.r,th.r{text-align:right}'
+    +'h2{font-size:14px;margin:12px 0 6px}tfoot td{font-weight:800;background:#f1f5f9}@media print{button{display:none}}';
+  var h='<html><head><meta charset="utf-8"><title>SMS ანგარიში</title><style>'+css+'</style></head><body>'
+    +'<h1>📨 შეტყობინების ანგარიში — AgroInTechSol</h1>'
+    +'<div class="sub">პერიოდი: '+esc(period)+' · ამობეჭდილია: '+_today()+'</div>'
+    +'<div class="sum"><div>სულ შეტყობინება<b>'+tot.n+'</b></div><div>სულ წონა<b>'+tot.kg.toFixed(1)+' კგ</b></div><div>სულ თანხა<b>'+tot.gel.toFixed(2)+' ₾</b></div><div>გაგზავნილი<b>'+tot.sent+'</b></div>'+(tot.fail?'<div>ჩავარდა<b>'+tot.fail+'</b></div>':'')+'</div>'
+    +'<h2>📅 თარიღების მიხედვით</h2><table><thead><tr><th>თარიღი</th><th class="r">SMS</th><th class="r">კგ</th><th class="r">₾</th></tr></thead><tbody>'
+    +dts.map(function(d){ var v=byd[d]; return '<tr><td>'+esc(d)+'</td><td class="r">'+v.n+'</td><td class="r">'+v.kg.toFixed(1)+'</td><td class="r">'+v.gel.toFixed(2)+'</td></tr>'; }).join('')
+    +'</tbody><tfoot><tr><td>ჯამი</td><td class="r">'+tot.n+'</td><td class="r">'+tot.kg.toFixed(1)+'</td><td class="r">'+tot.gel.toFixed(2)+'</td></tr></tfoot></table>'
+    +'<h2>📋 დეტალები</h2><table><thead><tr><th>თარიღი</th><th>მკრეფავი</th><th>ნომერი</th><th class="r">კგ</th><th class="r">₾</th><th>სტ.</th></tr></thead><tbody>'
+    +rows.map(function(r){ var s=String(r.status||''); var ic=(s.indexOf('fail')>=0)?'❌':((s.indexOf('sent')>=0||s.indexOf('deliver')>=0)?'✅':'·'); return '<tr><td>'+esc(r.date||'—')+'</td><td>'+esc(r.picker_name||'—')+'</td><td>'+esc(r.phone||'—')+'</td><td class="r">'+(r.kg!=null?(+r.kg).toFixed(2):'—')+'</td><td class="r">'+(r.gel!=null?(+r.gel).toFixed(2):'—')+'</td><td>'+ic+'</td></tr>'; }).join('')
+    +'</tbody></table><button onclick="window.print()" style="padding:10px 20px;font-size:14px;cursor:pointer">🖨️ ბეჭდვა</button></body></html>';
+  w.document.write(h); w.document.close(); setTimeout(function(){ try{ w.print(); }catch(e){} }, 400);
+};
 // #SMS-RECON: SMS-ის თანხვედრა პროგრამის რეალურ აწონვებთან (harvest_sessions)
 window.smsReconcile=async function(){
   var box=document.getElementById('smsJRecon'); if(!box) return;
