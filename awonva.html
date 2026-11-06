@@ -87,7 +87,7 @@
   <div class="qbar" id="qbar"></div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v30</span></h1>
+    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v31</span></h1>
     <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
     <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
     <div id="roleBar" style="justify-content:flex-end;margin:6px 0 0">
@@ -947,7 +947,8 @@ async function tgSendWeigh(rec){
     if(!sb||!uid||!navigator.onLine) return;
     var phone=rec.phone||''; if(!phone) return;
     var net=(+rec.weight||0), earn=(+rec.earned||0);
-    var text='⚖️ აწონვა — '+(rec.picker_name||'')+'\nსუფთა: '+net.toFixed(2)+' კგ\n💰 '+earn.toFixed(2)+' ₾\n\nAgroInTechSol';
+    var _dt=(rec.date||_today())+(rec.time?(' · '+rec.time):'');
+    var text='⚖️ აწონვა — '+(rec.picker_name||'')+'\n📅 '+_dt+'\nსუფთა: '+net.toFixed(2)+' კგ\n💰 '+earn.toFixed(2)+' ₾\n\nAgroInTechSol';
     // telegram-send თვითონ ამოწმებს ვინ არის დაკავშირებული — თუ არა, ჩუმად გამოტოვდება
     var r=await sb.functions.invoke('telegram-send',{ body:{ text:text, phones:[phone] } });
     if(r&&r.data&&r.data.sent){
