@@ -868,6 +868,26 @@ function csDashboard(){
     +'</div>';
   el.innerHTML=h;
 }
+// ── 📄 გაყიდვის აქტი (კომპანია=გამყიდველი, მყიდველი=buyer) ──
+function csSaleActHtml(sale){
+  var co=(window.__swCompany||{});
+  var cName=co.name?safeText(co.name):'________________________';
+  var cId=(co.idnum!=null&&String(co.idnum).trim())?safeText(co.idnum):'____________';
+  var buyer=safeText(sale.buyer||'____________');
+  var binfo=(CS_BUYERS||[]).find(function(b){ return (b.name||'').toLowerCase()===String(sale.buyer||'').toLowerCase(); })||{};
+  var bId=safeText(binfo.id_num||'____________'), bPh=safeText(binfo.phone||'');
+  var qty=+sale.kg||0, price=+sale.price||0, sum=+sale.amount||0, paid=+sale.paid_amount||0;
+  var prod=sale.source==='cold'?('პროდუქტი (ოთახი '+(sale.room_no||'')+')'):(sale.product||'პროდუქტი');
+  var head='<div style="text-align:center;margin:0 0 22px"><div style="font-size:20px;font-weight:700">საქონლის მიღება-ჩაბარების აქტი</div><div style="margin-top:6px">თარიღი: '+safeText(sale.date||_csToday())+'</div></div>';
+  var intro='<p style="text-align:justify;margin:0 0 26px;line-height:2.15">ჩვენ, ერთის მხრივ <b>'+cName+'</b> (ს/კ '+cId+'), შემდგომში „გამყიდველი" და მეორეს მხრივ <u>&nbsp;'+buyer+'&nbsp;</u> (ს/კ პ/ნ <u>&nbsp;'+bId+'&nbsp;</u>)'+(bPh?(', ტელ. <u>&nbsp;'+bPh+'&nbsp;</u>'):'')+', შემდგომში „მყიდველი" ვადგენთ აღნიშნულ აქტს მასზედ, რომ „გამყიდველმა" მიჰყიდა „მყიდველს" შემდეგი საქონელი:</p>';
+  var foot='<p style="margin:0 0 14px;line-height:2.1">თანხა შეადგენს: <u>&nbsp;'+geoLari(sum)+'&nbsp;</u> <span style="color:#333">('+_akFmt2(sum)+' ₾)</span></p>'
+    +'<p style="margin:0 0 30px;line-height:2.1">გადახდილი: <b>'+_akFmt2(paid)+' ₾</b>'+(sum-paid>0.009?(' · დარჩენილი (ვალი): <b style="color:#b91c1c">'+_akFmt2(sum-paid)+' ₾</b>'):' · სრულად გადახდილი ✓')+'</p>'
+    +'<div style="display:flex;justify-content:space-between;gap:60px;margin-top:40px;font-size:16.5px;line-height:1.9"><div style="flex:1">გამყიდველი<br>'+cName+'<br><br><br>__________________</div><div style="flex:1">მყიდველი<br>'+buyer+'<br><br><br>__________________</div></div>';
+  return aktWrap(head+intro+aktTableHead()+aktRow(1,prod,qty,price,sum)+aktTotalRow(qty,sum)+foot);
+}
+function csSaleAct(saleId){ var s=CS_SALES.find(function(x){return x.id===saleId;}); if(!s){ alert('გაყიდვა ვერ მოიძებნა'); return; } swPrintAct(csSaleActHtml(s), 'გაყიდვის აქტი'); }
+window.csSaleAct=csSaleAct;
+
 // ═══════════ 🏭 მაცივარი — ოთახები / მარაგი / ტემპერატურა (matsivari-დან) ═══════════
 var MZ_TEMP=[], mzCols=12, mzRows=8, mzCell=46, mzDraw=false, mzDrag=null, mzCurRoom=null, mzCurIdx=null;
 async function mzLoadTemp(){ MZ_TEMP=[]; var s=getSb(); try{ if(s&&uid){ var r=await s.from('cold_temp').select('*').eq('user_id',uid).order('at',{ascending:false}).limit(2000); if(!r.error) MZ_TEMP=r.data||[]; } }catch(e){} }
@@ -990,7 +1010,7 @@ function csRender(){
   if(debt.length){ h+='<div style="margin-top:14px"><div class="sw-card-title">🔴 ვალები (მოსაცემი)</div><div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>მყიდველი</th><th>ვალი ₾</th></tr></thead><tbody>'+debt.map(function(x){ return '<tr><td><b>'+csEsc(x.b)+'</b></td><td style="color:#dc2626;font-weight:800">'+x.d.toFixed(2)+'</td></tr>'; }).join('')+'</tbody></table></div></div>'; }
   h+='<div style="margin-top:14px"><div class="sw-card-title">💰 გაყიდვები</div><div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>თარიღი</th><th>მყიდველი</th><th>რა</th><th>კგ</th><th>₾/კგ</th><th>სულ ₾</th><th>გადახდ.</th><th>ვალი</th><th></th></tr></thead><tbody>';
   if(!CS_SALES.length){ h+='<tr><td colspan="9" class="sw-empty">— გაყიდვა არ არის —</td></tr>'; }
-  else CS_SALES.forEach(function(x){ var d=(+x.amount||0)-(+x.paid_amount||0); h+='<tr><td>'+csEsc(x.date||'')+'</td><td><b>'+csEsc(x.buyer||'—')+'</b>'+(x.note?'<div style="font-size:.68rem;color:#64748b;font-weight:400">'+csEsc(x.note)+'</div>':'')+'</td><td>'+(x.source==='cold'?('🏭 ოთ.'+csEsc(x.room_no||'')):('🧺 '+csEsc(x.product||'პირდ.')))+'</td><td>'+(Math.round((+x.kg||0)*10)/10)+'</td><td>'+(+x.price||0)+'</td><td><b>'+(Math.round((+x.amount||0)*100)/100)+'</b></td><td style="color:#16a34a">'+(Math.round((+x.paid_amount||0)*100)/100)+'</td><td style="color:'+(d>0.009?'#dc2626':'#16a34a')+';font-weight:700">'+(d>0.009?d.toFixed(2):'✓')+'</td><td><span style="cursor:pointer;color:#dc2626" onclick="csDelSale(\''+csEsc(x.id)+'\')">🗑️</span></td></tr>'; });
+  else CS_SALES.forEach(function(x){ var d=(+x.amount||0)-(+x.paid_amount||0); h+='<tr><td>'+csEsc(x.date||'')+'</td><td><b>'+csEsc(x.buyer||'—')+'</b>'+(x.note?'<div style="font-size:.68rem;color:#64748b;font-weight:400">'+csEsc(x.note)+'</div>':'')+'</td><td>'+(x.source==='cold'?('🏭 ოთ.'+csEsc(x.room_no||'')):('🧺 '+csEsc(x.product||'პირდ.')))+'</td><td>'+(Math.round((+x.kg||0)*10)/10)+'</td><td>'+(+x.price||0)+'</td><td><b>'+(Math.round((+x.amount||0)*100)/100)+'</b></td><td style="color:#16a34a">'+(Math.round((+x.paid_amount||0)*100)/100)+'</td><td style="color:'+(d>0.009?'#dc2626':'#16a34a')+';font-weight:700">'+(d>0.009?d.toFixed(2):'✓')+'</td><td style="white-space:nowrap"><span style="cursor:pointer;color:#0369a1;margin-right:8px" title="აქტი" onclick="csSaleAct(\''+csEsc(x.id)+'\')">🖨️</span><span style="cursor:pointer;color:#dc2626" onclick="csDelSale(\''+csEsc(x.id)+'\')">🗑️</span></td></tr>'; });
   h+='</tbody></table></div></div>';
   el.innerHTML=h;
   try{ csDashboard(); }catch(e){}   // დეშბორდი (ზემოთ) განახლდეს გაყიდვის ცვლილებაზე
@@ -1031,6 +1051,7 @@ async function csConfirm(){
   if(buyer) csAddBuyerName(buyer);
   CS_SALES.unshift(rec); var s=getSb(); try{ await s.from('cold_sales').upsert(rec,{onConflict:'id'}); }catch(e){}
   var m=document.getElementById('csModal'); if(m) m.remove(); csRender();
+  try{ csSaleAct(rec.id); }catch(e){ console.warn('sale act', e); }   // აქტი ავტომატურად
 }
 async function csSubtractRoom(room,kg){
   var entries=CS_STOCK.filter(function(x){ return String(x.room_no)===String(room); }).sort(function(a,b){ return (a.created_at||'')<(b.created_at||'')?-1:1; });
