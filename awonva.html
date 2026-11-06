@@ -66,6 +66,10 @@
   .pal-modal-inner{background:#f1f5f9;border-radius:16px;max-width:560px;width:100%;margin:auto;padding:14px;box-shadow:0 12px 48px rgba(0,0,0,.3)}
   .pal-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;position:sticky;top:0}
   .pal-x{background:#fff;border:1.5px solid #cbd5e1;border-radius:10px;width:38px;height:38px;font-size:1.1rem;cursor:pointer;color:#475569}
+  body.weigher-mode .admin-only{display:none!important}
+  #roleBar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+  #roleBar .who{font-weight:800;color:#0369a1;background:#eff6ff;border-radius:9px;padding:6px 11px;font-size:.85rem}
+  #roleBar button{padding:6px 11px;border:1.5px solid #cbd5e1;border-radius:9px;background:#fff;color:#475569;font-family:inherit;font-weight:700;font-size:.8rem;cursor:pointer}
 </style></head>
 <body>
 
@@ -94,7 +98,13 @@
   <div class="stats" id="awTodayStats" style="margin-bottom:6px"></div>
   <div class="muted" id="dtPending" style="font-size:.74rem;margin-bottom:12px"></div>
 
-  <div class="card">
+  <div id="roleBar">
+    <span class="who" id="roleWho">👑 ადმინი</span>
+    <button class="admin-only" onclick="weighersModal()">👤 ამწონველები</button>
+    <button onclick="switchUser()">🔄 შეცვლა</button>
+  </div>
+
+  <div class="card admin-only">
     <div class="cfgbar">
       <div class="fld"><label>ფასი, ₾/კგ</label><input id="cfgPrice" type="number" step="0.01" onchange="saveSetting('its_price',this.value);prevAll()"></div>
       <div class="fld"><label>ტარა, კგ</label><input id="cfgTare" type="number" step="0.01" onchange="saveSetting('its_box_w',this.value);prevAll()"></div>
@@ -230,6 +240,9 @@
 <script>
 const SB_URL="https://rycyvlugqqyzrazssgop.supabase.co", SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Y3l2bHVncXF5enJhenNzZ29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzk1MjUsImV4cCI6MjA4ODcxNTUyNX0.GUSpdMmEr3oQwwWwarWL44Lcn19JSstA3uq1-T3SzZA";
 let sb=null, uid=null, PICKERS=[], NUMMAP={}, activeTab='num', TG_MODE='off', handManSeq=0;
+// ── როლები: ადმინი (ყველაფერი) / ამწონველი (მხოლოდ წონა) ──
+var CUR_ROLE='admin', CUR_WEIGHER='', WEIGHERS=[], ADMIN_PIN='', _noWeigherCol=false, DEVID='';
+try{ DEVID=localStorage.getItem('aw_devid')||''; if(!DEVID){ DEVID=Math.random().toString(36).slice(2,4).toUpperCase(); localStorage.setItem('aw_devid',DEVID); } }catch(e){ DEVID='XX'; }
 let boxes=[], lastW=[], queue=[], syncing=false, feed=[], numSeq={}, dedup={}, BLOCKS=[], ROWS=[], committedPallets={}, palCommitting=false;
 let smsSentBoxes={}, SMSCFG=null;
 let palPend={picker:null,quarter:'',row:'',_label:'',_isScan:false,_raw:''};
@@ -279,11 +292,12 @@ async function showApp(email){
   window.addEventListener('offline',updateNet);
   try{ queue=(await idbGet('queue'))||[]; }catch(e){ queue=[]; }
   await loadSettings();
+  await loadRoleCfg(); initRole();
   await loadPickers();
   await loadZones();
   switchTab('num');
   renderQueue(); renderFeed(); refreshDayTotal(); fetchSeason(true);
-  showStartCheck();
+  if(CUR_ROLE==='admin' && !document.getElementById('roleGate')) showStartCheck();
   if(navigator.onLine) syncQueue();
 }
 
@@ -332,6 +346,80 @@ async function loadSettings(){
   var ts=document.getElementById('tareShow'); if(ts) ts.textContent=tare().toFixed(2);
 }
 function palTareW(){ var v=parseFloat((document.getElementById('cfgPalW')||{}).value || localStorage.getItem('its_pallet_w') || '23'); return isNaN(v)?23:v; }
+
+// ═══════════ 👤 როლები: ადმინი / ამწონველი ═══════════
+async function loadRoleCfg(){
+  try{ if(sb&&uid){ var r=await sb.from('user_settings').select('skey,sval').eq('user_id',uid).in('skey',['admin_pin','weighers']);
+    if(!r.error&&r.data){ r.data.forEach(function(x){ if(x.skey==='admin_pin') ADMIN_PIN=x.sval||''; if(x.skey==='weighers'){ try{ WEIGHERS=JSON.parse(x.sval||'[]')||[]; }catch(e){ WEIGHERS=[]; } } }); }
+  } }catch(e){}
+}
+function saveWeighers(){ saveSetting('weighers', JSON.stringify(WEIGHERS)); }
+function applyRole(){
+  var isW=(CUR_ROLE==='weigher');
+  document.body.classList.toggle('weigher-mode', isW);
+  var w=document.getElementById('roleWho'); if(w) w.textContent=isW?('⚖️ '+CUR_WEIGHER):'👑 ადმინი';
+}
+function initRole(){
+  var rr='', wn=''; try{ rr=sessionStorage.getItem('aw_role')||''; wn=sessionStorage.getItem('aw_wname')||''; }catch(e){}
+  if(rr==='admin'){ CUR_ROLE='admin'; CUR_WEIGHER=''; applyRole(); return; }
+  if(rr && WEIGHERS.some(function(w){return w.id===rr;})){ CUR_ROLE='weigher'; CUR_WEIGHER=wn||(WEIGHERS.find(function(w){return w.id===rr;})||{}).name||''; applyRole(); return; }
+  if(!ADMIN_PIN && !WEIGHERS.length){ CUR_ROLE='admin'; CUR_WEIGHER=''; applyRole(); return; } // პირველი გაშვება
+  roleGate();
+}
+function roleGate(){
+  var old=document.getElementById('roleGate'); if(old) old.remove();
+  var ov=document.createElement('div'); ov.id='roleGate';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.8);display:flex;align-items:center;justify-content:center;z-index:100000;padding:16px';
+  var wbtns=WEIGHERS.map(function(w){ return '<button class="sec" style="margin:5px 0;width:100%" onclick="gateSel(\''+w.id+'\')">⚖️ '+esc(w.name)+'</button>'; }).join('');
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.35)">'
+    +'<h2 style="text-align:center;margin:0 0 14px">ვინ ხართ?</h2>'
+    +'<div id="gateList"><button class="g" style="margin:5px 0;width:100%" onclick="gateSel(\'admin\')">👑 ადმინი</button>'+wbtns+'</div>'
+    +'<div id="gatePin"></div></div>';
+  document.body.appendChild(ov);
+}
+function gateSel(id){
+  var el=document.getElementById('gatePin'); if(!el) return;
+  var isAdmin=(id==='admin');
+  var pinSet = isAdmin ? !!ADMIN_PIN : !!((WEIGHERS.find(function(w){return w.id===id;})||{}).pin);
+  if(!pinSet){ gateEnter(id); return; }
+  el.innerHTML='<div style="margin-top:14px"><input id="gatePinIn" type="password" inputmode="numeric" placeholder="PIN" style="text-align:center;font-size:1.3rem;letter-spacing:4px" onkeydown="if(event.key===\'Enter\')gateTry(\''+id+'\')"><div id="gatePinErr" style="color:#dc2626;font-size:.82rem;margin-top:5px;text-align:center"></div><button class="g" style="margin-top:8px;width:100%" onclick="gateTry(\''+id+'\')">შესვლა</button><button class="sec" style="margin-top:6px;width:100%" onclick="roleGate()">← უკან</button></div>';
+  setTimeout(function(){ var i=document.getElementById('gatePinIn'); if(i) i.focus(); },50);
+}
+function gateTry(id){
+  var v=(document.getElementById('gatePinIn')||{}).value||'';
+  var okPin = (id==='admin') ? ADMIN_PIN : (WEIGHERS.find(function(w){return w.id===id;})||{}).pin;
+  if(String(v)!==String(okPin||'')){ var e=document.getElementById('gatePinErr'); if(e) e.textContent='❌ არასწორი PIN'; return; }
+  gateEnter(id);
+}
+function gateEnter(id){
+  if(id==='admin'){ CUR_ROLE='admin'; CUR_WEIGHER=''; try{ sessionStorage.setItem('aw_role','admin'); sessionStorage.removeItem('aw_wname'); }catch(e){} }
+  else { var w=WEIGHERS.find(function(x){return x.id===id;})||{}; CUR_ROLE='weigher'; CUR_WEIGHER=w.name||''; try{ sessionStorage.setItem('aw_role',id); sessionStorage.setItem('aw_wname',CUR_WEIGHER); }catch(e){} }
+  applyRole(); var g=document.getElementById('roleGate'); if(g) g.remove();
+}
+function switchUser(){ try{ sessionStorage.removeItem('aw_role'); sessionStorage.removeItem('aw_wname'); }catch(e){} roleGate(); }
+// ── ამწონველების მართვა (ადმინი) ──
+function weighersModal(){
+  if(CUR_ROLE!=='admin') return;
+  var ov=document.createElement('div'); ov.id='wgModal'; ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.6);display:flex;align-items:flex-start;justify-content:center;z-index:100000;padding:16px;overflow:auto';
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:460px;width:100%;margin:auto;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.3)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:1.05rem;color:#0369a1">👤 ამწონველები</b><button class="sec" style="width:auto;padding:5px 11px" onclick="document.getElementById(\'wgModal\').remove()">✕</button></div>'
+    +'<div style="display:flex;gap:8px"><input id="wgName" placeholder="სახელი"><input id="wgPin" placeholder="PIN" inputmode="numeric" style="max-width:110px"></div>'
+    +'<button class="g" style="margin-top:8px;width:100%" onclick="wgAdd()">➕ დამატება</button>'
+    +'<div id="wgList" style="margin-top:12px"></div>'
+    +'<hr style="margin:14px 0;border:none;border-top:1px solid #e2e8f0">'
+    +'<label>👑 ადმინის PIN '+(ADMIN_PIN?'<span class="ok" style="font-size:.76rem">(დაყენებულია)</span>':'<span class="warn" style="font-size:.76rem">(ჯერ არ არის)</span>')+'</label>'
+    +'<div style="display:flex;gap:8px"><input id="wgAdminPin" placeholder="ახალი PIN" inputmode="numeric"><button class="sec" style="width:auto;padding:9px 14px" onclick="wgSaveAdminPin()">💾</button></div>'
+    +'<div class="muted" style="font-size:.76rem;margin-top:4px">ადმინის PIN იცავს პარამეტრებს/SMS-ს. ამწონველები მხოლოდ წონიან.</div>'
+    +'</div>';
+  document.body.appendChild(ov); wgRender();
+}
+function wgRender(){ var el=document.getElementById('wgList'); if(!el) return;
+  if(!WEIGHERS.length){ el.innerHTML='<div class="muted" style="text-align:center;padding:8px">— ჯერ არავინ —</div>'; return; }
+  el.innerHTML='<table><thead><tr><th>სახელი</th><th>PIN</th><th></th></tr></thead><tbody>'+WEIGHERS.map(function(w,i){ return '<tr><td><b>'+esc(w.name)+'</b></td><td class="muted">'+esc(w.pin||'—')+'</td><td><span style="cursor:pointer;color:#dc2626" onclick="wgDel('+i+')">🗑️</span></td></tr>'; }).join('')+'</tbody></table>';
+}
+function wgAdd(){ var n=(document.getElementById('wgName').value||'').trim(), p=(document.getElementById('wgPin').value||'').trim(); if(!n){ return; } WEIGHERS.push({id:'w'+Date.now().toString(36),name:n,pin:p}); saveWeighers(); document.getElementById('wgName').value=''; document.getElementById('wgPin').value=''; wgRender(); }
+function wgDel(i){ if(!confirm('ამწონველი წაიშალოს?')) return; WEIGHERS.splice(i,1); saveWeighers(); wgRender(); }
+function wgSaveAdminPin(){ var v=(document.getElementById('wgAdminPin').value||'').trim(); if(!v) return; ADMIN_PIN=v; saveSetting('admin_pin',v); document.getElementById('wgAdminPin').value=''; var m=document.getElementById('wgModal'); if(m) m.remove(); alert('✅ ადმინის PIN შენახულია'); }
 function saveSetting(key,val){
   try{ localStorage.setItem(key,val); }catch(e){}
   if(key==='its_box_w'){
@@ -486,7 +574,7 @@ function pushRecord(o){
   var _rec={ id:_uuid(), code:o.code, short_code:o.short_code, picker_name:pName(p), picker_id:p.uid||'', phone:p.phone||'',
     pallet_code:o.pallet||'', weight:net, kg:net, price:pr, date:_today(), time:_time(),
     row_num:o.row_num||'', quarter:o.quarter||'', earned:Math.round(net*pr*100)/100,
-    sms:document.getElementById('smsToggle').checked && !!p.phone, entry_mode:o.entry_mode };
+    sms:document.getElementById('smsToggle').checked && !!p.phone, entry_mode:o.entry_mode, weigher:(CUR_WEIGHER||'ადმინი') };
   queue.push(_rec);
   feed.unshift({ code:o.short_code, name:pName(p), w:net, mode:o.entry_mode });
   saveQueue(); renderQueue(); renderFeed(); renderDayTotal();
@@ -714,7 +802,7 @@ async function palCommit(){
     else { shortc=genCode(); var _bu=(b.uid!=null?String(b.uid).trim():''); code=_bu?(_bu+'|'+d+'|||'+('00'+(i+1)).slice(-3)+'|'+shortc):shortc; }
     queue.push({ id:_uuid(), code:code, short_code:shortc, picker_name:b.picker, picker_id:b.uid||'', phone:b.phone||'',
       pallet_code:pal, weight:w, kg:w, price:pr, date:d, time:tm, row_num:(b.row&&b.row!=='—'?b.row:''), quarter:b.quarter||'',
-      earned:Math.round(w*pr*100)/100, sms:smsOn&&!!b.phone, entry_mode:'პალეტი' });
+      earned:Math.round(w*pr*100)/100, sms:smsOn&&!!b.phone, entry_mode:'პალეტი', weigher:(CUR_WEIGHER||'ადმინი') });
   }
   committedPallets[pal]=1;
   await saveQueue();
@@ -897,7 +985,7 @@ window.smsReconcile=async function(){
 async function syncQueue(){
   if(syncing || !queue.length || !navigator.onLine || !sb || !uid) return;
   syncing=true; var done=0, fail=0, remain=[], lastErr='';
-  function toRow(q){ return { id:q.id, user_id:uid, picker_name:q.picker_name, picker_id:q.picker_id||'', kg:q.kg, price:q.price||0, date:q.date, weight:q.weight, earned:q.earned||0, phone:q.phone||'', row_num:q.row_num||null, quarter:q.quarter||'', short_code:q.short_code, box_num:'', time:q.time, code:q.code, pallet_code:q.pallet_code||'', source:'krepa_bulk', entry_mode:q.entry_mode||'' }; }
+  function toRow(q){ var o={ id:q.id, user_id:uid, picker_name:q.picker_name, picker_id:q.picker_id||'', kg:q.kg, price:q.price||0, date:q.date, weight:q.weight, earned:q.earned||0, phone:q.phone||'', row_num:q.row_num||null, quarter:q.quarter||'', short_code:q.short_code, box_num:'', time:q.time, code:q.code, pallet_code:q.pallet_code||'', source:'krepa_bulk', entry_mode:q.entry_mode||'' }; if(!_noWeigherCol) o.weigher=q.weigher||''; return o; }
   function sendSms(q){ if(!(q.sms && q.phone)) return;
     if(q.source==='sms_phantom' || q.phantom===true) return;   // #PHANTOM-GUARD: ფანტომი SMS-ს ვერ აგზავნის
     var _to=normPhone(q.phone); if(!/^9955\d{8}$/.test(_to)) return;   // #PHONE-GUARD: მხოლოდ ვალიდური მობილური
@@ -913,6 +1001,10 @@ async function syncQueue(){
   for(var b=0;b<all.length;b+=BATCH){
     var chunk=all.slice(b,b+BATCH), r;
     try{ r=await sb.from('harvest_sessions').upsert(chunk.map(toRow),{onConflict:'id'}); }catch(e){ r={error:{message:(e.message||e)}}; }
+    if(r.error && !_noWeigherCol && (r.error.code==='PGRST204' || /weigher/i.test(r.error.message||''))){
+      _noWeigherCol=true;  // weigher სვეტი ჯერ არ არსებობს — ვტოვებთ და ვცდით თავიდან
+      try{ r=await sb.from('harvest_sessions').upsert(chunk.map(toRow),{onConflict:'id'}); }catch(e){ r={error:{message:(e.message||e)}}; }
+    }
     if(r.error){
       for(var k=0;k<chunk.length;k++){ var q=chunk[k], rr;
         try{ rr=await sb.from('harvest_sessions').upsert(toRow(q),{onConflict:'id'}); }catch(e2){ rr={error:{message:(e2.message||e2)}}; }
