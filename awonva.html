@@ -87,7 +87,7 @@
   <div class="qbar" id="qbar"></div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v34</span></h1>
+    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v35</span></h1>
     <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
     <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
     <div id="roleBar" style="justify-content:flex-end;margin:6px 0 0">
@@ -113,16 +113,16 @@
   </div>
 
   <div class="tabs">
-    <button class="tab" data-t="hand"   onclick="switchTab('hand')"><span class="ic">✋</span>სკანი+წონა</button>
+    <button class="tab" onclick="openWModal('handModal')"><span class="ic">✋</span>სკანი+წონა</button>
     <button class="tab" onclick="openPalModal()"><span class="ic">📦</span>პალეტზე</button>
-    <button class="tab" data-t="num"    onclick="switchTab('num')"><span class="ic">#️⃣</span>ნუმერაცია</button>
+    <button class="tab" onclick="openWModal('numModal')"><span class="ic">#️⃣</span>ნუმერაცია</button>
     <button class="tab" data-t="auto"   onclick="switchTab('auto')"><span class="ic">⚡</span>ავტომატ.</button>
     <button class="tab admin-only" data-t="sms" onclick="switchTab('sms')"><span class="ic">📨</span>SMS</button>
   </div>
 
-  <div class="panel" id="p-hand">
+  <div id="handModal" class="pal-modal"><div class="pal-modal-inner">
+    <div class="pal-modal-head"><h2 style="margin:0;font-size:1.05rem">✋ ხელით / სკანერით</h2><button class="pal-x" onclick="closeWModal('handModal')">✕</button></div>
     <div class="card">
-      <h2>✋ ხელით / სკანერით</h2>
       <label>📷 ასკანერე ყუთის სტიკერი (QR) — ან მკრეფავი / რიგი</label>
       <input id="hScan" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="დაასკანერე ან აკრიფე კოდი…" onkeydown="if(event.key==='Enter')handScan()">
       <div id="hScanMsg" class="muted" style="margin-top:4px"></div>
@@ -144,7 +144,7 @@
       <button onclick="handAdd()" style="margin-top:10px">➕ დამატება</button>
       <div id="hMsg" style="font-size:.85rem;margin-top:8px"></div>
     </div>
-  </div>
+  </div></div>
 
   <div id="palModal" class="pal-modal"><div class="pal-modal-inner">
     <div class="pal-modal-head"><h2 style="margin:0;font-size:1.05rem">📦 პალეტზე აწონვა</h2><button class="pal-x" onclick="closePalModal()">✕</button></div>
@@ -195,9 +195,9 @@
     </div>
   </div></div>
 
-  <div class="panel" id="p-num">
+  <div id="numModal" class="pal-modal"><div class="pal-modal-inner">
+    <div class="pal-modal-head"><h2 style="margin:0;font-size:1.05rem">#️⃣ ნუმერაციით</h2><button class="pal-x" onclick="closeWModal('numModal')">✕</button></div>
     <div class="card">
-      <h2>#️⃣ ნუმერაციით</h2>
       <label>მკრეფავის ნომერი</label>
       <input id="nNum" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="bignum" inputmode="numeric" placeholder="მაგ. 17" oninput="numResolve()" onkeydown="if(event.key==='Enter')document.getElementById('nWeight').focus()">
       <div id="nPicker"></div>
@@ -208,7 +208,7 @@
       <div id="nMsg" style="font-size:.85rem;margin-top:8px"></div>
       <div class="muted" style="margin-top:8px;text-align:center">ℹ️ ზონა/რიგი აქ არ საჭიროა — მხოლოდ ნომერი და წონა.</div>
     </div>
-  </div>
+  </div></div>
 
   <div class="panel" id="p-auto">
     <div class="card">
@@ -330,7 +330,7 @@ async function showApp(email){
   await loadSettings();
   await loadPickers();
   await loadZones();
-  switchTab('num');
+  var fc=document.getElementById('feedCard'); if(fc) fc.style.display='block';
   renderQueue(); renderFeed(); refreshDayTotal(); fetchSeason(true);
   if(CUR_ROLE==='admin') showStartCheck();
   if(navigator.onLine) syncQueue();
@@ -545,8 +545,13 @@ function switchTab(t){
   activeTab=t;
   document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-t')===t); });
   document.querySelectorAll('.panel').forEach(function(p){ p.classList.toggle('active', p.id==='p-'+t); });
-  document.getElementById('feedCard').style.display=(t==='hand'||t==='num')?'block':'none';
+  var fc=document.getElementById('feedCard'); if(fc) fc.style.display='block';
 }
+// ── აწონვის popup-ები (ხელით / ნუმერაცია) ──
+function openWModal(id){ var m=document.getElementById(id); if(!m) return; m.classList.add('open');
+  var f=(id==='handModal')?'hScan':(id==='numModal'?'nNum':''); if(f){ var e=document.getElementById(f); if(e){ setTimeout(function(){ try{ e.focus(); }catch(x){} }, 60); } } }
+function closeWModal(id){ var m=document.getElementById(id); if(m) m.classList.remove('open'); }
+window.openWModal=openWModal; window.closeWModal=closeWModal;
 
 function handSearch(){
   var q=document.getElementById('hSearch').value.trim().toLowerCase(), el=document.getElementById('hRes');
