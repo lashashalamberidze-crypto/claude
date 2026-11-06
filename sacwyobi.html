@@ -946,7 +946,7 @@ function csWoActHtml(wo){
   var head='<div style="text-align:center;margin:0 0 22px"><div style="font-size:20px;font-weight:700">ჩამოწერის აქტი</div><div style="margin-top:6px">თარიღი: '+safeText(wo.date||_csToday())+'</div></div>';
   var intro='<p style="text-align:justify;margin:0 0 20px;line-height:2.15"><b>'+cName+'</b> (ს/კ '+cId+') ადგენს წინამდებარე აქტს მასზედ, რომ ჩამოიწერა / უსასყიდლოდ გაიცა შემდეგი საქონელი:</p>';
   var reason='<p style="margin:0 0 26px;line-height:2.1">მიზეზი: <u>&nbsp;'+safeText(wo.note||'')+'&nbsp;</u>'+(wo.room_no?(' · ოთახი '+safeText(wo.room_no)):'')+'</p>';
-  var foot='<div style="display:flex;justify-content:space-between;gap:60px;margin-top:50px;font-size:16.5px;line-height:1.9"><div style="flex:1">ჩამმწერი<br>'+cName+'<br><br><br>__________________</div><div style="flex:1">დაამტკიცა<br><br><br><br>__________________</div></div>';
+  var foot='<div style="display:flex;justify-content:space-between;gap:60px;margin-top:50px;font-size:16.5px;line-height:1.9"><div style="flex:1">შეადგინა:<br>'+cName+'<br><br><br>__________________</div><div style="flex:1">დაამტკიცა:<br><br><br><br>__________________</div></div>';
   return aktWrap(head+intro+aktTableHead()+aktRow(1,prod,qty,0,0)+aktTotalRow(qty,0)+reason+foot);
 }
 function csWoAct(id){ var w=CS_SALES.find(function(x){return x.id===id;}); if(!w){ alert('ვერ მოიძებნა'); return; } swPrintAct(csWoActHtml(w), 'ჩამოწერის აქტი'); }
@@ -1075,7 +1075,7 @@ function csRender(){
   if(debt.length){ h+='<div style="margin-top:14px"><div class="sw-card-title">🔴 ვალები (მოსაცემი)</div><div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>მყიდველი</th><th>ვალი ₾</th></tr></thead><tbody>'+debt.map(function(x){ return '<tr><td><b>'+csEsc(x.b)+'</b></td><td style="color:#dc2626;font-weight:800">'+x.d.toFixed(2)+'</td></tr>'; }).join('')+'</tbody></table></div></div>'; }
   h+='<div style="margin-top:14px"><div class="sw-card-title">💰 გაყიდვები</div><div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>თარიღი</th><th>მყიდველი</th><th>რა</th><th>კგ</th><th>₾/კგ</th><th>სულ ₾</th><th>გადახდ.</th><th>ვალი</th><th></th></tr></thead><tbody>';
   if(!_sales.length){ h+='<tr><td colspan="9" class="sw-empty">— გაყიდვა არ არის —</td></tr>'; }
-  else _sales.forEach(function(x){ var d=(+x.amount||0)-(+x.paid_amount||0); var payBtn=(d>0.009?'<span style="cursor:pointer;color:#16a34a;margin-right:8px" title="გადახდის ჩაწერა" onclick="csPay(\''+csEsc(x.id)+'\')">💵</span>':''); h+='<tr><td>'+csEsc(x.date||'')+'</td><td><b>'+csEsc(x.buyer||'—')+'</b>'+(x.note?'<div style="font-size:.68rem;color:#64748b;font-weight:400">'+csEsc(x.note)+'</div>':'')+'</td><td>'+(x.source==='cold'?('🏭 ოთ.'+csEsc(x.room_no||'')):('🧺 '+csEsc(x.product||'პირდ.')))+'</td><td>'+(Math.round((+x.kg||0)*10)/10)+'</td><td>'+(+x.price||0)+'</td><td><b>'+(Math.round((+x.amount||0)*100)/100)+'</b></td><td style="color:#16a34a">'+(Math.round((+x.paid_amount||0)*100)/100)+'</td><td style="color:'+(d>0.009?'#dc2626':'#16a34a')+';font-weight:700;cursor:'+(d>0.009?'pointer':'default')+'" '+(d>0.009?'title="გადახდის ჩაწერა" onclick="csPay(\''+csEsc(x.id)+'\')"':'')+'>'+(d>0.009?d.toFixed(2):'✓')+'</td><td style="white-space:nowrap">'+payBtn+'<span style="cursor:pointer;color:#0369a1;margin-right:8px" title="აქტი" onclick="csSaleAct(\''+csEsc(x.id)+'\')">🖨️</span><span style="cursor:pointer;color:#dc2626" onclick="csDelSale(\''+csEsc(x.id)+'\')">🗑️</span></td></tr>'; });
+  else _sales.forEach(function(x){ var d=(+x.amount||0)-(+x.paid_amount||0); var payBtn=(d>0.009?'<span style="cursor:pointer;color:#16a34a;margin-right:8px" title="გადახდის ჩაწერა" onclick="csPay(\''+csEsc(x.id)+'\')">💵</span>':''); h+='<tr><td>'+csEsc(x.date||'')+'</td><td><b>'+csEsc(x.buyer||'—')+'</b>'+(x.note?'<div style="font-size:.68rem;color:#64748b;font-weight:400">'+csEsc(x.note)+'</div>':'')+'</td><td>'+(x.source==='cold'?('🏭 ოთ.'+csEsc(x.room_no||'')):('🧺 '+csEsc(x.product||'პირდ.')))+'</td><td>'+(Math.round((+x.kg||0)*10)/10)+'</td><td>'+(+x.price||0)+'</td><td><b>'+(Math.round((+x.amount||0)*100)/100)+'</b></td><td style="color:#16a34a">'+(Math.round((+x.paid_amount||0)*100)/100)+'</td><td style="color:'+(d>0.009?'#dc2626':'#16a34a')+';font-weight:700;cursor:'+(d>0.009?'pointer':'default')+'" '+(d>0.009?'title="გადახდის ჩაწერა" onclick="csPay(\''+csEsc(x.id)+'\')"':'')+'>'+(d>0.009?d.toFixed(2):'✓')+'</td><td style="white-space:nowrap">'+payBtn+'<span style="cursor:pointer;color:#dc2626" onclick="csDelSale(\''+csEsc(x.id)+'\')">🗑️</span></td></tr>'; });
   h+='</tbody></table></div></div>';
   el.innerHTML=h;
   try{ csDashboard(); }catch(e){}   // დეშბორდი (ზემოთ) განახლდეს გაყიდვის ცვლილებაზე
@@ -1116,7 +1116,6 @@ async function csConfirm(){
   if(buyer) csAddBuyerName(buyer);
   CS_SALES.unshift(rec); var s=getSb(); try{ await s.from('cold_sales').upsert(rec,{onConflict:'id'}); }catch(e){}
   var m=document.getElementById('csModal'); if(m) m.remove(); csRender();
-  try{ csSaleAct(rec.id); }catch(e){ console.warn('sale act', e); }   // აქტი ავტომატურად
 }
 async function csSubtractRoom(room,kg){
   var entries=CS_STOCK.filter(function(x){ return String(x.room_no)===String(room); }).sort(function(a,b){ return (a.created_at||'')<(b.created_at||'')?-1:1; });
@@ -2700,111 +2699,122 @@ window.xlStyleWB = function(WB){
 function swExportExcel(){
   if(typeof XLSX==='undefined'){ swNotify('⚠️ XLSX ბიბლ. ვ/მ', true); return; }
   const WB = XLSX.utils.book_new();
-  const M  = v => swMoney(v);                 // money string
   const n2 = v => +(+v||0).toFixed(2);        // numeric money
   const n1 = v => +(+v||0).toFixed(1);        // numeric kg
-  const lots  = Array.isArray(swLots)?swLots:[];
+  // ── რეალური მონაცემები (ის, რაც ეკრანზე ჩანს) ──
+  const stock = Array.isArray(CS_STOCK)?CS_STOCK:[];
+  const allSales = Array.isArray(CS_SALES)?CS_SALES:[];
+  const rooms = Array.isArray(CS_ROOMS)?CS_ROOMS:[];
+  const temps = Array.isArray(MZ_TEMP)?MZ_TEMP:[];
+  const sales = allSales.filter(x=>x && x.source!=='writeoff');    // გაყიდვები (ჩამოწერის გარეშე)
+  const woffs = allSales.filter(x=>x && x.source==='writeoff');    // ჩამოწერა ცალკე
   const ops   = Array.isArray(swOps)?swOps:[];
-  const temps = Array.isArray(swTemps)?swTemps:[];
-  const ships = Array.isArray(swShipments)?swShipments:[];
-  const outs  = ops.filter(o=>o&&o.type==='out');
   const purs  = ops.filter(o=>o&&typeof swIsPurchase==='function'&&swIsPurchase(o));
   const supByName = window.__swSupByName||{};
-  function payStatus(o){ const amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0; if(amt<=0) return '—'; if(pa>=amt) return 'გადახდილი'; if(pa>0) return 'ნაწილობრივი'; return 'გადაუხდელი'; }
+  function payStatus(amt,pa){ amt=+amt||0; pa=+pa||0; if(amt<=0) return '—'; if(pa>=amt) return 'გადახდილი'; if(pa>0) return 'ნაწილობრივი'; return 'გადაუხდელი'; }
 
   // ── totals ──
-  const totRemaining = lots.reduce((a,l)=>a+(+l.remaining||0),0);
-  const activeLots   = lots.filter(l=>(+l.remaining||0)>0).length;
+  let stockKg=0, stockBx=0; stock.forEach(x=>{ stockKg+=(+x.kg||0); stockBx+=(+x.boxes||0); });
   let saleTot=0, salePaid=0, saleOwed=0, saleKg=0;
-  outs.forEach(o=>{ const amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0; saleTot+=amt; salePaid+=Math.min(pa,amt||pa); saleKg+=(+o.kg||0); if(amt>0){ const r=amt-pa; if(r>0.0001) saleOwed+=r; } });
-  let purTot=0, purPaid=0, purOwed=0;
-  purs.forEach(o=>{ const amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0; purTot+=amt; purPaid+=Math.min(pa,amt||pa); if(amt>0){ const r=amt-pa; if(r>0.0001) purOwed+=r; } });
-  let shipP=0, shipN=0; ships.forEach(s=>{ shipP+=(+s.pallets||0); shipN+=(+s.net||0); });
+  sales.forEach(x=>{ const amt=+x.amount||0, pa=+x.paid_amount||0; saleTot+=amt; salePaid+=Math.min(pa,amt||pa); saleKg+=(+x.kg||0); if(amt>0){ const r=amt-pa; if(r>0.0001) saleOwed+=r; } });
+  let woKg=0, woBx=0; woffs.forEach(x=>{ woKg+=(+x.kg||0); woBx+=(+x.boxes||0); });
+  let purTot=0, purPaid=0, purOwed=0, purKg=0;
+  purs.forEach(o=>{ const kg=+o.kg||0, amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0; purKg+=kg; purTot+=amt; purPaid+=Math.min(pa,amt||pa); if(amt>0){ const r=amt-pa; if(r>0.0001) purOwed+=r; } });
 
   // ── 1) summary ──
   const s0=[
-    ['📊 შეჯამება — საწყობი / მაცივარი',''],
+    ['📊 შეჯამება — საწყობი და რეალიზაცია',''],
     ['თარიღი', swDate()],
     ['',''],
-    ['— მარაგი —',''],
-    ['სულ მარაგი (კგ)', n1(totRemaining)],
-    ['პარტიები (აქტიური)', activeLots],
+    ['— მარაგი მაცივარში —',''],
+    ['სულ მარაგი (კგ)', n1(stockKg)],
+    ['ყუთი (Σ)', stockBx],
+    ['ოთახები', rooms.length],
     ['',''],
     ['— გაყიდვა —',''],
-    ['სულ გაყიდვა (₾)', n2(saleTot)],
-    ['გადახდილი (₾)', n2(salePaid)],
-    ['🔴 დარჩა — გვმართებენ (₾)', n2(saleOwed)],
+    ['ჩანაწერი', sales.length],
     ['გაყიდული (კგ)', n1(saleKg)],
+    ['სულ შემოსავალი (₾)', n2(saleTot)],
+    ['გადახდილი (₾)', n2(salePaid)],
+    ['🔴 მოსაცემი — ვალი (₾)', n2(saleOwed)],
     ['',''],
     ['— შესყიდვა —',''],
+    ['ჩანაწერი', purs.length],
+    ['შესყიდული (კგ)', n1(purKg)],
     ['სულ შესყიდვა (₾)', n2(purTot)],
     ['გადახდილი (₾)', n2(purPaid)],
     ['🔴 მომწოდებლებს ვმართებთ (₾)', n2(purOwed)],
     ['',''],
-    ['— გამგზავრება —',''],
-    ['ჩანაწერი', ships.length],
-    ['პალეტი (Σ)', n1(shipP)],
-    ['ნეტო (Σ, კგ)', n1(shipN)]
+    ['— ჩამოწერა —',''],
+    ['ჩანაწერი', woffs.length],
+    ['ჩამოწერილი (კგ)', n1(woKg)]
   ];
   const ws0=XLSX.utils.aoa_to_sheet(s0); ws0['!cols']=[{wch:34},{wch:16}];
   XLSX.utils.book_append_sheet(WB,ws0,'შეჯამება');
 
-  // ── 2) lots ──
-  const s1=[['ლოტი','პალეტი','პროდუქტი','მიღების თარიღი','სულ კგ','მარაგი','სეცია','ვადა','შენიშვნა']];
-  lots.forEach(l=>s1.push([l.lot||'',l.pallet_code||'',l.product||'',l.date||'',n1(l.qty),n1(l.remaining),l.section||'',l.expire||'',l.note||'']));
+  // ── 2) მარაგი (cold_stock) ──
+  const s1=[['ოთახი','პალეტი','პროდუქტი','ყუთი','კგ','შენიშვნა','თარიღი']];
+  let c1bx=0,c1kg=0;
+  stock.slice().sort((a,b)=>String(a.room_no||'').localeCompare(String(b.room_no||''))).forEach(x=>{ c1bx+=(+x.boxes||0); c1kg+=(+x.kg||0);
+    s1.push([x.room_no||'—',x.pallet_code||'',x.product||'',(+x.boxes||0),n1(x.kg),x.note||'',x.date||'']); });
+  if(stock.length) s1.push(['ჯამი','','',c1bx,n1(c1kg),'','']);
   const ws1=XLSX.utils.aoa_to_sheet(s1);
-  ws1['!cols']=[{wch:12},{wch:16},{wch:20},{wch:14},{wch:10},{wch:10},{wch:10},{wch:12},{wch:24}];
+  ws1['!cols']=[{wch:10},{wch:16},{wch:20},{wch:9},{wch:10},{wch:26},{wch:12}];
   XLSX.utils.book_append_sheet(WB,ws1,'მარაგი');
 
-  // ── 3) sales (out-ops) ──
-  const s2=[['თარიღი','მიმღები','პროდუქტი','კგ','ფასი ₾/კგ','სულ ₾','გადახდილი ₾','დარჩა ₾','სტატუსი']];
+  // ── 3) გაყიდვები (CS_SALES, ჩამოწერის გარეშე) ──
+  const s2=[['თარიღი','მყიდველი','წყარო','პროდუქტი','კგ','ფასი ₾/კგ','სულ ₾','გადახდილი ₾','ვალი ₾','სტატუსი']];
   let c2kg=0,c2t=0,c2p=0,c2r=0;
-  outs.forEach(o=>{ const kg=+o.kg||0, amt=(o.amount!=null?+o.amount:0)||0, pa=Math.min(+o.paid_amount||0,amt||(+o.paid_amount||0)), rem=amt>0?Math.max(0,amt-pa):0, unit=(amt>0&&kg>0)?n2(amt/kg):'';
+  sales.forEach(x=>{ const kg=+x.kg||0, amt=+x.amount||0, pa=Math.min(+x.paid_amount||0,amt||(+x.paid_amount||0)), rem=amt>0?Math.max(0,amt-pa):0;
+    const src=(x.source==='cold')?('მაცივარი'+(x.room_no?(' ოთ.'+x.room_no):'')):'პირდაპირი';
     c2kg+=kg;c2t+=amt;c2p+=pa;c2r+=rem;
-    s2.push([o.date||'',o.buyer||'',o.product||'',n1(kg),unit,amt>0?n2(amt):'',amt>0?n2(pa):'',amt>0?n2(rem):'',payStatus(o)]); });
-  if(outs.length) s2.push(['ჯამი','','',n1(c2kg),'',n2(c2t),n2(c2p),n2(c2r),'']);
+    s2.push([x.date||'',x.buyer||'',src,x.product||'',n1(kg),+x.price||0,amt>0?n2(amt):'',amt>0?n2(pa):'',amt>0?n2(rem):'',payStatus(amt,pa)]); });
+  if(sales.length) s2.push(['ჯამი','','','',n1(c2kg),'',n2(c2t),n2(c2p),n2(c2r),'']);
   const ws2=XLSX.utils.aoa_to_sheet(s2);
-  ws2['!cols']=[{wch:12},{wch:20},{wch:20},{wch:9},{wch:11},{wch:12},{wch:12},{wch:11},{wch:14}];
+  ws2['!cols']=[{wch:12},{wch:20},{wch:16},{wch:18},{wch:9},{wch:11},{wch:12},{wch:12},{wch:11},{wch:14}];
   XLSX.utils.book_append_sheet(WB,ws2,'გაყიდვები');
 
-  // ── 4) purchases (purchase in-ops) ──
-  const s3=[['თარიღი','მომწოდებელი','ს/კ','პროდუქტი','კგ','ფასი ₾/კგ','სულ ₾','გადახდილი ₾','დარჩა ₾','სტატუსი']];
+  // ── 4) 🔴 ვალები (მოსაცემი — მყიდველების მიხედვით) ──
+  const byB={};
+  sales.forEach(x=>{ const b=(x.buyer||'—'); if(!byB[b])byB[b]={amt:0,paid:0}; byB[b].amt+=(+x.amount||0); byB[b].paid+=(+x.paid_amount||0); });
+  const s2b=[['მყიდველი','სულ ₾','გადახდილი ₾','ვალი ₾']];
+  Object.keys(byB).map(b=>({b:b,amt:byB[b].amt,paid:byB[b].paid,d:byB[b].amt-byB[b].paid}))
+    .filter(x=>x.d>0.009).sort((a,b)=>b.d-a.d)
+    .forEach(x=>s2b.push([x.b,n2(x.amt),n2(x.paid),n2(x.d)]));
+  if(s2b.length>1){ s2b.push(['ჯამი', n2(saleTot), n2(salePaid), n2(saleOwed)]);
+    const ws2b=XLSX.utils.aoa_to_sheet(s2b); ws2b['!cols']=[{wch:24},{wch:12},{wch:12},{wch:12}];
+    XLSX.utils.book_append_sheet(WB,ws2b,'ვალები'); }
+
+  // ── 5) შესყიდვები (purchase in-ops) ──
+  const s3=[['თარიღი','მომწოდებელი','ს/კ','პროდუქტი','კგ','ფასი ₾/კგ','სულ ₾','გადახდილი ₾','ვალი ₾','სტატუსი']];
   let c3kg=0,c3t=0,c3p=0,c3r=0;
   purs.forEach(o=>{ const kg=+o.kg||0, amt=(o.amount!=null?+o.amount:0)||0, pa=Math.min(+o.paid_amount||0,amt||(+o.paid_amount||0)), rem=amt>0?Math.max(0,amt-pa):0, unit=(amt>0&&kg>0)?n2(amt/kg):'';
     const rec=supByName[String(o.buyer||'').trim().toLowerCase()]; const idc=(rec&&(rec.idnum||rec.idcode))||'';
     c3kg+=kg;c3t+=amt;c3p+=pa;c3r+=rem;
-    s3.push([o.date||'',o.buyer||o.section||'',idc,o.product||'',n1(kg),unit,amt>0?n2(amt):'',amt>0?n2(pa):'',amt>0?n2(rem):'',payStatus(o)]); });
+    s3.push([o.date||'',o.buyer||o.section||'',idc,o.product||'',n1(kg),unit,amt>0?n2(amt):'',amt>0?n2(pa):'',amt>0?n2(rem):'',payStatus(amt,pa)]); });
   if(purs.length) s3.push(['ჯამი','','','',n1(c3kg),'',n2(c3t),n2(c3p),n2(c3r),'']);
   const ws3=XLSX.utils.aoa_to_sheet(s3);
   ws3['!cols']=[{wch:12},{wch:20},{wch:16},{wch:20},{wch:9},{wch:11},{wch:12},{wch:12},{wch:11},{wch:14}];
   XLSX.utils.book_append_sheet(WB,ws3,'შესყიდვები');
 
-  // ── 5) shipments ──
-  const s4=[['თარიღი','მისაბმელი','მძღოლი','მიმართულება','პალეტი','ბრუტო','ნეტო']];
-  let c4p=0,c4b=0,c4n=0;
-  ships.slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))).forEach(s=>{ c4p+=(+s.pallets||0);c4b+=(+s.gross||0);c4n+=(+s.net||0);
-    s4.push([s.date||'',s.trailer||'',s.driver||'',s.dest||'',n1(s.pallets),n1(s.gross),n1(s.net)]); });
-  if(ships.length) s4.push(['ჯამი','','','',n1(c4p),n1(c4b),n1(c4n)]);
+  // ── 6) ჩამოწერა ──
+  const s4=[['თარიღი','ოთახი','პროდუქტი','ყუთი','კგ','მიზეზი']];
+  let c4bx=0,c4kg=0;
+  woffs.forEach(x=>{ c4bx+=(+x.boxes||0); c4kg+=(+x.kg||0);
+    s4.push([x.date||'',x.room_no||'—',x.product||'',(+x.boxes||0),n1(x.kg),x.note||'']); });
+  if(woffs.length) s4.push(['ჯამი','','',c4bx,n1(c4kg),'']);
   const ws4=XLSX.utils.aoa_to_sheet(s4);
-  ws4['!cols']=[{wch:12},{wch:14},{wch:16},{wch:18},{wch:9},{wch:10},{wch:10}];
-  XLSX.utils.book_append_sheet(WB,ws4,'გამგზავრება');
+  ws4['!cols']=[{wch:12},{wch:10},{wch:20},{wch:9},{wch:10},{wch:26}];
+  XLSX.utils.book_append_sheet(WB,ws4,'ჩამოწერა');
 
-  // ── 6) all ops ──
-  const s5=[['თარიღი','დრო','ტიპი','პროდუქტი','ლოტი','კგ','მიმღ./მომწ./სეც.','თანხა ₾','გადახდილი ₾','შენიშვნა']];
-  ops.forEach(o=>{ const amt=(o.amount!=null?+o.amount:0)||0, pa=+o.paid_amount||0;
-    s5.push([o.date||'',o.time||'',o.type==='in'?'მიღება':'გატანა',o.product||'',o.lot||'',n1(o.kg),o.buyer||o.section||'',amt>0?n2(amt):'',amt>0?n2(pa):'',o.note||'']); });
-  const ws5=XLSX.utils.aoa_to_sheet(s5);
-  ws5['!cols']=[{wch:12},{wch:10},{wch:9},{wch:20},{wch:12},{wch:9},{wch:18},{wch:11},{wch:12},{wch:22}];
-  XLSX.utils.book_append_sheet(WB,ws5,'ოპერაციები');
-
-  // ── 7) temps ──
-  const s6=[['დრო','სეცია','ტემპ. °C','შენიშვნა']];
-  temps.forEach(t=>s6.push([t.time||'',t.section||'',+t.temp||0,t.note||'']));
+  // ── 7) ტემპერატურა (cold_temp) ──
+  const s6=[['თარიღი/დრო','ოთახი','ტემპ. °C']];
+  temps.forEach(t=>{ let tm=t.at||''; try{ if(t.at) tm=new Date(t.at).toLocaleString('ka-GE',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(e){} s6.push([tm,t.room_no||'',+t.temp||0]); });
   const ws6=XLSX.utils.aoa_to_sheet(s6);
-  ws6['!cols']=[{wch:18},{wch:10},{wch:10},{wch:24}];
+  ws6['!cols']=[{wch:20},{wch:10},{wch:10}];
   XLSX.utils.book_append_sheet(WB,ws6,'ტემპერატურა');
 
-  xlStyleWB(WB); XLSX.writeFile(WB,'InTechSol_Sacwyobi_'+swDate()+'.xlsx');
+  xlStyleWB(WB); XLSX.writeFile(WB,'AgroInTechSol_Sacwyobi_'+swDate()+'.xlsx');
   swNotify('📥 Excel ჩამოიტვირთა');
 }
 window.swExportExcel = swExportExcel;
