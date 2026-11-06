@@ -96,7 +96,6 @@
     <button class="tab" data-t="qr" onclick="switchTab('qr')">🏷️ QR კოდები</button>
     <button class="tab" data-t="report" onclick="switchTab('report')">📊 ანგარიში</button>
     <button class="tab" data-t="reg" onclick="switchTab('reg')">📋 რეგისტრაცია</button>
-    <button class="tab" data-t="notify" onclick="switchTab('notify')">📨 შეტყობინებები</button>
   </div>
 
   <div class="panel active" id="p-pickers">
@@ -208,30 +207,6 @@
   </div>
 
   <div class="panel" id="p-report">
-    <div class="card" style="border:1.5px solid #229ED9;background:#f5fbff">
-      <h2 style="color:#229ED9;margin-top:0">✈️ Telegram — ანგარიშის გაგზავნა</h2>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
-        <div>
-          <label style="margin:0 0 3px">შეტყობინების რეჟიმი</label>
-          <select id="tgMode" style="width:auto" onchange="tgSaveMode()">
-            <option value="daily">📊 დღის ჯამი (რეკომ.)</option>
-            <option value="each">⚖️ ყოველ აწონვაზე</option>
-            <option value="off">🔕 გამორთული</option>
-          </select>
-        </div>
-        <div style="flex:1;min-width:160px">
-          <label style="margin:0 0 3px">კონკ. თარიღი (ცარიელი = დღეს)</label>
-          <input type="date" id="tgDailyDate" style="width:auto">
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="g" style="width:auto;padding:9px 15px;background:#229ED9" onclick="tgSendDaily()">📊 დღის ჯამი — ყველა დაკავშირებულს</button>
-        <button class="sec" style="width:auto;padding:9px 13px" onclick="tgSendTest()">🔔 ტესტი (ჩემთვის)</button>
-        <button class="sec" style="width:auto;padding:9px 13px" onclick="loadTgLinks().then(tgRenderLinks)">🔄 სტატუსი</button>
-      </div>
-      <div id="tgSendStat" class="muted" style="font-size:.82rem;margin-top:9px"></div>
-      <div id="tgLinkedList" style="font-size:.82rem;margin-top:6px"></div>
-    </div>
     <div class="card">
       <div class="toolbar">
         <div><label style="margin:0 0 3px">დან</label><input type="date" id="rFrom" style="width:auto"></div>
@@ -288,26 +263,6 @@
     </div>
   </div>
 
-  <div class="panel" id="p-notify">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-        <h2 style="margin:0">📨 შეტყობინებების ანალიტიკა</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="sec" style="width:auto;padding:8px 12px" onclick="loadNotifyLog()">🔄 განახლება</button>
-          <button class="sec" style="width:auto;padding:8px 12px" onclick="exportNotifyExcel()">📊 Excel</button>
-        </div>
-      </div>
-      <div class="muted" style="font-size:.82rem;margin:6px 0 10px">ვის, რა არხით (Telegram / SMS), რა ტექსტი გაეგზავნა — ერთ ადგილას.</div>
-      <div id="notifyStats" class="stats" style="margin-bottom:12px"></div>
-      <div class="toolbar" style="margin-bottom:10px">
-        <div><label style="margin:0 0 3px">დან</label><input type="date" id="nlFrom" style="width:auto" onchange="renderNotifyLog()"></div>
-        <div><label style="margin:0 0 3px">მდე</label><input type="date" id="nlTo" style="width:auto" onchange="renderNotifyLog()"></div>
-        <div><label style="margin:0 0 3px">არხი</label><select id="nlChan" style="width:auto" onchange="renderNotifyLog()"><option value="">ყველა</option><option value="telegram">✈️ Telegram</option><option value="sms">📱 SMS</option></select></div>
-        <div style="flex:1;min-width:150px"><label style="margin:0 0 3px">ძებნა</label><input id="nlSearch" placeholder="🔎 სახელი / ტელ / ტექსტი…" oninput="renderNotifyLog()"></div>
-      </div>
-      <div id="notifyBody"><div class="muted">⏳ იტვირთება…</div></div>
-    </div>
-  </div>
 </div>
 
 <script>
