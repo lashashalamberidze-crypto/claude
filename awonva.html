@@ -88,7 +88,7 @@
   <div class="qbar" id="qbar"></div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v37</span></h1>
+    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v38</span></h1>
     <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
     <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
     <div id="roleBar" style="justify-content:flex-end;margin:6px 0 0">
@@ -116,6 +116,7 @@
   <div class="tabs">
     <button class="tab" onclick="openWModal('handModal')"><span class="ic">✋</span>სკანი+წონა</button>
     <button class="tab" onclick="openPalModal()"><span class="ic">📦</span>პალეტზე</button>
+    <button class="tab" onclick="openLinkModal()"><span class="ic">🔗</span>პალეტზე მიბმა</button>
     <button class="tab" onclick="openWModal('numModal')"><span class="ic">#️⃣</span>ნუმერაცია</button>
     <button class="tab" data-t="auto"   onclick="switchTab('auto')"><span class="ic">⚡</span>ავტომატ.</button>
     <button class="tab admin-only" data-t="sms" onclick="switchTab('sms')"><span class="ic">📨</span>SMS</button>
@@ -142,9 +143,6 @@
       <label style="margin-top:12px">წონა (კგ)</label>
       <input id="hWeight" type="number" step="0.01" placeholder="მაგ. 5.4" oninput="prevHand()">
       <div id="hPrev" class="muted" style="margin-top:6px">სუფთა: — · — ₾</div>
-      <label style="margin-top:12px">📦 პალეტი <span class="muted" style="font-weight:400">(არჩევითი — ყუთი მაშინვე მიება)</span></label>
-      <input id="hPal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ასკანერე/ჩაწერ პალეტს — PAL-XXXXXX-XXXX" oninput="hValPal()">
-      <div id="hPalVal" style="font-size:.8rem;margin-top:4px"></div>
       <button onclick="handAdd()" style="margin-top:10px">➕ დამატება</button>
       <div id="hMsg" style="font-size:.85rem;margin-top:8px"></div>
     </div>
@@ -196,6 +194,23 @@
       <div id="palSummary"></div><div id="palByPicker"></div><div id="palByBox"></div>
       <button class="g" onclick="palCommit()" style="margin-top:12px">✅ დაადასტურე და ჩაწერე</button>
       <div id="palConf" style="font-size:.85rem;margin-top:8px"></div>
+    </div>
+  </div></div>
+
+  <div id="linkModal" class="pal-modal"><div class="pal-modal-inner">
+    <div class="pal-modal-head"><h2 style="margin:0;font-size:1.05rem">🔗 პალეტზე მიბმა + შემოწმება</h2><button class="pal-x" onclick="closeWModal('linkModal')">✕</button></div>
+    <div class="card">
+      <div class="muted" style="font-size:.84rem;margin-bottom:8px">1️⃣ ასკანერე/ჩაწერ <b>პალეტი</b> · 2️⃣ ასკანერე/ჩაწერ <b>ყუთების კოდები</b> (მაგ. GMN2QH) — თითო ყუთი მიება ამ პალეტზე და ჩანს ვისია.</div>
+      <label>📦 პალეტი</label>
+      <input id="lnkPal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="PAL-XXXXXX-XXXX" oninput="lnkValPal()">
+      <div id="lnkPalVal" style="font-size:.8rem;margin-top:4px"></div>
+      <label style="margin-top:12px">🏷️ ყუთის კოდი</label>
+      <input id="lnkBox" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="ასკანერე ან ჩაწერ კოდს — GMN2QH" onkeydown="if(event.key==='Enter')lnkAddBox()">
+      <button onclick="lnkAddBox()" style="margin-top:10px">🔗 მიბმა</button>
+      <div id="lnkMsg" style="font-size:.9rem;margin-top:8px"></div>
+      <div class="cnt" style="margin-top:10px"><span style="font-weight:700;color:#0369a1">ამ პალეტზე მიბმული</span><span class="n" id="lnkCount">0</span></div>
+      <table><thead><tr><th>#</th><th>კოდი</th><th>მკრეფავი</th><th>კგ</th></tr></thead>
+      <tbody id="lnkBody"><tr><td colspan="4" class="muted">ჯერ არცერთი</td></tr></tbody></table>
     </div>
   </div></div>
 
@@ -602,6 +617,37 @@ function openWModal(id){ var m=document.getElementById(id); if(!m) return; m.cla
   var f=(id==='handModal')?'hScan':(id==='numModal'?'nNum':''); if(f){ var e=document.getElementById(f); if(e){ setTimeout(function(){ try{ e.focus(); }catch(x){} }, 60); } } }
 function closeWModal(id){ var m=document.getElementById(id); if(m) m.classList.remove('open'); }
 window.openWModal=openWModal; window.closeWModal=closeWModal;
+// ── 🔗 პალეტზე მიბმა + შემოწმება (უკვე აწონილი ყუთის კოდით) ──
+var LNK_LIST=[];
+function lnkValPal(){ var v=((document.getElementById('lnkPal')||{}).value||'').trim(), el=document.getElementById('lnkPalVal'); if(!el) return; if(!v){ el.innerHTML=''; return; } el.innerHTML=palOk(v)?'<span class="ok">✅ სწორი პალეტი</span>':'<span class="warn">❌ ფორმატი: PAL-XXXXXX-XXXX</span>'; }
+function openLinkModal(){ var m=document.getElementById('linkModal'); if(!m) return; m.classList.add('open'); var p=document.getElementById('lnkPal'); if(p){ setTimeout(function(){ try{ p.focus(); }catch(e){} },60); } lnkRender(); }
+function lnkRender(){ var b=document.getElementById('lnkBody'), c=document.getElementById('lnkCount'); if(c) c.textContent=LNK_LIST.length; if(!b) return;
+  if(!LNK_LIST.length){ b.innerHTML='<tr><td colspan="4" class="muted">ჯერ არცერთი</td></tr>'; return; }
+  b.innerHTML=LNK_LIST.map(function(x,i){ return '<tr><td>'+(i+1)+'</td><td style="font-family:monospace">'+esc(x.code)+'</td><td>'+esc(x.name)+'</td><td><b>'+x.kg.toFixed(2)+'</b></td></tr>'; }).join('');
+}
+async function lnkAddBox(){
+  var msg=document.getElementById('lnkMsg');
+  var pal=((document.getElementById('lnkPal')||{}).value||'').trim();
+  if(!palOk(pal)){ msg.innerHTML='<span class="warn">❌ ჯერ ჩაწერ სწორი პალეტი</span>'; return; }
+  var raw=((document.getElementById('lnkBox')||{}).value||'').trim(); if(!raw) return;
+  var seg=raw.indexOf('|')>=0 ? raw.split('|').pop() : raw;
+  if(!sb||!uid){ msg.innerHTML='<span class="warn">ჯერ შედი</span>'; return; }
+  msg.innerHTML='<span class="muted">🔎 ვეძებ…</span>';
+  var sel='id,picker_name,weight,kg,date,pallet_code,short_code,code', hit=null;
+  try{
+    var r1=await sb.from('harvest_sessions').select(sel).eq('user_id',uid).eq('short_code',seg).limit(1); if(r1.data&&r1.data.length) hit=r1.data[0];
+    if(!hit){ var r2=await sb.from('harvest_sessions').select(sel).eq('user_id',uid).eq('code',raw).limit(1); if(r2.data&&r2.data.length) hit=r2.data[0]; }
+    if(!hit){ var r3=await sb.from('harvest_sessions').select(sel).eq('user_id',uid).ilike('code','%'+seg).limit(1); if(r3.data&&r3.data.length) hit=r3.data[0]; }
+  }catch(e){ msg.innerHTML='<span class="warn">❌ '+esc(e.message||e)+'</span>'; return; }
+  if(!hit){ msg.innerHTML='<span class="warn">❌ ვერ მოიძებნა: '+esc(seg)+'</span>'; return; }
+  var kg=+(hit.weight||hit.kg)||0;
+  if(hit.pallet_code && hit.pallet_code!==pal){ if(!confirm('ეს ყუთი უკვე პალეტზეა: '+hit.pallet_code+'\nგადავაბა '+pal+'-ზე?')){ msg.innerHTML=''; return; } }
+  try{ var up=await sb.from('harvest_sessions').update({pallet_code:pal}).eq('user_id',uid).eq('id',hit.id); if(up.error){ msg.innerHTML='<span class="warn">❌ '+esc(up.error.message)+'</span>'; return; } }catch(e){ msg.innerHTML='<span class="warn">❌ '+esc(e.message||e)+'</span>'; return; }
+  LNK_LIST.unshift({code:(hit.short_code||seg), name:(hit.picker_name||'—'), kg:kg}); lnkRender();
+  msg.innerHTML='<span class="ok">✅ '+esc(hit.picker_name||'—')+' · '+kg.toFixed(2)+' კგ → 📦 '+esc(pal)+'</span>';
+  var bx=document.getElementById('lnkBox'); if(bx){ bx.value=''; try{ bx.focus(); }catch(e){} }
+}
+window.openLinkModal=openLinkModal; window.lnkValPal=lnkValPal; window.lnkAddBox=lnkAddBox;
 
 function handSearch(){
   var q=document.getElementById('hSearch').value.trim().toLowerCase(), el=document.getElementById('hRes');
@@ -666,7 +712,7 @@ function handAdd(){
   if(!hChosen){ msg.innerHTML='<span class="warn">ჯერ აირჩიე მკრეფავი</span>'; return; }
   var w=parseFloat(document.getElementById('hWeight').value)||0;
   if(w<=0){ msg.innerHTML='<span class="warn">ჩაწერე წონა</span>'; return; }
-  var pal=''; var _hp=((document.getElementById('hPal')||{}).value||'').trim(); if(_hp && palOk(_hp)) pal=_hp;  // ხელით აწონვისას პალეტი არჩევით მიება
+  var pal=''; // ხელით აწონვა — პალეტზე მიბმა ცალკე „🔗 პალეტზე მიბმა" popup-შია
   var zid=document.getElementById('hZone').value, row=document.getElementById('hRow').value;
   var zb=BLOCKS.find(function(b){ return String(b.id)===String(zid); }), zone=zb?zb.name:'';
   // ── კოდი: თუ ყუთის სტიკერი დასკანერდა — ზუსტად ის კოდი ინახება (იგივე იკითხება პალეტზე/შემოწმებაში).
