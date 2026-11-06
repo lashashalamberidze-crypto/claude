@@ -560,7 +560,7 @@ function numAdd(){
   var w=parseFloat(document.getElementById('nWeight').value)||0;
   if(w<=0){ msg.innerHTML='<span class="warn">ჩაწერე წონა</span>'; return; }
   var d=_today().replace(/-/g,''); numSeq[n]=(numSeq[n]||0)+1;
-  var code=n+'-'+d+'-'+numSeq[n], short=n+'-'+numSeq[n];
+  var code=n+'-'+d+'-'+DEVID+numSeq[n], short=n+'-'+DEVID+numSeq[n];
   pushRecord({ code:code, short_code:short, picker:p, weight:w, row_num:'', quarter:'', entry_mode:'ნუმერაცია' });
   var _net=Math.max(0,Math.round((w-tare())*100)/100);
   msg.innerHTML='<span class="ok">✅ #'+n+' '+esc(pName(p))+' · ბრუტო '+w.toFixed(2)+' → სუფთა '+_net.toFixed(2)+' კგ ('+short+')</span>';
