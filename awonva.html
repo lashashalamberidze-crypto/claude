@@ -87,7 +87,7 @@
   <div class="qbar" id="qbar"></div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v26</span></h1>
+    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v27</span></h1>
     <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
     <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
     <div id="roleBar" style="justify-content:flex-end;margin:6px 0 0">
@@ -348,11 +348,18 @@ function palTareW(){ var v=parseFloat((document.getElementById('cfgPalW')||{}).v
 
 // ═══════════ 👤 როლები: ადმინი / ამწონველი ═══════════
 async function loadRoleCfg(){
+  var gotW=false;
   try{ if(sb&&uid){ var r=await sb.from('user_settings').select('skey,sval').eq('user_id',uid).in('skey',['admin_pin','weighers']);
-    if(!r.error&&r.data){ r.data.forEach(function(x){ if(x.skey==='admin_pin') ADMIN_PIN=x.sval||''; if(x.skey==='weighers'){ try{ WEIGHERS=JSON.parse(x.sval||'[]')||[]; }catch(e){ WEIGHERS=[]; } } }); }
+    if(!r.error&&r.data){ r.data.forEach(function(x){ if(x.skey==='admin_pin') ADMIN_PIN=x.sval||''; if(x.skey==='weighers'){ try{ WEIGHERS=JSON.parse(x.sval||'[]')||[]; gotW=true; }catch(e){ WEIGHERS=[]; } } }); }
   } }catch(e){}
+  // fallback — localStorage (თუ ბაზამ ვერ მოასწრო/ვერ ჩაწერა, ამწონველი არ დაიკარგოს)
+  if(!gotW || !WEIGHERS.length){ try{ var ls=JSON.parse(localStorage.getItem('weighers')||'[]')||[]; if(ls.length) WEIGHERS=ls; }catch(e){} }
+  if(!ADMIN_PIN){ try{ var ap=localStorage.getItem('admin_pin')||''; if(ap) ADMIN_PIN=ap; }catch(e){} }
 }
-function saveWeighers(){ saveSetting('weighers', JSON.stringify(WEIGHERS)); }
+async function saveWeighers(){
+  try{ localStorage.setItem('weighers', JSON.stringify(WEIGHERS)); }catch(e){}
+  if(sb&&uid){ try{ await sb.from('user_settings').upsert({user_id:uid,skey:'weighers',sval:JSON.stringify(WEIGHERS),updated_at:new Date().toISOString()},{onConflict:'user_id,skey'}); }catch(e){} }
+}
 function applyRole(){
   var isW=(CUR_ROLE==='weigher');
   document.body.classList.toggle('weigher-mode', isW);
