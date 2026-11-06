@@ -21,7 +21,12 @@ on:
     # ეს სარეზერვოა.
     - cron: "17 13 * * *"
     - cron: "47 17 * * *"
-  workflow_dispatch: {}   # Actions ტაბში ხელით გაშვების ღილაკი
+  workflow_dispatch:      # Actions ტაბში ხელით გაშვების ღილაკი
+    inputs:
+      telegram_test:
+        description: "მხოლოდ სატესტო Telegram მესიჯი (ვაჭრობის გარეშე)"
+        type: boolean
+        default: false
 
 concurrency:
   group: trading-bot
@@ -40,7 +45,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - run: python bot.py
+      - run: python bot.py ${{ inputs.telegram_test && '--telegram-test' || '' }}
         env:
           ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
           ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}

@@ -19,6 +19,7 @@ Telegram (არასავალდებულო): TELEGRAM_BOT_TOKEN + TELE
 import json
 import os
 import sys
+import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -66,16 +67,38 @@ def log(msg, notify=False):
 
 
 def telegram(text):
+    """აგზავნის მესიჯს; აბრუნებს True-ს წარმატებისას."""
     if not (TG_TOKEN and TG_CHAT):
-        return
+        return False
     try:
         req = urllib.request.Request(
             f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage",
             data=json.dumps({"chat_id": TG_CHAT, "text": text}).encode(),
             headers={"Content-Type": "application/json"})
         urllib.request.urlopen(req, timeout=15)
-    except Exception as e:  # Telegram-ის შეცდომამ ვაჭრობა არ უნდა გააჩეროს
+        return True
+    except urllib.error.HTTPError as e:  # Telegram-ის შეცდომამ ვაჭრობა არ უნდა გააჩეროს
+        print(f"Telegram შეცდომა: {e.code} {e.read().decode(errors='replace')}", flush=True)
+    except Exception as e:
         print(f"Telegram შეცდომა: {e}", flush=True)
+    return False
+
+
+def telegram_test():
+    """სატესტო მესიჯი ანგარიშის მიმდინარე მდგომარეობით (ვაჭრობის გარეშე)."""
+    if not (TG_TOKEN and TG_CHAT):
+        sys.exit("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID secret-ები არ არის დამატებული GitHub-ზე.")
+    trading = TradingClient(API_KEY, SECRET_KEY, paper=PAPER)
+    account = trading.get_account()
+    lines = ["✅ სავაჭრო ბოტი დაკავშირებულია Telegram-თან!", "",
+             f"ანგარიში ({'PAPER' if PAPER else 'LIVE'}): ${float(account.equity):,.2f}",
+             f"ნაღდი: ${float(account.cash):,.2f}"]
+    for p in trading.get_all_positions():
+        lines.append(f"• {p.symbol}: {float(p.unrealized_pl):+,.2f}$ ({float(p.unrealized_plpc) * 100:+.2f}%)")
+    lines += ["", "ამიერიდან მოგწერ ყიდვა/გაყიდვისას, შეცდომისას და შაბათს — კვირის შეჯამებას."]
+    if not telegram("\n".join(lines)):
+        sys.exit("Telegram-მა მესიჯი ვერ მიიღო — იხილე შეცდომა ზემოთ.")
+    print("სატესტო მესიჯი გაიგზავნა ✅", flush=True)
 
 
 def run_once():
@@ -173,6 +196,9 @@ def run_once():
 
 
 if __name__ == "__main__":
+    if "--telegram-test" in sys.argv:
+        telegram_test()
+        sys.exit(0)
     try:
         run_once()
     except Exception as e:
