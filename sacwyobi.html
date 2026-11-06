@@ -1829,7 +1829,7 @@ function swNewPurchase(){
         <div class="sw-field"><label>ფასი ₾/კგ</label><input type="number" id="swnp-price" min="0" step="0.01" placeholder="0.00" oninput="swNpCalc()"></div>
         <div class="sw-field"><label>თანხა ₾ (სულ)</label><input type="number" id="swnp-amount" min="0" step="0.01" placeholder="0.00"></div>
         <div class="sw-field"><label>გადახდილი ₾</label><input type="number" id="swnp-paidamt" min="0" step="0.01" placeholder="0.00"></div>
-        <div class="sw-field"><label>სეცია</label><input id="swnp-section" placeholder="A1"></div>
+        <div class="sw-field"><label>🏭 ოთახი მაცივარში <span class="muted" style="font-weight:400">(არჩევითი → მარაგში)</span></label><select id="swnp-room" style="padding:9px 11px;background:#f7fafd;border:1px solid #dde8f5;border-radius:8px;color:#1e3a5f;font-family:inherit;font-size:.85rem;width:100%;outline:none"></select></div>
         <div class="sw-field"><label>ვადა</label><input type="date" id="swnp-expire"></div>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap">
@@ -1842,6 +1842,7 @@ function swNewPurchase(){
     </div>`;
   document.body.appendChild(bg);
   swFillSupSelect('swnp-supselect');
+  var _rs=document.getElementById('swnp-room'); if(_rs){ _rs.innerHTML='<option value="">— ოთახში არ შევიდეს —</option>'+((typeof CS_ROOMS!=='undefined'?CS_ROOMS:[]).map(function(r){ return '<option value="'+safeAttr(r.no)+'">ოთახი '+safeText(r.no)+'</option>'; }).join('')); }
 }
 window.swNewPurchase = swNewPurchase;
 // fill a <select> with saved companies (gv_suppliers)
@@ -1873,7 +1874,8 @@ function swConfirmNewPurchase(){
   let amount=parseFloat(document.getElementById('swnp-amount').value);
   let paidAmt=parseFloat(document.getElementById('swnp-paidamt').value);
   const lotIn='';  // პარტია მოხსნილია შესყიდვიდან — ლოტი ავტო
-  const section=(document.getElementById('swnp-section').value||'').trim();
+  const section=((document.getElementById('swnp-section')||{}).value||'').trim();
+  const roomNo=((document.getElementById('swnp-room')||{}).value||'').trim();
   const expire=document.getElementById('swnp-expire').value||'';
   if(!product||!kg||kg<=0){ swNotify('⚠️ პროდუქტი და კგ სავალდებულოა', true); return; }
   if(isNaN(amount)) amount=null;
@@ -1890,9 +1892,15 @@ function swConfirmNewPurchase(){
   swSave();
   // remember supplier details in gv_suppliers (so the act's გამყიდველი is complete next time)
   if(supplier) swUpsertSupplier(supplier, supIdnum, supPhone, supAddr);
+  // 🏭 თუ ოთახი აირჩა → მარაგში (cold_stock) მოთავსდეს
+  if(roomNo && _sb && uid){
+    var _cs={ id:'cs_'+now+'_'+Math.random().toString(36).slice(2,6), user_id:uid, room_no:roomNo, kind:'manual', pallet_code:'', product:product, boxes:0, kg:kg, note:'შესყიდვა'+(supplier?(' · '+supplier):''), date:swDate() };
+    try{ if(typeof CS_STOCK!=='undefined') CS_STOCK.push(_cs); _sb.from('cold_stock').upsert(_cs,{onConflict:'id'}); }catch(e){}
+    try{ csDashboard(); if(typeof mzRenderStock==='function') mzRenderStock(); if(typeof mzRenderMap==='function') mzRenderMap(); }catch(e){}
+  }
   swUpdateStats(); swRenderStock(); swRenderHistory(); swRenderPurchases(); swBuildContactLists();
   const m=document.getElementById('sw-newpur-modal'); if(m) m.remove();
-  swNotify('🛒 შესყიდვა: '+kg+'კგ '+product);
+  swNotify('🛒 შესყიდვა: '+kg+'კგ '+product+(roomNo?(' → ოთახი '+roomNo):''));
   // 🖨️ აქტი ავტომატურად გაიხსნას შენახვისთანავე (ბეჭდვისთვის)
   try{ if(window.__swAutoAct!==false) swActForOp(_purOp.id); }catch(e){ console.warn('auto act', e); }
 }
