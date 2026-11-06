@@ -892,7 +892,7 @@ function mzRoomClick(i){ if(mzDraw) return; var r=CS_ROOMS[i]; if(r) mzOpenRoom(
 function mzRenderMap(){
   var wrap=document.getElementById('mzMapWrap'); if(!wrap) return;
   var W=mzCols*mzCell, H=mzRows*mzCell, i;
-  var s='<svg id="mzMapSvg" viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:'+W+'px;border:1px solid #cdddee;border-radius:10px;background:#f6fafe;touch-action:none;cursor:'+(mzDraw?'crosshair':'pointer')+'">';
+  var s='<svg id="mzMapSvg" viewBox="0 0 '+W+' '+H+'" onpointerdown="mzDown(event)" onpointermove="mzMove(event)" onpointerup="mzUp(event)" style="width:100%;max-width:'+W+'px;border:1px solid #cdddee;border-radius:10px;background:#f6fafe;touch-action:none;cursor:'+(mzDraw?'crosshair':'pointer')+'">';
   for(i=0;i<=mzCols;i++) s+='<line x1="'+(i*mzCell)+'" y1="0" x2="'+(i*mzCell)+'" y2="'+H+'" stroke="#e3edf7"/>';
   for(i=0;i<=mzRows;i++) s+='<line x1="0" y1="'+(i*mzCell)+'" x2="'+W+'" y2="'+(i*mzCell)+'" stroke="#e3edf7"/>';
   CS_ROOMS.forEach(function(r,idx){ var cx=r.x*mzCell+r.w*mzCell/2, cy=r.y*mzCell+r.h*mzCell/2, kg=mzRoomKg(r.no), tp=mzRoomTemp(r.no), hasKg=kg>0;
@@ -975,6 +975,11 @@ function mzRenderTempTab(){
   el.innerHTML=cur+'<div class="sw-card-title" style="font-size:.9rem">ჟურნალი</div><div class="sw-table-wrap"><table class="sw-table"><thead><tr><th>ოთახი</th><th>ტემპ.</th><th>დრო</th></tr></thead><tbody>'+(log||'<tr><td colspan="3" class="muted">— ჯერ არ არის —</td></tr>')+'</tbody></table></div>';
 }
 async function mzRecordTemp(){ var no=(document.getElementById('mzTempRoom')||{}).value, t=parseFloat(document.getElementById('mzTempVal').value); if(!no||isNaN(t)){ return; } await mzSaveTemp(no,t); document.getElementById('mzTempVal').value=''; mzRenderTempTab(); mzRenderMap(); }
+// onclick/markup-ისთვის window-ზე მიბმა (სკრიპტი შეფუთულია)
+window.mzDrawToggle=mzDrawToggle; window.mzDown=mzDown; window.mzMove=mzMove; window.mzUp=mzUp; window.mzRoomClick=mzRoomClick;
+window.mzOpenRoom=mzOpenRoom; window.mzCloseRoom=mzCloseRoom; window.mzScanPallet=mzScanPallet; window.mzAddManual=mzAddManual; window.mzDelStock=mzDelStock;
+window.mzRoomRecordTemp=mzRoomRecordTemp; window.mzRoomRename=mzRoomRename; window.mzRoomDelete=mzRoomDelete; window.mzRecordTemp=mzRecordTemp;
+window.mzRenderMap=mzRenderMap; window.mzRenderStock=mzRenderStock; window.mzRenderTempTab=mzRenderTempTab;
 function csRender(){
   var el=document.getElementById('cs-body'); if(!el) return;
   var totKg=0,totAmt=0,totPaid=0; CS_SALES.forEach(function(x){ totKg+=(+x.kg||0); totAmt+=(+x.amount||0); totPaid+=(+x.paid_amount||0); });
