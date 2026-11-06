@@ -87,7 +87,7 @@
   <div class="qbar" id="qbar"></div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v29</span></h1>
+    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v30</span></h1>
     <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
     <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
     <div id="roleBar" style="justify-content:flex-end;margin:6px 0 0">
@@ -108,15 +108,8 @@
       <div class="fld"><label>ფასი, ₾/კგ</label><input id="cfgPrice" type="number" step="0.01" onchange="saveSetting('its_price',this.value);prevAll()"></div>
       <div class="fld"><label>ტარა, კგ</label><input id="cfgTare" type="number" step="0.01" onchange="saveSetting('its_box_w',this.value);prevAll()"></div>
       <div class="fld"><label>პალეტის წონა, კგ</label><input id="cfgPalW" type="number" step="0.1" placeholder="23" onchange="saveSetting('its_pallet_w',this.value)"></div>
-      <div class="fld" style="max-width:120px">
-        <label>SMS</label>
-        <label class="switch" style="padding:9px 6px;border:1.5px solid #cbd5e1;border-radius:10px;justify-content:center">
-          <input type="checkbox" id="smsToggle" style="width:auto"> <span id="smsLbl" style="font-size:.8rem">გამორთ.</span>
-        </label>
-      </div>
     </div>
-    <div class="muted" style="margin-top:6px">ფასი/ტარა ღრუბელშივე ინახება — მთავარ გვერდზეც იგივე ჩანს. SMS გამორთულით გატესტე.</div>
-    <button onclick="smsJournalView()" style="margin-top:8px;width:100%;padding:9px;border:1.5px solid #cbd5e1;border-radius:10px;background:#f8fafc;color:#0369a1;font-family:inherit;font-weight:700;font-size:.85rem;cursor:pointer">📋 SMS ჟურნალი — ვის რა გაეგზავნა</button>
+    <div class="muted" style="margin-top:6px">ფასი/ტარა/პალეტი ღრუბელშივე ინახება. 📨 SMS/შეტყობინება ცალკე ტაბშია.</div>
   </div>
 
   <div class="tabs">
@@ -124,6 +117,7 @@
     <button class="tab" onclick="openPalModal()"><span class="ic">📦</span>პალეტზე</button>
     <button class="tab" data-t="num"    onclick="switchTab('num')"><span class="ic">#️⃣</span>ნუმერაცია</button>
     <button class="tab" data-t="auto"   onclick="switchTab('auto')"><span class="ic">⚡</span>ავტომატ.</button>
+    <button class="tab admin-only" data-t="sms" onclick="switchTab('sms')"><span class="ic">📨</span>SMS</button>
   </div>
 
   <div class="panel" id="p-hand">
@@ -226,6 +220,40 @@
     </div>
   </div>
 
+  <!-- ── TAB: SMS / შეტყობინება (მხოლოდ მფლობელი) ── -->
+  <div class="panel" id="p-sms">
+    <div class="card admin-only">
+      <h2>📨 შეტყობინება მკრეფავებს</h2>
+      <div class="muted" style="font-size:.82rem;margin-bottom:10px">ერთ ადგილას — არხი, დრო და გაგზავნა. მხოლოდ მფლობელი აკონტროლებს.</div>
+      <div class="row2">
+        <div><label>არხი</label><select id="ntfChannel" onchange="saveNotify()">
+          <option value="off">🔴 გამორთული</option>
+          <option value="sms">📱 SMS</option>
+          <option value="tg">✈️ Telegram</option>
+        </select></div>
+        <div><label>როდის</label><select id="ntfWhen" onchange="saveNotify()">
+          <option value="each">⚡ ყოველ აწონვაზე</option>
+          <option value="daily">📅 დღის ბოლოს (ჯამი)</option>
+        </select></div>
+      </div>
+      <div id="ntfState" class="muted" style="margin-top:8px"></div>
+      <button onclick="smsJournalView()" style="margin-top:10px;width:100%;padding:9px;border:1.5px solid #cbd5e1;border-radius:10px;background:#f8fafc;color:#0369a1;font-family:inherit;font-weight:700;font-size:.85rem;cursor:pointer">📋 ჟურნალი — ვის რა გაეგზავნა</button>
+    </div>
+    <div class="card admin-only">
+      <h2>📅 დღის შეტყობინება — ჯამი</h2>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="date" id="dsmsDate" style="padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:9px;font-family:inherit">
+        <button class="sec" style="width:auto;padding:9px 16px" onclick="dsmsLoad()">🔄 ჩატვირთვა</button>
+      </div>
+      <div id="dsmsTools" style="display:none;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:5px;font-size:.84rem"><input type="checkbox" id="dsmsAll" onchange="dsmsToggleAll(this)" checked style="width:auto"> ყველა</label>
+        <span id="dsmsCountLbl" class="muted" style="font-size:.82rem"></span>
+        <button class="g" style="width:auto;padding:9px 18px;margin:0" onclick="dsmsSend()">📤 გაგზავნა</button>
+      </div>
+      <div id="dsmsBody" style="margin-top:10px"></div>
+    </div>
+  </div>
+
   <div class="card" id="feedCard">
     <h2>📋 დღეს დამატებული: <span id="feedCount" style="color:#0369a1">0</span></h2>
     <table><thead><tr><th>კოდი</th><th>მკრეფავი</th><th>წონა</th><th>რეჟიმი</th></tr></thead>
@@ -244,6 +272,7 @@ var CUR_ROLE='admin', CUR_WEIGHER='', WEIGHERS=[], ADMIN_PIN='', _noWeigherCol=f
 try{ DEVID=localStorage.getItem('aw_devid')||''; if(!DEVID){ DEVID=Math.random().toString(36).slice(2,4).toUpperCase(); localStorage.setItem('aw_devid',DEVID); } }catch(e){ DEVID='XX'; }
 let boxes=[], lastW=[], queue=[], syncing=false, feed=[], numSeq={}, dedup={}, BLOCKS=[], ROWS=[], committedPallets={}, palCommitting=false;
 let smsSentBoxes={}, SMSCFG=null;
+var NOTIFY={channel:'off', when:'each'};   // არხი: off|sms|tg · დრო: each|daily
 let palPend={picker:null,quarter:'',row:'',_label:'',_isScan:false,_raw:''};
 let hChosen=null, hBox=null;   // hBox = ბოლო დასკანერებული ყუთის სტიკერის კოდი {code,short}
 
@@ -295,7 +324,6 @@ async function showApp(email){
   var sd=document.getElementById('smsDate'); if(sd && !sd.value) sd.value=_today();
   var dm=document.getElementById('dsmsDate'); if(dm && !dm.value) dm.value=_today();
   updateNet();
-  document.getElementById('smsToggle').addEventListener('change',function(){ document.getElementById('smsLbl').textContent=this.checked?'ჩართ.✅':'გამორთ.'; });
   window.addEventListener('online',function(){ updateNet(); syncQueue(); });
   window.addEventListener('offline',updateNet);
   try{ queue=(await idbGet('queue'))||[]; }catch(e){ queue=[]; }
@@ -337,8 +365,8 @@ async function loadSettings(){
   // წყარო = ღრუბელი (user_settings). localStorage მხოლოდ offline-fallback ქეშია,
   // და მხოლოდ მაშინ იკითხება, თუ ღრუბელი მიუწვდომელია.
   var cloud={};
-  try{ var r=await sb.from('user_settings').select('skey,sval').eq('user_id',uid).in('skey',['its_price','its_box_w','its_pallet_w','its_sms_config','tg_notify_mode']);
-    if(!r.error && r.data){ r.data.forEach(function(x){ if(x.skey==='tg_notify_mode'){ TG_MODE=x.sval||'off'; return; } cloud[x.skey]=x.sval; try{ localStorage.setItem(x.skey,x.sval); }catch(e){} }); }
+  try{ var r=await sb.from('user_settings').select('skey,sval').eq('user_id',uid).in('skey',['its_price','its_box_w','its_pallet_w','its_sms_config','tg_notify_mode','notify_channel','notify_when']);
+    if(!r.error && r.data){ r.data.forEach(function(x){ if(x.skey==='tg_notify_mode'){ TG_MODE=x.sval||'off'; return; } if(x.skey==='notify_channel'){ NOTIFY.channel=x.sval||'off'; return; } if(x.skey==='notify_when'){ NOTIFY.when=x.sval||'each'; return; } cloud[x.skey]=x.sval; try{ localStorage.setItem(x.skey,x.sval); }catch(e){} }); }
     else if(r.error){ console.warn('[loadSettings]', r.error); }
   }catch(e){ console.warn('[loadSettings]', e); }
   // SMS კონფიგი ღრუბლიდან — awonva აღარაა დამოკიდებული imაზე, index.html-მა ჩაწერა თუ არა localStorage-ში
@@ -351,6 +379,28 @@ async function loadSettings(){
   var cpw=document.getElementById('cfgPalW'); if(cpw) cpw.value=pw;
   var pwi=document.getElementById('palW'); if(pwi) pwi.value=pw;
   var ts=document.getElementById('tareShow'); if(ts) ts.textContent=tare().toFixed(2);
+  applyNotifyUI();
+}
+// ── 📨 შეტყობინების არხი/დრო (მფლობელი) ──
+function applyNotifyUI(){
+  var c=document.getElementById('ntfChannel'), w=document.getElementById('ntfWhen');
+  if(c) c.value=NOTIFY.channel; if(w) w.value=NOTIFY.when;
+  TG_MODE=(NOTIFY.channel==='tg' && NOTIFY.when==='each')?'each':'off';
+  var st=document.getElementById('ntfState');
+  if(st){
+    var ch=NOTIFY.channel==='sms'?'📱 SMS':(NOTIFY.channel==='tg'?'✈️ Telegram':'🔴 გამორთული');
+    var wh=NOTIFY.when==='each'?'ყოველ აწონვაზე':'დღის ბოლოს (ჯამი)';
+    st.innerHTML=(NOTIFY.channel==='off')?'<b style="color:#64748b">შეტყობინება გამორთულია</b>':('<b style="color:#0369a1">'+ch+'</b> · '+wh);
+  }
+}
+function notifyOn(){ return NOTIFY.channel!=='off'; }
+function smsEach(){ return NOTIFY.channel==='sms' && NOTIFY.when==='each'; }
+function saveNotify(){
+  var c=document.getElementById('ntfChannel'), w=document.getElementById('ntfWhen');
+  NOTIFY.channel=(c&&c.value)||'off'; NOTIFY.when=(w&&w.value)||'each';
+  saveSetting('notify_channel',NOTIFY.channel); saveSetting('notify_when',NOTIFY.when);
+  saveSetting('tg_notify_mode',(NOTIFY.channel==='tg'&&NOTIFY.when==='each')?'each':'off');
+  applyNotifyUI();
 }
 function palTareW(){ var v=parseFloat((document.getElementById('cfgPalW')||{}).value || localStorage.getItem('its_pallet_w') || '23'); return isNaN(v)?23:v; }
 
@@ -615,7 +665,7 @@ function pushRecord(o){
   var _rec={ id:_uuid(), code:o.code, short_code:o.short_code, picker_name:pName(p), picker_id:p.uid||'', phone:p.phone||'',
     pallet_code:o.pallet||'', weight:net, kg:net, price:pr, date:_today(), time:_time(),
     row_num:o.row_num||'', quarter:o.quarter||'', earned:Math.round(net*pr*100)/100,
-    sms:document.getElementById('smsToggle').checked && !!p.phone, entry_mode:o.entry_mode, weigher:(CUR_WEIGHER||'მფლობელი') };
+    sms:(smsEach() && !!p.phone), entry_mode:o.entry_mode, weigher:(CUR_WEIGHER||'მფლობელი') };
   queue.push(_rec);
   feed.unshift({ code:o.short_code, name:pName(p), w:net, mode:o.entry_mode });
   saveQueue(); renderQueue(); renderFeed(); renderDayTotal();
@@ -833,7 +883,7 @@ async function palCommit(){
       }
     }catch(e){}
   }
-  var smsOn=document.getElementById('smsToggle').checked;
+  var smsOn=smsEach();
   if(!confirm(boxes.length+' ყუთი ჩაიწერება პალეტზე '+pal+(smsOn?'\n\n⚠️ SMS ჩართულია!':'\n\nSMS გამორთულია.')+'\n\nგავაგრძელო?')) return;
   palCommitting=true;
   var d=_today(), tm=_time(), pr=price();
