@@ -92,13 +92,13 @@ begin
     -- კითხვა: მფლობელი + მისი წევრები
     create policy "us_farm_select" on public.user_settings for select to authenticated
       using (user_id::text = public.farm_owner((select auth.uid()))::text);
-    -- ჩაწერა/ცვლილება/წაშლა: მხოლოდ მფლობელი (თავისი user_id-ით)
+    -- ჩაწერა/ცვლილება/წაშლა: მხოლოდ მფლობელი (თავისი user_id-ით) — ::text cast (uuid/text ორივესთვის)
     create policy "us_own_write_i" on public.user_settings for insert to authenticated
-      with check (user_id = (select auth.uid()));
+      with check (user_id::text = (select auth.uid())::text);
     create policy "us_own_write_u" on public.user_settings for update to authenticated
-      using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
+      using (user_id::text = (select auth.uid())::text) with check (user_id::text = (select auth.uid())::text);
     create policy "us_own_write_d" on public.user_settings for delete to authenticated
-      using (user_id = (select auth.uid()));
+      using (user_id::text = (select auth.uid())::text);
   end if;
 end $$;
 
