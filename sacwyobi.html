@@ -844,7 +844,10 @@ async function csLoadAll(){
   var s=getSb(); if(!s||!uid) return;
   try{ var r=await s.from('cold_stock').select('*').eq('user_id',uid); if(!r.error) CS_STOCK=r.data||[]; }catch(e){}
   try{ var r2=await s.from('cold_sales').select('*').eq('user_id',uid).order('date',{ascending:false}); if(!r2.error) CS_SALES=r2.data||[]; }catch(e){}
-  try{ var r3=await s.from('user_settings').select('sval').eq('user_id',uid).eq('skey','cold_rooms').maybeSingle(); if(r3&&r3.data&&r3.data.sval) CS_ROOMS=JSON.parse(r3.data.sval)||[]; }catch(e){}
+  var _gotRooms=false;
+  try{ var r3=await s.from('user_settings').select('sval').eq('user_id',uid).eq('skey','cold_rooms').maybeSingle(); if(r3&&r3.data&&r3.data.sval){ CS_ROOMS=JSON.parse(r3.data.sval)||[]; _gotRooms=CS_ROOMS.length>0; } }catch(e){}
+  // fallback — localStorage (matsivari-დან დახატული ოთახები) + supabase-ში ჩაწერა (healing)
+  if(!_gotRooms){ try{ var _ls=JSON.parse(localStorage.getItem('cold_rooms')||'[]')||[]; if(_ls.length){ CS_ROOMS=_ls; try{ if(s&&uid) s.from('user_settings').upsert({user_id:uid,skey:'cold_rooms',sval:JSON.stringify(_ls),updated_at:new Date().toISOString()},{onConflict:'user_id,skey'}); }catch(e){} } }catch(e){} }
   try{ var r4=await s.from('user_settings').select('sval').eq('user_id',uid).eq('skey','sale_buyers').maybeSingle(); if(r4&&r4.data&&r4.data.sval) CS_BUYERS=JSON.parse(r4.data.sval)||[]; }catch(e){}
 }
 function csSaveBuyers(){ var s=getSb(); try{ if(s&&uid) s.from('user_settings').upsert({user_id:uid,skey:'sale_buyers',sval:JSON.stringify(CS_BUYERS),updated_at:new Date().toISOString()},{onConflict:'user_id,skey'}); }catch(e){} }
