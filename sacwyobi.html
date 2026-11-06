@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ka"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
-<title>💰 რეალიზაცია</title>
+<title>🏭 საწყობი და რეალიზაცია</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
@@ -91,7 +91,7 @@
 <body>
 
 <div id="loginCard" class="card">
-  <h1>💰 რეალიზაცია — შესვლა</h1>
+  <h1>🏭 საწყობი და რეალიზაცია — შესვლა</h1>
   <label>ელ-ფოსტა</label><input id="email" type="email" placeholder="emzar@...">
   <label>პაროლი</label><input id="pass" type="password" placeholder="••••••••">
   <button onclick="doLogin()">შესვლა</button>
@@ -102,7 +102,7 @@
 <div id="app" style="display:none">
   <div id="netbar" class="on">🌐 ონლაინ</div>
   <div class="appbar">
-    <div style="font-size:1.3rem;font-weight:800;color:#f59e0b;letter-spacing:.2px">💰 რეალიზაცია <span style="font-size:.7rem;font-weight:400;color:#64748b">(გაყიდვა / შესყიდვა / გამგზავრება)</span></div>
+    <div style="font-size:1.3rem;font-weight:800;color:#f59e0b;letter-spacing:.2px">🏭 საწყობი და რეალიზაცია <span style="font-size:.7rem;font-weight:400;color:#64748b">(მარაგი / გაყიდვა / შესყიდვა)</span></div>
     <div style="font-size:.76rem;text-align:right;display:flex;align-items:center;gap:8px">
       <span>შესული: <b id="whoami" style="color:#0369a1">…</b></span>
       <button onclick="doLogout()">გასვლა</button>
@@ -145,22 +145,19 @@
     </div>
   </div>
 
+  <!-- ── DASHBOARD (ტაბებზე მაღლა, მუდმივი) ── -->
+  <div class="sw-card" id="cs-dash-wrap"><div id="cs-dash"><div class="muted">იტვირთება…</div></div></div>
+
   <!-- TABS -->
   <div class="sw-tabs">
-    <button class="sw-tab active" onclick="swTab('dash',this)">📊 დეშბორდი</button>
-    <button class="sw-tab" onclick="swTab('newsale',this)">💰 გაყიდვა</button>
+    <button class="sw-tab active" onclick="swTab('newsale',this)">💰 გაყიდვა</button>
     <button class="sw-tab" onclick="swTab('purchases',this)">🛒 შესყიდვა</button>
     <button class="sw-tab" onclick="swTab('sales',this)">📒 ძველი გაყიდვა</button>
     <button class="sw-tab" onclick="swTab('history',this)">📋 ისტორია</button>
   </div>
 
-  <!-- ── TAB: DASHBOARD ── -->
-  <div id="sw-page-dash" class="sw-page active">
-    <div class="sw-card"><div id="cs-dash"><div class="muted">იტვირთება…</div></div></div>
-  </div>
-
   <!-- ── TAB: NEW SALE (💰 გაყიდვა — რეალიზაცია) ── -->
-  <div id="sw-page-newsale" class="sw-page">
+  <div id="sw-page-newsale" class="sw-page active">
     <div class="sw-card"><div id="cs-body"><div class="muted">იტვირთება…</div></div></div>
   </div>
 
@@ -782,10 +779,9 @@ function swTab(id, el){
   if(el) el.classList.add('active');
   else {
     const tabs = document.querySelectorAll('.sw-tab');
-    const map = {dash:0,newsale:1,purchases:2,sales:3,history:4,ship:8,stock:9};
+    const map = {newsale:0,purchases:1,sales:2,history:3,ship:8,stock:9};
     if(map[id]!==undefined && tabs[map[id]]) tabs[map[id]].classList.add('active');
   }
-  if(id==='dash')      csDashboard();
   if(id==='newsale')   csRender();
   if(id==='stock')     swRenderStock();
   if(id==='history')   swRenderHistory();
@@ -866,6 +862,7 @@ function csRender(){
   else CS_SALES.forEach(function(x){ var d=(+x.amount||0)-(+x.paid_amount||0); h+='<tr><td>'+csEsc(x.date||'')+'</td><td><b>'+csEsc(x.buyer||'—')+'</b>'+(x.note?'<div style="font-size:.68rem;color:#64748b;font-weight:400">'+csEsc(x.note)+'</div>':'')+'</td><td>'+(x.source==='cold'?('🏭 ოთ.'+csEsc(x.room_no||'')):('🧺 '+csEsc(x.product||'პირდ.')))+'</td><td>'+(Math.round((+x.kg||0)*10)/10)+'</td><td>'+(+x.price||0)+'</td><td><b>'+(Math.round((+x.amount||0)*100)/100)+'</b></td><td style="color:#16a34a">'+(Math.round((+x.paid_amount||0)*100)/100)+'</td><td style="color:'+(d>0.009?'#dc2626':'#16a34a')+';font-weight:700">'+(d>0.009?d.toFixed(2):'✓')+'</td><td><span style="cursor:pointer;color:#dc2626" onclick="csDelSale(\''+csEsc(x.id)+'\')">🗑️</span></td></tr>'; });
   h+='</tbody></table></div></div>';
   el.innerHTML=h;
+  try{ csDashboard(); }catch(e){}   // დეშბორდი (ზემოთ) განახლდეს გაყიდვის ცვლილებაზე
 }
 function csNewSale(){
   var ov=document.createElement('div'); ov.id='csModal';
