@@ -87,7 +87,7 @@
   <div class="qbar" id="qbar"></div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v31</span></h1>
+    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v32</span></h1>
     <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
     <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
     <div id="roleBar" style="justify-content:flex-end;margin:6px 0 0">
@@ -960,7 +960,8 @@ async function tgSendWeigh(rec){
 }
 function smsLog(rec){
   if(!sb||!uid) return;
-  try{ sb.from('sms_log').insert({ user_id:uid, picker_name:rec.name||'', picker_id:rec.pid||'', phone:rec.phone||'', text:rec.text||'', kg:rec.kg||0, gel:rec.gel||0, box_code:rec.code||'', pallet_code:rec.pallet||'', status:rec.status||'', error:rec.error||'', msg_id:rec.msg_id||'', date:_today() }).then(function(){},function(){}); }catch(e){}
+  var row={ user_id:uid, picker_name:rec.name||'', picker_id:rec.pid||'', phone:rec.phone||'', text:rec.text||'', kg:rec.kg||0, gel:rec.gel||0, box_code:rec.code||'', pallet_code:rec.pallet||'', status:rec.status||'', error:rec.error||'', msg_id:rec.msg_id||'', channel:rec.channel||'sms', date:_today() };
+  try{ sb.from('sms_log').insert(row).then(function(x){ if(x&&x.error&&(x.error.code==='PGRST204'||/channel/i.test(x.error.message||''))){ delete row.channel; sb.from('sms_log').insert(row).then(function(){},function(){}); } },function(){}); }catch(e){}
 }
 // #SMS-JOURNAL: გაგზავნილი SMS-ების ნახვა (sms_log-იდან)
 window.smsJournalView=async function(){
@@ -1256,8 +1257,9 @@ function dsmsSend(){
   var _d=(document.getElementById('dsmsDate').value)||_today();
   var chks=Array.prototype.slice.call(document.querySelectorAll('.dsmsChk:checked'));
   if(!chks.length){ alert('ჯერ მონიშნე მკრეფავები.'); return; }
+  var chTg=(NOTIFY.channel==='tg');
   var cfg=smsCfg();
-  if(!cfg.proxyUrl){ alert('⚠️ SMS კონფიგი (proxy) არ არის — ჯერ მთავარ აპში დააკონფიგურირე.'); return; }
+  if(!chTg && !cfg.proxyUrl){ alert('⚠️ SMS კონფიგი (proxy) არ არის — ჯერ მთავარ აპში დააკონფიგურირე.'); return; }
   _dsmsDate=_d; _dsmsPending=[];
   chks.forEach(function(c){ var x=dsmsList[+c.getAttribute('data-i')]; if(x) _dsmsPending.push({x:x, msg:dsmsMsg(x.name,x.box,x.kg,x.gel,_d)}); });
   if(!_dsmsPending.length){ alert('ვერ მოიძებნა.'); return; }
@@ -1270,7 +1272,7 @@ function dsmsSend(){
       +'<div style="white-space:pre-wrap;font-size:.86rem;line-height:1.5;color:#0f172a">'+esc(p.msg)+'</div></div>';
   }).join('');
   ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:520px;width:100%;margin:auto;box-shadow:0 10px 40px rgba(0,0,0,.25);display:flex;flex-direction:column;max-height:92vh">'
-    +'<div style="padding:15px 18px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center"><b style="font-size:1.02rem;color:#0369a1">👀 გაგზავნის წინ ნახვა — '+_dsmsPending.length+' SMS ('+esc(_d)+')</b><button class="sec" style="width:auto;padding:6px 11px" onclick="dsmsCancelPrev()">✕</button></div>'
+    +'<div style="padding:15px 18px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center"><b style="font-size:1.02rem;color:#0369a1">👀 გაგზავნის წინ ნახვა — '+_dsmsPending.length+' '+(chTg?'✈️ Telegram':'📱 SMS')+' ('+esc(_d)+')</b><button class="sec" style="width:auto;padding:6px 11px" onclick="dsmsCancelPrev()">✕</button></div>'
     +'<div style="padding:14px 18px;overflow:auto;flex:1">'+items+'</div>'
     +'<div style="padding:14px 18px;border-top:1px solid #eee;display:flex;gap:10px">'
       +'<button class="g" id="dsmsGoBtn" style="flex:1;margin:0" onclick="dsmsDoSend()">✅ გაგზავნა ('+_dsmsPending.length+')</button>'
@@ -1283,11 +1285,18 @@ async function dsmsDoSend(){
   var list=_dsmsPending.slice(), _d=_dsmsDate;
   if(!list.length){ dsmsCancelPrev(); return; }
   var goBtn=document.getElementById('dsmsGoBtn'); if(goBtn){ goBtn.disabled=true; goBtn.style.opacity=.7; goBtn.textContent='⏳ იგზავნება…'; }
-  var ok=0, fail=0;
+  var ok=0, fail=0, chTg=(NOTIFY.channel==='tg');
   for(var i=0;i<list.length;i++){
     var x=list[i].x, msg=list[i].msg;
-    try{ var res=await smsSend(x.phone, msg, 'daily-'+_d); ok++; smsLog({name:x.name,pid:x.pid,phone:x.phone,text:msg,kg:x.kg,gel:x.gel,code:'',pallet:'',status:'sent',msg_id:smsMsgId(res)}); }
-    catch(e){ fail++; smsLog({name:x.name,pid:x.pid,phone:x.phone,text:msg,kg:x.kg,gel:x.gel,code:'',pallet:'',status:'failed',error:(e&&e.message)||String(e)}); }
+    if(chTg){
+      try{ var r=await sb.functions.invoke('telegram-send',{ body:{ text:msg, phones:[x.phone] } });
+        if(r&&r.data&&r.data.sent){ ok++; smsLog({name:x.name,pid:x.pid,phone:x.phone,text:msg,kg:x.kg,gel:x.gel,code:'',pallet:'',status:'sent',channel:'telegram'}); }
+        else { fail++; smsLog({name:x.name,pid:x.pid,phone:x.phone,text:msg,kg:x.kg,gel:x.gel,code:'',pallet:'',status:'failed',error:'Telegram-ზე არ არის დაკავშირებული',channel:'telegram'}); }
+      }catch(e){ fail++; smsLog({name:x.name,pid:x.pid,phone:x.phone,text:msg,kg:x.kg,gel:x.gel,code:'',pallet:'',status:'failed',error:(e&&e.message)||String(e),channel:'telegram'}); }
+    } else {
+      try{ var res=await smsSend(x.phone, msg, 'daily-'+_d); ok++; smsLog({name:x.name,pid:x.pid,phone:x.phone,text:msg,kg:x.kg,gel:x.gel,code:'',pallet:'',status:'sent',msg_id:smsMsgId(res)}); }
+      catch(e){ fail++; smsLog({name:x.name,pid:x.pid,phone:x.phone,text:msg,kg:x.kg,gel:x.gel,code:'',pallet:'',status:'failed',error:(e&&e.message)||String(e)}); }
+    }
     if(goBtn){ goBtn.textContent='⏳ '+(ok+fail)+'/'+list.length; }
   }
   dsmsCancelPrev();
