@@ -87,7 +87,7 @@
   <div class="qbar" id="qbar"></div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v32</span></h1>
+    <h1>⚖️ აწონვა <span style="font-size:.6rem;background:#0369a1;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v33</span></h1>
     <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
     <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
     <div id="roleBar" style="justify-content:flex-end;margin:6px 0 0">
@@ -339,16 +339,20 @@ async function showApp(email){
 function showStartCheck(){
   var old=document.getElementById('startCheck'); if(old) old.remove();
   var p=price().toFixed(2), t=tare().toFixed(2);
+  var ntfLbl = (NOTIFY.channel==='off') ? '🔴 გამორთული'
+    : ((NOTIFY.channel==='sms'?'📱 SMS':'✈️ Telegram')+' · '+(NOTIFY.when==='each'?'ყოველ აწონვაზე':'დღის ბოლოს'));
+  var ntfColor = (NOTIFY.channel==='off') ? '#64748b' : '#0369a1';
   var ov=document.createElement('div'); ov.id='startCheck';
   ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
   ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:340px;width:100%;padding:22px;box-shadow:0 10px 40px rgba(0,0,0,.25)">'
     +'<div style="font-size:1.6rem;text-align:center;margin-bottom:2px">⚠️</div>'
     +'<h2 style="text-align:center;margin:0 0 4px;font-size:1.05rem;color:#0f172a">გადაამოწმე პარამეტრები</h2>'
-    +'<p style="text-align:center;color:#64748b;font-size:.85rem;margin:0 0 16px">დაიწყე მუშაობა ამ ფასითა და ტარით?</p>'
-    +'<div style="display:flex;gap:10px;margin-bottom:16px">'
+    +'<p style="text-align:center;color:#64748b;font-size:.85rem;margin:0 0 16px">დაიწყე მუშაობა ამ პარამეტრებით?</p>'
+    +'<div style="display:flex;gap:10px;margin-bottom:10px">'
       +'<div style="flex:1;background:#eff6ff;border-radius:12px;padding:12px;text-align:center"><div style="font-size:.72rem;color:#64748b">ფასი</div><div style="font-size:1.4rem;font-weight:800;color:#0369a1">'+p+' ₾</div><div style="font-size:.7rem;color:#94a3b8">/კგ</div></div>'
       +'<div style="flex:1;background:#eff6ff;border-radius:12px;padding:12px;text-align:center"><div style="font-size:.72rem;color:#64748b">ტარა</div><div style="font-size:1.4rem;font-weight:800;color:#0369a1">'+t+'</div><div style="font-size:.7rem;color:#94a3b8">კგ/ყუთი</div></div>'
     +'</div>'
+    +'<div style="background:#f0f9ff;border:1px solid #e0f2fe;border-radius:12px;padding:10px 12px;margin-bottom:16px;text-align:center"><div style="font-size:.72rem;color:#64748b">📨 შეტყობინება</div><div style="font-size:1rem;font-weight:800;color:'+ntfColor+'">'+ntfLbl+'</div></div>'
     +'<button class="g" onclick="document.getElementById(\'startCheck\').remove()" style="margin-top:0">✅ კი, გავაგრძელო</button>'
     +'<button class="sec" onclick="startCheckEdit()" style="margin-top:8px">✏️ შევცვალო</button>'
     +'</div>';
