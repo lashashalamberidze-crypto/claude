@@ -1300,6 +1300,17 @@ function exportComboXls(){if(!window.XLSX||!window.XLSX.utils){alert('Excel ბ�
       (inv.lines||[]).map(l=>(l.name||l.code)+' ('+fmtNum(l.qty)+'×'+money(l.price)+'₾)').join(', '),
       invWeightKg(inv),g,pd,g-pd,stl(invStatusEff(inv)),ex.dispensed?'კი':'არა',ex.demo?'🎁 კი':'',ex.note||''];});
   xlsSheet(XLSX,wbk,'ინვოისები','📄 RAM IMPEX — ინვოისები · '+dlabel,['#','თარიღი','№','ტიპი','მყიდველი','დისტრიბუტორი','პროდუქცია',un,'სულ ₾','გადახდ. ₾','ნაშთი ₾','სტატუსი','გატანილი','საცდელი','შენიშვნა'],rR,[7,8,9,10]);
+  // ——— ფურცელი: ფასები (რა ფასად გაიყიდა — თითო პოზიცია ცალკე) ———
+  const allInvs=(INVOICES||[]).slice().sort((a,b)=>((a.date||'').localeCompare(b.date||''))||(String(a.no||'').localeCompare(String(b.no||''))));
+  const liR=[];let ln=0;
+  allInvs.forEach(inv=>{const ex=inv.extra||{};const isD=invIsDist(inv);
+    (inv.lines||[]).forEach(l=>{
+      if(dir!=='all'){const cdir=saleDirOf(l.code,(byCode(l.code)||{}).dir||'');if(cdir!==dir)return;}
+      const q=+l.qty||0,pr=+l.price||0;
+      liR.push([++ln,inv.date||'',ex.demo?'(საცდელი)':(inv.no||''),isD?'🚚 დისტრ.':'🛒 საცალო',(isD?distName(ex.distributor_id):inv.cust)||'',(l.name||'')+(l.size?' '+l.size:''),ruCode(l.code)||l.code||'',q,pr,q*pr,ex.dispensed?'კი':'არა']);
+    });
+  });
+  xlsSheet(XLSX,wbk,'ფასები','🏷️ RAM IMPEX — გაყიდვის ფასები · '+dlabel,['#','თარიღი','№','ტიპი','მყიდ./დისტრ.','პროდუქცია','კოდი','რაოდ.','ფასი ₾/ერთ','ჯამი ₾','გატანილი'],liR,[7,8,9]);
   // ——— ფურცელი 3-4: დისტრიბუტორები + გატანები (მხოლოდ ბრიკეტზე) ———
   if(inclDist)addDistSheets(XLSX,wbk);
   // ——— ბოლო ფურცელი: მოგება-ზარალი (ცალკე) ———
