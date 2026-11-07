@@ -1165,6 +1165,7 @@ async function openDistributionTab(){
   try{await ensureDirs();}catch(e){}
   try{await loadDistrib();}catch(e){}
   try{await loadBookings();}catch(e){}
+  try{const {data}=await sb.from('invoices').select('*').order('created_at',{ascending:false}).limit(500);INVOICES=data||[];}catch(e){}
   distBookFor='';bookFixed=false;bookHostId='book';renderDist();
 }
 function renderDist(){
