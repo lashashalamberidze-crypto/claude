@@ -866,6 +866,7 @@ async function openInvoice(){
   if(!Object.keys(PUB).length)await loadPub();
   await loadStock();
   try{const {data}=await sb.from('invoices').select('*').order('created_at',{ascending:false}).limit(500);INVOICES=data||[];}catch(e){INVOICES=[];}
+  try{await loadDistrib();}catch(e){}
   renderInvoice();
 }
 /* კატალოგის რიგიდან „კალათაში" დამატება — ტაბს არ ცვლის, ითვლის */
