@@ -17,14 +17,20 @@ on:
     # 13:17 UTC (ნიუ-იორკში გახსნამდე — ორდერი შესრულდება გახსნისას) და 17:47 UTC (სარეზერვო).
     # სიგნალი ბოლო დასრულებული დღის ფასითაა, ამიტომ დაგვიანება საშიში არ არის;
     # ორჯერ გაშვებისას ერთსა და იმავეს ორჯერ არ ყიდულობს.
-    # GitHub-ის schedule არასაიმედოა — მთავარი განრიგი Supabase-შია (sql/trading_bot_cron.sql),
-    # ეს სარეზერვოა.
+    # GitHub ზოგჯერ საათობით აგვიანებს — ბოტი ნებისმიერ დროს მუშაობს, ასე რომ პრობლემა არ არის.
+    # (სურვილისამებრ ზუსტი განრიგი: sql/trading_bot_cron.sql Supabase-ში.)
     - cron: "17 13 * * *"
     - cron: "47 17 * * *"
+    # შაბათს 08:07 UTC (12:07 თბილისში) — კვირის შეჯამება Telegram-ზე
+    - cron: "7 8 * * 6"
   workflow_dispatch:      # Actions ტაბში ხელით გაშვების ღილაკი
     inputs:
       telegram_test:
         description: "მხოლოდ სატესტო Telegram მესიჯი (ვაჭრობის გარეშე)"
+        type: boolean
+        default: false
+      weekly_summary:
+        description: "კვირის შეჯამების გაგზავნა ახლავე"
         type: boolean
         default: false
 
@@ -53,3 +59,4 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           INITIAL_CAPITAL: ${{ vars.INITIAL_CAPITAL }}   # ცარიელი = 100000
+          WEEKLY_SUMMARY: ${{ github.event.schedule == '7 8 * * 6' || inputs.weekly_summary }}
