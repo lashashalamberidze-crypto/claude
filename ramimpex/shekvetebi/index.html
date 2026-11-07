@@ -1247,10 +1247,72 @@ function xlsSheet(XLSX,wbk,name,title,header,rows,numCols){
   ws['!cols']=header.map((h,ci)=>{const isNum=(numCols||[]).indexOf(ci)>=0;let w=dispW(h,false);rows.forEach(r=>{w=Math.max(w,dispW(r[ci],isNum));});return {wch:Math.min(Math.max(Math.round(w*1.1)+2,6),70)};});
   const S=(r,c,st)=>{const ref=XLSX.utils.encode_cell({r,c});if(ws[ref])ws[ref].s=st;};
   S(0,0,{font:{bold:true,sz:14,color:{rgb:'0B6B3C'}}});
-  const grn={fill:{patternType:'solid',fgColor:{rgb:'0B6B3C'}},font:{color:{rgb:'FFFFFF'},bold:true},alignment:{horizontal:'center'}};
+  const bd={style:'thin',color:{rgb:'BFCBC3'}};const brd={top:bd,bottom:bd,left:bd,right:bd};
+  const grn={fill:{patternType:'solid',fgColor:{rgb:'0B6B3C'}},font:{color:{rgb:'FFFFFF'},bold:true},alignment:{horizontal:'center',vertical:'center'},border:brd};
   for(let c=0;c<header.length;c++)S(2,c,grn);
-  (numCols||[]).forEach(c=>{for(let r=3;r<3+rows.length;r++){const ref=XLSX.utils.encode_cell({r,c});if(ws[ref]){ws[ref].t='n';ws[ref].z='#,##0.00';}}});
+  // ხაზები (ბორდერები) + ზებრა + რიცხვების ფორმატი/მარჯვნივ სწორება
+  for(let ri=0;ri<rows.length;ri++){const r=3+ri;const zebra=(ri%2===1);
+    for(let c=0;c<header.length;c++){const ref=XLSX.utils.encode_cell({r,c});if(!ws[ref])ws[ref]={t:'s',v:''};
+      const isNum=(numCols||[]).indexOf(c)>=0;
+      const st={border:brd};
+      if(zebra)st.fill={patternType:'solid',fgColor:{rgb:'F3F7F4'}};
+      if(isNum){st.alignment={horizontal:'right'};if(ws[ref].v!==''&&ws[ref].v!=null){ws[ref].t='n';ws[ref].z='#,##0.00';}}
+      ws[ref].s=st;}}
+  ws['!rows']=[{hpt:20},{hpt:15},{hpt:18}];
   XLSX.utils.book_append_sheet(wbk,ws,name.slice(0,31));
+}
+/* დაშბორდის ფურცელი — ცხრილი (ხაზებით) + ბარ-ჩარტი + საცდელი ქვევით, ფერებით */
+function addDashSheet(XLSX,wbk,title,D){
+  const rt=D.rt,da=D.da,rKg=D.rKg,dKg=D.dKg,stockK=D.stockK,dm=D.dm,un=D.un;
+  const sumInv=rt.T+da.taken,sumPaid=rt.P+da.paid,sumDebt=rt.due+da.debt,sumSold=rKg+dKg;
+  const aoa=[[title],['დაბეჭდილია: '+todayStr()],
+   ['მაჩვენებელი','🛒 საცალო','🚚 დისტრიბუცია','📊 ჯამი'],
+   ['📝 გაწერილი ₾',rt.T,da.taken,sumInv],
+   ['💰 ჩარიცხული ₾',rt.P,da.paid,sumPaid],
+   ['❗ დარჩენილი ვალი ₾',rt.due,da.debt,sumDebt],
+   ['⚖️ გაყიდული ('+un+')',rKg,dKg,sumSold],
+   ['📦 დარჩ. გასაყიდი ('+un+')','','',stockK],
+   [],
+   ['📊 გრაფიკი — ჯამური (₾)'],
+   ['📝 გაწერილი','','',sumInv],
+   ['💰 ჩარიცხული','','',sumPaid],
+   ['❗ ვალი','','',sumDebt]];
+  const barRowIdx=[10,11,12],barColor=['2B6CB0','0B6B3C','B00020'],barVal=[sumInv,sumPaid,sumDebt];
+  let demoHdr=-1;
+  if(dm.kg>0){aoa.push([]);aoa.push([]);demoHdr=aoa.length;aoa.push(['🎁 საცდელად / სადემონსტრაციოდ წაღებული']);aoa.push(['— წაღებული ('+un+')','','',dm.kg]);aoa.push(['— საცდელი ინვოისი (ცალი)','','',dm.n]);aoa.push(['— ფასად ₾','','',dm.val]);}
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const lastRow=aoa.length-1,BARMAX=30,barEndCol=5+BARMAX-1;
+  ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lastRow,c:barEndCol}});
+  const cols=[{wch:28},{wch:16},{wch:18},{wch:15},{wch:2}];for(let i=0;i<BARMAX;i++)cols.push({wch:1.7});ws['!cols']=cols;
+  const merges=[{s:{r:0,c:0},e:{r:0,c:3}},{s:{r:1,c:0},e:{r:1,c:3}},{s:{r:9,c:0},e:{r:9,c:3}}];
+  if(demoHdr>=0)merges.push({s:{r:demoHdr,c:0},e:{r:demoHdr,c:3}});
+  ws['!merges']=merges;
+  const bd={style:'thin',color:{rgb:'BFCBC3'}},brd={top:bd,bottom:bd,left:bd,right:bd};
+  const put=(r,c,st,numFmt)=>{const ref=XLSX.utils.encode_cell({r,c});if(!ws[ref])ws[ref]={t:'s',v:''};if(numFmt&&ws[ref].v!==''&&ws[ref].v!=null){ws[ref].t='n';ws[ref].z='#,##0.00';}ws[ref].s=st;};
+  put(0,0,{font:{bold:true,sz:14,color:{rgb:'0B6B3C'}}});
+  put(1,0,{font:{sz:10,color:{rgb:'7A857E'}}});
+  const grn={fill:{patternType:'solid',fgColor:{rgb:'0B6B3C'}},font:{color:{rgb:'FFFFFF'},bold:true},alignment:{horizontal:'center',vertical:'center'},border:brd};
+  for(let c=0;c<4;c++)put(2,c,grn);
+  const rowColor=['2B6CB0','0B6B3C','B00020','C9701A','6D3AD6'];
+  for(let i=0;i<5;i++){const r=3+i,zeb=(i%2===1),zf={patternType:'solid',fgColor:{rgb:'F3F7F4'}};
+    const s0={border:brd,font:{bold:true,color:{rgb:rowColor[i]}}};if(zeb)s0.fill=zf;put(r,0,s0);
+    for(let c=1;c<4;c++){const sc={border:brd,alignment:{horizontal:'right'},font:{bold:c===3}};if(zeb)sc.fill=zf;put(r,c,sc,true);}}
+  put(9,0,{font:{bold:true,sz:12,color:{rgb:'14261C'}},fill:{patternType:'solid',fgColor:{rgb:'EAF2EC'}},alignment:{vertical:'center'}});
+  for(let c=1;c<4;c++)put(9,c,{fill:{patternType:'solid',fgColor:{rgb:'EAF2EC'}}});
+  const maxV=Math.max(sumInv,sumPaid,sumDebt,1);
+  barRowIdx.forEach((r,i)=>{
+    put(r,0,{font:{bold:true,color:{rgb:barColor[i]}}});
+    put(r,3,{alignment:{horizontal:'right'},font:{bold:true,color:{rgb:barColor[i]}}},true);
+    const len=barVal[i]>0?Math.max(1,Math.round(barVal[i]/maxV*BARMAX)):0;
+    for(let k=0;k<len;k++){const ref=XLSX.utils.encode_cell({r,c:5+k});ws[ref]={t:'s',v:'',s:{fill:{patternType:'solid',fgColor:{rgb:barColor[i]}}}};}});
+  if(demoHdr>=0){
+    put(demoHdr,0,{font:{bold:true,sz:12,color:{rgb:'A5591A'}},fill:{patternType:'solid',fgColor:{rgb:'FDF3E9'}},border:brd,alignment:{vertical:'center'}});
+    for(let c=1;c<4;c++)put(demoHdr,c,{fill:{patternType:'solid',fgColor:{rgb:'FDF3E9'}},border:brd});
+    for(let i=1;i<=3;i++){const r=demoHdr+i,pf={patternType:'solid',fgColor:{rgb:'FDF8F2'}};
+      put(r,0,{border:brd,font:{color:{rgb:'A5591A'}},fill:pf});
+      for(let c=1;c<4;c++)put(r,c,{border:brd,alignment:{horizontal:'right'},fill:pf,font:{color:{rgb:'A5591A'},bold:c===3}},true);}}
+  ws['!rows']=[{hpt:20},{hpt:14},{hpt:18}];
+  XLSX.utils.book_append_sheet(wbk,ws,'დაშბორდი');
 }
 function addDistSheets(XLSX,wbk){
   const stl=st=>({paid:'გადახდილი',part:'ნაწილობრივ',due:'გადასახდელი'}[st]||'');
@@ -1278,20 +1340,8 @@ function exportComboXls(){if(!window.XLSX||!window.XLSX.utils){alert('Excel ბ�
   const rt=retailTotals(dir), da=distDashAgg(dir);
   const rKg=retailSoldQty(dir), dKg=distSoldQty(dir), stockK=stockFromPurch(dir);
   const dm=demoDispensed(dir);
-  // ——— ფურცელი 1: დაშბორდი (მოგება-ზარალის გარეშე) ———
-  const dashR=[
-    ['📝 გაწერილი ₾',            rt.T,   da.taken,  rt.T+da.taken],
-    ['💰 ჩარიცხული ₾',          rt.P,   da.paid,   rt.P+da.paid],
-    ['❗ დარჩენილი ვალი ₾',      rt.due, da.debt,   rt.due+da.debt],
-    ['⚖️ გაყიდული ('+un+')',     rKg,    dKg,       rKg+dKg],
-    ['📦 დარჩ. გასაყიდი ('+un+')','',    '',        stockK]
-  ];
-  if(dm.kg>0){
-    dashR.push(['🎁 საცდელად წაღებული ('+un+')','','',dm.kg]);
-    dashR.push(['🎁 საცდელი ინვოისი (ცალი)','','',dm.n]);
-    dashR.push(['🎁 საცდელის ფასი ₾','','',dm.val]);
-  }
-  xlsSheet(XLSX,wbk,'დაშბორდი','💼 RAM IMPEX — დაშბორდი · '+dlabel,['მაჩვენებელი','🛒 საცალო','🚚 დისტრიბუცია','📊 ჯამი'],dashR,[1,2,3]);
+  // ——— ფურცელი 1: დაშბორდი (ცხრილი + ჩარტი + საცდელი ქვევით) ———
+  addDashSheet(XLSX,wbk,'💼 RAM IMPEX — დაშბორდი · '+dlabel,{rt,da,rKg,dKg,stockK,dm,un});
   // ——— ფურცელი 2: ყველა ინვოისი (არჩეულ მიმართულებაზე) ———
   const invs=(INVOICES||[]).filter(inv=>dir==='all'||invDirBucket(inv)===dir)
     .sort((a,b)=>((a.date||'').localeCompare(b.date||''))||(String(a.no||'').localeCompare(String(b.no||''))));
