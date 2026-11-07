@@ -460,18 +460,24 @@ async function productCostJPG(d,it,btn){
       '<div style="font-size:12.5px;color:#5c6b62;margin-top:3px">კოდი: <b>'+esc(ruCode(it.code))+'</b>'+(it.size?' · ზომა: '+esc(it.size):'')+(it.mark?' · '+esc(it.mark):'')+(it.ply?' · '+esc(it.ply)+' შრე':'')+(it.color?' · '+esc(it.color):'')+'</div>'+
       '<div style="font-size:11.5px;color:#7a857e;margin-top:6px">კურსი: 1$='+money(gel)+'₾ · 1$='+(+p.usdRub||0)+'₽ · RUB ფასი: <b>'+(it.rub||0)+'₽</b></div></div></div>';
     // ხარჯები
-    h+='<div style="font-weight:900;color:#8a5a00;margin:4px 0 2px;font-size:13px">📦 ხარჯები (თვითღირებულება)</div>';
-    h+=row('🧱','საქონელი',g2(c.box)+' ₾');
-    if(d.hasSetka)h+=row('🔲','ბადე/სეტკა',g2(c.setka)+' ₾');
-    h+=row('🚚','ტრანსპორტი',g2(c.transp)+' ₾');
-    h+=row('🏭','კონტეინერის ფიქს. ხარჯი',g2(c.contU)+' ₾');
-    h+=row('=','თვითღირებულება (სულ)','<span style="color:#8a5a00">'+g2(c.landed)+' ₾</span>','background:#fff8ea;font-weight:900;border-radius:8px;margin-top:3px');
+    const perCont=(it.cap!=null&&it.cap!==''&&+it.cap>0)?+it.cap:(+p.container||0);
+    const f4=v=>(+v||0).toFixed(4);
+    // დეტალური ხაზი: სახელი + პატარა ფორმულა ქვემოთ, შედეგი ₾ მარჯვნივ
+    const rowF=(ic,l,formula,r,st)=>'<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:8px 4px;border-bottom:1px solid #eef1ef;'+(st||'')+'">'+
+      '<span style="color:#33423a"><b>'+ic+' '+l+'</b><div style="font-size:11px;color:#8a939c;margin-top:2px">'+formula+'</div></span>'+
+      '<span style="font-weight:800;color:#14261c;white-space:nowrap;padding-top:1px">'+r+'</span></div>';
+    h+='<div style="font-weight:900;color:#8a5a00;margin:4px 0 4px;font-size:13px">📦 ხარჯები — საიდან მოდის თვითღირებულება (1 '+(d.dir==='ანთრაციტის ბრიკეტი'?'კგ':'ცალი')+')</div>';
+    h+=rowF('🧱','საქონელი',(it.rub||0)+'₽ ÷ '+(+p.usdRub||0)+' (1$=₽) = '+f4(c.box)+'$ × '+money(gel)+' (1$=₾) = <b>'+g2(c.box)+'₾</b>',g2(c.box)+' ₾');
+    if(d.hasSetka||c.setka>0)h+=rowF('🔲','ბადე/სეტკა',(+p.setkaRub||0)+'₽ ÷ '+(+p.usdRub||0)+' = '+f4(c.setka)+'$ × '+money(gel)+' = <b>'+g2(c.setka)+'₾</b>',g2(c.setka)+' ₾');
+    h+=rowF('🚚','ტრანსპორტი','ტრანსპ. სულ '+(+p.transpUsd||0)+'$ ÷ ტევადობა '+(perCont||'—')+' ცალი = '+f4(c.transp)+'$ × '+money(gel)+' = <b>'+g2(c.transp)+'₾</b>',g2(c.transp)+' ₾');
+    h+=rowF('🏭','კონტეინერის ფიქს. ხარჯი',(+p.contFlat||0)+'₾ ÷ '+(perCont||'—')+' ცალი = <b>'+g2(c.contU)+'₾</b>',g2(c.contU)+' ₾');
+    h+=row('=','თვითღირებულება (სულ)','<span style="color:#8a5a00">'+f4(c.landed)+'$ × '+money(gel)+' = '+g2(c.landed)+' ₾</span>','background:#fff8ea;font-weight:900;border-radius:8px;margin-top:3px');
     // დანამატები
-    h+='<div style="font-weight:900;color:#2b6cb0;margin:14px 0 2px;font-size:13px">📈 დანამატები</div>';
-    h+=row('➕','გაუთვალისწინებელი ('+pct(p.conting)+')',g2(c.contingAmt)+' ₾');
-    h+=row('➕','მოგება ('+pct(p.profit)+')',g2(c.profit)+' ₾');
-    h+=row('💧','დღგ ('+pct(vatR)+')',g2(c.vat)+' ₾');
-    h+=row('=','საბოლოო ფასი (დღგ-ით)','<span style="color:#0B6B3C">'+money(c.price)+' ₾</span>','background:#eefaf1;font-weight:900;font-size:17px;border-radius:8px;margin-top:3px');
+    h+='<div style="font-weight:900;color:#2b6cb0;margin:14px 0 4px;font-size:13px">📈 დანამატები (თვითღირებულებაზე)</div>';
+    h+=rowF('➕','გაუთვალისწინებელი ('+pct(p.conting)+')','თვითღ. '+g2(c.landed)+'₾ × '+pct(p.conting)+' = <b>'+g2(c.contingAmt)+'₾</b>',g2(c.contingAmt)+' ₾');
+    h+=rowF('➕','მოგება ('+pct(p.profit)+')','(თვითღ.+გაუთვ.) '+g2(c.afterCont)+'₾ × '+pct(p.profit)+' = <b>'+g2(c.profit)+'₾</b>',g2(c.profit)+' ₾');
+    h+=rowF('💧','დღგ ('+pct(vatR)+')','(ჯამი დღგ-მდე) '+g2(c.afterProfit)+'₾ × '+pct(vatR)+' = <b>'+g2(c.vat)+'₾</b>',g2(c.vat)+' ₾');
+    h+=rowF('=','საბოლოო ფასი (დღგ-ით)',money(c.totGel)+'₾ → დამრგვ. '+(+p.step||0)+'₾-ზე = <b>'+money(c.price)+'₾</b>','<span style="color:#0B6B3C;font-size:17px">'+money(c.price)+' ₾</span>','background:#eefaf1;font-weight:900;border-radius:8px;margin-top:3px');
     if(manual&&Math.abs(eff-c.price)>0.005)h+='<div style="text-align:right;font-size:12px;color:#7a3b00;margin-top:4px">✏ ხელით დადგენილი ფასი: <b>'+money(eff)+' ₾</b></div>';
     // ბოლო ინფო
     h+='<div style="margin-top:16px;background:#eef4ff;border:1px solid #cfe0f7;border-radius:10px;padding:11px 13px;font-size:12.5px;color:#2b6cb0">💧 დასაბრუნებელი დღგ (ჩათვლა, 18% × საქონელი+ტრანსპ.): <b>'+money(c.importVatGel)+' ₾</b> — ეს თქვენ გიბრუნდებათ, ხარჯი არ არის</div>';
