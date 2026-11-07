@@ -434,6 +434,64 @@ function calcRow(d,it){
   return {box,setka,transp,contU,landed,contingAmt,afterCont,profit,afterProfit,vat,totUsd,totGel,importVatUsd,importVatGel,sub:landed,price:Math.round(price*100)/100};
 }
 function effective(d,it){if(it.pfinal!=null&&it.pfinal!==''&&!isNaN(+it.pfinal))return Math.round((+it.pfinal)*100)/100;return calcRow(d,it).price;}
+/* 📊 პროდუქტის თვითღირებულება/ხარჯები/დღგ → JPG (მეწილეებისთვის, სურათით) */
+async function productCostJPG(d,it,btn){
+  if(!window.html2canvas){alert('გამოსახულების ბიბლიოთეკა ჯერ არ ჩაიტვირთა — სცადე ისევ');return;}
+  const old=btn?btn.textContent:'';if(btn){btn.textContent='⏳…';btn.disabled=true;}
+  try{
+    const c=calcRow(d,it);const p=d.params;const gel=+p.usdGel||0;const vatR=+p.vat||0;
+    const g2=v=>money((+v||0)*gel);                 // $ → ₾
+    const pct=x=>(Math.round((+x||0)*1000)/10)+'%';
+    const eff=(it.pfinal!=null&&it.pfinal!==''&&!isNaN(+it.pfinal))?(+it.pfinal):c.price;
+    const manual=(it.pfinal!=null&&it.pfinal!==''&&!isNaN(+it.pfinal));
+    const netUnit=eff/(1+vatR)-c.landed*gel;
+    const cap=(it.cap!=null&&it.cap!==''&&+it.cap>0)?+it.cap:(+p.container||0);
+    const img=pubImg(it.code);
+    const row=(ic,l,r,st)=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px;border-bottom:1px solid #eef1ef;'+(st||'')+'"><span style="color:#33423a">'+ic+' '+l+'</span><span style="font-weight:800;color:#14261c;white-space:nowrap">'+r+'</span></div>';
+    const node=document.createElement('div');
+    node.style.cssText='position:fixed;left:-10000px;top:0;width:700px;background:#fff;padding:26px 30px;box-sizing:border-box;color:#14261c;font-size:14px;line-height:1.35';
+    let h='';
+    h+='<div style="display:flex;align-items:flex-start;justify-content:space-between;border-bottom:3px solid #0B6B3C;padding-bottom:12px;margin-bottom:14px">'+
+      '<div><div style="font-size:23px;font-weight:900;color:#0B6B3C;letter-spacing:.5px">RAM IMPEX</div><div style="font-size:12px;color:#7a857e">თვითღირებულება · ხარჯების დაშლა · 1 '+(d.dir==='ანთრაციტის ბრიკეტი'?'კგ':'ცალი')+'</div></div>'+
+      '<div style="text-align:right;font-size:12px;color:#7a857e">'+todayStr()+'</div></div>';
+    h+='<div style="display:flex;gap:16px;align-items:center;margin-bottom:14px">';
+    if(img)h+='<img src="'+esc(img)+'" crossorigin="anonymous" style="width:120px;height:120px;object-fit:cover;border-radius:12px;border:1px solid #e3e9e5;flex:0 0 auto">';
+    h+='<div style="flex:1"><div style="font-size:18px;font-weight:900">'+esc(it.name||'')+'</div>'+
+      '<div style="font-size:12.5px;color:#5c6b62;margin-top:3px">კოდი: <b>'+esc(ruCode(it.code))+'</b>'+(it.size?' · ზომა: '+esc(it.size):'')+(it.mark?' · '+esc(it.mark):'')+(it.ply?' · '+esc(it.ply)+' შრე':'')+(it.color?' · '+esc(it.color):'')+'</div>'+
+      '<div style="font-size:11.5px;color:#7a857e;margin-top:6px">კურსი: 1$='+money(gel)+'₾ · 1$='+(+p.usdRub||0)+'₽ · RUB ფასი: <b>'+(it.rub||0)+'₽</b></div></div></div>';
+    // ხარჯები
+    h+='<div style="font-weight:900;color:#8a5a00;margin:4px 0 2px;font-size:13px">📦 ხარჯები (თვითღირებულება)</div>';
+    h+=row('🧱','საქონელი',g2(c.box)+' ₾');
+    if(d.hasSetka)h+=row('🔲','ბადე/სეტკა',g2(c.setka)+' ₾');
+    h+=row('🚚','ტრანსპორტი',g2(c.transp)+' ₾');
+    h+=row('🏭','კონტეინერის ფიქს. ხარჯი',g2(c.contU)+' ₾');
+    h+=row('=','თვითღირებულება (სულ)','<span style="color:#8a5a00">'+g2(c.landed)+' ₾</span>','background:#fff8ea;font-weight:900;border-radius:8px;margin-top:3px');
+    // დანამატები
+    h+='<div style="font-weight:900;color:#2b6cb0;margin:14px 0 2px;font-size:13px">📈 დანამატები</div>';
+    h+=row('➕','გაუთვალისწინებელი ('+pct(p.conting)+')',g2(c.contingAmt)+' ₾');
+    h+=row('➕','მოგება ('+pct(p.profit)+')',g2(c.profit)+' ₾');
+    h+=row('💧','დღგ ('+pct(vatR)+')',g2(c.vat)+' ₾');
+    h+=row('=','საბოლოო ფასი (დღგ-ით)','<span style="color:#0B6B3C">'+money(c.price)+' ₾</span>','background:#eefaf1;font-weight:900;font-size:17px;border-radius:8px;margin-top:3px');
+    if(manual&&Math.abs(eff-c.price)>0.005)h+='<div style="text-align:right;font-size:12px;color:#7a3b00;margin-top:4px">✏ ხელით დადგენილი ფასი: <b>'+money(eff)+' ₾</b></div>';
+    // ბოლო ინფო
+    h+='<div style="margin-top:16px;background:#eef4ff;border:1px solid #cfe0f7;border-radius:10px;padding:11px 13px;font-size:12.5px;color:#2b6cb0">💧 დასაბრუნებელი დღგ (ჩათვლა, 18% × საქონელი+ტრანსპ.): <b>'+money(c.importVatGel)+' ₾</b> — ეს თქვენ გიბრუნდებათ, ხარჯი არ არის</div>';
+    h+='<div style="margin-top:8px;background:#eefaf1;border:1px solid #cfe7d4;border-radius:10px;padding:11px 13px;font-size:12.5px;color:#0B6B3C">💚 სუფთა მოგება 1 '+(d.dir==='ანთრაციტის ბრიკეტი'?'კგ':'ცალ')+'-ზე (დღგ-ს გარეშე): <b>'+money(netUnit)+' ₾</b>'+(cap>0?' · 📦 კონტეინერზე ('+cap+' ც): <b>'+money(netUnit*cap)+' ₾</b>':'')+'</div>';
+    h+='<div style="margin-top:14px;text-align:center;font-size:10.5px;color:#9aa6a0">RAM IMPEX — შიდა დოკუმენტი · თვითღირებულება 1 ერთეულზე</div>';
+    node.innerHTML=h;
+    document.body.appendChild(node);
+    // სურათის ჩატვირთვის მოცდა
+    const im=node.querySelector('img');
+    if(im&&!im.complete){await new Promise(r=>{im.onload=r;im.onerror=r;setTimeout(r,1500);});}
+    await new Promise(r=>setTimeout(r,50));
+    let canvas;
+    try{canvas=await window.html2canvas(node,{scale:2,backgroundColor:'#ffffff',useCORS:true,windowWidth:760,logging:false});}
+    catch(e){if(im){im.remove();}canvas=await window.html2canvas(node,{scale:2,backgroundColor:'#ffffff',windowWidth:760,logging:false});}
+    const url=canvas.toDataURL('image/jpeg',0.92);
+    const a=document.createElement('a');a.href=url;a.download='RAM_IMPEX_tvitgirebuleba_'+(ruCode(it.code)||'produkti')+'.jpg';document.body.appendChild(a);a.click();a.remove();
+    node.remove();
+  }catch(e){alert('ვერ შეიქმნა JPG: '+(e.message||e));}
+  if(btn){btn.textContent=old;btn.disabled=false;}
+}
 function byCode(c){for(const d of DIRS){for(const it of d.items){if(it.code===c)return {code:c,name:it.name,size:it.size,color:it.color,mark:it.mark,ply:it.ply||'',dir:d.dir,group:d.name,price:effective(d,it)};}}return null;}
 // ყუთის ტიპი ილუსტრაციისთვის (მუყაოს ყუთები/კუთხოვანი; ბრიკეტი → null)
 function boxKind(l){const p=byCode(l&&l.code)||{};const dir=p.dir||l.dir||'';
@@ -709,7 +767,8 @@ function renderCat(){
         '<button class="btn sm" data-inv="'+idx+'" data-tier="2" title="დაამატე ფიქს. ფასით — '+briketTierLabel(2)+'" style="background:#0B6B3C;color:#fff;font-weight:800;font-size:11px;padding:4px 7px;white-space:nowrap">＋ '+briketTierLabel(2)+' · '+(+b.p2)+'₾</button>'+
         '<button class="btn sm" data-inv="'+idx+'" data-tier="3" title="დაამატე ფიქს. ფასით — '+briketTierLabel(3)+' (ბიგ-ბეგი)" style="background:#7a3b00;color:#fff;font-weight:800;font-size:11px;padding:4px 7px;white-space:nowrap">＋ '+briketTierLabel(3)+' · '+(+b.p3)+'₾</button>'+
         '</div>';})()):('<button class="btn sm" data-inv="'+idx+'" title="დაამატე არჩეულებში — მერე ზემოთ დააჭირე შეკვეთა/შეთავაზება" style="background:#0B6B3C;color:#fff;font-weight:800">＋ დამატება</button>');
-      rh+='<tr'+trStyle+'><td style="white-space:nowrap">'+_addCell+'</td><td>'+pos+'</td><td><input value="'+esc(ruCode(it.code))+'" style="width:64px" data-f="code" data-i="'+idx+'"></td>'+
+      const _costBtn='<button class="btn sm" data-costjpg="'+idx+'" title="ხარჯების/თვითღირებულების/დღგ-ს დაშლა — JPG (მეწილეებისთვის)" style="margin-top:3px;background:#2b6cb0;color:#fff;font-weight:800;padding:3px 7px;font-size:11px;white-space:nowrap">📊 ხარჯები</button>';
+      rh+='<tr'+trStyle+'><td style="white-space:nowrap"><div style="display:flex;flex-direction:column;gap:3px">'+_addCell+_costBtn+'</div></td><td>'+pos+'</td><td><input value="'+esc(ruCode(it.code))+'" style="width:64px" data-f="code" data-i="'+idx+'"></td>'+
         '<td><input value="'+esc(it.name||'')+'" style="min-width:120px" data-f="name" data-i="'+idx+'">'+(it.pack?'<div class="muted" style="font-size:9px;margin-top:1px">📦 '+esc(it.pack)+'</div>':'')+'<input value="'+esc(it.note||'')+'" placeholder="📝 შენიშვნა (მხოლოდ აქ)" title="შიდა შენიშვნა — ჩანს მხოლოდ კატალოგში, ინვოისში არა" style="display:block;min-width:120px;margin-top:3px;background:#FFFDF0;border:1px dashed #E6C200;border-radius:6px;font-size:11px;padding:3px 6px" data-f="note" data-i="'+idx+'"></td>'+
         '<td><input value="'+esc(it.size||'')+'" style="width:82px" data-f="size" data-i="'+idx+'"></td>'+
         '<td><input value="'+esc(it.mark||'')+'" style="width:50px" data-f="mark" data-i="'+idx+'"></td>'+
@@ -746,6 +805,7 @@ function renderCat(){
     rowsHost.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(!confirm('წავშალო?'))return;d.items.splice(+b.dataset.del,1);saveDirs();paintRows();});
     rowsHost.querySelectorAll('[data-media]').forEach(b=>b.onclick=()=>openProdMedia(d,d.items[+b.dataset.media],paintRows));
     rowsHost.querySelectorAll('[data-inv]').forEach(b=>b.onclick=()=>addToCart(d,d.items[+b.dataset.inv],b,b.dataset.tier?+b.dataset.tier:0));
+    rowsHost.querySelectorAll('[data-costjpg]').forEach(b=>b.onclick=()=>productCostJPG(d,d.items[+b.dataset.costjpg],b));
   }
   $('cq').oninput=paintRows;
   if($('catDet'))$('catDet').onclick=()=>{const t=$('catTbl');if(!t)return;const simple=t.classList.toggle('simple');$('catDet').textContent=simple?'🔎 დეტალები':'🧹 მარტივად';};
