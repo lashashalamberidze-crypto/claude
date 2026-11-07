@@ -1252,10 +1252,18 @@ function xlsSheet(XLSX,wbk,name,title,header,rows,numCols){
 }
 function addDistSheets(XLSX,wbk){
   const stl=st=>({paid:'გადახდილი',part:'ნაწილობრივ',due:'გადასახდელი'}[st]||'');
-  const sumR=DISTRIBUTORS.map((d,i)=>{const a=distAgg(d.id);return [i+1,d.name||d.shop_name||'',d.region||'',((d.municipalities&&d.municipalities.length)?d.municipalities.join(', '):(d.municipality||'')),a.pickedKg,a.takenVal,a.paid,a.debt];});
-  xlsSheet(XLSX,wbk,'დისტრიბუტორები','RAM IMPEX — დისტრიბუტორები',['#','დისტრიბუტორი','რეგიონი','მუნიციპ.','გატანილი','ღირებ. ₾','გადახდ. ₾','ვალი ₾'],sumR,[4,5,6,7]);
-  const pkR=DIST_PICKUPS.map((p,i)=>[i+1,p.date||'',p.distributor_name||distName(p.distributor_id),(ruCode(p.code)||'')+' '+(p.product||''),+p.qty||0,+p.price||0]);
-  xlsSheet(XLSX,wbk,'გატანები','RAM IMPEX — გატანები',['#','თარიღი','დისტრიბუტორი','პროდუქტი','რაოდ.','₾/ერთ.'],pkR,[4,5]);
+  // შემაჯამებელი — ზუსტად ისევე, როგორც დეშბორდი/დისტრიბუტორების ცხრილი (ინვოისებზე)
+  const sumR=DISTRIBUTORS.map((d,i)=>[i+1,d.name||d.shop_name||'',d.region||'',((d.municipalities&&d.municipalities.length)?d.municipalities.join(', '):(d.municipality||'')),distTakenKgFor(d.id),distTakenFor(d.id),distDepositsFor(d.id),distDebtFor(d.id)]);
+  xlsSheet(XLSX,wbk,'დისტრიბუტორები','👥 RAM IMPEX — დისტრიბუტორები',['#','დისტრიბუტორი','რეგიონი','მუნიციპ.','გატანილი კგ','წაღებული ₾','გადახდ. ₾','ვალი ₾'],sumR,[4,5,6,7]);
+  // ყველა დისტრიბუტორული ინვოისი — რომელი დისტრიბუტორმა რა წაიღო (აღარ არის „ცალკე გატანები")
+  const invR=[];let n=0;
+  DISTRIBUTORS.forEach(d=>{
+    distInvoicesFor(d.id).slice().sort((a,b)=>((a.date||'').localeCompare(b.date||''))||(String(a.no||'').localeCompare(String(b.no||'')))).forEach(inv=>{
+      const ex=inv.extra||{};const g=+inv.grand||0,pd=invPaidEffective(inv);
+      invR.push([++n,d.name||d.shop_name||'',inv.date||'',ex.demo?'(საცდელი)':(inv.no||''),invWeightKg(inv),g,pd,g-pd,stl(invStatusEff(inv)),ex.dispensed?'კი':'არა',ex.note||'']);
+    });
+  });
+  xlsSheet(XLSX,wbk,'დისტრ. ინვოისები','🚚 RAM IMPEX — დისტრიბუტორული ინვოისები',['#','დისტრიბუტორი','თარიღი','№','კგ','სულ ₾','გადახდ. ₾','ნაშთი ₾','სტატუსი','გატანილი','შენიშვნა'],invR,[4,5,6,7]);
 }
 function exportDistXls(){if(!window.XLSX||!window.XLSX.utils){alert('Excel ბიბლიოთეკა ვერ ჩაიტვირთა — სცადე ონლაინ (ინტერნეტით).');return;}const XLSX=window.XLSX;const wbk=XLSX.utils.book_new();addDistSheets(XLSX,wbk);try{XLSX.writeFile(wbk,'RAM_IMPEX_distribucia_'+todayStr()+'.xlsx');}catch(e){alert('ვერ შეიქმნა: '+(e.message||e));}}
 function exportComboXls(){if(!window.XLSX||!window.XLSX.utils){alert('Excel ბიბლიოთეკა ვერ ჩაიტვირთა — სცადე ონლაინ (ინტერნეტით).');return;}const XLSX=window.XLSX;const wbk=XLSX.utils.book_new();
