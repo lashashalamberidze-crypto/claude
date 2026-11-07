@@ -1260,25 +1260,40 @@ function addDistSheets(XLSX,wbk){
 function exportDistXls(){if(!window.XLSX||!window.XLSX.utils){alert('Excel ბიბლიოთეკა ვერ ჩაიტვირთა — სცადე ონლაინ (ინტერნეტით).');return;}const XLSX=window.XLSX;const wbk=XLSX.utils.book_new();addDistSheets(XLSX,wbk);try{XLSX.writeFile(wbk,'RAM_IMPEX_distribucia_'+todayStr()+'.xlsx');}catch(e){alert('ვერ შეიქმნა: '+(e.message||e));}}
 function exportComboXls(){if(!window.XLSX||!window.XLSX.utils){alert('Excel ბიბლიოთეკა ვერ ჩაიტვირთა — სცადე ონლაინ (ინტერნეტით).');return;}const XLSX=window.XLSX;const wbk=XLSX.utils.book_new();
   const stl=st=>({paid:'გადახდილი',part:'ნაწილობრივ',due:'გადასახდელი'}[st]||'');
-  const dir='all'; // სრული დაშბორდი — ყველა მიმართულება
-  // —— ზუსტად ის ციფრები, რაც დეშბორდზეა ——
+  const dir=IL_DIR||'all'; // არჩეული მიმართულება (ბრიკეტი → მხოლოდ ბრიკეტის მონაცემები)
+  const dsel=SAL_DIRS.find(x=>x[0]===dir);const dlabel=(dir&&dir!=='all'&&dsel)?dsel[1]:'ყველა მიმართულება';
+  const isBrik=(dir==='all'||dir==='ანთრაციტის ბრიკეტი');const un=isBrik?'კგ':'ცალ';
+  const inclDist=(dir==='all'||dir==='ანთრაციტის ბრიკეტი'); // დისტრიბუცია მხოლოდ ბრიკეტზეა
+  // —— ზუსტად ის ციფრები, რაც დეშბორდზეა (არჩეულ მიმართულებაზე) ——
   const rt=retailTotals(dir), da=distDashAgg(dir);
   const rKg=retailSoldQty(dir), dKg=distSoldQty(dir), stockK=stockFromPurch(dir);
   const dm=demoDispensed(dir);
-  const pl=computePL(dir);
-  // Sheet 1 — დაშბორდი (გაწერილი / ჩარიცხული / ვალი / კგ)
+  // ——— ფურცელი 1: დაშბორდი (მოგება-ზარალის გარეშე) ———
   const dashR=[
-    ['📝 გაწერილი ₾',          rt.T,        da.taken,       rt.T+da.taken],
-    ['💰 ჩარიცხული ₾',         rt.P,        da.paid,        rt.P+da.paid],
-    ['❗ დარჩენილი ვალი ₾',     rt.due,      da.debt,        rt.due+da.debt],
-    ['⚖️ გაყიდული (კგ/ცალ)',   rKg,         dKg,            rKg+dKg],
-    ['📦 დარჩ. გასაყიდი (მარაგი)','',        '',             stockK],
-    ['🎁 საცდელად წაღებული კგ','',          '',             dm.kg],
-    ['🎁 საცდელი ინვოისები (ც)','',          '',             dm.n],
-    ['🎁 საცდელის ფასი ₾','',               '',             dm.val]
+    ['📝 გაწერილი ₾',            rt.T,   da.taken,  rt.T+da.taken],
+    ['💰 ჩარიცხული ₾',          rt.P,   da.paid,   rt.P+da.paid],
+    ['❗ დარჩენილი ვალი ₾',      rt.due, da.debt,   rt.due+da.debt],
+    ['⚖️ გაყიდული ('+un+')',     rKg,    dKg,       rKg+dKg],
+    ['📦 დარჩ. გასაყიდი ('+un+')','',    '',        stockK]
   ];
-  xlsSheet(XLSX,wbk,'დაშბორდი','RAM IMPEX — საერთო დაშბორდი',['მაჩვენებელი','🛒 საცალო','🚚 დისტრიბუცია','📊 ჯამი'],dashR,[1,2,3]);
-  // Sheet 2 — მოგება-ზარალი + დღგ
+  if(dm.kg>0){
+    dashR.push(['🎁 საცდელად წაღებული ('+un+')','','',dm.kg]);
+    dashR.push(['🎁 საცდელი ინვოისი (ცალი)','','',dm.n]);
+    dashR.push(['🎁 საცდელის ფასი ₾','','',dm.val]);
+  }
+  xlsSheet(XLSX,wbk,'დაშბორდი','💼 RAM IMPEX — დაშბორდი · '+dlabel,['მაჩვენებელი','🛒 საცალო','🚚 დისტრიბუცია','📊 ჯამი'],dashR,[1,2,3]);
+  // ——— ფურცელი 2: ყველა ინვოისი (არჩეულ მიმართულებაზე) ———
+  const invs=(INVOICES||[]).filter(inv=>dir==='all'||invDirBucket(inv)===dir)
+    .sort((a,b)=>((a.date||'').localeCompare(b.date||''))||(String(a.no||'').localeCompare(String(b.no||''))));
+  const rR=invs.map((inv,i)=>{const ex=inv.extra||{};const g=+inv.grand||0,pd=invPaidEffective(inv);const isD=invIsDist(inv);
+    return [i+1,inv.date||'',ex.demo?'(საცდელი)':(inv.no||''),isD?'🚚 დისტრ.':'🛒 საცალო',inv.cust||'',isD?distName(ex.distributor_id):'',
+      (inv.lines||[]).map(l=>(l.name||l.code)+' ('+fmtNum(l.qty)+'×'+money(l.price)+'₾)').join(', '),
+      invWeightKg(inv),g,pd,g-pd,stl(invStatusEff(inv)),ex.dispensed?'კი':'არა',ex.demo?'🎁 კი':'',ex.note||''];});
+  xlsSheet(XLSX,wbk,'ინვოისები','📄 RAM IMPEX — ინვოისები · '+dlabel,['#','თარიღი','№','ტიპი','მყიდველი','დისტრიბუტორი','პროდუქცია',un,'სულ ₾','გადახდ. ₾','ნაშთი ₾','სტატუსი','გატანილი','საცდელი','შენიშვნა'],rR,[7,8,9,10]);
+  // ——— ფურცელი 3-4: დისტრიბუტორები + გატანები (მხოლოდ ბრიკეტზე) ———
+  if(inclDist)addDistSheets(XLSX,wbk);
+  // ——— ბოლო ფურცელი: მოგება-ზარალი (ცალკე) ———
+  const pl=computePL(dir);
   const plR=[
     ['📥 შემოსავალი (გაყიდვები, დღგ-ს გარეშე)', pl.rev],
     ['📦 − საქონლის თვითღირებულება (დღგ-ს გარეშე)', pl.cogs],
@@ -1286,22 +1301,12 @@ function exportComboXls(){if(!window.XLSX||!window.XLSX.utils){alert('Excel ბ�
     ['💸 − საოპერაციო/კაპიტ. ხარჯები (დღგ-ს გარეშე)', pl.opex],
     ['🏛️ − მოგების გადასახადი ('+(Math.round(PL_TAX*1000)/10)+'%)', pl.tax],
     ['💚 = სუფთა მოგება', pl.net],
-    ['— — —', ''],
     ['💧 ჩასათვლელი/დასაბრუნებელი დღგ (ხარჯების)', pl.vatBack],
     ['💧 აკრეფილი დღგ (გაყიდვების, გადასახდელი)', pl.vatOut],
     ['💧 დღგ სალდო ('+(pl.vatNet>=0?'გიბრუნდებათ':'გადასახდელია')+')', Math.abs(pl.vatNet)]
   ];
-  xlsSheet(XLSX,wbk,'მოგება-ზარალი','RAM IMPEX — მოგება-ზარალი (ყველა მიმართ.)',['მუხლი','₾'],plR,[1]);
-  // Sheet 3 — ყველა ინვოისი (სრული: გადახდილი / ნაშთი / სტატუსი / გატანილი)
-  const invs=(INVOICES||[]).slice().sort((a,b)=>((a.date||'').localeCompare(b.date||''))||(String(a.no||'').localeCompare(String(b.no||''))));
-  const rR=invs.map((inv,i)=>{const ex=inv.extra||{};const g=+inv.grand||0,pd=invPaidEffective(inv);const isD=invIsDist(inv);
-    return [i+1,inv.date||'',ex.demo?'(საცდელი)':(inv.no||''),isD?'🚚 დისტრ.':'🛒 საცალო',inv.cust||'',isD?distName(ex.distributor_id):'',
-      (inv.lines||[]).map(l=>(l.name||l.code)+' ('+fmtNum(l.qty)+'×'+money(l.price)+'₾)').join(', '),
-      invWeightKg(inv),g,pd,g-pd,stl(invStatusEff(inv)),ex.dispensed?'კი':'არა',ex.demo?'🎁 კი':'',ex.note||''];});
-  xlsSheet(XLSX,wbk,'ყველა ინვოისი','RAM IMPEX — ყველა ინვოისი',['#','თარიღი','№','ტიპი','მყიდველი','დისტრიბუტორი','პროდუქცია','კგ','სულ ₾','გადახდ. ₾','ნაშთი ₾','სტატუსი','გატანილი','საცდელი','შენიშვნა'],rR,[7,8,9,10]);
-  // Sheet 4-5 — დისტრიბუტორები + გატანები
-  addDistSheets(XLSX,wbk);
-  try{XLSX.writeFile(wbk,'RAM_IMPEX_dashboard_'+todayStr()+'.xlsx');}catch(e){alert('ვერ შეიქმნა: '+(e.message||e));}}
+  xlsSheet(XLSX,wbk,'მოგება-ზარალი','💰 RAM IMPEX — მოგება-ზარალი · '+dlabel,['მუხლი','₾'],plR,[1]);
+  try{XLSX.writeFile(wbk,'RAM_IMPEX_dashboard'+(dir!=='all'?'_'+dir:'')+'_'+todayStr()+'.xlsx');}catch(e){alert('ვერ შეიქმნა: '+(e.message||e));}}
 async function htmlToPDF(html,fname,orient,holderW){orient=orient||'l';holderW=holderW||940;
   if(!window.html2canvas||!(window.jspdf&&window.jspdf.jsPDF)){const w=window.open('','_blank');if(w){w.document.write('<html><head><meta charset="utf-8"></head><body>'+html+'</body></html>');w.document.close();w.focus();setTimeout(()=>w.print(),300);}return;}
   const holder=document.createElement('div');holder.style.cssText='position:fixed;left:-99999px;top:0;width:'+holderW+'px;background:#fff;color-scheme:light;z-index:-1';holder.innerHTML=html;document.body.appendChild(holder);const node=holder.firstElementChild||holder;
