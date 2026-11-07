@@ -205,12 +205,13 @@ def run_once():
         except Exception as e:  # ერთი სიმბოლოს შეცდომამ დანარჩენი არ გააჩეროს
             log(f"⚠️ {symbol}: შეცდომა — {e}", notify=True)
 
-    # შაბათს, დილის გაშვებისას — კვირის შეჯამება
-    if now_ny.weekday() == 5 and clock.timestamp.hour < 16:
+    # კვირის შეჯამება — workflow-ის შაბათის ცალკე განრიგიდან (WEEKLY_SUMMARY=true).
+    # საათზე აღარ ვამოწმებთ: GitHub-ის განრიგი საათობით აგვიანებს.
+    if os.environ.get("WEEKLY_SUMMARY", "").lower() == "true":
         account = trading.get_account()
         equity, last = float(account.equity), float(account.last_equity)
         lines = [f"📊 კვირის შეჯამება ({'PAPER' if PAPER else 'LIVE'})",
-                 f"ანგარიში: ${equity:,.2f} (დღეს {equity - last:+,.2f}$)",
+                 f"ანგარიში: ${equity:,.2f}",
                  f"ნაღდი: ${float(account.cash):,.2f}"] + profit_lines(account) + [""]
         for p in trading.get_all_positions():
             if p.symbol in STOCKS:
