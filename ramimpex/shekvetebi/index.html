@@ -186,82 +186,105 @@ function renderBooklets(){
 /* ========================= DOCUMENTS (შენახვა/რედაქტ.) ========================= */
 const DOC_STATUS=[['მიმდინარე','#2b6cb0'],['დასადასტურებელი','#c9701a'],['დასრულებული','#0B6B3C'],['არქივი','#8a8a8a']];
 const DOC_KINDS=['ხელშეკრულება','ინვოისი','სერტიფიკატი','ლაბორატორია','ანგარიში','წერილი','აქტი','რეკვიზიტები','სხვა'];
-let DOCS=[], DOC_F_DIR='', DOC_F_STATUS='', DOC_Q='', DOC_OPEN={};
+let DOCS=[], DOC_F_DIR='', DOC_F_STATUS='', DOC_Q='', DOC_OPEN={}, DOC_FOLDER=null;
 async function loadDocs(){try{const {data}=await sb.from('docs').select('*').order('date',{ascending:false});DOCS=data||[];}catch(e){DOCS=[];}}
 async function openDocs(){docsEl.innerHTML='<div class="empty">იტვირთება…</div>';try{await loadDocs();}catch(e){}renderDocs();}
 function docStatusColor(s){const f=DOC_STATUS.find(x=>x[0]===s);return f?f[1]:'#8a8a8a';}
 function docDirList(){const s=new Set();(DOCS||[]).forEach(d=>{if(d.direction)s.add(d.direction);});return [...s].sort((a,b)=>a.localeCompare(b));}
 function docFmtMB(b){b=+b||0;return (b/1048576).toFixed(2)+' MB';}
 function docFilesOf(d){return Array.isArray(d.files)?d.files:[];}
+function docFolders(){const m={};(DOCS||[]).forEach(d=>{const k=((d.direction||'').trim())||'უჯგუფო';(m[k]=m[k]||[]).push(d);});return m;}
+function docCardHTML(d){
+  const files=docFilesOf(d);const open=!!DOC_OPEN[d.id];const col=docStatusColor(d.status);
+  const sub=[d.kind,d.partner,(d.date||'')].filter(Boolean).map(esc).join(' · ');
+  let h='<div class="card" style="padding:0;overflow:hidden">'+
+    '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer" data-doctgl="'+esc(d.id)+'">'+
+      '<div style="font-size:26px;flex:0 0 auto">📄</div>'+
+      '<div style="flex:1;min-width:0"><div style="font-weight:800;color:#14261c;font-size:14px">'+esc(d.title||'—')+'</div><div class="muted" style="font-size:12px">'+(sub||'—')+'</div></div>'+
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:0 0 auto">'+
+        '<span style="background:'+col+'22;color:'+col+';font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px">'+esc(d.status||'—')+'</span>'+
+        '<span class="muted" style="font-size:11px;font-weight:700;white-space:nowrap">'+files.length+' ფაილი</span>'+
+        '<span style="font-size:13px;color:#8a8a8a">'+(open?'▲':'▼')+'</span>'+
+      '</div></div>';
+  if(open){
+    h+='<div style="padding:0 14px 12px;border-top:1px solid #eef1ef">'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 8px;align-items:center">'+
+        '<button class="btn line sm" data-docadd="'+esc(d.id)+'">＋ ფაილი</button>'+
+        '<button class="btn line sm" data-docedit="'+esc(d.id)+'">✏ რედაქტირება</button>'+
+        '<button class="btn danger sm" data-docdel="'+esc(d.id)+'">🗑 წაშლა</button>'+
+        (d.note?'<span class="muted" style="font-size:11.5px">📝 '+esc(d.note)+'</span>':'')+
+        '<span style="margin-left:auto;font-size:11px;color:#8a8a8a">სულ '+docFmtMB(files.reduce((a,f)=>a+(+f.size||0),0))+'</span>'+
+      '</div>';
+    if(!files.length)h+='<div class="empty" style="padding:10px">ფაილი ჯერ არ არის — დააჭირე „＋ ფაილი".</div>';
+    else{h+='<div class="scroll"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><tbody>';
+      files.forEach((f,i)=>{h+='<tr style="border-top:1px solid #f0f3f1">'+
+        '<td style="padding:7px"><div style="font-weight:700">'+esc(f.name||f.fname||'ფაილი')+'</div><div class="muted" style="font-size:10.5px;font-family:monospace;word-break:break-all">'+esc(f.fname||'')+'</div></td>'+
+        '<td style="padding:7px;white-space:nowrap">'+(f.type?'<span style="background:#f0f0f0;color:#555;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px">'+esc(f.type)+'</span>':'')+'</td>'+
+        '<td style="padding:7px;text-align:right;white-space:nowrap;color:#8a8a8a;font-size:11px">'+esc(f.date||'')+'</td>'+
+        '<td style="padding:7px;text-align:right;white-space:nowrap;color:#8a8a8a;font-size:11px">'+docFmtMB(f.size)+'</td>'+
+        '<td style="padding:7px;text-align:right;white-space:nowrap">'+(f.url?'<a class="smini" href="'+esc(f.url)+'" target="_blank" rel="noopener" title="ნახვა" style="text-decoration:none">👁</a> <a class="smini" href="'+esc(f.url)+'" download title="ჩამოტვირთვა" style="text-decoration:none">⬇</a> ':'')+'<button class="smini danger" data-docfdel="'+esc(d.id)+'|'+i+'" title="წაშლა">🗑</button></td>'+
+        '</tr>';});
+      h+='</tbody></table></div>';}
+    h+='</div>';}
+  h+='</div>';return h;
+}
 function renderDocs(){
-  const dirs=docDirList();
-  let h='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2>🗂 დოკუმენტები</h2><button class="btn sm" id="docNew" style="background:#0B6B3C;color:#fff">➕ ახალი დოკუმენტი</button></div>'+
-    '<p class="muted" style="font-size:12px;margin-top:4px">სხვადასხვა მიმართულების დოკუმენტები — შენახვა, ფაილების ატვირთვა, რედაქტირება.</p>'+
-    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">'+
-      '<select id="docFDir" style="min-width:160px"><option value="">ყველა მიმართულება</option>'+dirs.map(x=>'<option'+(DOC_F_DIR===x?' selected':'')+'>'+esc(x)+'</option>').join('')+'</select>'+
-      '<select id="docFSt" style="min-width:150px"><option value="">ყველა სტატუსი</option>'+DOC_STATUS.map(s=>'<option'+(DOC_F_STATUS===s[0]?' selected':'')+'>'+esc(s[0])+'</option>').join('')+'</select>'+
-      '<input id="docQ" placeholder="🔍 ძებნა სახელში/ფაილში" value="'+esc(DOC_Q)+'" style="flex:1;min-width:160px">'+
-    '</div></div>';
+  if(DOC_FOLDER!=null){renderDocFolderView(DOC_FOLDER);return;}
+  const folders=docFolders();const names=Object.keys(folders).sort((a,b)=>a.localeCompare(b));
   const q=DOC_Q.trim().toLowerCase();
-  const list=(DOCS||[]).filter(d=>{
-    if(DOC_F_DIR&&(d.direction||'')!==DOC_F_DIR)return false;
+  let h='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2>🗂 დოკუმენტები</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" id="docNewFolder" style="background:#2b6cb0;color:#fff">📁 ახალი ფოლდერი</button><button class="btn sm" id="docNew" style="background:#0B6B3C;color:#fff">➕ ახალი დოკუმენტი</button></div></div>'+
+    '<p class="muted" style="font-size:12px;margin-top:4px">ფოლდერებად დალაგებული — აირჩიე ფოლდერი (მიმართულება) და შედი.</p>'+
+    '<input id="docQ" placeholder="🔍 ძებნა ყველა ფოლდერში" value="'+esc(DOC_Q)+'" style="margin-top:8px;width:100%"></div>';
+  if(q){
+    const matches=(DOCS||[]).filter(d=>{const hay=((d.title||'')+' '+(d.partner||'')+' '+(d.kind||'')+' '+(d.direction||'')+' '+docFilesOf(d).map(f=>(f.name||'')+' '+(f.fname||'')).join(' ')).toLowerCase();return hay.indexOf(q)>=0;});
+    h+='<div class="card" style="padding:10px"><b style="font-size:12.5px">🔍 ნაპოვნია: '+matches.length+'</b></div>';
+    if(!matches.length)h+='<div class="card"><div class="empty">ვერ მოიძებნა.</div></div>';
+    matches.forEach(d=>h+=docCardHTML(d));
+    docsEl.innerHTML=h;wireDocs();return;}
+  if(!names.length)h+='<div class="card"><div class="empty">ჯერ არაფერია. შექმენი „📁 ახალი ფოლდერი" ან „➕ ახალი დოკუმენტი".</div></div>';
+  else{h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">';
+    names.forEach(nm=>{const arr=folders[nm];const nf=arr.reduce((a,d)=>a+docFilesOf(d).length,0);
+      h+='<div class="card" style="cursor:pointer;margin:0;display:flex;align-items:center;gap:12px;padding:14px" data-docfolder="'+esc(nm)+'">'+
+        '<div style="font-size:34px;flex:0 0 auto">📁</div>'+
+        '<div style="flex:1;min-width:0"><div style="font-weight:800;color:#14261c;font-size:14px;word-break:break-word">'+esc(nm)+'</div><div class="muted" style="font-size:11.5px">'+arr.length+' დოკ. · '+nf+' ფაილი</div></div></div>';});
+    h+='</div>';}
+  docsEl.innerHTML=h;wireDocs();
+}
+function renderDocFolderView(folder){
+  const folders=docFolders();const arr=(folders[folder]||[]);const q=DOC_Q.trim().toLowerCase();
+  let h='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div style="display:flex;align-items:center;gap:10px;min-width:0"><button class="btn line sm" id="docBack">← ფოლდერები</button><h2 style="margin:0;word-break:break-word">📁 '+esc(folder)+'</h2></div><button class="btn sm" id="docNew" style="background:#0B6B3C;color:#fff">➕ ახალი დოკუმენტი</button></div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">'+
+      '<select id="docFSt" style="min-width:150px"><option value="">ყველა სტატუსი</option>'+DOC_STATUS.map(s=>'<option'+(DOC_F_STATUS===s[0]?' selected':'')+'>'+esc(s[0])+'</option>').join('')+'</select>'+
+      '<input id="docQ" placeholder="🔍 ძებნა ამ ფოლდერში" value="'+esc(DOC_Q)+'" style="flex:1;min-width:160px">'+
+    '</div></div>';
+  const list=arr.filter(d=>{
     if(DOC_F_STATUS&&(d.status||'')!==DOC_F_STATUS)return false;
     if(q){const hay=((d.title||'')+' '+(d.partner||'')+' '+(d.kind||'')+' '+docFilesOf(d).map(f=>(f.name||'')+' '+(f.fname||'')).join(' ')).toLowerCase();if(hay.indexOf(q)<0)return false;}
     return true;});
-  if(!list.length)h+='<div class="card"><div class="empty">დოკუმენტი ვერ მოიძებნა. დაამატე „➕ ახალი დოკუმენტი".</div></div>';
-  list.forEach(d=>{
-    const files=docFilesOf(d);const open=!!DOC_OPEN[d.id];const col=docStatusColor(d.status);
-    const sub=[d.kind,d.partner,(d.date||'')].filter(Boolean).map(esc).join(' · ');
-    h+='<div class="card" style="padding:0;overflow:hidden">'+
-      '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer" data-doctgl="'+esc(d.id)+'">'+
-        '<div style="font-size:26px;flex:0 0 auto">📄</div>'+
-        '<div style="flex:1;min-width:0"><div style="font-weight:800;color:#14261c;font-size:14px">'+esc(d.title||'—')+'</div><div class="muted" style="font-size:12px">'+(sub||'—')+'</div></div>'+
-        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:0 0 auto">'+
-          (d.direction?'<span style="background:#eef4ff;color:#2b6cb0;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px">'+esc(d.direction)+'</span>':'')+
-          '<span style="background:'+col+'22;color:'+col+';font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px">'+esc(d.status||'—')+'</span>'+
-          '<span class="muted" style="font-size:11px;font-weight:700;white-space:nowrap">'+files.length+' დოკ.</span>'+
-          '<span style="font-size:13px;color:#8a8a8a">'+(open?'▲':'▼')+'</span>'+
-        '</div></div>';
-    if(open){
-      h+='<div style="padding:0 14px 12px;border-top:1px solid #eef1ef">'+
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 8px;align-items:center">'+
-          '<button class="btn line sm" data-docadd="'+esc(d.id)+'">＋ დოკუმენტი</button>'+
-          '<button class="btn line sm" data-docedit="'+esc(d.id)+'">✏ რედაქტირება</button>'+
-          '<button class="btn danger sm" data-docdel="'+esc(d.id)+'">🗑 წაშლა</button>'+
-          (d.note?'<span class="muted" style="font-size:11.5px">📝 '+esc(d.note)+'</span>':'')+
-          '<span style="margin-left:auto;font-size:11px;color:#8a8a8a">სულ '+docFmtMB(files.reduce((a,f)=>a+(+f.size||0),0))+'</span>'+
-        '</div>';
-      if(!files.length)h+='<div class="empty" style="padding:10px">ფაილი ჯერ არ არის — დააჭირე „＋ დოკუმენტი".</div>';
-      else{h+='<div class="scroll"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><tbody>';
-        files.forEach((f,i)=>{h+='<tr style="border-top:1px solid #f0f3f1">'+
-          '<td style="padding:7px"><div style="font-weight:700">'+esc(f.name||f.fname||'ფაილი')+'</div><div class="muted" style="font-size:10.5px;font-family:monospace;word-break:break-all">'+esc(f.fname||'')+'</div></td>'+
-          '<td style="padding:7px;white-space:nowrap">'+(f.type?'<span style="background:#f0f0f0;color:#555;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px">'+esc(f.type)+'</span>':'')+'</td>'+
-          '<td style="padding:7px;text-align:right;white-space:nowrap;color:#8a8a8a;font-size:11px">'+esc(f.date||'')+'</td>'+
-          '<td style="padding:7px;text-align:right;white-space:nowrap;color:#8a8a8a;font-size:11px">'+docFmtMB(f.size)+'</td>'+
-          '<td style="padding:7px;text-align:right;white-space:nowrap">'+(f.url?'<a class="smini" href="'+esc(f.url)+'" target="_blank" rel="noopener" title="ნახვა" style="text-decoration:none">👁</a> <a class="smini" href="'+esc(f.url)+'" download title="ჩამოტვირთვა" style="text-decoration:none">⬇</a> ':'')+'<button class="smini danger" data-docfdel="'+esc(d.id)+'|'+i+'" title="წაშლა">🗑</button></td>'+
-          '</tr>';});
-        h+='</tbody></table></div>';}
-      h+='</div>';}
-    h+='</div>';});
+  if(!list.length)h+='<div class="card"><div class="empty">ამ ფოლდერში დოკუმენტი არ არის. დაამატე „➕ ახალი დოკუმენტი".</div></div>';
+  list.forEach(d=>h+=docCardHTML(d));
   docsEl.innerHTML=h;wireDocs();
 }
 function wireDocs(){
-  if($('docNew'))$('docNew').onclick=()=>docForm(null);
-  if($('docFDir'))$('docFDir').onchange=e=>{DOC_F_DIR=e.target.value;renderDocs();};
+  const inFolder=(DOC_FOLDER!=null&&DOC_FOLDER!=='უჯგუფო')?DOC_FOLDER:'';
+  if($('docNew'))$('docNew').onclick=()=>docForm(null,inFolder);
+  if($('docNewFolder'))$('docNewFolder').onclick=()=>{const nm=(prompt('ფოლდერის სახელი (მიმართულება):','')||'').trim();if(!nm)return;DOC_FOLDER=nm;DOC_Q='';DOC_F_STATUS='';renderDocs();};
+  if($('docBack'))$('docBack').onclick=()=>{DOC_FOLDER=null;DOC_Q='';DOC_F_STATUS='';renderDocs();};
   if($('docFSt'))$('docFSt').onchange=e=>{DOC_F_STATUS=e.target.value;renderDocs();};
   if($('docQ'))$('docQ').oninput=e=>{DOC_Q=e.target.value;renderDocs();const el=$('docQ');if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(x){}}};
+  docsEl.querySelectorAll('[data-docfolder]').forEach(b=>b.onclick=()=>{DOC_FOLDER=b.dataset.docfolder;DOC_Q='';DOC_F_STATUS='';renderDocs();});
   docsEl.querySelectorAll('[data-doctgl]').forEach(b=>b.onclick=()=>{const id=b.dataset.doctgl;DOC_OPEN[id]=!DOC_OPEN[id];renderDocs();});
   docsEl.querySelectorAll('[data-docadd]').forEach(b=>b.onclick=()=>docAddFile(b.dataset.docadd));
   docsEl.querySelectorAll('[data-docedit]').forEach(b=>b.onclick=()=>docForm(b.dataset.docedit));
   docsEl.querySelectorAll('[data-docdel]').forEach(b=>b.onclick=()=>docDeleteGroup(b.dataset.docdel));
   docsEl.querySelectorAll('[data-docfdel]').forEach(b=>b.onclick=()=>{const p=b.dataset.docfdel.split('|');docDeleteFile(p[0],+p[1]);});
 }
-function docForm(id){
+function docForm(id,prefillDir){
   const d=id?(DOCS||[]).find(x=>String(x.id)===String(id)):null;const dirs=docDirList();
   const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:18px;overflow:auto';
   ov.innerHTML='<div class="card" style="max-width:520px;width:100%"><h2 style="margin-bottom:10px">'+(d?'✏ დოკუმენტის რედაქტირება':'➕ ახალი დოკუმენტი')+'</h2>'+
     '<label>სათაური</label><input id="dfTitle" value="'+esc(d?(d.title||''):'')+'" placeholder="მაგ. მაგთისთან ხელშეკრულება">'+
-    '<div class="row" style="margin-top:8px"><div style="flex:1"><label>მიმართულება</label><input id="dfDir" list="dfDirs" value="'+esc(d?(d.direction||''):'')+'" placeholder="მაგ. ხელშეკრულებები"><datalist id="dfDirs">'+dirs.map(x=>'<option>'+esc(x)+'</option>').join('')+'</datalist></div><div style="flex:1"><label>ტიპი</label><select id="dfKind">'+DOC_KINDS.map(k=>'<option'+(d&&d.kind===k?' selected':'')+'>'+esc(k)+'</option>').join('')+'</select></div></div>'+
+    '<div class="row" style="margin-top:8px"><div style="flex:1"><label>მიმართულება (ფოლდერი)</label><input id="dfDir" list="dfDirs" value="'+esc(d?(d.direction||''):(prefillDir||''))+'" placeholder="მაგ. ხელშეკრულებები"><datalist id="dfDirs">'+dirs.map(x=>'<option>'+esc(x)+'</option>').join('')+'</datalist></div><div style="flex:1"><label>ტიპი</label><select id="dfKind">'+DOC_KINDS.map(k=>'<option'+(d&&d.kind===k?' selected':'')+'>'+esc(k)+'</option>').join('')+'</select></div></div>'+
     '<div class="row" style="margin-top:8px"><div style="flex:1"><label>პარტნიორი/მხარე</label><input id="dfPartner" value="'+esc(d?(d.partner||''):'')+'" placeholder="მაგ. მაგთი"></div><div style="flex:1"><label>სტატუსი</label><select id="dfStatus">'+DOC_STATUS.map(s=>'<option'+((d&&d.status===s[0])||(!d&&s[0]==='მიმდინარე')?' selected':'')+'>'+esc(s[0])+'</option>').join('')+'</select></div></div>'+
     '<div class="row" style="margin-top:8px"><div style="flex:0 0 200px"><label>თარიღი</label><input id="dfDate" type="date" value="'+esc(d&&d.date?d.date:todayStr())+'"></div><div style="flex:1"><label>შენიშვნა</label><input id="dfNote" value="'+esc(d?(d.note||''):'')+'"></div></div>'+
     '<div style="display:flex;gap:8px;margin-top:14px"><button class="btn" id="dfSave" style="flex:1">💾 შენახვა</button><button class="btn line" id="dfClose">დახურვა</button></div><div id="dfMsg" style="margin-top:8px;font-size:12px"></div></div>';
