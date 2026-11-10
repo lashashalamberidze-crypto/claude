@@ -185,7 +185,7 @@ async function doLogin(){
     uid=r.data.user.id; userEmail=r.data.user.email; showApp();
   }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
 }
-async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} try{ var _q=localStorage.getItem("check_queue"); localStorage.clear(); if(_q) localStorage.setItem("check_queue",_q); }catch(e){} location.reload(); }
 function updateNet(){ var b=g('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
 
 async function showApp(){

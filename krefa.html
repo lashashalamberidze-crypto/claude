@@ -262,7 +262,7 @@ async function doLogin(){
     uid=r.data.user.id; showApp(r.data.user.email);
   }catch(ex){ err.textContent='❌ '+(ex.message||ex); }
 }
-async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
+async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} try{ var _q=localStorage.getItem("check_queue"); localStorage.clear(); if(_q) localStorage.setItem("check_queue",_q); }catch(e){} location.reload(); }
 
 async function showApp(email){
   document.getElementById('loginCard').style.display='none';
