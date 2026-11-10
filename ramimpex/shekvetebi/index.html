@@ -287,14 +287,23 @@ function docForm(id,prefillDir){
     '<div class="row" style="margin-top:8px"><div style="flex:1"><label>მიმართულება (ფოლდერი)</label><input id="dfDir" list="dfDirs" value="'+esc(d?(d.direction||''):(prefillDir||''))+'" placeholder="მაგ. ხელშეკრულებები"><datalist id="dfDirs">'+dirs.map(x=>'<option>'+esc(x)+'</option>').join('')+'</datalist></div><div style="flex:1"><label>ტიპი</label><select id="dfKind">'+DOC_KINDS.map(k=>'<option'+(d&&d.kind===k?' selected':'')+'>'+esc(k)+'</option>').join('')+'</select></div></div>'+
     '<div class="row" style="margin-top:8px"><div style="flex:1"><label>პარტნიორი/მხარე</label><input id="dfPartner" value="'+esc(d?(d.partner||''):'')+'" placeholder="მაგ. მაგთი"></div><div style="flex:1"><label>სტატუსი</label><select id="dfStatus">'+DOC_STATUS.map(s=>'<option'+((d&&d.status===s[0])||(!d&&s[0]==='მიმდინარე')?' selected':'')+'>'+esc(s[0])+'</option>').join('')+'</select></div></div>'+
     '<div class="row" style="margin-top:8px"><div style="flex:0 0 200px"><label>თარიღი</label><input id="dfDate" type="date" value="'+esc(d&&d.date?d.date:todayStr())+'"></div><div style="flex:1"><label>შენიშვნა</label><input id="dfNote" value="'+esc(d?(d.note||''):'')+'"></div></div>'+
+    '<div style="margin-top:10px;border:1px dashed #b7c7bf;border-radius:10px;padding:10px 12px;background:#f8fdfa"><label style="margin:0">📎 ფაილ(ებ)ის ატვირთვა'+(d?' (დამატება)':'')+'</label><input id="dfFiles" type="file" multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt" style="margin-top:4px"><div class="muted" style="font-size:11px;margin-top:3px">შეგიძლია რამდენიმე ფაილი ერთად აირჩიო. (შენახვის შემდეგაც შეიძლება დამატება „＋ ფაილი"-თ.)</div></div>'+
     '<div style="display:flex;gap:8px;margin-top:14px"><button class="btn" id="dfSave" style="flex:1">💾 შენახვა</button><button class="btn line" id="dfClose">დახურვა</button></div><div id="dfMsg" style="margin-top:8px;font-size:12px"></div></div>';
   document.body.appendChild(ov);const qq=s=>ov.querySelector(s);
   qq('#dfClose').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove();};
   qq('#dfSave').onclick=async()=>{
     const title=qq('#dfTitle').value.trim();if(!title){qq('#dfMsg').innerHTML='<span style="color:#b00020">ჩაწერე სათაური</span>';return;}
-    const rec={id:d?d.id:('doc'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)),title,direction:qq('#dfDir').value.trim(),kind:qq('#dfKind').value,partner:qq('#dfPartner').value.trim(),status:qq('#dfStatus').value,date:qq('#dfDate').value||todayStr(),note:qq('#dfNote').value.trim(),files:d?docFilesOf(d):[]};
+    const rec={id:d?d.id:('doc'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)),title,direction:qq('#dfDir').value.trim(),kind:qq('#dfKind').value,partner:qq('#dfPartner').value.trim(),status:qq('#dfStatus').value,date:qq('#dfDate').value||todayStr(),note:qq('#dfNote').value.trim(),files:d?docFilesOf(d).slice():[]};
     const btn=qq('#dfSave');btn.disabled=true;btn.textContent='⏳…';
-    try{const {error}=await sb.from('docs').upsert(rec,{onConflict:'id'});if(error)throw error;
+    try{
+      const fi=qq('#dfFiles');const sel=fi&&fi.files?[...fi.files]:[];
+      if(sel.length){btn.textContent='⏳ ფაილები იტვირთება…';
+        for(const f of sel){const path='documents/'+rec.id+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'-'+f.name.replace(/[^\w.\-]/g,'_');
+          const r=await sb.storage.from('sale-docs').upload(path,f,{upsert:true});if(r.error)throw r.error;
+          const url=sb.storage.from('sale-docs').getPublicUrl(path).data.publicUrl;
+          rec.files.push({name:f.name.replace(/\.[^.]+$/,''),fname:f.name,url,type:((f.name.split('.').pop()||'').toUpperCase()).slice(0,5),size:f.size,date:todayStr()});}
+      }
+      const {error}=await sb.from('docs').upsert(rec,{onConflict:'id'});if(error)throw error;
       DOCS=(DOCS||[]).filter(x=>String(x.id)!==String(rec.id));DOCS.unshift(rec);DOC_OPEN[rec.id]=true;ov.remove();renderDocs();}
     catch(e){const hint=/relation|table|schema|cache|does not exist/i.test(e.message||'')?' — ჯერ გაუშვი sql/docs.sql Supabase-ში':'';qq('#dfMsg').innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+hint+'</span>';btn.disabled=false;btn.textContent='💾 შენახვა';}};
 }
