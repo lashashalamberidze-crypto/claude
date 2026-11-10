@@ -88,9 +88,9 @@ td.right,th.right{text-align:right}
 </style></head>
 <body>
 <div class="top"><div><div class="lg">RAM IMPEX</div><div class="su">ადმინ პანელი</div></div>
- <div class="tabbar" id="tabbar" style="display:none"><button class="tb on" data-t="orders">📋 შეკვეთები</button><button class="tb" data-t="catalog">💰 კატალოგი & ფასები</button><button class="tb" data-t="invoice">🧾 ინვოისი</button><button class="tb" data-t="sales">📊 გაყიდვები</button><button class="tb" data-t="purchases">🛒 შესყიდვები</button><button class="tb" data-t="expenses">💸 ხარჯები</button><button class="tb" data-t="booklets">📄 ბუკლეტები</button></div>
+ <div class="tabbar" id="tabbar" style="display:none"><button class="tb on" data-t="orders">📋 შეკვეთები</button><button class="tb" data-t="catalog">💰 კატალოგი & ფასები</button><button class="tb" data-t="invoice">🧾 ინვოისი</button><button class="tb" data-t="sales">📊 გაყიდვები</button><button class="tb" data-t="purchases">🛒 შესყიდვები</button><button class="tb" data-t="expenses">💸 ხარჯები</button><button class="tb" data-t="booklets">📄 ბუკლეტები</button><button class="tb" data-t="docs">🗂 დოკუმენტები</button></div>
  <button class="btn line sm" id="logout" style="display:none">გასვლა</button></div>
-<div class="wrap"><div id="app"><div class="empty">იტვირთება…</div></div><div id="cat" style="display:none"></div><div id="inv" style="display:none"></div><div id="book" style="display:none"></div><div id="sales" style="display:none"></div><div id="sal" style="display:none"></div><div id="purch" style="display:none"></div><div id="buk" style="display:none"></div></div>
+<div class="wrap"><div id="app"><div class="empty">იტვირთება…</div></div><div id="cat" style="display:none"></div><div id="inv" style="display:none"></div><div id="book" style="display:none"></div><div id="sales" style="display:none"></div><div id="sal" style="display:none"></div><div id="purch" style="display:none"></div><div id="buk" style="display:none"></div><div id="docs" style="display:none"></div></div>
 <div class="ov" id="ov"><img id="ovImg" src=""></div>
 <div id="printArea"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -105,7 +105,7 @@ const IMG_BY_CODE={"PL-1418": "/img/r3.jpg", "PL-1068": "/img/r3.jpg", "PL-1134"
 const PIZZA_IMG={"PZC01": "/files/pizza_corner_kraft.png", "PZC02": "/files/pizza_corner.png", "PZC03": "/files/pizza_corner_kraft.png", "PZC04": "/files/pizza_corner.png", "PZC05": "/files/pizza_corner_kraft.png", "PZC06": "/files/pizza_corner.png", "PZC07": "/files/pizza_corner_kraft.png", "PZC08": "/files/pizza_corner.png", "PZC09": "/files/pizza_corner_kraft.png", "PZC10": "/files/pizza_corner.png", "PZC11": "/files/pizza_corner_kraft.png", "PZC12": "/files/pizza_corner.png", "PZC13": "/files/pizza_corner_kraft.png", "PZC14": "/files/pizza_corner.png", "PZC15": "/files/pizza_corner_kraft.png", "PZC16": "/files/pizza_corner.png", "PZC17": "/files/pizza_corner_kraft.png", "PZC18": "/files/pizza_corner.png", "PZC19": "/files/pizza_corner_kraft.png", "PZC20": "/files/pizza_corner.png", "PZS01": "/files/pizza_square_kraft.png", "PZS02": "/files/pizza_square.png", "PZS03": "/files/pizza_square_kraft.png", "PZS04": "/files/pizza_square.png", "PZS05": "/files/pizza_square_kraft.png", "PZS06": "/files/pizza_square.png", "PZS07": "/files/pizza_square_kraft.png", "PZS08": "/files/pizza_square.png", "PZS09": "/files/pizza_square_kraft.png", "PZS10": "/files/pizza_square.png", "PZS11": "/files/pizza_square_kraft.png", "PZS12": "/files/pizza_square.png", "PZS13": "/files/pizza_square_kraft.png", "PZS14": "/files/pizza_square.png", "PZS15": "/files/pizza_square_kraft.png", "PZS16": "/files/pizza_square.png", "PZS17": "/files/pizza_square_kraft.png", "PZS18": "/files/pizza_square.png", "PZR01": "/files/pizza_round_kraft.png", "PZR02": "/files/pizza_round.png", "PZR03": "/files/pizza_round_kraft.png", "PZR04": "/files/pizza_round.png", "PZR05": "/files/pizza_round_kraft.png", "PZR06": "/files/pizza_round.png"};    // პიცის ფორმა-სურათი კოდით (კვადრატი/მოჭრილკუთხა/მრგვალი × კრაფტი/თეთრი) — გადაწონის
 const PIZZA_SHAPE={PZS:'კვადრატული',PZC:'მოჭრილკუთხებიანი',PZR:'მრგვალი'};
 function pizzaShapeWord(code,name){const m=(''+(code||'')).match(/^(PZ[SCR])/);if(!m)return '';const w=PIZZA_SHAPE[m[1]]||'';if(!w)return '';return (name||'').indexOf(w)>=0?'':w;}
-const $=id=>document.getElementById(id), app=$('app'), catEl=$('cat'), invEl=$('inv'), salesEl=$('sales'), salEl=$('sal'), bukEl=$('buk'), bookEl=$('book'), purchEl=$('purch');
+const $=id=>document.getElementById(id), app=$('app'), catEl=$('cat'), invEl=$('inv'), salesEl=$('sales'), salEl=$('sal'), bukEl=$('buk'), bookEl=$('book'), purchEl=$('purch'), docsEl=$('docs');
 const esc=s=>(s==null?'':(''+s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const money=v=>(Math.round((+v||0)*100)/100).toFixed(2);
 const DIR_RU={boxes:'Картонные ящики',edge:'Уголковые защиты',anth:'Антрацитовый брикет',contact:'Сообщение с сайта','':'—'};
@@ -132,12 +132,14 @@ $('tabbar').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{
   salEl.style.display=t==='expenses'?'':'none';
   purchEl.style.display=t==='purchases'?'':'none';
   bukEl.style.display=t==='booklets'?'':'none';
+  docsEl.style.display=t==='docs'?'':'none';
   if(t==='catalog'){if(!catEl.dataset.ready)loadCatalog();}
   if(t==='invoice')openInvoice();
   if(t==='sales')openSales();
   if(t==='expenses')openExpenses();
   if(t==='purchases')openPurchases();
   if(t==='booklets')renderBooklets();
+  if(t==='docs')openDocs();
 });
 /* ========================= BOOKLETS (download) ========================= */
 const BOOKLETS=[
@@ -180,6 +182,127 @@ function renderBooklets(){
   const cp=$('copyInfoLink');if(cp)cp.onclick=()=>{const url='https://ramimpex.com.ge/info';(navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(url):Promise.reject()).then(()=>{const o=cp.textContent;cp.textContent='✔ დაკოპირდა';setTimeout(()=>cp.textContent=o,1500);}).catch(()=>{prompt('დააკოპირე ბმული (Ctrl+C):',url);});};
   const cb=$('copyBankLink');if(cb)cb.onclick=()=>{const url='https://ramimpex.com.ge/bank';(navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(url):Promise.reject()).then(()=>{const o=cb.textContent;cb.textContent='✔ დაკოპირდა';setTimeout(()=>cb.textContent=o,1500);}).catch(()=>{prompt('დააკოპირე ბმული (Ctrl+C):',url);});};
   const cd=$('copyDistLink');if(cd)cd.onclick=()=>{const url='https://ramimpex.com.ge/distribution';(navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(url):Promise.reject()).then(()=>{const o=cd.textContent;cd.textContent='✔ დაკოპირდა';setTimeout(()=>cd.textContent=o,1500);}).catch(()=>{prompt('დააკოპირე ბმული (Ctrl+C):',url);});};
+}
+/* ========================= DOCUMENTS (შენახვა/რედაქტ.) ========================= */
+const DOC_STATUS=[['მიმდინარე','#2b6cb0'],['დასადასტურებელი','#c9701a'],['დასრულებული','#0B6B3C'],['არქივი','#8a8a8a']];
+const DOC_KINDS=['ხელშეკრულება','ინვოისი','სერტიფიკატი','ლაბორატორია','ანგარიში','წერილი','აქტი','რეკვიზიტები','სხვა'];
+let DOCS=[], DOC_F_DIR='', DOC_F_STATUS='', DOC_Q='', DOC_OPEN={};
+async function loadDocs(){try{const {data}=await sb.from('docs').select('*').order('date',{ascending:false});DOCS=data||[];}catch(e){DOCS=[];}}
+async function openDocs(){docsEl.innerHTML='<div class="empty">იტვირთება…</div>';try{await loadDocs();}catch(e){}renderDocs();}
+function docStatusColor(s){const f=DOC_STATUS.find(x=>x[0]===s);return f?f[1]:'#8a8a8a';}
+function docDirList(){const s=new Set();(DOCS||[]).forEach(d=>{if(d.direction)s.add(d.direction);});return [...s].sort((a,b)=>a.localeCompare(b));}
+function docFmtMB(b){b=+b||0;return (b/1048576).toFixed(2)+' MB';}
+function docFilesOf(d){return Array.isArray(d.files)?d.files:[];}
+function renderDocs(){
+  const dirs=docDirList();
+  let h='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2>🗂 დოკუმენტები</h2><button class="btn sm" id="docNew" style="background:#0B6B3C;color:#fff">➕ ახალი დოკუმენტი</button></div>'+
+    '<p class="muted" style="font-size:12px;margin-top:4px">სხვადასხვა მიმართულების დოკუმენტები — შენახვა, ფაილების ატვირთვა, რედაქტირება.</p>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">'+
+      '<select id="docFDir" style="min-width:160px"><option value="">ყველა მიმართულება</option>'+dirs.map(x=>'<option'+(DOC_F_DIR===x?' selected':'')+'>'+esc(x)+'</option>').join('')+'</select>'+
+      '<select id="docFSt" style="min-width:150px"><option value="">ყველა სტატუსი</option>'+DOC_STATUS.map(s=>'<option'+(DOC_F_STATUS===s[0]?' selected':'')+'>'+esc(s[0])+'</option>').join('')+'</select>'+
+      '<input id="docQ" placeholder="🔍 ძებნა სახელში/ფაილში" value="'+esc(DOC_Q)+'" style="flex:1;min-width:160px">'+
+    '</div></div>';
+  const q=DOC_Q.trim().toLowerCase();
+  const list=(DOCS||[]).filter(d=>{
+    if(DOC_F_DIR&&(d.direction||'')!==DOC_F_DIR)return false;
+    if(DOC_F_STATUS&&(d.status||'')!==DOC_F_STATUS)return false;
+    if(q){const hay=((d.title||'')+' '+(d.partner||'')+' '+(d.kind||'')+' '+docFilesOf(d).map(f=>(f.name||'')+' '+(f.fname||'')).join(' ')).toLowerCase();if(hay.indexOf(q)<0)return false;}
+    return true;});
+  if(!list.length)h+='<div class="card"><div class="empty">დოკუმენტი ვერ მოიძებნა. დაამატე „➕ ახალი დოკუმენტი".</div></div>';
+  list.forEach(d=>{
+    const files=docFilesOf(d);const open=!!DOC_OPEN[d.id];const col=docStatusColor(d.status);
+    const sub=[d.kind,d.partner,(d.date||'')].filter(Boolean).map(esc).join(' · ');
+    h+='<div class="card" style="padding:0;overflow:hidden">'+
+      '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer" data-doctgl="'+esc(d.id)+'">'+
+        '<div style="font-size:26px;flex:0 0 auto">📄</div>'+
+        '<div style="flex:1;min-width:0"><div style="font-weight:800;color:#14261c;font-size:14px">'+esc(d.title||'—')+'</div><div class="muted" style="font-size:12px">'+(sub||'—')+'</div></div>'+
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:0 0 auto">'+
+          (d.direction?'<span style="background:#eef4ff;color:#2b6cb0;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px">'+esc(d.direction)+'</span>':'')+
+          '<span style="background:'+col+'22;color:'+col+';font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px">'+esc(d.status||'—')+'</span>'+
+          '<span class="muted" style="font-size:11px;font-weight:700;white-space:nowrap">'+files.length+' დოკ.</span>'+
+          '<span style="font-size:13px;color:#8a8a8a">'+(open?'▲':'▼')+'</span>'+
+        '</div></div>';
+    if(open){
+      h+='<div style="padding:0 14px 12px;border-top:1px solid #eef1ef">'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 8px;align-items:center">'+
+          '<button class="btn line sm" data-docadd="'+esc(d.id)+'">＋ დოკუმენტი</button>'+
+          '<button class="btn line sm" data-docedit="'+esc(d.id)+'">✏ რედაქტირება</button>'+
+          '<button class="btn danger sm" data-docdel="'+esc(d.id)+'">🗑 წაშლა</button>'+
+          (d.note?'<span class="muted" style="font-size:11.5px">📝 '+esc(d.note)+'</span>':'')+
+          '<span style="margin-left:auto;font-size:11px;color:#8a8a8a">სულ '+docFmtMB(files.reduce((a,f)=>a+(+f.size||0),0))+'</span>'+
+        '</div>';
+      if(!files.length)h+='<div class="empty" style="padding:10px">ფაილი ჯერ არ არის — დააჭირე „＋ დოკუმენტი".</div>';
+      else{h+='<div class="scroll"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><tbody>';
+        files.forEach((f,i)=>{h+='<tr style="border-top:1px solid #f0f3f1">'+
+          '<td style="padding:7px"><div style="font-weight:700">'+esc(f.name||f.fname||'ფაილი')+'</div><div class="muted" style="font-size:10.5px;font-family:monospace;word-break:break-all">'+esc(f.fname||'')+'</div></td>'+
+          '<td style="padding:7px;white-space:nowrap">'+(f.type?'<span style="background:#f0f0f0;color:#555;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px">'+esc(f.type)+'</span>':'')+'</td>'+
+          '<td style="padding:7px;text-align:right;white-space:nowrap;color:#8a8a8a;font-size:11px">'+esc(f.date||'')+'</td>'+
+          '<td style="padding:7px;text-align:right;white-space:nowrap;color:#8a8a8a;font-size:11px">'+docFmtMB(f.size)+'</td>'+
+          '<td style="padding:7px;text-align:right;white-space:nowrap">'+(f.url?'<a class="smini" href="'+esc(f.url)+'" target="_blank" rel="noopener" title="ნახვა" style="text-decoration:none">👁</a> <a class="smini" href="'+esc(f.url)+'" download title="ჩამოტვირთვა" style="text-decoration:none">⬇</a> ':'')+'<button class="smini danger" data-docfdel="'+esc(d.id)+'|'+i+'" title="წაშლა">🗑</button></td>'+
+          '</tr>';});
+        h+='</tbody></table></div>';}
+      h+='</div>';}
+    h+='</div>';});
+  docsEl.innerHTML=h;wireDocs();
+}
+function wireDocs(){
+  if($('docNew'))$('docNew').onclick=()=>docForm(null);
+  if($('docFDir'))$('docFDir').onchange=e=>{DOC_F_DIR=e.target.value;renderDocs();};
+  if($('docFSt'))$('docFSt').onchange=e=>{DOC_F_STATUS=e.target.value;renderDocs();};
+  if($('docQ'))$('docQ').oninput=e=>{DOC_Q=e.target.value;renderDocs();const el=$('docQ');if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(x){}}};
+  docsEl.querySelectorAll('[data-doctgl]').forEach(b=>b.onclick=()=>{const id=b.dataset.doctgl;DOC_OPEN[id]=!DOC_OPEN[id];renderDocs();});
+  docsEl.querySelectorAll('[data-docadd]').forEach(b=>b.onclick=()=>docAddFile(b.dataset.docadd));
+  docsEl.querySelectorAll('[data-docedit]').forEach(b=>b.onclick=()=>docForm(b.dataset.docedit));
+  docsEl.querySelectorAll('[data-docdel]').forEach(b=>b.onclick=()=>docDeleteGroup(b.dataset.docdel));
+  docsEl.querySelectorAll('[data-docfdel]').forEach(b=>b.onclick=()=>{const p=b.dataset.docfdel.split('|');docDeleteFile(p[0],+p[1]);});
+}
+function docForm(id){
+  const d=id?(DOCS||[]).find(x=>String(x.id)===String(id)):null;const dirs=docDirList();
+  const ov=document.createElement('div');ov.className='ov on';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:18px;overflow:auto';
+  ov.innerHTML='<div class="card" style="max-width:520px;width:100%"><h2 style="margin-bottom:10px">'+(d?'✏ დოკუმენტის რედაქტირება':'➕ ახალი დოკუმენტი')+'</h2>'+
+    '<label>სათაური</label><input id="dfTitle" value="'+esc(d?(d.title||''):'')+'" placeholder="მაგ. მაგთისთან ხელშეკრულება">'+
+    '<div class="row" style="margin-top:8px"><div style="flex:1"><label>მიმართულება</label><input id="dfDir" list="dfDirs" value="'+esc(d?(d.direction||''):'')+'" placeholder="მაგ. ხელშეკრულებები"><datalist id="dfDirs">'+dirs.map(x=>'<option>'+esc(x)+'</option>').join('')+'</datalist></div><div style="flex:1"><label>ტიპი</label><select id="dfKind">'+DOC_KINDS.map(k=>'<option'+(d&&d.kind===k?' selected':'')+'>'+esc(k)+'</option>').join('')+'</select></div></div>'+
+    '<div class="row" style="margin-top:8px"><div style="flex:1"><label>პარტნიორი/მხარე</label><input id="dfPartner" value="'+esc(d?(d.partner||''):'')+'" placeholder="მაგ. მაგთი"></div><div style="flex:1"><label>სტატუსი</label><select id="dfStatus">'+DOC_STATUS.map(s=>'<option'+((d&&d.status===s[0])||(!d&&s[0]==='მიმდინარე')?' selected':'')+'>'+esc(s[0])+'</option>').join('')+'</select></div></div>'+
+    '<div class="row" style="margin-top:8px"><div style="flex:0 0 200px"><label>თარიღი</label><input id="dfDate" type="date" value="'+esc(d&&d.date?d.date:todayStr())+'"></div><div style="flex:1"><label>შენიშვნა</label><input id="dfNote" value="'+esc(d?(d.note||''):'')+'"></div></div>'+
+    '<div style="display:flex;gap:8px;margin-top:14px"><button class="btn" id="dfSave" style="flex:1">💾 შენახვა</button><button class="btn line" id="dfClose">დახურვა</button></div><div id="dfMsg" style="margin-top:8px;font-size:12px"></div></div>';
+  document.body.appendChild(ov);const qq=s=>ov.querySelector(s);
+  qq('#dfClose').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  qq('#dfSave').onclick=async()=>{
+    const title=qq('#dfTitle').value.trim();if(!title){qq('#dfMsg').innerHTML='<span style="color:#b00020">ჩაწერე სათაური</span>';return;}
+    const rec={id:d?d.id:('doc'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)),title,direction:qq('#dfDir').value.trim(),kind:qq('#dfKind').value,partner:qq('#dfPartner').value.trim(),status:qq('#dfStatus').value,date:qq('#dfDate').value||todayStr(),note:qq('#dfNote').value.trim(),files:d?docFilesOf(d):[]};
+    const btn=qq('#dfSave');btn.disabled=true;btn.textContent='⏳…';
+    try{const {error}=await sb.from('docs').upsert(rec,{onConflict:'id'});if(error)throw error;
+      DOCS=(DOCS||[]).filter(x=>String(x.id)!==String(rec.id));DOCS.unshift(rec);DOC_OPEN[rec.id]=true;ov.remove();renderDocs();}
+    catch(e){const hint=/relation|table|schema|cache|does not exist/i.test(e.message||'')?' — ჯერ გაუშვი sql/docs.sql Supabase-ში':'';qq('#dfMsg').innerHTML='<span style="color:#b00020">ვერ შეინახა: '+esc(e.message||e)+hint+'</span>';btn.disabled=false;btn.textContent='💾 შენახვა';}};
+}
+function docAddFile(id){
+  const d=(DOCS||[]).find(x=>String(x.id)===String(id));if(!d)return;
+  const fi=document.createElement('input');fi.type='file';fi.accept='image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt';fi.multiple=true;
+  fi.onchange=async()=>{const files=[...(fi.files||[])];if(!files.length)return;
+    const btn=docsEl.querySelector('[data-docadd="'+id+'"]');const ob=btn?btn.textContent:'';if(btn){btn.textContent='⏳ იტვირთება…';btn.disabled=true;}
+    try{const cur=docFilesOf(d).slice();
+      for(const f of files){const path='documents/'+d.id+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,6)+'-'+f.name.replace(/[^\w.\-]/g,'_');
+        const r=await sb.storage.from('sale-docs').upload(path,f,{upsert:true});if(r.error)throw r.error;
+        const url=sb.storage.from('sale-docs').getPublicUrl(path).data.publicUrl;
+        cur.push({name:f.name.replace(/\.[^.]+$/,''),fname:f.name,url,type:((f.name.split('.').pop()||'').toUpperCase()).slice(0,5),size:f.size,date:todayStr()});}
+      const {error}=await sb.from('docs').update({files:cur}).eq('id',d.id);if(error)throw error;
+      d.files=cur;DOC_OPEN[d.id]=true;renderDocs();}
+    catch(e){if(btn){btn.textContent=ob;btn.disabled=false;}alert('ვერ აიტვირთა: '+(e.message||e));}};
+  fi.click();
+}
+async function docDeleteFile(id,i){
+  const d=(DOCS||[]).find(x=>String(x.id)===String(id));if(!d)return;if(!confirm('წავშალო ეს ფაილი?'))return;
+  const cur=docFilesOf(d).slice();const rm=cur.splice(i,1)[0];
+  try{const {error}=await sb.from('docs').update({files:cur}).eq('id',id);if(error)throw error;d.files=cur;renderDocs();
+    try{if(rm&&rm.url){const m=rm.url.split('/sale-docs/')[1];if(m)await sb.storage.from('sale-docs').remove([decodeURIComponent(m.split('?')[0])]);}}catch(e){}}
+  catch(e){alert('ვერ წაიშალა: '+(e.message||e));}
+}
+async function docDeleteGroup(id){
+  const d=(DOCS||[]).find(x=>String(x.id)===String(id));if(!d)return;if(!confirm('წავშალო მთლიანად ეს დოკუმენტი და მისი ფაილები?'))return;
+  try{const {error}=await sb.from('docs').delete().eq('id',id);if(error)throw error;
+    try{const paths=docFilesOf(d).map(f=>{const m=(f.url||'').split('/sale-docs/')[1];return m?decodeURIComponent(m.split('?')[0]):null;}).filter(Boolean);if(paths.length)await sb.storage.from('sale-docs').remove(paths);}catch(e){}
+    DOCS=(DOCS||[]).filter(x=>String(x.id)!==String(id));delete DOC_OPEN[id];renderDocs();}
+  catch(e){alert('ვერ წაიშალა: '+(e.message||e));}
 }
 /* ========================= SALES (გაყიდვები) ========================= */
 let SALES=[], SAL_DIR='all', editingSaleId=null;
@@ -258,12 +381,12 @@ function invProdOptions(dirFilter){let h='<option value="">— აირჩი�
   else{const pr=effective(d,it);inner+='<option value="'+esc(it.code)+'">'+esc(ruCode(it.code))+' · '+esc(it.name||'')+(it.size?' · '+esc(it.size):'')+' — '+money(pr)+' ₾</option>';}
   });if(inner)h+='<optgroup label="'+esc(d.name)+'">'+inner+'</optgroup>';});return h;}
 function loginView(msg){
- $('tabbar').style.display='none';$('logout').style.display='none';catEl.style.display='none';invEl.style.display='none';bookEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';purchEl.style.display='none';app.style.display='';
+ $('tabbar').style.display='none';$('logout').style.display='none';catEl.style.display='none';invEl.style.display='none';bookEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';purchEl.style.display='none';docsEl.style.display='none';app.style.display='';
  app.innerHTML='<div class="card" style="max-width:380px;margin:40px auto"><h2 style="margin-bottom:6px">შესვლა</h2><p class="muted" style="font-size:12px;margin-bottom:8px">ადმინის ელ.ფოსტა/პაროლი (Supabase)</p>'+(msg?'<p style="color:#c62828;font-size:12px;margin-bottom:6px">'+esc(msg)+'</p>':'')+'<label>ელ. ფოსტა</label><input id="em" type="email"><label>პაროლი</label><input id="pw" type="password"><button class="btn" id="lg" style="width:100%;margin-top:12px">შესვლა</button><button class="smini" id="fpw" style="width:100%;margin-top:8px;background:#f3faf5;color:#0B6B3C">🔑 პაროლი დამავიწყდა</button><div id="fpwMsg" class="muted" style="font-size:12px;margin-top:6px"></div></div>';
  $('lg').onclick=async()=>{$('lg').disabled=true;$('lg').textContent='...';const {error}=await sb.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});if(error){loginView(error.message);}else{onLogin();}};
  $('fpw').onclick=async()=>{const em=($('em').value||'').trim();if(!em){$('fpwMsg').innerHTML='<span style="color:#c62828">ჯერ ჩაწერე ელ.ფოსტა ზემოთ</span>';return;}$('fpw').disabled=true;const {error}=await sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});if(error){$('fpwMsg').innerHTML='<span style="color:#c62828">'+esc(error.message)+'</span>';$('fpw').disabled=false;}else{$('fpwMsg').innerHTML='<span style="color:#0B6B3C">✅ გამოგზავნილია აღდგენის ბმული <b>'+esc(em)+'</b>-ზე. გახსენი წერილი და დააყენე ახალი პაროლი.</span>';}};
 }
-function recoverView(){$('tabbar').style.display='none';$('logout').style.display='none';catEl.style.display='none';invEl.style.display='none';bookEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';purchEl.style.display='none';app.style.display='';
+function recoverView(){$('tabbar').style.display='none';$('logout').style.display='none';catEl.style.display='none';invEl.style.display='none';bookEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';purchEl.style.display='none';docsEl.style.display='none';app.style.display='';
  app.innerHTML='<div class="card" style="max-width:380px;margin:40px auto"><h2 style="margin-bottom:6px">🔑 ახალი პაროლი</h2><p class="muted" style="font-size:12px;margin-bottom:8px">ჩაწერე ახალი პაროლი (მინ. 6 სიმბოლო)</p><label>ახალი პაროლი</label><input id="np" type="password"><button class="btn" id="npsave" style="width:100%;margin-top:12px">შენახვა</button><div id="npMsg" class="muted" style="font-size:12px;margin-top:6px"></div></div>';
  $('npsave').onclick=async()=>{const p=$('np').value||'';if(p.length<6){$('npMsg').innerHTML='<span style="color:#c62828">მინ. 6 სიმბოლო</span>';return;}$('npsave').disabled=true;$('npsave').textContent='...';const {error}=await sb.auth.updateUser({password:p});if(error){$('npMsg').innerHTML='<span style="color:#c62828">'+esc(error.message)+'</span>';$('npsave').disabled=false;$('npsave').textContent='შენახვა';}else{$('npMsg').innerHTML='<span style="color:#0B6B3C">✅ პაროლი შეიცვალა</span>';history.replaceState(null,'',location.pathname);setTimeout(onLogin,600);}};
 }
@@ -887,7 +1010,7 @@ function editInvoice(inv){
   // ვიზუალურად გადავდივართ „ინვოისის" ტაბზე openInvoice-ის გამოძახების გარეშე (რომ ფორმა არ გაიწმინდოს)
   $('tabbar').querySelectorAll('.tb').forEach(x=>x.classList.remove('on'));
   const ib=$('tabbar').querySelector('[data-t="invoice"]');if(ib)ib.classList.add('on');
-  app.style.display='none';catEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';invEl.style.display='';
+  app.style.display='none';catEl.style.display='none';salesEl.style.display='none';salEl.style.display='none';bukEl.style.display='none';docsEl.style.display='none';invEl.style.display='';
   editingInvId=inv.id;
   invVatIncl=!!((inv.extra||{}).vatIncl);
   invDemo=!!((inv.extra||{}).demo);
@@ -925,7 +1048,7 @@ async function invoiceFromOrder(o){
   // ინვოისის ტაბზე გადასვლა
   $('tabbar').querySelectorAll('.tb').forEach(x=>x.classList.remove('on'));
   const ib=$('tabbar').querySelector('[data-t="invoice"]'); if(ib)ib.classList.add('on');
-  app.style.display='none';catEl.style.display='none';bukEl.style.display='none';salesEl.style.display='none';invEl.style.display='';
+  app.style.display='none';catEl.style.display='none';bukEl.style.display='none';docsEl.style.display='none';salesEl.style.display='none';invEl.style.display='';
   await openInvoice();
   if($('iCust'))$('iCust').value=o.cust_name||'';
   if($('iPhone'))$('iPhone').value=o.cust_phone||'';
