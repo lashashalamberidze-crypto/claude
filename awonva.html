@@ -355,10 +355,16 @@ async function doLogin(){
 async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
 
 // ── ფერმის ამოცნობა: მფლობელი თუ ამწონველი (farm_members) ──
+var ROLE_PAGE={weigher:'awonva.html',agronomist:'phenocal.html',inspector:'shemowmeba.html'};
 async function resolveFarm(){
   AUTH_UID=uid; CUR_ROLE='admin'; CUR_WEIGHER='';
-  try{ var r=await sb.from('farm_members').select('owner_uid,name').eq('member_uid',AUTH_UID).maybeSingle();
-    if(r&&r.data&&r.data.owner_uid){ uid=r.data.owner_uid; CUR_ROLE='weigher'; CUR_WEIGHER=r.data.name||'ამწონველი'; }
+  try{ var r=await sb.from('farm_members').select('owner_uid,name,role').eq('member_uid',AUTH_UID).maybeSingle();
+    if(r&&r.data&&r.data.owner_uid){
+      var role=r.data.role||'weigher';
+      var page=ROLE_PAGE[role]||'awonva.html';
+      if(page!=='awonva.html'){ location.replace(page); await new Promise(function(){}); return; }
+      uid=r.data.owner_uid; CUR_ROLE='weigher'; CUR_WEIGHER=r.data.name||'ამწონველი';
+    }
   }catch(e){}
 }
 async function showApp(email){

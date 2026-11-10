@@ -98,6 +98,7 @@
     </div>
     <div style="margin-left:auto;text-align:right">
       <div style="font-size:.72rem">შესული: <b id="whoami" style="color:#e11d48">…</b></div>
+      <button id="phUsersBtn" class="sec" style="width:auto;padding:5px 10px;margin:4px 4px 0 0;font-size:.72rem;display:none" onclick="phUsersModal()">👤 აგრონომები</button>
       <button class="sec" style="width:auto;padding:5px 10px;margin:4px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
     </div>
   </div>
@@ -270,10 +271,27 @@ async function doLogin(){
 async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
 function updateNet(){ var b=document.getElementById('netbar'); if(!b)return; if(navigator.onLine){ b.className='on'; b.textContent='🌐 ონლაინ'; } else { b.className='off'; b.textContent='📴 ოფლაინ'; } }
 
+// ── ფერმის წევრის როლი: agronomist → ამ მოდულზე; სხვა → თავის მოდულზე ──
+var ROLE_PAGE={weigher:'awonva.html',agronomist:'phenocal.html',inspector:'shemowmeba.html'};
+var PH_ROLE='admin', PH_MEMBER_NAME='', MEMBERS=[];
+async function phResolveFarm(){
+  PH_ROLE='admin'; PH_MEMBER_NAME='';
+  try{ var r=await sb.from('farm_members').select('owner_uid,name,role').eq('member_uid',uid).maybeSingle();
+    if(r&&r.data&&r.data.owner_uid){
+      var role=r.data.role||'weigher';
+      var page=ROLE_PAGE[role]||'awonva.html';
+      if(page!=='phenocal.html'){ location.replace(page); await new Promise(function(){}); return; }
+      uid=r.data.owner_uid; PH_ROLE='agronomist'; PH_MEMBER_NAME=r.data.name||'აგრონომი';
+    }
+  }catch(e){}
+}
+
 async function showApp(email){
   document.getElementById('loginCard').style.display='none';
   document.getElementById('app').style.display='block';
-  document.getElementById('whoami').textContent=email||'—';
+  await phResolveFarm();   // uid→მფლობელი (წევრზე); არა-აგრონომი → თავის მოდულზე
+  document.getElementById('whoami').textContent=(PH_ROLE==='agronomist'?('🌿 '+(PH_MEMBER_NAME||'აგრონომი')):(email||'—'));
+  var ub=document.getElementById('phUsersBtn'); if(ub) ub.style.display=(PH_ROLE==='admin')?'inline-block':'none';
   updateNet();
   window.addEventListener('online',updateNet);
   window.addEventListener('offline',updateNet);
@@ -285,6 +303,53 @@ async function showApp(email){
   await phLoadFromCloud();
   phSwitchTab('calendar', document.querySelector('#phTabs .tab'));
 }
+
+// ── 👤 აგრონომების მართვა (farm_members · role=agronomist) ──
+function phUsersModal(){
+  var ov=document.getElementById('phuModal'); if(ov){ ov.remove(); return; }
+  ov=document.createElement('div'); ov.id='phuModal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
+  ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:440px;width:100%;padding:18px;max-height:90vh;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.25)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:1.05rem;color:#0369a1">👤 აგრონომები</b><button class="sec" style="width:auto;padding:5px 11px" onclick="document.getElementById(\'phuModal\').remove()">✕</button></div>'
+    +'<div style="font-size:.78rem;color:#64748b;margin-bottom:8px">შექმენი აგრონომის ანგარიში — ის შევა <b>თავისი email/პაროლით</b> და ნახავს მხოლოდ ფენოკალენდარს.</div>'
+    +'<input id="phuName" placeholder="სახელი (მაგ. ნინო)" style="width:100%;padding:9px;border:1px solid #dbe4ee;border-radius:9px;box-sizing:border-box">'
+    +'<input id="phuEmail" placeholder="email" type="email" autocapitalize="off" style="width:100%;padding:9px;border:1px solid #dbe4ee;border-radius:9px;box-sizing:border-box;margin-top:6px">'
+    +'<input id="phuPass" placeholder="პაროლი (მინ. 6 სიმბოლო)" style="width:100%;padding:9px;border:1px solid #dbe4ee;border-radius:9px;box-sizing:border-box;margin-top:6px">'
+    +'<button class="pri" style="margin-top:8px;width:100%" onclick="phuAdd()">➕ აგრონომის შექმნა</button>'
+    +'<div id="phuMsg" style="font-size:.82rem;margin-top:6px"></div>'
+    +'<div id="phuList" style="margin-top:12px">იტვირთება…</div>'
+    +'</div>';
+  document.body.appendChild(ov); phuLoad();
+}
+async function phuLoad(){
+  try{ var r=await sb.from('farm_members').select('*').eq('owner_uid',uid).eq('role','agronomist').order('created_at',{ascending:true}); MEMBERS=(r&&r.data)||[]; }catch(e){ MEMBERS=[]; }
+  phuRender();
+}
+function phuRender(){ var el=document.getElementById('phuList'); if(!el) return;
+  if(!MEMBERS.length){ el.innerHTML='<div style="text-align:center;padding:8px;color:#94a3b8">— ჯერ არავინ —</div>'; return; }
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.82rem"><thead><tr><th style="text-align:left;padding:4px">სახელი</th><th style="text-align:left;padding:4px">email</th><th></th></tr></thead><tbody>'+MEMBERS.map(function(m){ return '<tr><td style="padding:4px"><b>'+esc(m.name||'—')+'</b></td><td style="padding:4px;color:#64748b;font-size:.74rem">'+esc(m.email||'')+'</td><td style="padding:4px"><span style="cursor:pointer;color:#dc2626" onclick="phuDel(\''+esc(m.id)+'\')">🗑️</span></td></tr>'; }).join('')+'</tbody></table>';
+}
+async function phuAdd(){
+  var n=(document.getElementById('phuName').value||'').trim(), em=(document.getElementById('phuEmail').value||'').trim().toLowerCase(), pw=(document.getElementById('phuPass').value||''), msg=document.getElementById('phuMsg');
+  if(!n){ msg.innerHTML='<span style="color:#dc2626">ჩაწერე სახელი</span>'; return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ msg.innerHTML='<span style="color:#dc2626">არასწორი email</span>'; return; }
+  if(pw.length<6){ msg.innerHTML='<span style="color:#dc2626">პაროლი მინ. 6 სიმბოლო</span>'; return; }
+  msg.innerHTML='<span style="color:#64748b">⏳ ვქმნი ანგარიშს…</span>';
+  var prov=null; try{ prov=supabase.createClient(SB_URL,SB_KEY,{auth:{storageKey:'prov_'+Date.now(),persistSession:false,autoRefreshToken:false}}); }catch(e){ msg.innerHTML='<span style="color:#dc2626">client ვერ შეიქმნა</span>'; return; }
+  var su; try{ su=await prov.auth.signUp({email:em,password:pw}); }catch(e){ msg.innerHTML='<span style="color:#dc2626">❌ '+esc(e.message||String(e))+'</span>'; return; }
+  if(su.error){ msg.innerHTML='<span style="color:#dc2626">❌ '+esc(su.error.message)+'</span>'; return; }
+  var mid=su.data&&su.data.user&&su.data.user.id;
+  if(!mid){ msg.innerHTML='<span style="color:#dc2626">❌ ანგარიში ვერ შეიქმნა (შეამოწმე „Confirm email" გამორთვა)</span>'; return; }
+  try{ await prov.auth.signOut(); }catch(e){}
+  try{ var r=await sb.from('farm_members').insert({owner_uid:uid,member_uid:mid,name:n,email:em,role:'agronomist'}); if(r.error){ msg.innerHTML='<span style="color:#dc2626">❌ ბმა ვერ შეიქმნა: '+esc(r.error.message)+'</span>'; return; } }catch(e){ msg.innerHTML='<span style="color:#dc2626">❌ '+esc(e.message||String(e))+'</span>'; return; }
+  document.getElementById('phuName').value=''; document.getElementById('phuEmail').value=''; document.getElementById('phuPass').value='';
+  msg.innerHTML='<span style="color:#16a34a">✅ შეიქმნა — აგრონომი შედის ამ email/პაროლით</span>';
+  phuLoad();
+}
+async function phuDel(id){ if(!confirm('აგრონომის წვდომა მოიხსნას?')) return;
+  try{ var r=await sb.from('farm_members').delete().eq('id',id).eq('owner_uid',uid); if(r.error){ alert('❌ '+r.error.message); return; } }catch(e){ alert('❌ '+(e.message||e)); return; }
+  phuLoad(); }
+window.phUsersModal=phUsersModal; window.phuAdd=phuAdd; window.phuDel=phuDel;
 
 // ── plantations (optional read-only context) ──
 async function loadPlantations(){

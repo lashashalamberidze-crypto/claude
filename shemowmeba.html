@@ -74,6 +74,7 @@
     <h1>🔍 ყუთის შემოწმება</h1>
     <div style="font-size:.76rem;color:#475569;text-align:right">
       <div>შესული: <b id="whoami" style="color:#0369a1">…</b></div>
+      <button id="chkUsersBtn" class="sec" style="width:auto;padding:5px 10px;margin:3px 4px 0 0;font-size:.72rem;display:none" onclick="chkUsersModal()">👤 შემმოწმებლები</button>
       <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button>
     </div>
   </div>
@@ -221,15 +222,78 @@ async function doLogin(){
   catch(e){ err.textContent='ვერ მოხერხდა: '+(e.message||e); }
 }
 async function doLogout(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} location.reload(); }
-function showApp(){
+// ── ფერმის წევრის როლი: inspector → ამ მოდულზე; სხვა → თავის მოდულზე ──
+var ROLE_PAGE={weigher:'awonva.html',agronomist:'phenocal.html',inspector:'shemowmeba.html'};
+var CHK_ROLE='admin', CHK_MEMBER_NAME='', MEMBERS=[];
+async function chkResolveFarm(){
+  CHK_ROLE='admin'; CHK_MEMBER_NAME='';
+  if(!sb||!uid) return;
+  try{ var r=await sb.from('farm_members').select('owner_uid,name,role').eq('member_uid',uid).maybeSingle();
+    if(r&&r.data&&r.data.owner_uid){
+      var role=r.data.role||'weigher';
+      var page=ROLE_PAGE[role]||'awonva.html';
+      if(page!=='shemowmeba.html'){ location.replace(page); await new Promise(function(){}); return; }
+      uid=r.data.owner_uid; CHK_ROLE='inspector'; CHK_MEMBER_NAME=r.data.name||'შემმოწმებელი';
+    }
+  }catch(e){}
+}
+async function showApp(){
   document.getElementById('loginCard').style.display='none';
-  try{ if(sb&&uid){ sb.from('farm_members').select('member_uid').eq('member_uid',uid).maybeSingle().then(function(r){ if(r&&r.data) location.replace('awonva.html'); },function(){}); } }catch(e){}
+  await chkResolveFarm();   // uid→მფლობელი (წევრზე); არა-შემმოწმებელი → თავის მოდულზე
   document.getElementById('app').style.display='block';
+  var ub=document.getElementById('chkUsersBtn'); if(ub) ub.style.display=(CHK_ROLE==='admin')?'inline-block':'none';
   updateNet(); renderDlStatus(); renderQueue(); focus1();
-  if(sb){ sb.auth.getUser().then(({data})=>{ var em=(data&&data.user&&data.user.email)||'-'; var el=document.getElementById('whoami'); if(el) el.textContent=em; }).catch(function(){}); }
+  if(CHK_ROLE==='inspector'){ var el=document.getElementById('whoami'); if(el) el.textContent='🔍 '+(CHK_MEMBER_NAME||'შემმოწმებელი'); }
+  else if(sb){ sb.auth.getUser().then(({data})=>{ var em=(data&&data.user&&data.user.email)||'-'; var el=document.getElementById('whoami'); if(el) el.textContent=em; }).catch(function(){}); }
   else { var el2=document.getElementById('whoami'); if(el2) el2.textContent='ოფლაინ'; }
   if(navigator.onLine && uid) syncQueue();
 }
+// ── 👤 შემმოწმებლების მართვა (farm_members · role=inspector) ──
+function chkUsersModal(){
+  var ov=document.getElementById('chkuModal'); if(ov){ ov.remove(); return; }
+  ov=document.createElement('div'); ov.id='chkuModal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
+  ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:440px;width:100%;padding:18px;max-height:90vh;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.25)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:1.05rem;color:#0369a1">👤 შემმოწმებლები</b><button class="sec" style="width:auto;padding:5px 11px" onclick="document.getElementById(\'chkuModal\').remove()">✕</button></div>'
+    +'<div style="font-size:.78rem;color:#64748b;margin-bottom:8px">შექმენი შემმოწმებლის ანგარიში — ის შევა <b>თავისი email/პაროლით</b> და ნახავს მხოლოდ ყუთის შემოწმებას.</div>'
+    +'<input id="chkuName" placeholder="სახელი" style="width:100%;padding:9px;border:1px solid #dbe4ee;border-radius:9px;box-sizing:border-box">'
+    +'<input id="chkuEmail" placeholder="email" type="email" autocapitalize="off" style="width:100%;padding:9px;border:1px solid #dbe4ee;border-radius:9px;box-sizing:border-box;margin-top:6px">'
+    +'<input id="chkuPass" placeholder="პაროლი (მინ. 6 სიმბოლო)" style="width:100%;padding:9px;border:1px solid #dbe4ee;border-radius:9px;box-sizing:border-box;margin-top:6px">'
+    +'<button style="margin-top:8px;width:100%" onclick="chkuAdd()">➕ შემმოწმებლის შექმნა</button>'
+    +'<div id="chkuMsg" style="font-size:.82rem;margin-top:6px"></div>'
+    +'<div id="chkuList" style="margin-top:12px">იტვირთება…</div>'
+    +'</div>';
+  document.body.appendChild(ov); chkuLoad();
+}
+async function chkuLoad(){
+  try{ var r=await sb.from('farm_members').select('*').eq('owner_uid',uid).eq('role','inspector').order('created_at',{ascending:true}); MEMBERS=(r&&r.data)||[]; }catch(e){ MEMBERS=[]; }
+  chkuRender();
+}
+function chkuRender(){ var el=document.getElementById('chkuList'); if(!el) return;
+  if(!MEMBERS.length){ el.innerHTML='<div style="text-align:center;padding:8px;color:#94a3b8">— ჯერ არავინ —</div>'; return; }
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.82rem"><thead><tr><th style="text-align:left;padding:4px">სახელი</th><th style="text-align:left;padding:4px">email</th><th></th></tr></thead><tbody>'+MEMBERS.map(function(m){ return '<tr><td style="padding:4px"><b>'+esc(m.name||'—')+'</b></td><td style="padding:4px;color:#64748b;font-size:.74rem">'+esc(m.email||'')+'</td><td style="padding:4px"><span style="cursor:pointer;color:#dc2626" onclick="chkuDel(\''+esc(m.id)+'\')">🗑️</span></td></tr>'; }).join('')+'</tbody></table>';
+}
+async function chkuAdd(){
+  var n=(document.getElementById('chkuName').value||'').trim(), em=(document.getElementById('chkuEmail').value||'').trim().toLowerCase(), pw=(document.getElementById('chkuPass').value||''), msg=document.getElementById('chkuMsg');
+  if(!n){ msg.innerHTML='<span style="color:#dc2626">ჩაწერე სახელი</span>'; return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ msg.innerHTML='<span style="color:#dc2626">არასწორი email</span>'; return; }
+  if(pw.length<6){ msg.innerHTML='<span style="color:#dc2626">პაროლი მინ. 6 სიმბოლო</span>'; return; }
+  msg.innerHTML='<span style="color:#64748b">⏳ ვქმნი ანგარიშს…</span>';
+  var prov=null; try{ prov=supabase.createClient(SB_URL,SB_KEY,{auth:{storageKey:'prov_'+Date.now(),persistSession:false,autoRefreshToken:false}}); }catch(e){ msg.innerHTML='<span style="color:#dc2626">client ვერ შეიქმნა</span>'; return; }
+  var su; try{ su=await prov.auth.signUp({email:em,password:pw}); }catch(e){ msg.innerHTML='<span style="color:#dc2626">❌ '+esc(e.message||String(e))+'</span>'; return; }
+  if(su.error){ msg.innerHTML='<span style="color:#dc2626">❌ '+esc(su.error.message)+'</span>'; return; }
+  var mid=su.data&&su.data.user&&su.data.user.id;
+  if(!mid){ msg.innerHTML='<span style="color:#dc2626">❌ ანგარიში ვერ შეიქმნა (შეამოწმე „Confirm email" გამორთვა)</span>'; return; }
+  try{ await prov.auth.signOut(); }catch(e){}
+  try{ var r=await sb.from('farm_members').insert({owner_uid:uid,member_uid:mid,name:n,email:em,role:'inspector'}); if(r.error){ msg.innerHTML='<span style="color:#dc2626">❌ ბმა ვერ შეიქმნა: '+esc(r.error.message)+'</span>'; return; } }catch(e){ msg.innerHTML='<span style="color:#dc2626">❌ '+esc(e.message||String(e))+'</span>'; return; }
+  document.getElementById('chkuName').value=''; document.getElementById('chkuEmail').value=''; document.getElementById('chkuPass').value='';
+  msg.innerHTML='<span style="color:#16a34a">✅ შეიქმნა — შემმოწმებელი შედის ამ email/პაროლით</span>';
+  chkuLoad();
+}
+async function chkuDel(id){ if(!confirm('შემმოწმებლის წვდომა მოიხსნას?')) return;
+  try{ var r=await sb.from('farm_members').delete().eq('id',id).eq('owner_uid',uid); if(r.error){ alert('❌ '+r.error.message); return; } }catch(e){ alert('❌ '+(e.message||e)); return; }
+  chkuLoad(); }
+window.chkUsersModal=chkUsersModal; window.chkuAdd=chkuAdd; window.chkuDel=chkuDel;
 function focus1(){ var el=document.getElementById(MODE==='check'?'scanIn':'scanIn2'); if(el) el.focus(); }
 function setMode(m){ MODE=m;
   document.getElementById('modeCheck').style.display = m==='check'?'block':'none';
