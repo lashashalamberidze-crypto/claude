@@ -186,14 +186,16 @@ function renderBooklets(){
 /* ========================= DOCUMENTS (შენახვა/რედაქტ.) ========================= */
 const DOC_STATUS=[['მიმდინარე','#2b6cb0'],['დასადასტურებელი','#c9701a'],['დასრულებული','#0B6B3C'],['არქივი','#8a8a8a']];
 const DOC_KINDS=['ხელშეკრულება','ინვოისი','სერტიფიკატი','ლაბორატორია','ანგარიში','წერილი','აქტი','რეკვიზიტები','სხვა'];
-let DOCS=[], DOC_F_DIR='', DOC_F_STATUS='', DOC_Q='', DOC_OPEN={}, DOC_FOLDER=null;
+let DOCS=[], DOC_F_DIR='', DOC_F_STATUS='', DOC_Q='', DOC_OPEN={}, DOC_FOLDER=null, DOC_XFOLDERS=[];
+function docLoadX(){try{return JSON.parse(localStorage.getItem('ri_doc_folders')||'[]');}catch(e){return [];}}
+function docSaveX(){try{localStorage.setItem('ri_doc_folders',JSON.stringify(DOC_XFOLDERS));}catch(e){}}
 async function loadDocs(){try{const {data}=await sb.from('docs').select('*').order('date',{ascending:false});DOCS=data||[];}catch(e){DOCS=[];}}
-async function openDocs(){docsEl.innerHTML='<div class="empty">იტვირთება…</div>';try{await loadDocs();}catch(e){}renderDocs();}
+async function openDocs(){docsEl.innerHTML='<div class="empty">იტვირთება…</div>';DOC_XFOLDERS=docLoadX();try{await loadDocs();}catch(e){}renderDocs();}
 function docStatusColor(s){const f=DOC_STATUS.find(x=>x[0]===s);return f?f[1]:'#8a8a8a';}
 function docDirList(){const s=new Set();(DOCS||[]).forEach(d=>{if(d.direction)s.add(d.direction);});return [...s].sort((a,b)=>a.localeCompare(b));}
 function docFmtMB(b){b=+b||0;return (b/1048576).toFixed(2)+' MB';}
 function docFilesOf(d){return Array.isArray(d.files)?d.files:[];}
-function docFolders(){const m={};(DOCS||[]).forEach(d=>{const k=((d.direction||'').trim())||'უჯგუფო';(m[k]=m[k]||[]).push(d);});return m;}
+function docFolders(){const m={};(DOCS||[]).forEach(d=>{const k=((d.direction||'').trim())||'უჯგუფო';(m[k]=m[k]||[]).push(d);});(DOC_XFOLDERS||[]).forEach(nm=>{if(nm&&!m[nm])m[nm]=[];});return m;}
 function docCardHTML(d){
   const files=docFilesOf(d);const open=!!DOC_OPEN[d.id];const col=docStatusColor(d.status);
   const sub=[d.kind,d.partner,(d.date||'')].filter(Boolean).map(esc).join(' · ');
@@ -244,9 +246,12 @@ function renderDocs(){
   if(!names.length)h+='<div class="card"><div class="empty">ჯერ არაფერია. შექმენი „📁 ახალი ფოლდერი" ან „➕ ახალი დოკუმენტი".</div></div>';
   else{h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">';
     names.forEach(nm=>{const arr=folders[nm];const nf=arr.reduce((a,d)=>a+docFilesOf(d).length,0);
-      h+='<div class="card" style="cursor:pointer;margin:0;display:flex;align-items:center;gap:12px;padding:14px" data-docfolder="'+esc(nm)+'">'+
-        '<div style="font-size:34px;flex:0 0 auto">📁</div>'+
-        '<div style="flex:1;min-width:0"><div style="font-weight:800;color:#14261c;font-size:14px;word-break:break-word">'+esc(nm)+'</div><div class="muted" style="font-size:11.5px">'+arr.length+' დოკ. · '+nf+' ფაილი</div></div></div>';});
+      h+='<div class="card" style="margin:0;display:flex;align-items:center;gap:12px;padding:14px">'+
+        '<div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer" data-docfolder="'+esc(nm)+'">'+
+          '<div style="font-size:34px;flex:0 0 auto">📁</div>'+
+          '<div style="flex:1;min-width:0"><div style="font-weight:800;color:#14261c;font-size:14px;word-break:break-word">'+esc(nm)+'</div><div class="muted" style="font-size:11.5px">'+arr.length+' დოკ. · '+nf+' ფაილი</div></div></div>'+
+          (arr.length===0&&nm!=='უჯგუფო'?'<button class="smini danger" data-docfolderdel="'+esc(nm)+'" title="ცარიელი ფოლდერის წაშლა" style="flex:0 0 auto">🗑</button>':'')+
+        '</div>';});
     h+='</div>';}
   docsEl.innerHTML=h;wireDocs();
 }
@@ -268,7 +273,8 @@ function renderDocFolderView(folder){
 function wireDocs(){
   const inFolder=(DOC_FOLDER!=null&&DOC_FOLDER!=='უჯგუფო')?DOC_FOLDER:'';
   if($('docNew'))$('docNew').onclick=()=>docForm(null,inFolder);
-  if($('docNewFolder'))$('docNewFolder').onclick=()=>{const nm=(prompt('ფოლდერის სახელი (მიმართულება):','')||'').trim();if(!nm)return;DOC_FOLDER=nm;DOC_Q='';DOC_F_STATUS='';renderDocs();};
+  if($('docNewFolder'))$('docNewFolder').onclick=()=>{const nm=(prompt('ფოლდერის სახელი (მიმართულება):','')||'').trim();if(!nm)return;if((DOC_XFOLDERS||[]).indexOf(nm)<0){DOC_XFOLDERS.push(nm);docSaveX();}DOC_Q='';renderDocs();};
+  docsEl.querySelectorAll('[data-docfolderdel]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const nm=b.dataset.docfolderdel;if(!confirm('წავშალო ცარიელი ფოლდერი „'+nm+'"?'))return;DOC_XFOLDERS=(DOC_XFOLDERS||[]).filter(x=>x!==nm);docSaveX();renderDocs();});
   if($('docBack'))$('docBack').onclick=()=>{DOC_FOLDER=null;DOC_Q='';DOC_F_STATUS='';renderDocs();};
   if($('docFSt'))$('docFSt').onchange=e=>{DOC_F_STATUS=e.target.value;renderDocs();};
   if($('docQ'))$('docQ').oninput=e=>{DOC_Q=e.target.value;renderDocs();const el=$('docQ');if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(x){}}};
