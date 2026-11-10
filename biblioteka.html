@@ -67,7 +67,7 @@
   <div id="netbar" class="on">🌐 ონლაინ</div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-    <h1>📚 აგრო ბიბლიოთეკა <span style="font-size:.6rem;background:var(--accent-d);color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v1</span></h1>
+    <h1>📚 აგრო ბიბლიოთეკა <span style="font-size:.6rem;background:var(--accent-d);color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v2</span></h1>
     <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:var(--accent-d)">…</b></div>
     <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
   </div>
@@ -321,8 +321,8 @@ function switchTab(which){
 // ════════════════════════════════════════════════════
 //  TAB 1 — DOCS / LIBRARY  →  cloud table: ph_documents
 // ════════════════════════════════════════════════════
-function phDocsGetUser(){ try{ return JSON.parse(localStorage.getItem(PH_DOCS_KEY)||'[]'); }catch(e){ return []; } }
-function phDocsSaveUser(arr){ try{ localStorage.setItem(PH_DOCS_KEY, JSON.stringify(arr)); }catch(e){} }
+function phDocsGetUser(){ try{ return JSON.parse(localStorage.getItem(PH_DOCS_KEY+'__'+(uid||'anon'))||'[]'); }catch(e){ return []; } }
+function phDocsSaveUser(arr){ try{ localStorage.setItem(PH_DOCS_KEY+'__'+(uid||'anon'), JSON.stringify(arr)); }catch(e){} }
 function phDocsGetAll(){ return DOCS.length ? DOCS : phDocsGetUser(); }
 
 async function phDocsLoadFromSupabase(){
@@ -490,8 +490,8 @@ async function phDocDelete(id){
 // ════════════════════════════════════════════════════
 //  TAB 2 — PARTNERS  →  cloud table: ph_partners
 // ════════════════════════════════════════════════════
-function phPartnersLocal(){ try{ return JSON.parse(localStorage.getItem(PH_PARTNERS_KEY)||'[]'); }catch(e){ return []; } }
-function phPartnersSaveLocal(arr){ try{ localStorage.setItem(PH_PARTNERS_KEY, JSON.stringify(arr)); }catch(e){} }
+function phPartnersLocal(){ try{ return JSON.parse(localStorage.getItem(PH_PARTNERS_KEY+'__'+(uid||'anon'))||'[]'); }catch(e){ return []; } }
+function phPartnersSaveLocal(arr){ try{ localStorage.setItem(PH_PARTNERS_KEY+'__'+(uid||'anon'), JSON.stringify(arr)); }catch(e){} }
 
 // static default partner card (SRCA) — always shown at top, not deletable
 const SRCA_PARTNER={
@@ -654,8 +654,8 @@ async function phAdDelete(id){
 const PH_EVENTS_KEY='its_ph_events';
 let EVENTS=[], editEvId=null;
 
-function phEventsLocal(){ try{ return JSON.parse(localStorage.getItem(PH_EVENTS_KEY)||'[]'); }catch(e){ return []; } }
-function phEventsSaveLocal(arr){ try{ localStorage.setItem(PH_EVENTS_KEY, JSON.stringify(arr)); }catch(e){} }
+function phEventsLocal(){ try{ return JSON.parse(localStorage.getItem(PH_EVENTS_KEY+'__'+(uid||'anon'))||'[]'); }catch(e){ return []; } }
+function phEventsSaveLocal(arr){ try{ localStorage.setItem(PH_EVENTS_KEY+'__'+(uid||'anon'), JSON.stringify(arr)); }catch(e){} }
 
 const EV_TYPE_META={
   'კონფერენცია':{ic:'🎤',col:'#0284c7'},'ლაივი':{ic:'📡',col:'#e11d48'},

@@ -73,7 +73,7 @@
   <div id="netbar" class="on">🌐 ონლაინ</div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-    <h1>🌱 პლანტაციის მდგომარეობა <span style="font-size:.6rem;background:#06b6d4;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v1</span></h1>
+    <h1>🌱 პლანტაციის მდგომარეობა <span style="font-size:.6rem;background:#06b6d4;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v2</span></h1>
     <div style="font-size:.76rem;text-align:right"><div>შესული: <b id="whoami" style="color:#0891b2">…</b></div>
     <button class="sec" style="width:auto;padding:5px 10px;margin:3px 0 0;font-size:.72rem" onclick="doLogout()">გასვლა</button></div>
   </div>
@@ -315,8 +315,9 @@ function fillPlantationSelectors(){
 }
 
 // ══ localStorage mirror ══
-function pmGetAll(){ try{ return JSON.parse(localStorage.getItem('its_plantmon')||'[]'); }catch(e){ return []; } }
-function pmSaveLocal(arr){ try{ localStorage.setItem('its_plantmon', JSON.stringify(arr)); }catch(e){ console.warn('pm local save (quota?)', e); } }
+function pmKey(){ return 'its_plantmon__'+(uid||'anon'); }
+function pmGetAll(){ try{ return JSON.parse(localStorage.getItem(pmKey())||'[]'); }catch(e){ return []; } }
+function pmSaveLocal(arr){ try{ localStorage.setItem(pmKey(), JSON.stringify(arr)); }catch(e){ console.warn('pm local save (quota?)', e); } }
 
 // ══ camelCase <-> snake_case mapping (mirrors index.html pmToRow / pmFromRow) ══
 function pmToRow(e, userId){

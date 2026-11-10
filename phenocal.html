@@ -93,7 +93,7 @@
   <div class="apphead">
     <div class="ic">🌸</div>
     <div style="min-width:0">
-      <div class="ti">ფენოლოგიური კალენდარი <span style="font-size:.58rem;background:#e11d48;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v2</span></div>
+      <div class="ti">ფენოლოგიური კალენდარი <span style="font-size:.58rem;background:#e11d48;color:#fff;border-radius:8px;padding:1px 6px;vertical-align:middle">v3</span></div>
       <div class="su" id="phSubtitle">პლანტაციის ვეგეტაციური ფაზების მართვა</div>
     </div>
     <div style="margin-left:auto;text-align:right">
@@ -394,8 +394,9 @@ function phLookup(phase){
 // ── local + cloud data ──
 // CLOUD table phenocal_entries has EXACTLY 6 columns: id,user_id,phase,date,note,status.
 // All extra structured fields are serialized as JSON inside `note`.
-function phGetLocal(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'[]')||[]; }catch(e){ return []; } }
-function phSaveLocal(arr){ try{ localStorage.setItem(LS_KEY, JSON.stringify(arr)); }catch(e){} }
+function phKey(){ return LS_KEY+'__'+(uid||'anon'); }
+function phGetLocal(){ try{ return JSON.parse(localStorage.getItem(phKey())||'[]')||[]; }catch(e){ return []; } }
+function phSaveLocal(arr){ try{ localStorage.setItem(phKey(), JSON.stringify(arr)); }catch(e){} }
 
 function packNote(rec){
   var payload={ t:rec.note||'', dt:rec.dateTo||'', rm:Number(rec.remind)||0,
