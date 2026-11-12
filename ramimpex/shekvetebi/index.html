@@ -1395,7 +1395,7 @@ function distAgg(id){
   const paid=(Array.isArray(dd.payments)&&dd.payments.length)?dd.payments.reduce((s,p)=>s+(+p.amount||0),0):(+dd.paid||0);
   return {pickedKg,soldKg,remKg:pickedKg-soldKg,takenVal,avgW,owedSold,revenue,paid,debt:Math.max(0,takenVal-paid)};
 }
-function fmtKg(n){return (Math.round((+n||0)*100)/100).toLocaleString('ka-GE');}
+function fmtKg(n){return String(Math.round(+n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
 async function openDistributionTab(){
   bookEl.innerHTML='<div class="empty">იტვირთება…</div>';
   try{await ensureDirs();}catch(e){}
