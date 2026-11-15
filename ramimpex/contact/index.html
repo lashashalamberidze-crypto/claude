@@ -117,7 +117,6 @@ img{max-width:100%;display:block}
   <h2>🔗 სასარგებლო ბმულები</h2>
   <div class="links">
    <a class="lk g" href="../info/"><span class="e">📄</span> სრული ინფო & ფასები</a>
-   <a class="lk v" href="../distribution/"><span class="e">🤝</span> გახდი დისტრიბუტორი</a>
    <a class="lk o" href="../bank/"><span class="e">🏦</span> საბანკო რეკვიზიტები</a>
   </div>
  </div>
@@ -183,7 +182,7 @@ function buildMap(list){
  let list=[];try{const {data,error}=await sb.from('distributors').select('*').eq('approved',true).order('region',{ascending:true});if(error)throw error;list=data||[];}catch(e){list=[];}
  list=list.filter(d=>{const p=d.product||'ანთრაციტის ბრიკეტი';return p.indexOf('ანთრაცი')>=0||p.indexOf('ორივე')>=0;}); // მხოლოდ ანთრაციტის დისტრიბუტორები
  let h='<h2>🚚 ჩვენი დისტრიბუტორები</h2><p style="color:var(--mut);font-weight:600;font-size:13.5px;margin:-4px 0 12px">სად შეიძლია ბრიკეტის შეძენა — რეგიონებისა და მუნიციპალიტეტების მიხედვით</p>';
- if(!list.length){h+='<div class="dist-empty">დისტრიბუტორები მალე დაემატება. დაინტერესებული ხარ? <a href="../distribution/" style="color:var(--o);font-weight:800">🚚 გახდი დისტრიბუტორი</a></div>';sec.innerHTML=h;return;}
+ if(!list.length){h+='<div class="dist-empty">დისტრიბუტორები მალე დაემატება.</div>';sec.innerHTML=h;return;}
  buildMap(list);
  // დაჯგუფება რეგიონის id-ით (მუნიციპ.-იდან) — მრავალრეგიონიანი დისტრიბუტორი ყველგან ჩანს
  const byReg={};list.forEach(d=>{const ids=regionIdsFor(d);(ids.length?ids:['']).forEach(id=>{const ms=id?munisInRegion(d,id):distMunis(d);(ms.length?ms:['']).forEach(m=>{((byReg[id]=byReg[id]||{})[m]=(byReg[id][m]||[])).push(d);});});});
