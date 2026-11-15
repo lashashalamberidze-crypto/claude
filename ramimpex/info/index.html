@@ -325,7 +325,7 @@ function render(lang){
  const spec=t.spec.map(r=>'<tr><td>'+r[0]+'</td><td class="v">'+r[1]+'</td></tr>').join('');
  const safe=t.safe.map(s=>'<div class="ri"><span class="e">'+s[0]+'</span><div>'+s[1]+'</div></div>').join('');
  const rules=t.rules.map((r,i)=>'<div class="rule"><div class="n">'+(i+1)+'</div><div>'+r+'</div></div>').join('');
- const cards=t.tiers.map(x=>'<div class="pc'+(x[3]?' best':'')+'">'+(x[3]?'<div class="tag">⭐ '+t.price_pop+'</div>':'')+'<div class="rng">'+x[0]+'</div><div class="prc">'+x[1]+' <small>'+t.price_unit+'</small></div><div class="pk">📦 '+x[2]+'</div></div>').join('');
+ const cards='<div class="pc best" style="padding:30px 18px"><div class="prc" style="font-size:60px">2&nbsp;<small style="font-size:24px">₾</small></div></div>';
  const pinfo=t.price_notes.map(n=>'<div class="pib">'+n+'</div>').join('');
  document.getElementById('app').innerHTML=
   '<div class="hero"><div class="wrap">'+
@@ -347,7 +347,7 @@ function render(lang){
      '<figure class="pf"><img src="../files/RAM_IMPEX_briketi_foto1.jpg.jpeg" alt="ბრიკეტი" onerror="this.closest(\'figure\').remove()"><figcaption>'+({ka:'ბრიკეტი · ~50×50×30 მმ',az:'briket · ~50×50×30 mm',hy:'բրիկետ · ~50×50×30 մմ',ru:'брикет · ~50×50×30 мм'}[lang]||'ბრიკეტი · ~50×50×30 მმ')+'</figcaption></figure>'+
      '<figure class="pf"><img src="../files/RAM_IMPEX_briketi_foto2.jpg.jpeg" alt="ბრიკეტი" onerror="this.closest(\'figure\').remove()"></figure>'+
    '</div></section>'+
-   '<section><h2>'+t.price_h+'</h2><div class="cards">'+cards+'</div><div class="pinfo">'+pinfo+'</div></section>'+
+   '<section><h2>'+t.price_h+'</h2><div style="max-width:340px;margin:0 auto">'+cards+'</div><div class="pinfo">'+pinfo+'</div></section>'+
    '<section><h2>'+t.rules_h+'</h2><div class="rules">'+rules+'</div></section>'+
    '<section><h2>'+(REC[lang]||REC.ka).h+'</h2><div class="recwrap"><div class="recsvg"><video controls playsinline preload="metadata" poster="../files/RAM_anthracite_poster.jpg" style="width:100%;display:block;border-radius:16px;box-shadow:0 10px 28px rgba(0,0,0,.18);background:#000"><source src="../files/RAM_anthracite_3D_voiced.mp4" type="video/mp4"></video><p style="text-align:center;font-size:13px;color:#5c6b62;margin-top:8px;font-weight:700">'+({ka:'🎬 ვიდეო — როგორ დავანთოთ ანთრაციტი',az:'🎬 Video — antrasit necə yandırılır',hy:'🎬 Տեսանյութ — ինչպես վառել անտրացիտը',ru:'🎬 Видео — как разжечь антрацит'}[lang]||'🎬 ვიდეო — როგორ დავანთოთ ანთრაციტი')+'</p></div><ul class="reclist">'+(REC[lang]||REC.ka).pts.map(p=>'<li>'+p+'</li>').join('')+'</ul></div></section>'+
    '<section><h2>'+t.safe_h+'</h2><div class="recbox">'+safe+'</div></section>'+
