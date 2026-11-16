@@ -172,9 +172,9 @@ body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 </div></div>
 <div id="app"></div>
 <script>
-const PDF={ka:'../files/RAM_IMPEX_briketi_info.pdf',ru:'../files/RAM_IMPEX_briketi_info_ru.pdf',az:'../files/RAM_IMPEX_briketi_info_az.pdf',hy:'../files/RAM_IMPEX_briketi_info_hy.pdf'};
+const PDF={ka:'../files/RAM_IMPEX_briketi_info.pdf',ru:'../files/RAM_IMPEX_briketi_info_ru.pdf',az:'../files/RAM_IMPEX_briketi_info_az.pdf',hy:'../files/RAM_IMPEX_briketi_info_hy.pdf',en:'../files/RAM_IMPEX_briketi_info_en.pdf'};
 const MAPS='https://maps.app.goo.gl/7PTqBqMCZngpTgqQ6';
-const LANGS=[['ka','🇬🇪','ქარ'],['az','🇦🇿','AZ'],['hy','🇦🇲','ՀԱՅ'],['ru','🇷🇺','РУС']];
+const LANGS=[['ka','🇬🇪','ქარ'],['en','🇬🇧','EN'],['az','🇦🇿','AZ'],['hy','🇦🇲','ՀԱՅ'],['ru','🇷🇺','РУС']];
 const T={
  ka:{dir:'ltr',
   title:'ანთრაციტის ბრიკეტი',
@@ -204,6 +204,34 @@ const T={
   wh_h:'📍 საწყობი — ნატახტარი',
   wh_t:'დაასკანერე QR-კოდი ან დააჭირე ღილაკს — გაიხსნება საწყობის მდებარეობა Google Maps-ზე.',wh_btn:'📍 რუკაზე ნახვა',
   c_call:'📞 დარეკე'},
+ en:{dir:'ltr',
+  title:'Anthracite Briquette',
+  sub:'High-calorie, smokeless fuel for heating and industry',
+  dl:'📄 Download PDF',
+  chips:[['7 951','kcal/kg · ~2× firewood'],['8–12 h','burn per load'],['99.4%','durability'],['≤ 1.16%','sulfur'],['50×50×32','mm size'],['Low','smoke & ash']],
+  made_h:'🧱 What is it made of?',
+  made:[['100% anthracite coal','Anthracite — <b>the highest-grade coal</b> with the highest carbon content. It delivers maximum heat and a long, clean burn.'],['No chemical additives','The briquette is made by <b>high-pressure compression</b> of fine anthracite fraction. A clean, uniform product.']],
+  how_h:'⚙️ How it is made',
+  how:[['Fine fraction','Mining leaves fine chips/dust that <b>do not burn well</b> on their own.'],['High pressure','This fraction is <b>pressed under high pressure</b> into uniform briquettes.'],['Finished briquette','The result — a <b>solid, dry, stable</b> briquette that burns long and evenly.']],
+  how_note:'➜ That is why the briquette is far more efficient than coal dust or loose pieces.',
+  why_h:'🔥 Why better than firewood?',
+  cmp_h:'🪵 Briquette vs firewood — in numbers',cmp_brik:'1 kg briquette',cmp_brik_s:'~10 hours burn · 7 951 kcal/kg',cmp_wood:'~10 kg firewood',cmp_wood_s:'6–8× refills · ~2 100 kcal/kg',cmp_eq:'same heat',cmp_big:'1 kg briquette = ~10 kg firewood',cmp_note:'1 m³ firewood ≈ 500 kg → the same heat comes from ~50 kg briquette.',econ_h:'💚 Winter savings — 4 months',econ_wl:'🪵 Firewood (8 m³)',econ_wv:'8 × 200 = 1600 ₾',econ_bl:'🔥 Briquette (400 kg)',econ_bv:'400 × 2 = 800 ₾',econ_sl:'✅ Savings',econ_sv:'≈ 800 ₾',econ_note:'Example: ~2 m³/month × 4 months = 8 m³. With briquette ~2× lower cost.',
+  why:['🌡 <b>2× more heat</b> — high calorific value (7 951 kcal/kg).','⏱ <b>8–12 hours</b> per load (firewood only 1–2 h).','💨 <b>Low smoke and ash</b> — cleaner burn.','💰 <b>Economical</b> — lower heating cost.','📦 <b>Compact and dry</b> — easy to store.','🎯 <b>Stable quality</b> — uniform in every batch.'],
+  use_h:'📍 Where it is used',
+  uses:[['🔥','Closed stove and furnace'],['🏠','Home heating'],['🌱','Greenhouse heating'],['🏭','Industrial boilers'],['♨️','Water heater'],['🏢','Commercial facilities']],
+  spec_h:'📊 Technical specifications',
+  spec_th:['Parameter','Value'],
+  spec:[['Size','50×50×32 mm'],['Heat output (NCV)','7 951 kcal/kg'],['Sulfur','≤ 1.16%'],['Ash','≤ 11.1%'],['Moisture','≤ 6.5%'],['Volatile matter','≤ 8.5%']],
+  cert_h:'✓ Certified quality',
+  price_h:'💰 Price',price_pop:'popular',price_unit:'₾',
+  tiers:[['','2','',true]],
+  price_notes:['✅ Price incl. VAT','🏭 Warehouse — Natakhtari','📦 10 kg bag or big-bag'],
+  rules_h:'📘 Usage instructions',rules:['🔥 <b>Lighting:</b> the briquette is dense and hard to light directly — first light it with coal or charcoal (or a special firelighter) so it heats up and ignites.','🌬️ <b>Aeration:</b> ensure an air (oxygen) supply — this way the briquette glows steadily and keeps a high heat.'],
+  safe_h:'⚠️ Safety and recommendation',
+  safe:[['🔥','<b>For heating only.</b> Designed for <span class="g">closed stoves, furnaces and greenhouses.</span> Not recommended for cooking food over an open fire.'],['🌫️','When burning it <b>releases carbon dioxide (CO₂) and carbon monoxide (CO).</b> Use <span class="g">only in closed stoves and furnaces</span> — with a chimney and good ventilation.'],['🔩','<b>Because of the high burning temperature</b> a <span class="g">strong iron or cast-iron stove/furnace</span> is preferable. A cast-iron stove (with a cast-iron grate) is ideal.']],
+  wh_h:'📍 Warehouse — Natakhtari',
+  wh_t:'Scan the QR code or tap the button — the warehouse location opens in Google Maps.',wh_btn:'📍 View on map',
+  c_call:'📞 Call'},
  ru:{dir:'ltr',
   title:'Антрацитовый брикет',
   sub:'Высококалорийное топливо без дыма для отопления и промышленности',
@@ -310,7 +338,8 @@ const REC={
  ka:{h:'⚙️ გამოყენების წესები — ღუმელი / რეკომენდაცია',pts:['<b>1</b> ცხაურიანი ფეჩი — <b>ჰაერი ქვევიდან</b> შემოდის.','<b>2</b> კარგი გამწოვობა — ღუმელის მილი <b>5–6 მ-ზე</b> ნაკლები არ იყოს.','<b>3</b> ნაცრის კარი ქვევით აწვდის ჰაერს — წვის ტემპერატურა <b>ჰაერზეა</b> დამოკიდებული.','ქვაბი/ბოილერი <b>ქვანახშირზე გათვლილი</b> → ანთრაციტიც მიდის (ზუსტდება მწარმოებელთან/ხელოსანთან).','<b>თუჯის ცხაური</b> იცავს ღუმელს.']},
  az:{h:'⚙️ İstifadə qaydaları — soba',pts:['<b>1</b> Barmaqlıqlı soba — <b>hava aşağıdan</b> gəlir.','<b>2</b> Yaxşı çəkmə — baca borusu <b>5–6 m-dən</b> az olmasın.','<b>3</b> Kül qapısı aşağıda hava verir — yanma temperaturu <b>havadan</b> asılıdır.','Kömürə hesablanmış qazan/boyler → <b>antrasit də işləyir</b> (istehsalçı ilə dəqiqləşir).','<b>Çuqun barmaqlıq</b> sobanı qoruyur.']},
  hy:{h:'⚙️ Օգտագործման կանոններ — վառարան',pts:['<b>1</b> Վանդակավոր վառարան — <b>օդը ներքևից</b> է գալիս։','<b>2</b> Լավ ձգում — խողովակը <b>5–6 մ-ից</b> պակաս չլինի։','<b>3</b> Մոխրի դուռը ներքևում օդ է տալիս — այրման ջերմաստիճանը կախված է <b>օդից</b>։','Ածխի համար նախատեսված կաթսա/բոյլեր → <b>անտրացիտն էլ է աշխատում</b> (ճշտվում է արտադրողի հետ)։','<b>Չուգունե վանդակը</b> պաշտպանում է վառարանը։']},
- ru:{h:'⚙️ Правила использования — печь',pts:['<b>1</b> Печь с колосником — <b>воздух снизу</b>.','<b>2</b> Хорошая тяга — труба <b>не менее 5–6 м</b>.','<b>3</b> Зольная дверца снизу подаёт воздух — температура горения зависит от <b>воздуха</b>.','Котёл/бойлер, рассчитанный на уголь → <b>антрацит тоже подходит</b> (уточняется у производителя).','<b>Чугунный колосник</b> защищает печь.']}
+ ru:{h:'⚙️ Правила использования — печь',pts:['<b>1</b> Печь с колосником — <b>воздух снизу</b>.','<b>2</b> Хорошая тяга — труба <b>не менее 5–6 м</b>.','<b>3</b> Зольная дверца снизу подаёт воздух — температура горения зависит от <b>воздуха</b>.','Котёл/бойлер, рассчитанный на уголь → <b>антрацит тоже подходит</b> (уточняется у производителя).','<b>Чугунный колосник</b> защищает печь.']},
+ en:{h:'⚙️ Usage rules — stove',pts:['<b>1</b> Stove with a grate — <b>air comes from below</b>.','<b>2</b> Good draft — the chimney should be <b>at least 5–6 m</b>.','<b>3</b> The ash door below feeds air — the burning temperature depends on <b>air</b>.','A boiler rated for coal → <b>anthracite works too</b> (confirm with the manufacturer).','<b>A cast-iron grate</b> protects the stove.']}
 };
 function render(lang){
  window.RI_LANG=lang;
@@ -332,7 +361,7 @@ function render(lang){
     '<h1>'+t.title+'</h1><div class="sub">'+t.sub+'</div>'+
     '<div class="foto"><img src="foto.jpg" alt=""></div>'+
     '<div class="chips">'+chips+'</div>'+
-    '<button class="jumpbtn" onclick="document.getElementById(\'distSec\').scrollIntoView({behavior:\'smooth\'})">'+({ka:'📍 სად ვიყიდო — დისტრიბუტორები რეგიონებში',az:'📍 Haradan almaq olar — bölgələr üzrə',hy:'📍 Որտեղ գնել — բաշխիչներ մարզերում',ru:'📍 Где купить — дистрибьюторы по регионам'}[lang]||'📍 დისტრიბუტორები')+'</button>'+
+    '<button class="jumpbtn" onclick="document.getElementById(\'distSec\').scrollIntoView({behavior:\'smooth\'})">'+({ka:'📍 სად ვიყიდო — დისტრიბუტორები რეგიონებში',en:'📍 Where to buy — distributors by region',az:'📍 Haradan almaq olar — bölgələr üzrə',hy:'📍 Որտեղ գնել — բաշխիչներ մարզերում',ru:'📍 Где купить — дистрибьюторы по регионам'}[lang]||'📍 დისტრიბუტორები')+'</button>'+
   '</div></div>'+
   '<div class="wrap">'+
    '<section><h2>'+t.made_h+'</h2><div class="two">'+made+'</div></section>'+
@@ -343,13 +372,13 @@ function render(lang){
    '<section><h2>'+t.use_h+'</h2><div class="uses">'+uses+'</div></section>'+
    '<section><h2>'+t.spec_h+'</h2><table><tr><th>'+t.spec_th[0]+'</th><th style="text-align:right">'+t.spec_th[1]+'</th></tr>'+spec+'</table></section>'+
    '<section><h2>'+t.cert_h+'</h2><div class="pills"><span class="pill">ISO 9001</span><span class="pill">ISO 14001</span><span class="pill">ISO 45001</span><span class="pill o">ГОСТ Р 57016-2016</span><span class="pill">MSDS</span><span class="pill">COTECNA</span></div></section>'+
-   '<section class="pfoto-sec"><h2>'+({ka:'📸 ასე გამოიყურება',az:'📸 Belə görünür',hy:'📸 Այսպես է տեսքը',ru:'📸 Как выглядит'}[lang]||'📸 ასე გამოიყურება')+'</h2><div class="pfgrid">'+
-     '<figure class="pf"><img src="../files/RAM_IMPEX_briketi_foto1.jpg.jpeg" alt="ბრიკეტი" onerror="this.closest(\'figure\').remove()"><figcaption>'+({ka:'ბრიკეტი · ~50×50×30 მმ',az:'briket · ~50×50×30 mm',hy:'բրիկետ · ~50×50×30 մմ',ru:'брикет · ~50×50×30 мм'}[lang]||'ბრიკეტი · ~50×50×30 მმ')+'</figcaption></figure>'+
+   '<section class="pfoto-sec"><h2>'+({ka:'📸 ასე გამოიყურება',en:'📸 What it looks like',az:'📸 Belə görünür',hy:'📸 Այսպես է տեսքը',ru:'📸 Как выглядит'}[lang]||'📸 ასე გამოიყურება')+'</h2><div class="pfgrid">'+
+     '<figure class="pf"><img src="../files/RAM_IMPEX_briketi_foto1.jpg.jpeg" alt="ბრიკეტი" onerror="this.closest(\'figure\').remove()"><figcaption>'+({ka:'ბრიკეტი · ~50×50×30 მმ',en:'briquette · ~50×50×30 mm',az:'briket · ~50×50×30 mm',hy:'բրիկետ · ~50×50×30 մմ',ru:'брикет · ~50×50×30 мм'}[lang]||'ბრიკეტი · ~50×50×30 მმ')+'</figcaption></figure>'+
      '<figure class="pf"><img src="../files/RAM_IMPEX_briketi_foto2.jpg.jpeg" alt="ბრიკეტი" onerror="this.closest(\'figure\').remove()"></figure>'+
    '</div></section>'+
    '<section><h2>'+t.price_h+'</h2><div style="max-width:340px;margin:0 auto">'+cards+'</div><div class="pinfo">'+pinfo+'</div></section>'+
    '<section><h2>'+t.rules_h+'</h2><div class="rules">'+rules+'</div></section>'+
-   '<section><h2>'+(REC[lang]||REC.ka).h+'</h2><div class="recwrap"><div class="recsvg"><video controls playsinline preload="metadata" poster="../files/RAM_anthracite_poster.jpg" style="width:100%;display:block;border-radius:16px;box-shadow:0 10px 28px rgba(0,0,0,.18);background:#000"><source src="../files/RAM_anthracite_3D_voiced.mp4" type="video/mp4"></video><p style="text-align:center;font-size:13px;color:#5c6b62;margin-top:8px;font-weight:700">'+({ka:'🎬 ვიდეო — როგორ დავანთოთ ანთრაციტი',az:'🎬 Video — antrasit necə yandırılır',hy:'🎬 Տեսանյութ — ինչպես վառել անտրացիտը',ru:'🎬 Видео — как разжечь антрацит'}[lang]||'🎬 ვიდეო — როგორ დავანთოთ ანთრაციტი')+'</p></div><ul class="reclist">'+(REC[lang]||REC.ka).pts.map(p=>'<li>'+p+'</li>').join('')+'</ul></div></section>'+
+   '<section><h2>'+(REC[lang]||REC.ka).h+'</h2><div class="recwrap"><div class="recsvg"><video controls playsinline preload="metadata" poster="../files/RAM_anthracite_poster.jpg" style="width:100%;display:block;border-radius:16px;box-shadow:0 10px 28px rgba(0,0,0,.18);background:#000"><source src="../files/RAM_anthracite_3D_voiced.mp4" type="video/mp4"></video><p style="text-align:center;font-size:13px;color:#5c6b62;margin-top:8px;font-weight:700">'+({ka:'🎬 ვიდეო — როგორ დავანთოთ ანთრაციტი',en:'🎬 Video — how to light anthracite',az:'🎬 Video — antrasit necə yandırılır',hy:'🎬 Տեսանյութ — ինչպես վառել անտրացիտը',ru:'🎬 Видео — как разжечь антрацит'}[lang]||'🎬 ვიდეო — როგორ დავანთოთ ანთრაციტი')+'</p></div><ul class="reclist">'+(REC[lang]||REC.ka).pts.map(p=>'<li>'+p+'</li>').join('')+'</ul></div></section>'+
    '<section><h2>'+t.safe_h+'</h2><div class="recbox">'+safe+'</div></section>'+
    '<section><h2>'+t.wh_h+'</h2><div class="loc"><a class="qr" href="'+MAPS+'" target="_blank" rel="noopener"><img src="qr.png" alt="QR"></a><div class="lt"><div class="h">'+t.wh_h+'</div><div class="d">'+t.wh_t+'</div><a class="mapbtn" href="'+MAPS+'" target="_blank" rel="noopener">'+t.wh_btn+'</a></div></div></section>'+
    '<section id="distSec"></section>'+
@@ -374,7 +403,8 @@ const DTX={
  ka:{h:'ჩვენი დისტრიბუტორები',sub:'სად შეიძლია ბრიკეტის შეძენა — რეგიონებისა და მუნიციპალიტეტების მიხედვით',none:'დისტრიბუტორები მალე დაემატება. დაინტერესებული ხარ?',become:'🚚 გახდი დისტრიბუტორი',route:'რუკაზე ჩვენება'},
  az:{h:'Distribyutorlarımız',sub:'Briketi haradan almaq olar — bölgə və bələdiyyələr üzrə',none:'Distribyutorlar tezliklə əlavə olunacaq. Maraqlanırsan?',become:'🚚 Distribyutor ol',route:'Xəritədə göstər'},
  hy:{h:'Մեր բաշխիչները',sub:'Որտեղ կարելի է գնել բրիկետը — ըստ մարզերի և համայնքների',none:'Բաշխիչները շուտով կ ավելացվեն։ Հետաքրքրվա՞ծ ես։',become:'🚚 Դարձիր բաշխիչ',route:'Ցույց տալ քարտեզի վրա'},
- ru:{h:'Наши дистрибьюторы',sub:'Где купить брикет — по регионам и муниципалитетам',none:'Дистрибьюторы скоро добавятся. Заинтересованы?',become:'🚚 Стать дистрибьютором',route:'Показать на карте'}
+ ru:{h:'Наши дистрибьюторы',sub:'Где купить брикет — по регионам и муниципалитетам',none:'Дистрибьюторы скоро добавятся. Заинтересованы?',become:'🚚 Стать дистрибьютором',route:'Показать на карте'},
+ en:{h:'Our distributors',sub:'Where to buy the briquette — by region and municipality',none:'Distributors will be added soon. Interested?',become:'🚚 Become a distributor',route:'Show on map'}
 };
 const esc=s=>(s==null?'':(''+s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let cache=null;
