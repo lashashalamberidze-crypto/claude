@@ -2641,11 +2641,11 @@ function wireExpForm(){const g=id=>document.getElementById(id);
 }
 function finAddExpense(){editingExpId=null;expPeople=[];finOpenModal('exp');}
 function renderExpenses(){const g=id=>document.getElementById(id);
-  salEl.innerHTML=recurCard()+
+  salEl.innerHTML=
    '<div class="card"><h2>🧾 ხარჯების ჩამონათვალი</h2>'+
    '<div class="saldir" id="eDirTabs">'+([['','ყველა','🗂']].concat(EXP_DIRS.map(d=>[d[0],d[1],d[2]])).concat([['__gen__','ზოგადი','🔧']])).map(t=>'<button class="chip'+((EXP_FILTER||'')===t[0]?' on':'')+'" data-etab="'+esc(t[0])+'">'+t[2]+' '+esc(t[1])+'</button>').join('')+'</div>'+
    '<div class="row"><div><label>დან</label><input id="eFrom" type="date"></div><div><label>მდე</label><input id="eTo" type="date"></div><div style="align-self:flex-end;display:flex;gap:8px"><button class="btn a" id="eXls">📊 Excel</button><button class="btn line" id="ePdf">📄 PDF</button></div></div>'+
-   '<div class="scroll" style="margin-top:10px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:6px;text-align:left">თარიღი</th><th style="padding:6px;text-align:left">მიმართულება</th><th style="padding:6px;text-align:left">კატეგორია</th><th style="padding:6px;text-align:right">თანხა ₾</th><th style="padding:6px;text-align:center">ზედნადები</th><th style="padding:6px">დეტალები</th><th></th></tr></thead><tbody id="eRows"></tbody></table></div><div id="eEmpty" class="empty" style="display:none">ჯერ ხარჯი არ არის.</div></div>';
+   '<div class="scroll" style="margin-top:10px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#0B6B3C;color:#fff"><th style="padding:6px;text-align:left">თარიღი</th><th style="padding:6px;text-align:left">მიმართულება</th><th style="padding:6px;text-align:left">კატეგორია</th><th style="padding:6px;text-align:right">თანხა ₾</th><th style="padding:6px;text-align:center">ზედნადები</th><th style="padding:6px">დეტალები</th><th></th></tr></thead><tbody id="eRows"></tbody></table></div><div id="eEmpty" class="empty" style="display:none">ჯერ ხარჯი არ არის.</div></div>'+recurCard();
   salEl.querySelectorAll('#eDirTabs [data-etab]').forEach(b=>b.onclick=()=>{EXP_FILTER=b.dataset.etab;salEl.querySelectorAll('#eDirTabs .chip').forEach(x=>x.classList.toggle('on',x.dataset.etab===EXP_FILTER));renderExpList();});
   if(g('eFrom')){g('eFrom').value=EXP_FROM||'';g('eFrom').onchange=()=>{EXP_FROM=g('eFrom').value;renderExpList();};}
   if(g('eTo')){g('eTo').value=EXP_TO||'';g('eTo').onchange=()=>{EXP_TO=g('eTo').value;renderExpList();};}
