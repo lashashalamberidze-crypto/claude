@@ -2426,8 +2426,8 @@ function finOpenModal(type){FIN_MTYPE=type;const m=finEnsureModal();m.style.disp
   const body=document.getElementById('finModalBody');
   if(type==='exp'){body.innerHTML=expFormCard();wireExpForm();}else{body.innerHTML=purFormCard();wirePurForm();}
 }
-/* ===================== 🏦 ბანკთან შედარება (reconciliation) ===================== */
-let BANK_AOA=null, BANK_HROW=0, BANK_FNAME='';
+/* ===================== 🏦 ბანკთან შედარება (reconciliation, multi-file) ===================== */
+let BANK_TX=[], BANK_FILES=[], BANK_QUEUE=[], BANK_CUR=null;
 function finBankNum(v){if(v==null)return 0;let s=String(v).trim();if(!s)return 0;s=s.replace(/ /g,'');const neg=/^\(.*\)$/.test(s)||/-/.test(s);s=s.replace(/[^0-9.,]/g,'');if(!s)return 0;
   if(s.indexOf(',')>=0&&s.indexOf('.')>=0){s=s.replace(/,/g,'');}else if(s.indexOf(',')>=0){s=s.replace(',','.');}
   let n=parseFloat(s);if(isNaN(n))n=0;return neg?-Math.abs(n):Math.abs(n);}
@@ -2453,66 +2453,92 @@ function finBankEnsure(){let m=document.getElementById('finBankModal');if(m)retu
   m=document.createElement('div');m.id='finBankModal';m.innerHTML='<div id="finBankCard"><div class="bHead"><b>🏦 ბანკთან შედარება</b><button id="finBankX" type="button">✕</button></div><div id="finBankBody"></div></div>';
   document.body.appendChild(m);m.addEventListener('click',e=>{if(e.target===m)m.style.display='none';});
   document.getElementById('finBankX').onclick=()=>{m.style.display='none';};return m;}
-function finOpenBank(){const m=finBankEnsure();m.style.display='block';try{m.scrollTop=0;}catch(e){}BANK_AOA=null;
+function finOpenBank(){const m=finBankEnsure();m.style.display='block';try{m.scrollTop=0;}catch(e){}BANK_TX=[];BANK_FILES=[];BANK_QUEUE=[];BANK_CUR=null;
   document.getElementById('finBankBody').innerHTML=
-   '<p class="muted" style="font-size:13px;margin-top:0">ატვირთე ბანკის ამონაწერი (BOG / Pasha — <b>.xlsx</b> ან <b>.csv</b>). პროგრამა წაიკითხავს, შენ მონიშნავ რომელი სვეტია თარიღი/თანხა, და შევადარებთ პროგრამის ჩანაწერებს.</p>'+
-   '<div style="border:2px dashed #cdd9d0;border-radius:12px;padding:20px;text-align:center;background:#f7faf8"><input type="file" id="finBankFile" accept=".xlsx,.xls,.csv"></div>'+
-   '<div id="finBankMap" style="margin-top:14px"></div><div id="finBankRes" style="margin-top:14px"></div>';
-  const fi=document.getElementById('finBankFile');if(fi)fi.onchange=finBankLoad;}
-function finBankLoad(e){const f=e.target.files&&e.target.files[0];if(!f)return;BANK_FNAME=f.name;
-  if(!window.XLSX){alert('Excel ბიბლიოთეკა ვერ ჩაიტვირთა — სცადე ინტერნეტით');return;}
-  const rd=new FileReader();rd.onload=ev=>{try{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});BANK_AOA=aoa;BANK_HROW=finBankDetectHeader(aoa);finBankRenderMap();}catch(err){document.getElementById('finBankMap').innerHTML='<div style="color:#b00020">ვერ წავიკითხე ფაილი: '+esc(err.message||err)+'</div>';}};
+   '<p class="muted" style="font-size:13px;margin-top:0">ატვირთე <b>რამდენიმე</b> ბანკის ამონაწერი ერთად (BOG, Pasha, ₾/₽ — <b>.xlsx</b>/<b>.csv</b>). თითოს სვეტებსა და ვალუტას მოვარგებთ, მერე <b>ყველა ერთ ანალიზში</b> შევადარებთ პროგრამას.</p>'+
+   '<div style="border:2px dashed #cdd9d0;border-radius:12px;padding:18px;text-align:center;background:#f7faf8"><input type="file" id="finBankFile" accept=".xlsx,.xls,.csv" multiple></div>'+
+   '<div id="finBankFiles" style="margin-top:12px"></div><div id="finBankMap" style="margin-top:12px"></div><div id="finBankRes" style="margin-top:14px"></div>';
+  const fi=document.getElementById('finBankFile');if(fi)fi.onchange=finBankFileSel;finBankRenderFiles();}
+function finBankFileSel(e){const fs=e.target.files;if(!fs||!fs.length)return;for(let i=0;i<fs.length;i++)BANK_QUEUE.push(fs[i]);e.target.value='';if(!BANK_CUR)finBankNext();}
+function finBankNext(){if(BANK_CUR)return;if(!BANK_QUEUE.length){document.getElementById('finBankMap').innerHTML='';finBankRenderFiles();return;}
+  const f=BANK_QUEUE.shift();if(!window.XLSX){alert('Excel ბიბლიოთეკა ვერ ჩაიტვირთა');return;}
+  const rd=new FileReader();rd.onload=ev=>{try{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});BANK_CUR={name:f.name,aoa:aoa,hrow:finBankDetectHeader(aoa)};finBankRenderMap();}catch(err){BANK_CUR=null;document.getElementById('finBankMap').innerHTML='<div style="color:#b00020">ვერ წავიკითხე „'+esc(f.name)+'": '+esc(err.message||err)+'</div>';finBankNext();}};
   rd.readAsArrayBuffer(f);}
-function finBankRenderMap(){const aoa=BANK_AOA;if(!aoa)return;const hdr=aoa[BANK_HROW]||[];
+function finBankRenderMap(){const C=BANK_CUR;if(!C)return;const hdr=C.aoa[C.hrow]||[];
   const opts=(sel)=>'<option value="-1">— არცერთი —</option>'+hdr.map((c,i)=>'<option value="'+i+'"'+(i===sel?' selected':'')+'>['+(i+1)+'] '+esc(String(c==null?'':c).slice(0,40)||('სვეტი '+(i+1)))+'</option>').join('');
-  const gD=finBankGuess(hdr,['თარიღ','date','дата']);
-  const gIn=finBankGuess(hdr,['credit','კრედიტ','кредит','შემოტ','приход','income','ჩარიცხ']);
-  const gOut=finBankGuess(hdr,['debit','დებეტ','дебет','გატან','расход','გადახდ']);
-  const gAmt=finBankGuess(hdr,['თანხ','amount','сумма','ბრუნვ','turnover']);
+  const gD=finBankGuess(hdr,['თარიღ','date','дата']);const gIn=finBankGuess(hdr,['credit','კრედიტ','кредит','შემოტ','приход','income','ჩარიცხ']);
+  const gOut=finBankGuess(hdr,['debit','დებეტ','дебет','გატან','расход','გადახდ']);const gAmt=finBankGuess(hdr,['თანხ','amount','сумма','ბრუნვ','turnover']);
   const gDesc=finBankGuess(hdr,['დანიშნ','назнач','descr','აღწერ','კონტრაგ','details','purpose','payer','payee']);
   document.getElementById('finBankMap').innerHTML=
-   '<div class="card" style="box-shadow:none;border:1px solid #e3ece7"><h3 style="margin:0 0 4px">📋 მონიშნე სვეტები — '+esc(BANK_FNAME)+'</h3>'+
-   '<p class="muted" style="font-size:12px;margin:0 0 10px">სათაურის ხაზი: '+(BANK_HROW+1)+'. ან ცალ-ცალკე „შემოსავალი/გასავალი" სვეტები, ან ერთი „თანხა (+/−)" სვეტი.</p>'+
+   '<div class="card" style="box-shadow:none;border:2px solid #1e6fa8;border-radius:12px"><h3 style="margin:0 0 4px;color:#1e6fa8">📄 ფაილი '+(BANK_FILES.length+1)+': '+esc(C.name)+'</h3>'+
+   '<p class="muted" style="font-size:12px;margin:0 0 10px">სათაურის ხაზი: '+(C.hrow+1)+'. მონიშნე სვეტები (ან ცალკე „შემოს./გასავ.", ან ერთი „თანხა +/−").</p>'+
    '<div class="row" style="flex-wrap:wrap;gap:10px">'+
-     '<div style="flex:1;min-width:150px"><label>📅 თარიღი</label><select id="bmDate">'+opts(gD)+'</select></div>'+
-     '<div style="flex:1;min-width:150px"><label>⬇ შემოსავალი (კრედიტი)</label><select id="bmIn">'+opts(gIn)+'</select></div>'+
-     '<div style="flex:1;min-width:150px"><label>⬆ გასავალი (დებიტი)</label><select id="bmOut">'+opts(gOut)+'</select></div>'+
+     '<div style="flex:1;min-width:140px"><label>📅 თარიღი</label><select id="bmDate">'+opts(gD)+'</select></div>'+
+     '<div style="flex:1;min-width:140px"><label>⬇ შემოსავალი</label><select id="bmIn">'+opts(gIn)+'</select></div>'+
+     '<div style="flex:1;min-width:140px"><label>⬆ გასავალი</label><select id="bmOut">'+opts(gOut)+'</select></div>'+
+     '<div style="flex:1;min-width:140px"><label>💰 ან ერთი თანხა (+/−)</label><select id="bmAmt">'+opts((gAmt>=0&&gIn<0&&gOut<0)?gAmt:-1)+'</select></div>'+
    '</div>'+
    '<div class="row" style="flex-wrap:wrap;gap:10px;margin-top:8px">'+
-     '<div style="flex:1;min-width:150px"><label>💰 ან ერთი თანხა (+/−)</label><select id="bmAmt">'+opts(gAmt>=0&&gIn<0&&gOut<0?gAmt:-1)+'</select></div>'+
-     '<div style="flex:2;min-width:200px"><label>📝 აღწერა / კონტრაგენტი</label><select id="bmDesc">'+opts(gDesc)+'</select></div>'+
+     '<div style="flex:2;min-width:180px"><label>📝 აღწერა / კონტრაგენტი</label><select id="bmDesc">'+opts(gDesc)+'</select></div>'+
+     '<div style="flex:0 0 120px"><label>ვალუტა</label><select id="bmCur"><option value="GEL">₾ ლარი</option><option value="USD">$ დოლარი</option><option value="RUB">₽ რუბლი</option></select></div>'+
+     '<div style="flex:0 0 130px"><label>კურსი → ₾</label><input id="bmRate" type="number" step="0.0001" value="1" title="რამდენი ₾ ღირს 1 ერთ. ვალუტა (₾=1)"></div>'+
    '</div>'+
-   '<div style="margin-top:12px"><button class="btn" id="bmGo">🔍 შეადარე პროგრამას</button> <button class="btn line" id="bmHdrUp" type="button">↑ სათაური ზემოთ</button> <button class="btn line" id="bmHdrDn" type="button">↓ სათაური ქვემოთ</button></div></div>';
-  document.getElementById('bmGo').onclick=finBankCompare;
-  document.getElementById('bmHdrUp').onclick=()=>{if(BANK_HROW>0)BANK_HROW--;finBankRenderMap();};
-  document.getElementById('bmHdrDn').onclick=()=>{if(BANK_HROW<Math.min((BANK_AOA||[]).length-1,30))BANK_HROW++;finBankRenderMap();};}
-function finBankCompare(){const aoa=BANK_AOA;if(!aoa)return;const g=id=>document.getElementById(id);
+   '<div style="margin-top:12px"><button class="btn" id="bmAdd" style="background:#1e6fa8">➕ დაამატე ანალიზში</button> <button class="btn line" id="bmSkip" type="button">გამოტოვე ფაილი</button> <button class="btn line" id="bmHdrUp" type="button">↑ სათაური</button> <button class="btn line" id="bmHdrDn" type="button">↓ სათაური</button></div></div>';
+  const g=id=>document.getElementById(id);
+  g('bmCur').onchange=()=>{const c=g('bmCur').value;let r=1;try{if(c==='USD')r=nbgRate('USD')||1;else if(c==='RUB')r=nbgRate('RUB')||1;}catch(e){}g('bmRate').value=(c==='GEL')?1:(r||1);};
+  g('bmAdd').onclick=finBankAddCurrent;
+  g('bmSkip').onclick=()=>{BANK_CUR=null;finBankNext();};
+  g('bmHdrUp').onclick=()=>{if(C.hrow>0)C.hrow--;finBankRenderMap();};
+  g('bmHdrDn').onclick=()=>{if(C.hrow<Math.min(C.aoa.length-1,30))C.hrow++;finBankRenderMap();};}
+function finBankAddCurrent(){const C=BANK_CUR;if(!C)return;const g=id=>document.getElementById(id);
   const cD=+g('bmDate').value,cIn=+g('bmIn').value,cOut=+g('bmOut').value,cAmt=+g('bmAmt').value,cDesc=+g('bmDesc').value;
-  if(cD<0||(cIn<0&&cOut<0&&cAmt<0)){g('finBankRes').innerHTML='<div style="color:#b00020">მონიშნე მინიმუმ თარიღი და თანხა (შემოსავ./გასავ. ან ერთი თანხა).</div>';return;}
-  const bank=[];
-  for(let r=BANK_HROW+1;r<aoa.length;r++){const row=aoa[r]||[];const date=finBankDate(row[cD]);if(!date)continue;
+  const rate=+g('bmRate').value||1;const cur=g('bmCur').value;
+  if(cD<0||(cIn<0&&cOut<0&&cAmt<0)){g('finBankRes').innerHTML='<div style="color:#b00020">მონიშნე მინიმუმ თარიღი და თანხა.</div>';return;}
+  let n=0;for(let r=C.hrow+1;r<C.aoa.length;r++){const row=C.aoa[r]||[];const date=finBankDate(row[cD]);if(!date)continue;
     let inA=0,outA=0;
     if(cAmt>=0){const v=finBankNum(row[cAmt]);const raw=String(row[cAmt]==null?'':row[cAmt]);if(/-|\(/.test(raw))outA=Math.abs(v);else inA=Math.abs(v);}
     if(cIn>=0){const v=Math.abs(finBankNum(row[cIn]));if(v>0)inA+=v;}
     if(cOut>=0){const v=Math.abs(finBankNum(row[cOut]));if(v>0)outA+=v;}
     const desc=cDesc>=0?String(row[cDesc]==null?'':row[cDesc]).trim():'';
-    if(inA>0.0001)bank.push({date,amt:inA,dir:'in',desc});
-    if(outA>0.0001)bank.push({date,amt:outA,dir:'out',desc});}
+    if(inA>0.0001){BANK_TX.push({date,amt:inA*rate,dir:'in',desc,src:C.name,cur});n++;}
+    if(outA>0.0001){BANK_TX.push({date,amt:outA*rate,dir:'out',desc,src:C.name,cur});n++;}}
+  BANK_FILES.push({name:C.name,count:n,cur:cur});BANK_CUR=null;finBankNext();}
+function finBankRemoveFile(name){BANK_TX=BANK_TX.filter(t=>t.src!==name);BANK_FILES=BANK_FILES.filter(f=>f.name!==name);finBankRenderFiles();document.getElementById('finBankRes').innerHTML='';}
+function finBankRenderFiles(){const el=document.getElementById('finBankFiles');if(!el)return;
+  if(!BANK_FILES.length){el.innerHTML='';return;}
+  const chips=BANK_FILES.map(f=>'<span style="display:inline-flex;align-items:center;gap:6px;background:#eef5fb;color:#1e6fa8;border:1px solid #cfe0ef;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;margin:2px">📄 '+esc(f.name)+' · '+f.count+' ('+esc(f.cur||'GEL')+') <a href="#" data-rmbank="'+esc(f.name)+'" style="color:#c0392b;text-decoration:none" title="წაშლა">✕</a></span>').join('');
+  el.innerHTML='<div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px">'+chips+'</div><div style="margin-top:10px"><button class="btn" id="bmCompare">🔍 შეადარე პროგრამას ('+BANK_TX.length+' ტრანზაქცია)</button></div>';
+  el.querySelectorAll('[data-rmbank]').forEach(b=>b.onclick=(ev)=>{ev.preventDefault();finBankRemoveFile(b.dataset.rmbank);});
+  const cb=document.getElementById('bmCompare');if(cb)cb.onclick=finBankCompare;}
+function finBankCompare(){if(!BANK_TX.length){return;}
+  const bank=BANK_TX.map(b=>Object.assign({},b,{match:null}));
   const prog=finBankProgRows().map((p,i)=>({...p,idx:i,used:false}));
   bank.forEach(b=>{let best=-1,bd=1e9;prog.forEach(p=>{if(p.used||p.dir!==b.dir)return;if(Math.abs(p.amt-b.amt)>0.5)return;const dd=finBankDayDiff(p.date,b.date);if(dd>7)return;if(dd<bd){bd=dd;best=p.idx;}});if(best>=0){prog[best].used=true;b.match=prog[best];}});
   const progUn=prog.filter(p=>!p.used);
   let bIn=0,bOut=0,pIn=0,pOut=0,mN=0;bank.forEach(b=>{if(b.dir==='in')bIn+=b.amt;else bOut+=b.amt;if(b.match)mN++;});
   finBankProgRows().forEach(p=>{if(p.dir==='in')pIn+=p.amt;else pOut+=p.amt;});
   const bOnly=bank.filter(b=>!b.match);
+  const dIn=bIn-pIn,dOut=bOut-pOut;const sumInB=bOnly.filter(b=>b.dir==='in').reduce((s,b)=>s+b.amt,0),sumOutB=bOnly.filter(b=>b.dir==='out').reduce((s,b)=>s+b.amt,0);
+  const F=[];
+  if(Math.abs(dIn)<1)F.push(['ok','🟢 შემოსავალი ემთხვევა ბანკს — '+fmtNum(bIn)+' ₾']);
+  else F.push(['bad',''+(dIn>0?'🔴':'🟠')+' შემოსავალი არ ემთხვევა: ბანკი '+fmtNum(bIn)+' ₾ vs პროგრამა '+fmtNum(pIn)+' ₾ — სხვაობა '+fmtNum(Math.abs(dIn))+' ₾ '+(dIn>0?'(ბანკში მეტი შემოვიდა — იქნებ შემოსავალი პროგრამაში არ დაფიქსირდა)':'(პროგრამაში მეტია — იქნებ ნაღდი/ვალი, ბანკში არ ჩანს)')]);
+  if(Math.abs(dOut)<1)F.push(['ok','🟢 გასავალი ემთხვევა ბანკს — '+fmtNum(bOut)+' ₾']);
+  else F.push(['bad',''+(dOut>0?'🔴':'🟠')+' გასავალი არ ემთხვევა: ბანკი '+fmtNum(bOut)+' ₾ vs პროგრამა '+fmtNum(pOut)+' ₾ — სხვაობა '+fmtNum(Math.abs(dOut))+' ₾ '+(dOut>0?'(ბანკიდან მეტი გავიდა — იქნებ ხარჯი/შესყიდვა პროგრამაში არ ჩაწერე)':'(პროგრამაში მეტი ხარჯია — იქნებ ნაღდით ან ვალის დაბრუნება)')]);
+  if(bOnly.length)F.push(['warn','⚠ ბანკში '+bOnly.length+' ჩანაწერია პროგრამის გარეშე — სავარაუდოდ დასამატებელი: შემოსავ. '+fmtNum(sumInB)+' ₾, ხარჯი '+fmtNum(sumOutB)+' ₾ (წითლად ქვემოთ)']);
+  if(progUn.length)F.push(['info','🔵 პროგრამაში '+progUn.length+' ჩანაწერია ბანკის გარეშე — ნაღდი ან ვალი (ბანკში არ გასულა/შესულა)']);
+  if(!bOnly.length&&!progUn.length&&Math.abs(dIn)<1&&Math.abs(dOut)<1)F.push(['ok','✅ ყველაფერი ჯდება — ბანკი და პროგრამა სრულად ემთხვევა.']);
+  const fcol={ok:'#1a7a44',bad:'#c0392b',warn:'#c9701a',info:'#1e6fa8'};
+  const findHtml='<div class="card" style="box-shadow:none;border:2px solid #f0c36d;background:#fffdf5;margin-bottom:12px"><h3 style="margin:0 0 8px;color:#8a6a00">🔎 ანალიზი — რა ჯდება და რა აკლია</h3>'+F.map(f=>'<div style="display:flex;gap:8px;align-items:flex-start;margin:5px 0;font-size:13px;color:'+fcol[f[0]]+';font-weight:600"><span>'+esc(f[1])+'</span></div>').join('')+'<div style="margin-top:8px;font-size:11.5px;color:#8a968d">ℹ️ ბანკი არაფერს ცვლის ავტომატურად — ეს მხოლოდ შესამოწმებელი ანალიზია. რასაც გადაწყვეტ, ხელით დაამატებ ხარჯის/შესყიდვის ფანჯარაში.</div></div>';
   const K=(c,l,v)=>'<div style="flex:1;min-width:140px;background:#fff;border:1.5px solid #e6ece7;border-radius:10px;padding:9px 11px"><div style="font-size:10.5px;color:#8a968d;font-weight:700">'+l+'</div><div style="font-size:17px;font-weight:900;color:'+c+'">'+fmtNum(v)+' ₾</div></div>';
-  const kpi='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+K('#1a7a44','⬇ ბანკი — შემოსავ.',bIn)+K('#1a7a44','⬇ პროგრამა — შემოსავ.',pIn)+K(Math.abs(bIn-pIn)<1?'#8a968d':'#c0392b','Δ შემოსავალი',bIn-pIn)+K('#c0392b','⬆ ბანკი — გასავ.',bOut)+K('#c0392b','⬆ პროგრამა — გასავ.',pOut)+K(Math.abs(bOut-pOut)<1?'#8a968d':'#c0392b','Δ გასავალი',bOut-pOut)+'</div>';
+  const kpi='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+K('#1a7a44','⬇ ბანკი — შემოს.',bIn)+K('#1a7a44','⬇ პროგრამა — შემოს.',pIn)+K(Math.abs(bIn-pIn)<1?'#8a968d':'#c0392b','Δ შემოსავ.',bIn-pIn)+K('#c0392b','⬆ ბანკი — გასავ.',bOut)+K('#c0392b','⬆ პროგრამა — გასავ.',pOut)+K(Math.abs(bOut-pOut)<1?'#8a968d':'#c0392b','Δ გასავ.',bOut-pOut)+'</div>';
   const tag=(ok,t)=>'<span style="background:'+(ok?'#e7f6ee':'#fdeeea')+';color:'+(ok?'#1a7a44':'#c0392b')+';border-radius:6px;padding:2px 7px;font-weight:800;font-size:10.5px;white-space:nowrap">'+t+'</span>';
-  const brow=bank.slice(0,500).map(b=>'<tr style="background:'+(b.match?'#fff':'#fff7f5')+'"><td style="white-space:nowrap">'+esc(b.date)+'</td><td>'+(b.dir==='in'?'⬇':'⬆')+'</td><td style="text-align:right;font-weight:800;color:'+(b.dir==='in'?'#1a7a44':'#c0392b')+'">'+fmtNum(b.amt)+'</td><td style="font-size:11px;color:#55606b">'+esc((b.desc||'').slice(0,70))+'</td><td>'+(b.match?tag(1,'✓ ემთხვევა'):tag(0,'⚠ პროგრამაში არ არის'))+'</td><td style="font-size:11px;color:#8a968d">'+(b.match?esc((b.match.label||'').slice(0,50)):'')+'</td></tr>').join('');
-  const prow=progUn.slice(0,300).map(p=>'<tr style="background:#f6f8ff"><td style="white-space:nowrap">'+esc(p.date)+'</td><td>'+(p.dir==='in'?'⬇':'⬆')+'</td><td style="text-align:right;font-weight:800;color:'+(p.dir==='in'?'#1a7a44':'#c0392b')+'">'+fmtNum(p.amt)+'</td><td style="font-size:11px;color:#55606b">'+esc((p.label||'').slice(0,80))+'</td></tr>').join('');
-  g('finBankRes').innerHTML=kpi+
-   '<div style="font-size:12px;color:#55606b;margin:6px 0">ბანკში '+bank.length+' ტრანზაქცია · ✓ დაემთხვა '+mN+' · ⚠ ბანკში მარტო '+bOnly.length+' · 🔵 პროგრამაში მარტო '+progUn.length+'</div>'+
-   '<div class="card" style="box-shadow:none;border:1px solid #e3ece7;padding:0;overflow:hidden"><div style="padding:8px 12px;font-weight:800;background:#f3f7f4">🏦 ბანკის ტრანზაქციები (⚠ წითელი — პროგრამაში არ არის)</div><div style="overflow:auto;max-height:420px"><table><thead><tr><th>თარიღი</th><th>↕</th><th style="text-align:right">თანხა</th><th>აღწერა</th><th>სტატუსი</th><th>პროგრამაში</th></tr></thead><tbody>'+(brow||'<tr><td colspan="6" style="padding:12px;color:#8a968d">ჩანაწერი არ წაიკითხა — შეამოწმე სვეტების მონიშვნა</td></tr>')+'</tbody></table></div></div>'+
-   (progUn.length?('<div class="card" style="box-shadow:none;border:1px solid #e3ece7;padding:0;overflow:hidden;margin-top:12px"><div style="padding:8px 12px;font-weight:800;background:#eef2ff">🔵 პროგრამაში არის, ბანკში არა (მაგ. ნაღდი / ვალი)</div><div style="overflow:auto;max-height:320px"><table><thead><tr><th>თარიღი</th><th>↕</th><th style="text-align:right">თანხა</th><th>აღწერა</th></tr></thead><tbody>'+prow+'</tbody></table></div></div>'):'');
+  bank.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const brow=bank.slice(0,800).map(b=>'<tr style="background:'+(b.match?'#fff':'#fff7f5')+'"><td style="white-space:nowrap">'+esc(b.date)+'</td><td style="font-size:10.5px;color:#1e6fa8;font-weight:700">'+esc((b.src||'').slice(0,16))+'</td><td>'+(b.dir==='in'?'⬇':'⬆')+'</td><td style="text-align:right;font-weight:800;color:'+(b.dir==='in'?'#1a7a44':'#c0392b')+'">'+fmtNum(b.amt)+'</td><td style="font-size:11px;color:#55606b">'+esc((b.desc||'').slice(0,60))+'</td><td>'+(b.match?tag(1,'✓ ემთხვევა'):tag(0,'⚠ პროგრამაში არ არის'))+'</td><td style="font-size:11px;color:#8a968d">'+(b.match?esc((b.match.label||'').slice(0,46)):'')+'</td></tr>').join('');
+  const prow=progUn.slice(0,400).map(p=>'<tr style="background:#f6f8ff"><td style="white-space:nowrap">'+esc(p.date)+'</td><td>'+(p.dir==='in'?'⬇':'⬆')+'</td><td style="text-align:right;font-weight:800;color:'+(p.dir==='in'?'#1a7a44':'#c0392b')+'">'+fmtNum(p.amt)+'</td><td style="font-size:11px;color:#55606b">'+esc((p.label||'').slice(0,80))+'</td></tr>').join('');
+  document.getElementById('finBankRes').innerHTML=findHtml+kpi+
+   '<div style="font-size:12px;color:#55606b;margin:6px 0">📄 '+BANK_FILES.length+' ფაილი · ბანკში '+bank.length+' ტრანზ. · ✓ დაემთხვა '+mN+' · ⚠ ბანკში მარტო '+bOnly.length+' · 🔵 პროგრამაში მარტო '+progUn.length+'</div>'+
+   '<div class="card" style="box-shadow:none;border:1px solid #e3ece7;padding:0;overflow:hidden"><div style="padding:8px 12px;font-weight:800;background:#f3f7f4">🏦 ბანკის ტრანზაქციები (⚠ წითელი — პროგრამაში არ არის)</div><div style="overflow:auto;max-height:430px"><table><thead><tr><th>თარიღი</th><th>ფაილი</th><th>↕</th><th style="text-align:right">თანხა ₾</th><th>აღწერა</th><th>სტატუსი</th><th>პროგრამაში</th></tr></thead><tbody>'+(brow||'<tr><td colspan="7" style="padding:12px;color:#8a968d">ჩანაწერი არ წაიკითხა — შეამოწმე სვეტების მონიშვნა</td></tr>')+'</tbody></table></div></div>'+
+   (progUn.length?('<div class="card" style="box-shadow:none;border:1px solid #e3ece7;padding:0;overflow:hidden;margin-top:12px"><div style="padding:8px 12px;font-weight:800;background:#eef2ff">🔵 პროგრამაში არის, ბანკში არა (ნაღდი / ვალი)</div><div style="overflow:auto;max-height:320px"><table><thead><tr><th>თარიღი</th><th>↕</th><th style="text-align:right">თანხა ₾</th><th>აღწერა</th></tr></thead><tbody>'+prow+'</tbody></table></div></div>'):'');
 }
 async function openFinance(){if(!finTopEl)return;try{salEl.style.display='';}catch(e){}try{purchEl.style.display='';}catch(e){}finTopEl.innerHTML='<div class="empty">იტვირთება…</div>';try{await ensureDirs();}catch(e){}try{const {data}=await sb.from('invoices').select('*').order('created_at',{ascending:false}).limit(1000);INVOICES=data||[];}catch(e){}try{await loadDistrib();}catch(e){}try{await loadStock();}catch(e){}try{await loadExpenses();}catch(e){}try{await loadPurchases();}catch(e){}try{await loadDebtPays();}catch(e){}try{renderFinTop();}catch(e){finTopEl.innerHTML='<div class="card"><p style="color:#c62828">ფინანსების ხედი ვერ აიწყო: '+esc(e.message||e)+'</p></div>';}fetchNBG().then(()=>{try{renderFinTop();}catch(e){}}).catch(()=>{});try{await openExpenses();}catch(e){salEl.innerHTML='<div class="card"><p style="color:#c62828">ხარჯის ფორმა ვერ აიწყო: '+esc(e.message||e)+'</p></div>';}try{await openPurchases();}catch(e){purchEl.innerHTML='<div class="card"><p style="color:#c62828">შესყიდვის ფორმა ვერ აიწყო: '+esc(e.message||e)+'</p></div>';}}
 function finDebts(){const m={};
