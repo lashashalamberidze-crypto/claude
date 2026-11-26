@@ -2401,7 +2401,7 @@ function finIncomeRows(){const rows=[];
  return rows;}
 function finExpRows(){return (EXPENSES||[]).map(e=>({date:(e.date||''),kind:'out',dir:(e.code||''),cat:expCatLabel(e.category),party:((e.note||'').replace(/^🔁\s*/,'')||'ხარჯი'),desc:(e.product||''),amount:+e.amount||0,status:'paid',src:(e.note||'').indexOf('🔁')>=0?'auto':'manual',t:'exp',id:e.id}));}
 function finPurchRows(){return (PURCHASES||[]).map(p=>{const bc=byCode(p.code)||{};return {date:(p.date||''),kind:'out',dir:saleDirOf(p.code,bc.dir||''),cat:'🛒 შესყიდვა',party:(bc.name||p.code||'საქონელი'),desc:(p.qty?(fmtNum(p.qty)+' ერთ. → 📦 საწყობი'):''),amount:+p.paid||0,status:'paid',src:'manual',stock:true,t:'pur',id:p.id};});}
-function finAll(){let rows=finIncomeRows().concat(finExpRows()).concat(finPurchRows()).concat((DEBT_PAYS||[]).map(r=>({date:(r.date||''),kind:'out',dir:'',cat:'💳 ვალის დაბრუნება',party:(r.creditor||''),desc:'',amount:+r.amount||0,status:'paid',src:'repay',t:'repay',id:r.id})));if(FIN_FILTER==='in')rows=rows.filter(r=>r.kind==='in');else if(FIN_FILTER==='out')rows=rows.filter(r=>r.kind==='out');else if(['ანთრაციტის ბრიკეტი','მუყაოს ყუთები','კუთხოვანი დამცავები'].indexOf(FIN_FILTER)>=0)rows=rows.filter(r=>r.dir===FIN_FILTER);if(FIN_FROM)rows=rows.filter(r=>(r.date||'')>=FIN_FROM);if(FIN_TO)rows=rows.filter(r=>(r.date||'')<=FIN_TO);rows.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||0);return rows;}
+function finAll(){let rows=finIncomeRows().concat(finExpRows()).concat(finPurchRows()).concat((DEBT_PAYS||[]).map(r=>{const _ln=(r.kind||'repay')==='loan';return {date:(r.date||''),kind:_ln?'in':'out',dir:'',cat:_ln?'💰 ვალის/სესხის მიღება':'💳 ვალის დაბრუნება',party:(r.creditor||''),desc:'',amount:+r.amount||0,status:'paid',src:_ln?'loan':'repay',t:_ln?'loanrcv':'repay',id:r.id};}));if(FIN_FILTER==='in')rows=rows.filter(r=>r.kind==='in');else if(FIN_FILTER==='out')rows=rows.filter(r=>r.kind==='out');else if(['ანთრაციტის ბრიკეტი','მუყაოს ყუთები','კუთხოვანი დამცავები'].indexOf(FIN_FILTER)>=0)rows=rows.filter(r=>r.dir===FIN_FILTER);if(FIN_FROM)rows=rows.filter(r=>(r.date||'')>=FIN_FROM);if(FIN_TO)rows=rows.filter(r=>(r.date||'')<=FIN_TO);rows.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||0);return rows;}
 function finPnlDir(dir){var p;try{p=computePL(dir);}catch(e){p={};}const rev=(+p.revGross||+p.rev||0);const cogs=(+p.cogs||0)+(+p.cogsVat||0);return {soldQty:(+p.qty||0),revenue:rev,cogs:cogs,profit:rev-cogs,opex:(+p.opex||0),net:(+p.net||0)};}
 function finCapitalDir(dir){const q=stockQtyDir(dir);let uc=0,n=0;(PURCHASES||[]).forEach(p=>{if(saleDirOf(p.code,(byCode(p.code)||{}).dir||'')===dir){const c=purchUnitCost(p.code);if(c){uc+=c;n++;}}});return q*(n?uc/n:0);}
 function finCapital(){let v=0;(SAL_DIRS||[]).forEach(d=>{if(d[0]==='all')return;v+=finCapitalDir(d[0]);});return v;}
@@ -2578,9 +2578,9 @@ async function finBankAI(){const box=document.getElementById('finBankAI');if(!bo
 }
 function finCopyAllData(){
   let rows=[];try{rows=rows.concat(finIncomeRows());}catch(e){}try{rows=rows.concat(finExpRows());}catch(e){}try{rows=rows.concat(finPurchRows());}catch(e){}
-  (DEBT_PAYS||[]).forEach(r=>rows.push({date:(r.date||''),kind:'out',dir:'',cat:'ვალის დაბრუნება',party:(r.creditor||''),desc:'',amount:+r.amount||0,t:'repay'}));
+  (DEBT_PAYS||[]).forEach(r=>{const _ln=(r.kind||'repay')==='loan';rows.push({date:(r.date||''),kind:_ln?'in':'out',dir:'',cat:_ln?'ვალის/სესხის მიღება':'ვალის დაბრუნება',party:(r.creditor||''),desc:'',amount:+r.amount||0,t:_ln?'loanrcv':'repay'});});
   rows.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-  let inc=0,exp=0;rows.forEach(r=>{if(r.kind==='in')inc+=(+r.amount||0);else if(r.t!=='repay')exp+=(+r.amount||0);});
+  let inc=0,exp=0;rows.forEach(r=>{if(r.kind==='in'&&r.t!=='loanrcv')inc+=(+r.amount||0);else if(r.kind==='out'&&r.t!=='repay')exp+=(+r.amount||0);});
   let t='RAM IMPEX — ფინანსური მონაცემები ('+todayStr()+')\n\n';
   t+='=== ჯამები ===\n';
   t+='შემოსავალი (გადახდილი): '+Math.round(inc)+' GEL\n';
