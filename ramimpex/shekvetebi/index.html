@@ -342,7 +342,7 @@ async function docDeleteGroup(id){
 }
 /* ========================= SALES (გაყიდვები) ========================= */
 let SALES=[], SAL_DIR='all', editingSaleId=null;
-const SAL_DIRS=[['all','ყველა','🗂'],['ანთრაციტის ბრიკეტი','ბრიკეტები','🔥'],['მუყაოს ყუთები','ყუთები','📦'],['კუთხოვანი დამცავები','კუთხოვანი','📐']];
+const SAL_DIRS=[['all','ყველა','🗂'],['ანთრაციტის ბრიკეტი','ბრიკეტები','🔥'],['მუყაოს ყუთები','ყუთები','📦'],['კუთხოვანი დამცავები','კუთხოვანი','📐'],['ანთრაციტის ბრიკეტის ფეჩი','ფეჩები','♨️']];
 const SAL_DOCS=[['waybill','ზედნადები','🚚'],['payment','გადარიცხვის დოკ.','💳']];
 const REGIONS={
  'თბილისი':['თბილისი'],
@@ -404,7 +404,7 @@ const SAL_CSS='.salkpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px
 '.skpi .muted{font-size:9px!important}'+
 '.salform .fg{grid-template-columns:1fr 1fr}.salocs,.saldocs{grid-template-columns:1fr 1fr}'+
 '}';
-function saleDirOf(code,dir){const d=dir||((byCode(code)||{}).dir)||'';if(d==='ანთრაციტის ბრიკეტი')return 'ანთრაციტის ბრიკეტი';if(d==='კუთხოვანი დამცავები')return 'კუთხოვანი დამცავები';return 'მუყაოს ყუთები';}
+function saleDirOf(code,dir){const d=dir||((byCode(code)||{}).dir)||'';if(d==='ანთრაციტის ბრიკეტის ფეჩი')return 'ანთრაციტის ბრიკეტის ფეჩი';if(d==='ანთრაციტის ბრიკეტი')return 'ანთრაციტის ბრიკეტი';if(d==='კუთხოვანი დამცავები')return 'კუთხოვანი დამცავები';return 'მუყაოს ყუთები';}
 function fmtQty(q,u){if(q==null||q==='')return '';const n=+q;const s=isNaN(n)?q:n.toLocaleString('ka-GE');return s+(u?' '+u:'');}
 function salTotals(list){let t=0,p=0;list.forEach(s=>{t+=(+s.total||0);p+=(+s.paid||0);});return {t:t,p:p,due:t-p,n:list.length};}
 function salFiltered(){const q=(($('salQ')||{}).value||'').toLowerCase().trim();const df=($('salFrom')||{}).value,dt=($('salTo')||{}).value,st=($('salStatus')||{}).value||'';
@@ -575,6 +575,9 @@ function pubImg(code){if(PIZZA_IMG[code])return PIZZA_IMG[code];const r=PUB[code
 const PLABEL={usdRub:'1 USD = ₽',usdGel:'USD → ₾',transpUsd:'ტრანსპ. სულ ($)',container:'კონტეინერი (ცალი)',contFlat:'კონტ. ხარჯი +₾',setkaRub:'სეტკა (₽)',conting:'გაუთვალ. (0.05)',profit:'მოგება (0.20)',vat:'დღგ (0.18)',step:'დამრგვ. ბიჯი'};
 const PORDER=['usdRub','usdGel','transpUsd','container','contFlat','setkaRub','conting','profit','vat','step'];
 function calcRow(d,it){
+  // ♨️ ცალობითი (ქართული) მიმართულება — RUB/USD/ტრანსპ. გარეშე. თვითღ.=it.cost, გასაყიდი=it.pfinal, მოგება=სხვაობა (დღგ-ით, როგორც არის)
+  if(d&&d.mode==='unit'){const cost=+it.cost||0;const sell=(it.pfinal!=null&&it.pfinal!=='')?(+it.pfinal||0):0;
+    return {box:cost,setka:0,transp:0,contU:0,landed:cost,contingAmt:0,afterCont:cost,profit:(sell-cost),afterProfit:sell,vat:0,totUsd:sell,totGel:sell,importVatUsd:0,importVatGel:0,sub:cost,price:Math.round(sell*100)/100};}
   const p=d.params;let box,setka,transp;const gel=p.usdGel||1;
   // ტრანსპ. 1 ცალზე = ტრანსპ.სულ ÷ ინდივიდუალური ტევადობა (it.cap); თუ ცარიელია — ნაგულისხმევი p.container
   const perCont=(it.cap!=null&&it.cap!==''&&+it.cap>0)?+it.cap:p.container;
@@ -848,6 +851,10 @@ async function ensureDirs(){
       }
       ant._antKg=true;
     }}catch(e){}
+  // ♨️ მე-4 მიმართულება — ანთრაციტის ბრიკეტის ფეჩი (ქართული, ცალობით). ავტომატურად იქმნება თუ არ არსებობს.
+  try{if(!result.some(g=>g&&g.dir==='ანთრაციტის ბრიკეტის ფეჩი')){
+    result.push({id:'grpFechi',dir:'ანთრაციტის ბრიკეტის ფეჩი',name:'ანთრაციტის ბრიკეტის ფეჩი',tag:'FEC',mode:'unit',hasSetka:false,params:{usdGel:1,vat:0.18,step:1,container:0},items:[{code:'FEC-1',name:'ანთრაციტის ბრიკეტის ფეჩი',cost:800,pfinal:''}]});
+  }}catch(e){}
   DIRS=result;
   await sb.from('catalog').upsert({id:'main',dirs:DIRS,updated_at:new Date().toISOString()},{onConflict:'id'});
   return true;
@@ -898,6 +905,7 @@ function renderCat(){
   const st=$('subTabs');st.style.display=groupsInDir.length>1?'flex':'none';
   if(groupsInDir.length>1)groupsInDir.forEach(x=>{const b=document.createElement('button');b.className='subtab'+(x.id===curGid?' on':'');b.innerHTML=esc(x.name)+' · '+x.items.length;b.onclick=()=>{curGid=x.id;renderCat();};st.appendChild(b);});
   const d=g,body=$('catBody');let h='';
+  if(d.mode==='unit'){renderUnitDir(d,body);return;}
   const showPly=(d.dir==='მუყაოს ყუთები');const plyTh=showPly?'<th title="რამდენ შრიანი">შრე</th>':'';
   h+='<div class="card parambox"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2>⚙️ პარამეტრები — '+esc(d.name)+'</h2><button class="btn sm" id="applyAllParams" style="background:#6d3ad6;color:#fff;margin:0" title="ამ პარამეტრებით შეიცვალოს ამ მიმართულების ყველა კატეგორია">📋 გავრცელდეს ყველა კატეგორიაზე</button><span class="saveflag" id="saveflag"></span></div><div class="muted" style="font-size:11.5px;margin-top:6px">💡 შეავსე ერთხელ და დააჭირე „📋 გავრცელდეს ყველა კატეგორიაზე" — იგივე პარამეტრები დაეყენება ამ მიმართულების ყველა ტაბს.</div><div class="prow" style="margin-top:8px">';
   PORDER.forEach(k=>{if(d.params[k]==null)return;const step=(k==='vat'||k==='profit'||k==='conting'||k==='step'||k==='usdGel')?'0.01':'1';
@@ -992,6 +1000,52 @@ function renderCat(){
   const cartGo=body.querySelector('#cartGo');if(cartGo)cartGo.onclick=()=>{const b=document.querySelector('#tabbar [data-t="invoice"]');if(b)b.click();};
   const cartClr=body.querySelector('#cartClr');if(cartClr)cartClr.onclick=()=>{if(!confirm('გავასუფთავო კალათა?'))return;invDraft=[];updateCartBar();};
   const addcat=body.querySelector('[data-addcat]');if(addcat)addcat.onclick=()=>{const nm=(prompt('ახალი კატეგორიის სახელი\\n(მიმართულება: '+curdir+')','')||'').trim();if(!nm)return;if(DIRS.some(x=>x.dir===curdir&&x.name===nm)){alert('ასეთი კატეგორია უკვე არსებობს ამ მიმართულებაში.');return;}const g2={id:'grp'+Date.now(),dir:curdir,name:nm,tag:(nm.slice(0,2).toUpperCase()||'MK'),mode:'calc',hasSetka:false,params:JSON.parse(JSON.stringify(d.params)),items:[]};DIRS.push(g2);curGid=g2.id;saveDirs();renderCat();};
+}
+/* ♨️ ცალობითი მიმართულება (ქართული ანთრაციტის ბრიკეტის ფეჩი) — მარტივი: თვითღ.₾ · გასაყიდი₾ · მოგება=სხვაობა */
+function renderUnitDir(d,body){
+  let h='';
+  h+='<div class="card parambox"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2>♨️ '+esc(d.name)+'</h2><span style="font-size:12px;background:#eef2f6;color:#425066;border-radius:6px;padding:2px 8px;font-weight:800">📦 ერთეული: ცალი</span><span class="saveflag" id="saveflag"></span></div>'+
+    '<div class="muted" style="font-size:12px;margin-top:6px">🇬🇪 ქართული წარმოება — RUB / USD / ტრანსპორტი / კონტეინერი / დღგ-ს გამოკლება <b>არ არის</b>. მარტივად: 🏭 თვითღირებულება ₾ (დღგ-ით) · 💰 გასაყიდი ₾ (დღგ-ით) · 💚 მოგება = სხვაობა. ინვოისსა და ფინანსურ ტრანზაქციაში ავტომატურად ჩაჯდება.</div></div>';
+  if(d.note)h+='<div class="card" style="background:#FFF7D6;border-color:#E6C200;font-size:12px;color:#5a4b00;padding:10px 14px">📋 <b>შენიშვნა:</b> '+esc(d.note)+'</div>';
+  h+='<div class="card"><div id="cartBar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#EAF6EF;border:1px solid #BFE3CE;border-radius:10px;padding:8px 12px;margin-bottom:10px">'+
+     '<span style="font-size:14px">🛒 არჩეული: <b id="cartN">0</b> პროდუქტი · <b id="cartQ">0</b> ცალი</span>'+
+     '<button class="btn sm" id="cartGo" style="background:#0B6B3C;color:#fff;font-weight:800" title="გადადი შეკვეთის / შეთავაზების გვერდზე">🧾 შეკვეთა / 💰 შეთავაზება ▸</button>'+
+     '<button class="btn danger sm" id="cartClr" style="display:none">გასუფთავება</button>'+
+     '<span class="muted" style="font-size:11px">მონიშნე პროდუქტ(ებ)ი „＋ შეკვ."-ით, მერე ამ ღილაკით გადადი შეკვეთა/შეთავაზებაში.</span></div>';
+  h+='<div class="row" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><button class="btn line sm" data-uadd>+ ფეჩის დამატება</button><button class="btn sm" data-uaddcat style="background:#0B6B3C;color:#fff">📂 ახალი კატეგორია</button><input id="cq" placeholder="🔍 ძებნა კოდით/სახელით" style="max-width:280px"><span class="muted" style="align-self:center;font-size:11.5px">🟡 თვითღირებულება · 🟢 გასაყიდი · შეავსე ორივე → მოგება ავტომატურად</span></div>';
+  h+='<div class="scroll"><table id="catTbl" class="simple"><thead><tr><th title="დაამატე შეკვეთა/ფასებში">➕</th><th>№</th><th>კოდი</th><th>დასახელება</th><th class="right" style="background:#fff2d9;color:#8a5a00">🏭 თვითღ. ₾/ცალი (დღგ-ით)</th><th class="right" style="background:#eafaf0;color:#0B6B3C">💰 გასაყიდი ₾/ცალი (დღგ-ით)</th><th class="right" style="background:#dff3e6;color:#0B6B3C">💚 მოგება ₾/ცალი (სხვაობა)</th><th></th></tr></thead><tbody id="catRows"></tbody></table></div></div>';
+  body.innerHTML=h;
+  function paintU(){
+    const q=($('cq').value||'').toLowerCase().trim();let rh='';let pos=0;
+    d.items.forEach((it,idx)=>{
+      if(q && ((it.code||'')+' '+(it.name||'')).toLowerCase().indexOf(q)<0)return;
+      pos++;
+      const cost=+it.cost||0;const hasSell=(it.pfinal!=null&&it.pfinal!=='');const sell=hasSell?(+it.pfinal||0):0;const prof=sell-cost;
+      const trStyle=it.isNew?' style="background:#ffe9d6"':((hasSell&&sell>0)?' style="background:#eefaf1"':'');
+      rh+='<tr'+trStyle+'><td style="white-space:nowrap"><button class="btn sm" data-uinv="'+idx+'" title="დაამატე არჩეულებში — მერე ზემოთ შეკვეთა/შეთავაზება" style="background:#0B6B3C;color:#fff;font-weight:800">＋ შეკვ.</button></td>'+
+        '<td>'+pos+'</td>'+
+        '<td><input value="'+esc(ruCode(it.code))+'" style="width:72px" data-uf="code" data-i="'+idx+'"></td>'+
+        '<td><input value="'+esc(it.name||'')+'" style="min-width:160px" data-uf="name" data-i="'+idx+'"><input value="'+esc(it.note||'')+'" placeholder="📝 შენიშვნა (მხოლოდ აქ)" title="შიდა შენიშვნა — ინვოისში არ ჩანს" style="display:block;min-width:160px;margin-top:3px;background:#FFFDF0;border:1px dashed #E6C200;border-radius:6px;font-size:11px;padding:3px 6px" data-uf="note" data-i="'+idx+'"></td>'+
+        '<td class="right"><input type="number" step="0.01" value="'+(it.cost!=null&&it.cost!==''?it.cost:'')+'" placeholder="0.00" title="თვითღირებულება (დღგ-ით)" style="width:98px;background:#fff8ea;border:1px solid #e6c200;border-radius:7px;font-weight:800;text-align:right;padding:7px 8px" data-uf="cost" data-i="'+idx+'"> ₾</td>'+
+        '<td class="right"><input type="number" step="0.01" value="'+(hasSell?it.pfinal:'')+'" placeholder="0.00" title="გასაყიდი ფასი (დღგ-ით)" style="width:98px;background:#eefaf1;border:1px solid #9cd3b0;border-radius:7px;font-weight:800;text-align:right;padding:7px 8px" data-uf="pfinal" data-i="'+idx+'"> ₾</td>'+
+        '<td class="right" style="font-weight:900;background:#dff3e6;'+(prof>=0?'color:#0B6B3C':'color:#c0392b')+'">'+((hasSell&&sell>0)?((prof>=0?'+':'')+money(prof)+' ₾'):'<span class="muted">—</span>')+'</td>'+
+        '<td class="right"><button class="btn danger sm" data-udel="'+idx+'">✕</button></td></tr>';
+    });
+    $('catRows').innerHTML=rh||'<tr><td colspan="8" class="empty">ჯერ ფეჩი არ არის — დააჭირე „+ ფეჩის დამატება".</td></tr>';
+    $('catRows').querySelectorAll('input[data-uf]').forEach(inp=>inp.onchange=()=>{const it=d.items[+inp.dataset.i];const f=inp.dataset.uf;
+      if(f==='cost'||f==='pfinal'){it[f]=inp.value===''?'':(parseFloat(inp.value)||0);}
+      else if(f==='code'){it.code=latCode(inp.value.trim());}
+      else{it[f]=inp.value;}
+      saveDirs();paintU();});
+    $('catRows').querySelectorAll('[data-udel]').forEach(b=>b.onclick=()=>{if(!confirm('წავშალო?'))return;d.items.splice(+b.dataset.udel,1);saveDirs();paintU();});
+    $('catRows').querySelectorAll('[data-uinv]').forEach(b=>b.onclick=()=>addToCart(d,d.items[+b.dataset.uinv],b,0));
+  }
+  $('cq').oninput=paintU;paintU();
+  const add=body.querySelector('[data-uadd]');if(add)add.onclick=()=>{const pre=(d.tag||'FEC').toUpperCase();let n=1;const has=c=>d.items.some(x=>x&&x.code===c);while(has(pre+'-'+n))n++;d.items.push({code:pre+'-'+n,name:'ანთრაციტის ბრიკეტის ფეჩი',cost:'',pfinal:''});saveDirs();paintU();};
+  const addcat=body.querySelector('[data-uaddcat]');if(addcat)addcat.onclick=()=>{const nm=(prompt('ახალი კატეგორიის სახელი\n(მიმართულება: '+d.dir+')','')||'').trim();if(!nm)return;if(DIRS.some(x=>x.dir===d.dir&&x.name===nm)){alert('ასეთი კატეგორია უკვე არსებობს.');return;}const g2={id:'grp'+Date.now(),dir:d.dir,name:nm,tag:(nm.slice(0,3).toUpperCase()||'FEC'),mode:'unit',hasSetka:false,params:{usdGel:1,vat:0.18,step:1,container:0},items:[]};DIRS.push(g2);curGid=g2.id;saveDirs();renderCat();};
+  updateCartBar();
+  const cartGo=body.querySelector('#cartGo');if(cartGo)cartGo.onclick=()=>{const b=document.querySelector('#tabbar [data-t="invoice"]');if(b)b.click();};
+  const cartClr=body.querySelector('#cartClr');if(cartClr)cartClr.onclick=()=>{if(!confirm('გავასუფთავო კალათა?'))return;invDraft=[];updateCartBar();};
 }
 /* ფოტოები + საიტზე გამოჩენა — წერს public product_pub ცხრილში (მომხმარებელი კითხულობს) */
 function openProdMedia(d,it,after){
@@ -1128,7 +1182,7 @@ function todayStr(){const d=new Date();return d.getFullYear()+'-'+('0'+(d.getMon
 function invSeqOf(no){const s=(''+(no||''));const last=s.split('-').pop().replace(/\D/g,'');const n=parseInt(last,10);return isNaN(n)?0:n;}
 // ყველაზე დაბალი თავისუფალი ნომერი — წაშლისას ხვრელი ივსება, საცდელები (demo) ნომერს არ იკავებენ
 function nextInvSeq(){const used={};(INVOICES||[]).forEach(v=>{if((v.extra||{}).demo)return;const n=invSeqOf(v.no);if(n>0)used[n]=1;});let s=1;while(used[s])s++;return s;}
-function dirPrefix(dir){if(dir==='ანთრაციტის ბრიკეტი')return 'ANT';if(dir==='კუთხოვანი დამცავები')return 'EDG';if(/პიცის/.test(dir))return 'PIZ';if(/სამედიცინო|Safety/.test(dir))return 'MED';if(dir)return 'BOX';return 'RI';}
+function dirPrefix(dir){if(dir==='ანთრაციტის ბრიკეტის ფეჩი')return 'FEC';if(dir==='ანთრაციტის ბრიკეტი')return 'ANT';if(dir==='კუთხოვანი დამცავები')return 'EDG';if(/პიცის/.test(dir))return 'PIZ';if(/სამედიცინო|Safety/.test(dir))return 'MED';if(dir)return 'BOX';return 'RI';}
 function invPrefix(){if(!invDraft.length)return 'RI';const uniq=[];invDraft.forEach(l=>{const p=dirPrefix((byCode(l.code)||{}).dir||'');if(uniq.indexOf(p)<0)uniq.push(p);});return uniq.length===1?uniq[0]:'RI';}
 function makeInvNo(prefix,seq){return (prefix||'RI')+'-'+('000'+seq).slice(-4);}
 function nextInvNo(){return makeInvNo(invPrefix(),nextInvSeq());}
