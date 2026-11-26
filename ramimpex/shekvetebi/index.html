@@ -2435,9 +2435,20 @@ function finBankDate(v){if(v==null)return '';let s=String(v).trim();if(!s)return
   m=s.match(/(\d{1,2})[-.\/](\d{1,2})[-.\/](\d{2})(\D|$)/);if(m)return '20'+m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2);
   return '';}
 function finBankDayDiff(a,b){if(!a||!b)return 999;const da=new Date(a),db=new Date(b);if(isNaN(da)||isNaN(db))return 999;return Math.abs((da-db)/86400000);}
-function finBankDetectHeader(aoa){const kD=['თარიღ','date','дата','ოპერაცი','валу'];const kA=['თანხ','amount','сумма','ბრუნვ','debit','credit','დებ','კრ','дебет','кредит','გატან','შემოტ','приход','расход','turnover'];const kDesc=['დანიშნ','назнач','descr','აღწერ','კონტრაგ','payer','payee','გადამ','details','purpose'];
-  let best=0,bs=-1;const scan=Math.min(aoa.length,25);
-  for(let r=0;r<scan;r++){const row=aoa[r]||[];let sc=0;row.forEach(c=>{const t=String(c==null?'':c).toLowerCase();if(!t)return;if(kD.some(k=>t.indexOf(k)>=0))sc+=2;if(kA.some(k=>t.indexOf(k)>=0))sc+=2;if(kDesc.some(k=>t.indexOf(k)>=0))sc+=1;});if(sc>bs){bs=sc;best=r;}}
+function finBankDetectHeader(aoa){const kD=['თარიღ','date','дата'];
+  const kMoney=['credit','კრედიტ','кредит','debit','დებეტ','дебет','თანხ','amount','сумма','ბრუნვ','turnover','შემოსავ','გასავ','приход','расход','ოდენობ','ჩარიცხ','გადახდ'];
+  const kDesc=['დანიშნ','назнач','descr','აღწერ','კონტრაგ','details','purpose','payer','payee','გადამ','ბენეფიციარ','ოპერაცი'];
+  const bad=['საწყისი','საბოლოო','filter','ფილტრ','პერიოდ','period','ანგარიშის','account number','iban','მფლობელ','holder','ნაშთი დასაწ','opening bal'];
+  let best=0,bs=-1;const scan=Math.min(aoa.length,45);
+  for(let r=0;r<scan;r++){const row=aoa[r]||[];let d=0,money=0,desc=0,badc=0,cells=0;
+    row.forEach(c=>{const t=String(c==null?'':c).toLowerCase().trim();if(!t)return;cells++;
+      if(bad.some(k=>t.indexOf(k)>=0)){badc++;return;}
+      if(kD.some(k=>t.indexOf(k)>=0))d=1;
+      if(kMoney.some(k=>t.indexOf(k)>=0))money=1;
+      if(kDesc.some(k=>t.indexOf(k)>=0))desc=1;});
+    let sc=d*3+money*3+desc*2-badc*3;
+    if(cells>=4&&d&&money)sc+=3;
+    if(sc>bs){bs=sc;best=r;}}
   return best;}
 function finBankGuess(hdr,keys){for(let i=0;i<hdr.length;i++){const t=String(hdr[i]==null?'':hdr[i]).toLowerCase();if(keys.some(k=>t.indexOf(k)>=0))return i;}return -1;}
 function finBankProgRows(){const out=[];
