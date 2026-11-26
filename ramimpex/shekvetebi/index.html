@@ -2427,7 +2427,7 @@ function finOpenModal(type){FIN_MTYPE=type;const m=finEnsureModal();m.style.disp
   if(type==='exp'){body.innerHTML=expFormCard();wireExpForm();}else{body.innerHTML=purFormCard();wirePurForm();}
 }
 /* ===================== 🏦 ბანკთან შედარება (reconciliation, multi-file) ===================== */
-let BANK_TX=[], BANK_FILES=[], BANK_QUEUE=[], BANK_CUR=null;
+let BANK_TX=[], BANK_FILES=[], BANK_QUEUE=[], BANK_CUR=null, BANK_LAST=null;
 function finBankNum(v){if(v==null)return 0;let s=String(v).trim();if(!s)return 0;s=s.replace(/ /g,'');const neg=/^\(.*\)$/.test(s)||/-/.test(s);s=s.replace(/[^0-9.,]/g,'');if(!s)return 0;
   if(s.indexOf(',')>=0&&s.indexOf('.')>=0){s=s.replace(/,/g,'');}else if(s.indexOf(',')>=0){s=s.replace(',','.');}
   let n=parseFloat(s);if(isNaN(n))n=0;return neg?-Math.abs(n):Math.abs(n);}
@@ -2535,10 +2535,24 @@ function finBankCompare(){if(!BANK_TX.length){return;}
   bank.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const brow=bank.slice(0,800).map(b=>'<tr style="background:'+(b.match?'#fff':'#fff7f5')+'"><td style="white-space:nowrap">'+esc(b.date)+'</td><td style="font-size:10.5px;color:#1e6fa8;font-weight:700">'+esc((b.src||'').slice(0,16))+'</td><td>'+(b.dir==='in'?'⬇':'⬆')+'</td><td style="text-align:right;font-weight:800;color:'+(b.dir==='in'?'#1a7a44':'#c0392b')+'">'+fmtNum(b.amt)+'</td><td style="font-size:11px;color:#55606b">'+esc((b.desc||'').slice(0,60))+'</td><td>'+(b.match?tag(1,'✓ ემთხვევა'):tag(0,'⚠ პროგრამაში არ არის'))+'</td><td style="font-size:11px;color:#8a968d">'+(b.match?esc((b.match.label||'').slice(0,46)):'')+'</td></tr>').join('');
   const prow=progUn.slice(0,400).map(p=>'<tr style="background:#f6f8ff"><td style="white-space:nowrap">'+esc(p.date)+'</td><td>'+(p.dir==='in'?'⬇':'⬆')+'</td><td style="text-align:right;font-weight:800;color:'+(p.dir==='in'?'#1a7a44':'#c0392b')+'">'+fmtNum(p.amt)+'</td><td style="font-size:11px;color:#55606b">'+esc((p.label||'').slice(0,80))+'</td></tr>').join('');
-  document.getElementById('finBankRes').innerHTML=findHtml+kpi+
+  BANK_LAST={bIn,pIn,bOut,pOut,mN,bOnly,progUn};
+  document.getElementById('finBankRes').innerHTML=findHtml+'<div style="margin:0 0 12px"><button class="btn" id="bmAI" style="background:#6d3ad6">🤖 AI-მ გააანალიზოს (Claude)</button></div><div id="finBankAI" style="margin-bottom:12px"></div>'+kpi+
    '<div style="font-size:12px;color:#55606b;margin:6px 0">📄 '+BANK_FILES.length+' ფაილი · ბანკში '+bank.length+' ტრანზ. · ✓ დაემთხვა '+mN+' · ⚠ ბანკში მარტო '+bOnly.length+' · 🔵 პროგრამაში მარტო '+progUn.length+'</div>'+
    '<div class="card" style="box-shadow:none;border:1px solid #e3ece7;padding:0;overflow:hidden"><div style="padding:8px 12px;font-weight:800;background:#f3f7f4">🏦 ბანკის ტრანზაქციები (⚠ წითელი — პროგრამაში არ არის)</div><div style="overflow:auto;max-height:430px"><table><thead><tr><th>თარიღი</th><th>ფაილი</th><th>↕</th><th style="text-align:right">თანხა ₾</th><th>აღწერა</th><th>სტატუსი</th><th>პროგრამაში</th></tr></thead><tbody>'+(brow||'<tr><td colspan="7" style="padding:12px;color:#8a968d">ჩანაწერი არ წაიკითხა — შეამოწმე სვეტების მონიშვნა</td></tr>')+'</tbody></table></div></div>'+
    (progUn.length?('<div class="card" style="box-shadow:none;border:1px solid #e3ece7;padding:0;overflow:hidden;margin-top:12px"><div style="padding:8px 12px;font-weight:800;background:#eef2ff">🔵 პროგრამაში არის, ბანკში არა (ნაღდი / ვალი)</div><div style="overflow:auto;max-height:320px"><table><thead><tr><th>თარიღი</th><th>↕</th><th style="text-align:right">თანხა ₾</th><th>აღწერა</th></tr></thead><tbody>'+prow+'</tbody></table></div></div>'):'');
+  const _aiB=document.getElementById('bmAI');if(_aiB)_aiB.onclick=finBankAI;
+}
+async function finBankAI(){const box=document.getElementById('finBankAI');if(!box)return;box.innerHTML='<div class="muted" style="font-size:13px">🤖 ვაანალიზებ Claude-ით…</div>';
+  const L=BANK_LAST||{};
+  const payload={income:{bank:Math.round(L.bIn||0),program:Math.round(L.pIn||0)},expense:{bank:Math.round(L.bOut||0),program:Math.round(L.pOut||0)},matchedCount:(L.mN||0),
+    bankOnly:((L.bOnly||[]).slice(0,120).map(b=>({date:b.date,amount:Math.round(b.amt),dir:b.dir,desc:(b.desc||'').slice(0,80),file:b.src}))),
+    programOnly:((L.progUn||[]).slice(0,120).map(p=>({date:p.date,amount:Math.round(p.amt),dir:p.dir,what:(p.label||'').slice(0,80)})))};
+  try{const {data,error}=await sb.functions.invoke('bank-analyze',{body:{payload}});
+    if(error)throw error;
+    if(data&&data.error)throw new Error(data.error);
+    const t=(data&&data.text)||'(ცარიელი პასუხი)';
+    box.innerHTML='<div class="card" style="box-shadow:none;border:2px solid #6d3ad6;background:#faf7ff"><h3 style="margin:0 0 6px;color:#6d3ad6">🤖 Claude-ის ანალიზი</h3><div style="white-space:pre-wrap;font-size:13px;line-height:1.55">'+esc(t)+'</div></div>';
+  }catch(e){box.innerHTML='<div style="color:#b00020;font-size:13px">AI ანალიზი ვერ შესრულდა: '+esc((e&&e.message)||e)+'<br><span class="muted" style="font-size:11.5px">საჭიროა Supabase Edge Function „bank-analyze" + ANTHROPIC_API_KEY. იხ. supabase/functions/bank-analyze/README.</span></div>';}
 }
 async function openFinance(){if(!finTopEl)return;try{salEl.style.display='';}catch(e){}try{purchEl.style.display='';}catch(e){}finTopEl.innerHTML='<div class="empty">იტვირთება…</div>';try{await ensureDirs();}catch(e){}try{const {data}=await sb.from('invoices').select('*').order('created_at',{ascending:false}).limit(1000);INVOICES=data||[];}catch(e){}try{await loadDistrib();}catch(e){}try{await loadStock();}catch(e){}try{await loadExpenses();}catch(e){}try{await loadPurchases();}catch(e){}try{await loadDebtPays();}catch(e){}try{renderFinTop();}catch(e){finTopEl.innerHTML='<div class="card"><p style="color:#c62828">ფინანსების ხედი ვერ აიწყო: '+esc(e.message||e)+'</p></div>';}fetchNBG().then(()=>{try{renderFinTop();}catch(e){}}).catch(()=>{});try{await openExpenses();}catch(e){salEl.innerHTML='<div class="card"><p style="color:#c62828">ხარჯის ფორმა ვერ აიწყო: '+esc(e.message||e)+'</p></div>';}try{await openPurchases();}catch(e){purchEl.innerHTML='<div class="card"><p style="color:#c62828">შესყიდვის ფორმა ვერ აიწყო: '+esc(e.message||e)+'</p></div>';}}
 function finDebts(){const m={};
