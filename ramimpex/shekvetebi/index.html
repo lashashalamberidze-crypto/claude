@@ -2536,12 +2536,26 @@ function finBankCompare(){if(!BANK_TX.length){return;}
   const brow=bank.slice(0,800).map(b=>'<tr style="background:'+(b.match?'#fff':'#fff7f5')+'"><td style="white-space:nowrap">'+esc(b.date)+'</td><td style="font-size:10.5px;color:#1e6fa8;font-weight:700">'+esc((b.src||'').slice(0,16))+'</td><td>'+(b.dir==='in'?'⬇':'⬆')+'</td><td style="text-align:right;font-weight:800;color:'+(b.dir==='in'?'#1a7a44':'#c0392b')+'">'+fmtNum(b.amt)+'</td><td style="font-size:11px;color:#55606b">'+esc((b.desc||'').slice(0,60))+'</td><td>'+(b.match?tag(1,'✓ ემთხვევა'):tag(0,'⚠ პროგრამაში არ არის'))+'</td><td style="font-size:11px;color:#8a968d">'+(b.match?esc((b.match.label||'').slice(0,46)):'')+'</td></tr>').join('');
   const prow=progUn.slice(0,400).map(p=>'<tr style="background:#f6f8ff"><td style="white-space:nowrap">'+esc(p.date)+'</td><td>'+(p.dir==='in'?'⬇':'⬆')+'</td><td style="text-align:right;font-weight:800;color:'+(p.dir==='in'?'#1a7a44':'#c0392b')+'">'+fmtNum(p.amt)+'</td><td style="font-size:11px;color:#55606b">'+esc((p.label||'').slice(0,80))+'</td></tr>').join('');
   BANK_LAST={bIn,pIn,bOut,pOut,mN,bOnly,progUn};
-  document.getElementById('finBankRes').innerHTML=findHtml+'<div style="margin:0 0 12px"><button class="btn" id="bmAI" style="background:#6d3ad6">🤖 AI-მ გააანალიზოს (Claude)</button></div><div id="finBankAI" style="margin-bottom:12px"></div>'+kpi+
+  document.getElementById('finBankRes').innerHTML=findHtml+'<div style="margin:0 0 12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="bmCopy" style="background:#0B6B3C">📋 დააკოპირე Claude-ისთვის (უფასო)</button><button class="btn" id="bmAI" style="background:#6d3ad6">🤖 AI-მ გააანალიზოს (საიტზევე · API)</button></div><div id="finBankAI" style="margin-bottom:12px"></div>'+kpi+
    '<div style="font-size:12px;color:#55606b;margin:6px 0">📄 '+BANK_FILES.length+' ფაილი · ბანკში '+bank.length+' ტრანზ. · ✓ დაემთხვა '+mN+' · ⚠ ბანკში მარტო '+bOnly.length+' · 🔵 პროგრამაში მარტო '+progUn.length+'</div>'+
    '<div class="card" style="box-shadow:none;border:1px solid #e3ece7;padding:0;overflow:hidden"><div style="padding:8px 12px;font-weight:800;background:#f3f7f4">🏦 ბანკის ტრანზაქციები (⚠ წითელი — პროგრამაში არ არის)</div><div style="overflow:auto;max-height:430px"><table><thead><tr><th>თარიღი</th><th>ფაილი</th><th>↕</th><th style="text-align:right">თანხა ₾</th><th>აღწერა</th><th>სტატუსი</th><th>პროგრამაში</th></tr></thead><tbody>'+(brow||'<tr><td colspan="7" style="padding:12px;color:#8a968d">ჩანაწერი არ წაიკითხა — შეამოწმე სვეტების მონიშვნა</td></tr>')+'</tbody></table></div></div>'+
    (progUn.length?('<div class="card" style="box-shadow:none;border:1px solid #e3ece7;padding:0;overflow:hidden;margin-top:12px"><div style="padding:8px 12px;font-weight:800;background:#eef2ff">🔵 პროგრამაში არის, ბანკში არა (ნაღდი / ვალი)</div><div style="overflow:auto;max-height:320px"><table><thead><tr><th>თარიღი</th><th>↕</th><th style="text-align:right">თანხა ₾</th><th>აღწერა</th></tr></thead><tbody>'+prow+'</tbody></table></div></div>'):'');
   const _aiB=document.getElementById('bmAI');if(_aiB)_aiB.onclick=finBankAI;
+  const _cpB=document.getElementById('bmCopy');if(_cpB)_cpB.onclick=finBankCopyForAI;
 }
+function finBankCopyForAI(){const L=BANK_LAST||{};const g=v=>fmtNum(v||0);
+  let t='RAM IMPEX — ბანკი vs პროგრამა შედარება\n';
+  t+='შემოსავალი: ბანკი '+g(L.bIn)+' ₾ · პროგრამა '+g(L.pIn)+' ₾ · Δ '+g((L.bIn||0)-(L.pIn||0))+' ₾\n';
+  t+='გასავალი: ბანკი '+g(L.bOut)+' ₾ · პროგრამა '+g(L.pOut)+' ₾ · Δ '+g((L.bOut||0)-(L.pOut||0))+' ₾\n';
+  t+='დაემთხვა: '+(L.mN||0)+' ტრანზაქცია\n\n';
+  t+='ბანკში არის, პროგრამაში არა ('+((L.bOnly||[]).length)+'):\n';
+  (L.bOnly||[]).slice(0,200).forEach(b=>{t+='- '+b.date+' | '+(b.dir==='in'?'+':'-')+Math.round(b.amt)+' GEL | '+((b.desc||'').slice(0,80))+' | '+(b.src||'')+'\n';});
+  t+='\nპროგრამაში არის, ბანკში არა ('+((L.progUn||[]).length)+'):\n';
+  (L.progUn||[]).slice(0,200).forEach(p=>{t+='- '+p.date+' | '+(p.dir==='in'?'+':'-')+Math.round(p.amt)+' GEL | '+((p.label||'').slice(0,80))+'\n';});
+  t+='\nგთხოვ გააანალიზო: რა ჯდება/არ ჯდება, საეჭვო ან დუბლირებული ჩანაწერები, რა არის დასამატებელი, რეკომენდაციები.';
+  const done=()=>{const b=document.getElementById('bmCopy');if(b){b.textContent='✓ დაკოპირდა — ჩააგდე Claude chat-ში';setTimeout(()=>{b.textContent='📋 დააკოპირე Claude-ისთვის (უფასო)';},3500);}};
+  try{navigator.clipboard.writeText(t).then(done,()=>{finBankShowText(t);});}catch(e){finBankShowText(t);}}
+function finBankShowText(t){const box=document.getElementById('finBankAI');if(box)box.innerHTML='<div class="card" style="box-shadow:none;border:1px solid #cdd9d0"><div class="muted" style="font-size:12px;margin-bottom:6px">მონიშნე და დააკოპირე (Ctrl+C), ჩააგდე Claude chat-ში:</div><textarea style="width:100%;height:220px;font-size:12px" readonly>'+esc(t)+'</textarea></div>';}
 async function finBankAI(){const box=document.getElementById('finBankAI');if(!box)return;box.innerHTML='<div class="muted" style="font-size:13px">🤖 ვაანალიზებ Claude-ით…</div>';
   const L=BANK_LAST||{};
   const payload={income:{bank:Math.round(L.bIn||0),program:Math.round(L.pIn||0)},expense:{bank:Math.round(L.bOut||0),program:Math.round(L.pOut||0)},matchedCount:(L.mN||0),
