@@ -664,6 +664,7 @@ async function productCostJPG(d,it,btn){
 function byCode(c){for(const d of DIRS){for(const it of d.items){if(it.code===c)return {code:c,name:it.name,size:it.size,color:it.color,mark:it.mark,ply:it.ply||'',dir:d.dir,group:d.name,price:effective(d,it)};}}return null;}
 // ყუთის ტიპი ილუსტრაციისთვის (მუყაოს ყუთები/კუთხოვანი; ბრიკეტი → null)
 function boxKind(l){const p=byCode(l&&l.code)||{};const dir=p.dir||l.dir||'';
+  if(dir==='ანთრაციტის ბრიკეტის ფეჩი')return null;
   if(dir==='ანთრაციტის ბრიკეტი'||isBriket(l&&l.code))return null;
   if(dir==='კუთხოვანი დამცავები')return 'corner';
   const t=(((p.group||'')+' '+(l&&l.name||p.name||''))||'').toLowerCase();
