@@ -2590,13 +2590,11 @@ function finCopyAllData(){
   try{SAL_DIRS.filter(d=>d[0]!=='all').forEach(d=>{const p=finPnlDir(d[0]);if(p.revenue<=0&&p.soldQty<=0)return;t+=d[1]+': გაყიდული '+Math.round(p.soldQty)+' | შემოსავ '+Math.round(p.revenue)+' | თვითღირ '+Math.round(p.cogs)+' | მოგება საქონელზე '+Math.round(p.profit)+' | ზოგ.ხარჯი '+Math.round(p.opex)+' | წმინდა '+Math.round(p.net)+' GEL\n';});}catch(e){}
   t+='\n';
   try{const dm=finDebts();const dk=Object.keys(dm).filter(c=>dm[c].owed>0||dm[c].repaid>0);if(dk.length){t+='=== ვალები ===\n';dk.forEach(c=>{const o=dm[c];t+=c+': ვალი '+Math.round(o.owed)+' | დაბრუნებული '+Math.round(o.repaid)+' | დარჩენილი '+Math.round(o.owed-o.repaid)+' GEL\n';});t+='\n';}}catch(e){}
-  try{if((DISTRIBUTORS||[]).length){t+='=== დისტრიბუტორები — გატანა (რაოდ.) / ფასი / გადახდა / ვალი ===\n';
+  try{if((DISTRIBUTORS||[]).length){t+='=== დისტრიბუტორები — წაღებული(კგ)/გაყიდ./დარჩ./ღირებ./გადახდა/ვალი ===\n';
     (DISTRIBUTORS||[]).forEach(dd=>{const nm=dd.name||dd.shop_name||'—';
-      const pk=(DIST_PICKUPS||[]).filter(x=>String(x.distributor_id)===String(dd.id));
-      let q=0,val=0;pk.forEach(x=>{q+=(+x.qty||0);val+=(+x.qty||0)*(+x.price||0);});
-      let paid=0,debt=0;try{paid=distDepositsFor(dd.id);}catch(e){}try{debt=distDebtFor(dd.id);}catch(e){}
-      t+=nm+': გაიტანა '+fmtNum(q)+' ერთ. · ღირებ. '+Math.round(val)+' · გადახდილი '+Math.round(paid)+' · ვალი '+Math.round(debt)+' GEL\n';
-      pk.forEach(x=>{t+='   '+(x.date||'')+' — '+fmtNum(+x.qty||0)+' × '+(+x.price||0)+'₾ = '+Math.round((+x.qty||0)*(+x.price||0))+'₾ | '+((typeof ruCode==='function'?ruCode(x.code):x.code)||x.product||'')+'\n';});
+      let kg={takenKg:0,soldKg:0,debtKg:0};try{kg=distKgSplit(dd.id);}catch(e){}
+      let tv=0,paid=0,debt=0;try{tv=distTakenFor(dd.id);}catch(e){}try{paid=distDepositsFor(dd.id);}catch(e){}try{debt=distDebtFor(dd.id);}catch(e){}
+      t+=nm+': წაღ. '+fmtNum(kg.takenKg)+' კგ · გაყიდ. '+fmtNum(kg.soldKg)+' · დარჩ. '+fmtNum(kg.debtKg)+' · ღირებ. '+Math.round(tv)+'₾ · გადახდ. '+Math.round(paid)+'₾ · ვალი '+Math.round(debt)+'₾\n';
     });t+='\n';}}catch(e){}
   t+='=== ყველა ტრანზაქცია ('+rows.length+') ===\n';
   t+='თარიღი | ტიპი | მიმართულება | კატეგორია | კონტრაგენტი/აღწერა | თანხა\n';
