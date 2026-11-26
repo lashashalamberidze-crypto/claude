@@ -1373,7 +1373,7 @@ function batchLiveCard(dir){if(!dir||dir==='all')return '';const bs=dirBatches(d
 function wireBatchLive(dir){const s=$('blBatchSel');if(s)s.onchange=()=>{BL_SEL=s.value;if($('blLeft'))$('blLeft').innerHTML=blLeftHTML(dir);};}
 function renderRetail(){
   IL_WANT_DIST=false;
-  $('salesBody').innerHTML=ledgerCardHTML(false)+plCardHTML(IL_DIR)+batchLiveCard(IL_DIR);
+  $('salesBody').innerHTML=ledgerCardHTML(false)+batchLiveCard(IL_DIR);
   wireLedgerControls();wirePL();wireBatchLive(IL_DIR);renderInvList();
 }
 /* ---------- დისტრიბუცია ---------- */
@@ -1430,7 +1430,6 @@ function renderDist(){
   h+='<p class="muted" style="font-size:11.5px;margin-top:8px">💰 ჩარიცხვის ჩაწერა (ფული + კგ, აკლდება ვალს) · 👁 სრული ინფო · ✏ რედაქტ./დამტკიცება · ✅ დამტკიცებული ჩანს /contact-ის რუკაზე</p></div>';
   // დისტრიბუტორზე გამოწერილი ინვოისები (ზედნადებით) — „რამდენი წაიღო"
   h+=ledgerCardHTML(true);
-  h+=plCardHTML(IL_DIR);
   h+=batchLiveCard(IL_DIR);
   body.innerHTML=h;
   wireLedgerControls();wirePL();wireBatchLive(IL_DIR);renderInvList();
