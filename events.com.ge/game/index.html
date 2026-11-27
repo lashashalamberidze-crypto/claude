@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>პროტოკოლის თავსატეხი — შეძლებ სწორად დასხა?</title>
+<meta name="description" content="5 დონე, 1 წესი: ყველა სტუმარი თავის ადგილზე. გამოსცადე პროტოკოლის ცოდნა და ლოგიკა — events.com.ge">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://events.com.ge/game/">
+<meta property="og:title" content="პროტოკოლის თავსატეხი — შეძლებ სწორად დასხა?">
+<meta property="og:description" content="5 დონე · პრეზიდენტი, ელჩები, მინისტრები. გამოსცადე ლოგიკა და პროტოკოლის ცოდნა.">
+<meta property="og:image" content="https://events.com.ge/game/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="627">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#07040f">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♛</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;700;800;900&family=Noto+Serif+Georgian:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07040f;--muted:rgba(255,255,255,.62);--line:rgba(255,255,255,.1);--gold:#d4af6a;--gold2:#f5dfa8;--pink:#f43f5e;--violet:#8b5cf6;--ok:#22c55e;--bad:#f87171}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{font-family:"Noto Sans Georgian",system-ui,sans-serif;background:var(--bg);color:#fff;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  -webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+a{color:inherit}
+.bg{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.bg i{position:absolute;border-radius:50%;filter:blur(100px);opacity:.38;mix-blend-mode:screen}
+.bg i:nth-child(1){width:55vmax;height:55vmax;background:#9f1239;left:-20vmax;top:-25vmax;animation:d1 24s ease-in-out infinite alternate}
+.bg i:nth-child(2){width:50vmax;height:50vmax;background:#5b21b6;right:-20vmax;bottom:-25vmax;animation:d2 28s ease-in-out infinite alternate}
+.bg i:nth-child(3){width:35vmax;height:35vmax;background:#a16207;left:40%;top:30%;opacity:.18;animation:d1 30s ease-in-out infinite alternate-reverse}
+@keyframes d1{to{transform:translate(15vw,12vh) scale(1.1)}}
+@keyframes d2{to{transform:translate(-15vw,-12vh) scale(.9)}}
+.app{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:18px 16px 40px;min-height:100svh;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px}
+.brand{font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px;opacity:.85;text-decoration:none}
+.brand b{width:8px;height:8px;border-radius:50%;background:var(--pink);box-shadow:0 0 10px var(--pink)}
+.hud{margin-left:auto;display:flex;gap:8px}
+.pill{padding:7px 12px;border-radius:999px;font-size:13.5px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ეკრანები */
+.screen{display:none;flex:1;flex-direction:column;animation:fade .5s ease}
+.screen.on{display:flex}
+@keyframes fade{from{opacity:0;transform:translateY(12px)}}
+
+/* სტარტი */
+.intro{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 0}
+.crown{font-size:64px;filter:drop-shadow(0 10px 30px rgba(212,175,106,.6));animation:bob 3s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-10px) rotate(-4deg)}}
+.intro h1{font-family:"Noto Serif Georgian",serif;font-size:clamp(34px,7vw,64px);line-height:1.15;margin-top:14px;
+  background:linear-gradient(90deg,var(--gold2),var(--gold),#fff3d6,var(--gold));background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 6s linear infinite}
+@keyframes sh{to{background-position:-200% center}}
+.intro p{color:var(--muted);max-width:560px;margin-top:14px;font-size:17px;line-height:1.6}
+.rules0{margin-top:26px;display:grid;gap:10px;text-align:left;max-width:520px;width:100%}
+.rules0 b{color:var(--gold2)}
+.rules0 div{display:flex;gap:12px;align-items:center;padding:12px 16px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid var(--line);font-size:15px}
+.rules0 span{font-size:22px}
+.go{margin-top:30px;padding:17px 40px;border-radius:999px;font-weight:800;font-size:18px;background:linear-gradient(90deg,var(--pink),var(--violet));
+  box-shadow:0 16px 40px -10px rgba(139,92,246,.7);transition:transform .2s}
+.go:hover{transform:translateY(-2px) scale(1.03)}
+.go:active{transform:scale(.97)}
+
+/* დონე */
+.lvh{margin-top:18px;text-align:center}
+.lvh .k{font-size:12.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold2);font-weight:700}
+.lvh h2{font-family:"Noto Serif Georgian",serif;font-size:clamp(24px,4.4vw,36px);margin-top:4px}
+.dots{display:flex;gap:6px;justify-content:center;margin-top:10px}
+.dots i{width:28px;height:5px;border-radius:3px;background:rgba(255,255,255,.15)}
+.dots i.d{background:var(--gold)}.dots i.c{background:linear-gradient(90deg,var(--pink),var(--violet))}
+
+.room{margin-top:18px;border-radius:26px;padding:18px 14px 22px;background:linear-gradient(180deg,rgba(212,175,106,.08),rgba(255,255,255,.02));border:1px solid rgba(212,175,106,.25)}
+.aud{text-align:center;font-size:12.5px;color:var(--muted);margin-bottom:10px}
+.aud b{color:var(--gold2)}
+.table{display:flex;justify-content:center;gap:clamp(4px,1.4vw,12px);position:relative;padding:8px 6px 0}
+.seat{flex:1;max-width:120px;min-width:0;display:flex;flex-direction:column;align-items:center}
+.chair{width:100%;aspect-ratio:1/1.05;border-radius:18px;border:2px dashed rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.03);transition:all .25s;position:relative}
+.seat.target .chair{border-color:var(--gold);background:rgba(212,175,106,.12);box-shadow:0 0 0 4px rgba(212,175,106,.12);animation:glow 1.2s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 0 0 8px rgba(212,175,106,.05)}}
+.seat .no{font-size:11px;color:var(--muted);margin-top:6px;white-space:nowrap}
+.board{width:calc(100% + 12px);margin:-2px -6px 0;height:22px;border-radius:8px;background:linear-gradient(180deg,#5b4423,#3a2b15);
+  box-shadow:0 10px 20px -8px rgba(0,0,0,.7), inset 0 2px 0 rgba(255,255,255,.12)}
+.cloth{height:8px;margin:0 -6px;border-radius:0 0 6px 6px;background:linear-gradient(90deg,#7a1f2b,#a4303f,#7a1f2b)}
+.center-mark{position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--gold2);opacity:.75;white-space:nowrap}
+
+/* სტუმრის ბარათი */
+.g{width:100%;aspect-ratio:1/1.05;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;text-align:center;
+  background:linear-gradient(160deg,#fffaf0,#efe3c9);color:#2a1d0c;border:2px solid var(--gold);box-shadow:0 10px 24px -10px rgba(0,0,0,.8);
+  transition:transform .2s,box-shadow .2s;user-select:none;-webkit-user-select:none;touch-action:none}
+.g .e{font-size:clamp(22px,4vw,32px);line-height:1}
+.g .t{font-size:clamp(9.5px,1.6vw,12.5px);font-weight:800;line-height:1.2;overflow-wrap:anywhere;hyphens:auto}
+.chair .g .t{font-size:clamp(8.5px,1.5vw,12px)}
+.g.sel{transform:translateY(-6px) scale(1.05);box-shadow:0 0 0 4px var(--pink),0 18px 30px -10px rgba(244,63,94,.6)}
+.chair .g{border-radius:14px}
+.tray{margin-top:18px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px;min-height:96px;padding:12px;border-radius:20px;background:rgba(255,255,255,.03);border:1px dashed var(--line)}
+.tray .g{width:clamp(74px,13vw,104px)}
+.tray .empty{align-self:center;color:var(--muted);font-size:14px}
+.hint{text-align:center;font-size:13.5px;color:var(--muted);margin-top:10px;min-height:20px}
+
+.rules{margin-top:16px;display:grid;gap:8px}
+.rule{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--line);font-size:15px;line-height:1.45;transition:.3s}
+.rule .m{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;background:rgba(255,255,255,.1)}
+.rule.ok{border-color:rgba(34,197,94,.55);background:rgba(34,197,94,.08)}.rule.ok .m{background:var(--ok);color:#052e12}
+.rule.no{border-color:rgba(248,113,113,.6);background:rgba(248,113,113,.08);animation:shake .4s}.rule.no .m{background:var(--bad);color:#3b0a0a}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.rule b{color:var(--gold2)}
+.orient b{color:#fff}
+.orient{margin-top:14px;display:flex;gap:10px;align-items:center;padding:11px 14px;border-radius:14px;background:rgba(212,175,106,.08);border:1px solid rgba(212,175,106,.3);font-size:13.5px;color:var(--gold2)}
+.actions{margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn{padding:14px 26px;border-radius:999px;font-weight:800;font-size:16px;transition:transform .15s}
+.btn:active{transform:scale(.96)}
+.btn.p{background:linear-gradient(90deg,var(--pink),var(--violet));box-shadow:0 12px 30px -10px rgba(139,92,246,.7)}
+.btn.p:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.btn.s{background:rgba(255,255,255,.07);border:1px solid var(--line)}
+.btn.li{background:#0a66c2;display:inline-flex;align-items:center;gap:10px}
+
+/* მოდალი */
+.modal{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(5,3,12,.7);backdrop-filter:blur(6px)}
+.modal.on{display:flex;animation:fade .3s}
+.mc{max-width:460px;width:100%;border-radius:28px;padding:30px 26px;text-align:center;background:linear-gradient(160deg,#1b1330,#0e0a1c);border:1px solid rgba(212,175,106,.4);
+  box-shadow:0 40px 100px -30px rgba(212,175,106,.4)}
+.stars{font-size:40px;letter-spacing:6px}
+.stars .off{opacity:.2}
+.mc h3{font-family:"Noto Serif Georgian",serif;font-size:28px;margin-top:6px;color:var(--gold2)}
+.fact{margin-top:16px;padding:14px 16px;border-radius:16px;background:rgba(212,175,106,.08);border:1px solid rgba(212,175,106,.25);font-size:14.5px;line-height:1.55;text-align:left}
+.fact b{display:block;color:var(--gold2);font-size:12px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:4px}
+.mc .btn{margin-top:20px}
+
+/* ფინალი */
+.fin{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 0}
+.badge{position:relative;width:200px;height:200px;border-radius:50%;display:grid;place-items:center;
+  background:conic-gradient(from 0deg,var(--gold),#fff3d6,var(--gold),#a07a35,var(--gold));animation:spin 8s linear infinite;box-shadow:0 0 80px -10px rgba(212,175,106,.7)}
+.badge::after{content:"";position:absolute;inset:8px;border-radius:50%;background:#120c22}
+.badge span{position:relative;z-index:1;font-size:84px;animation:spin 8s linear infinite reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fin .rank{font-family:"Noto Serif Georgian",serif;font-size:clamp(28px,5vw,44px);margin-top:24px;color:var(--gold2)}
+.fin .stat{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.fin p{color:var(--muted);margin-top:14px;max-width:520px;line-height:1.6}
+.share{margin-top:24px;display:flex;flex-direction:column;gap:10px;align-items:center;width:100%;max-width:460px}
+.post{width:100%;text-align:left;font-size:14px;line-height:1.55;padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid var(--line);white-space:pre-line;color:rgba(255,255,255,.85)}
+.cta{margin-top:30px;padding:18px 20px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid var(--line);font-size:14.5px;color:var(--muted);max-width:460px}
+.cta a{color:#fff;font-weight:800;text-decoration:none}
+#cf{position:fixed;inset:0;pointer-events:none;z-index:40}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;transition:.3s;padding:12px 18px;border-radius:12px;background:#16a34a;font-weight:700;z-index:50}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
+<canvas id="cf" aria-hidden="true"></canvas>
+<div class="app">
+  <header>
+    <a class="brand" href="/"><b></b>events.com.ge</a>
+    <div class="hud" id="hud" hidden><span class="pill" id="tm">⏱ 0:00</span><span class="pill" id="sc">★ 0</span></div>
+  </header>
+
+  <!-- სტარტი -->
+  <section class="screen on" id="s0"><div class="intro">
+    <div class="crown">♛</div>
+    <h1>პროტოკოლის<br>თავსატეხი</h1>
+    <p>ოფიციალური მიღება იწყება. სტუმრები უკვე დარბაზში არიან — შენ კი პროტოკოლის უფროსი ხარ. დასვი ყველა თავის ადგილზე, სანამ კარი გაიღება.</p>
+    <div class="rules0">
+      <div><span>🎯</span>5 დონე — 3-დან 7 სტუმრამდე</div>
+      <div><span>👆</span>შეეხე სტუმარს, მერე — სკამს. ან გადაათრიე</div>
+      <div><span>🧭</span><em style="font-style:normal">ყურადღება: სტუმრები <b>დარბაზისკენ</b> იყურებიან</em></div>
+      <div><span>⭐</span>პირველივე ცდაზე სწორი — 3 ვარსკვლავი</div>
+    </div>
+    <button class="go" id="start">დაწყება →</button>
+  </div></section>
+
+  <!-- დონე -->
+  <section class="screen" id="s1">
+    <div class="lvh"><div class="k" id="lk"></div><h2 id="lt"></h2><div class="dots" id="dots"></div></div>
+    <div class="room">
+      <div class="aud">⬇ სტუმრები იყურებიან <b>დარბაზისკენ</b> — შენკენ ⬇</div>
+      <div class="table" id="table"></div>
+      <div class="board"></div><div class="cloth"></div>
+    </div>
+    <div class="tray" id="tray"></div>
+    <div class="hint" id="hint">შეეხე სტუმარს, შემდეგ — თავისუფალ სკამს</div>
+    <div class="orient"><span>🧭</span><span>სტუმრის <b>მარჯვენა</b> მხარე შენთვის <b>მარცხნივაა</b> — ისინი შენკენ იყურებიან.</span></div>
+    <div class="rules" id="rules"></div>
+    <div class="actions"><button class="btn s" id="reset">↺ თავიდან</button><button class="btn p" id="check" disabled>შემოწმება ✓</button></div>
+  </section>
+
+  <!-- ფინალი -->
+  <section class="screen" id="s2"><div class="fin">
+    <div class="badge"><span id="fb">♛</span></div>
+    <div class="rank" id="rank"></div>
+    <div class="stat"><span class="pill" id="fs"></span><span class="pill" id="ft"></span><span class="pill" id="fc"></span></div>
+    <p id="ftx"></p>
+    <div class="share">
+      <div class="post" id="post"></div>
+      <button class="btn li" id="li"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>გაზიარება LinkedIn-ზე</button>
+      <button class="btn s" id="copy">📋 ტექსტის კოპირება</button>
+      <button class="btn s" id="again">↺ თავიდან თამაში</button>
+    </div>
+    <div class="cta">რეალური ღონისძიებისთვის პროტოკოლი ჩვენზე იყოს 🤝<br><a href="/">events.com.ge</a> · <a href="tel:+995595533500">595 53 35 00</a></div>
+  </div></section>
+</div>
+
+<div class="modal" id="win"><div class="mc">
+  <div class="stars" id="wst"></div><h3 id="wt"></h3>
+  <div class="fact"><b>პროტოკოლის ფაქტი</b><span id="wf"></span></div>
+  <button class="btn p" id="next">შემდეგი დონე →</button>
+</div></div>
+<div class="toast" id="toast">დაკოპირდა ✓</div>
+
+<script>
+(function(){
+/* ═══ დონეები ═══
+   პოზიცია 0 = ეკრანზე მარცხნივ. სტუმრები მაყურებლისკენ სხედან, ამიტომ
+   „X ზის Y-ის მარჯვნივ“ ნიშნავს: X ეკრანზე Y-ის მარცხნივაა (pos = pos(Y) − 1). */
+var G = {
+  H:["🎩","მასპინძელი","მასპინძ."], G:["🎖️","საპატიო სტუმარი","სტუმარი"], T:["🗣️","თარჯიმანი","თარჯიმ."],
+  M:["💼","მინისტრი","მინისტრი"], E:["🏳️","ელჩი","ელჩი"], D:["📁","მოადგილე","მოადგ."], A:["📝","მრჩეველი","მრჩევ."],
+  P:["👑","პრეზიდენტი","პრეზიდ."], R:["🏛️","პრემიერ-მინისტრი","პრემიერი"], Y:["🏙️","მერი","მერი"],
+  S:["⚖️","პარლამენტის თავმჯდომარე","პარლამ."], F:["🌍","საგარეო მინისტრი","საგარეო"], B:["📈","ბიზნეს-ასოც. თავმჯდომარე","ბიზნესი"],
+  HS:["💐","მასპინძლის მეუღლე","მასპ. მეუღ."], GS:["🌹","სტუმრის მეუღლე","სტ. მეუღ."], AM:["🏳️","ელჩი","ელჩი"], I:["🗣️","თარჯიმანი","თარჯიმ."]
+};
+var LV = [
+  { title:"სამი სკამი", guests:["H","G","T"], rules:[["center","H"],["right","G","H"]],
+    fact:"ოფიციალურ სადილზე საპატიო სტუმარი მასპინძლის <b>მარჯვნივ</b> სხდება — ეს ყველაზე საპატიო ადგილია მასპინძლის შემდეგ." },
+  { title:"ლუწი მაგიდა", guests:["M","E","D","A"], rules:[["mid","M"],["mid","E"],["right","E","M"],["notadj","D","E"]],
+    fact:"როცა სკამების რაოდენობა ლუწია, ცენტრი ორ სკამს შორის გადის — მთავარი პირები შუა ორ ადგილზე სხდებიან." },
+  { title:"პრეზიდიუმი", guests:["P","R","E","M","Y"], rules:[["center","P"],["right","R","P"],["left","E","P"],["edge","M"],["adj","Y","E"]],
+    fact:"პრეცედენტის წესი: რაც უფრო მაღალია რანგი, მით უფრო ახლოს ზის ცენტრთან. მარჯვენა მხარე მარცხენაზე საპატიოა." },
+  { title:"საზეიმო ვახშამი", guests:["H","G","HS","GS","AM","I"], rules:[["mid","H"],["mid","G"],["right","G","H"],["left","GS","H"],["right","HS","G"],["adj","I","HS"]],
+    fact:"ოფიციალურ ვახშამზე მეუღლეებს, როგორც წესი, ერთმანეთის გვერდით არ სვამენ — ასე საუბარი უფრო მრავალფეროვანია." },
+  { title:"სახელმწიფო მიღება", guests:["P","S","R","E","F","Y","B"], rules:[["center","P"],["adj","R","P"],["adj","S","P"],["right","S","P"],["notedge","E"],["adj","F","E"],["farther","F","E"],["left","Y","R"]],
+    fact:"საქართველოს კონსტიტუციით, პრეზიდენტი სახელმწიფოს მეთაურია; ოფიციალურ რიგში მას მოსდევს პარლამენტის თავმჯდომარე, შემდეგ — პრემიერ-მინისტრი." }
+];
+function nm(k){ return "<b>"+G[k][1]+"</b>"; }
+function ruleText(r){
+  switch(r[0]){
+    case "center": return nm(r[1])+" ზის ზუსტად ცენტრში";
+    case "mid": return nm(r[1])+" ზის შუა ორი სკამიდან ერთ-ერთზე";
+    case "right": return nm(r[1])+" ზის "+nm(r[2])+"-ის მარჯვნივ, უშუალოდ გვერდით";
+    case "left": return nm(r[1])+" ზის "+nm(r[2])+"-ის მარცხნივ, უშუალოდ გვერდით";
+    case "adj": return nm(r[1])+" და "+nm(r[2])+" გვერდიგვერდ სხედან";
+    case "notadj": return nm(r[1])+" და "+nm(r[2])+" გვერდიგვერდ არ სხედან";
+    case "edge": return nm(r[1])+" ზის მაგიდის კიდეზე";
+    case "notedge": return nm(r[1])+" კიდეზე არ ზის";
+    case "farther": return nm(r[1])+" ცენტრიდან უფრო შორს ზის, ვიდრე "+nm(r[2]);
+  }
+}
+function test(r, pos, n){
+  var a = pos[r[1]], b = pos[r[2]], c = (n-1)/2;
+  if (a === undefined || (r[2] && b === undefined)) return null; // ჯერ არ დასხდნენ
+  switch(r[0]){
+    case "center": return a === c;
+    case "mid": return a === Math.floor(c) || a === Math.ceil(c);
+    case "right": return a === b-1;
+    case "left": return a === b+1;
+    case "adj": return Math.abs(a-b) === 1;
+    case "notadj": return Math.abs(a-b) !== 1;
+    case "edge": return a === 0 || a === n-1;
+    case "notedge": return a !== 0 && a !== n-1;
+    case "farther": return Math.abs(a-c) > Math.abs(b-c);
+  }
+}
+
+/* ═══ მდგომარეობა ═══ */
+var $ = function(id){ return document.getElementById(id); };
+var li = 0, seats = [], tray = [], sel = null, tries = 0, score = 0, stars = [], t0 = 0, timer = null, totalChecks = 0;
+function show(id){ ["s0","s1","s2"].forEach(function(s){ $(s).classList.toggle("on", s===id); }); window.scrollTo(0,0); }
+function fmt(s){ return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2); }
+function tick(){ $("tm").textContent = "⏱ " + fmt(Math.floor((Date.now()-t0)/1000)); }
+
+function card(k, short){
+  var d = document.createElement("div"); d.className = "g"; d.dataset.k = k;
+  d.innerHTML = '<span class="e">'+G[k][0]+'</span><span class="t">'+(short ? G[k][2] : G[k][1])+'</span>'; return d;
+}
+function load(i){
+  li = i; var L = LV[i], n = L.guests.length; tries = 0; sel = null;
+  seats = new Array(n).fill(null);
+  tray = L.guests.slice().sort(function(){ return Math.random()-.5; });
+  $("lk").textContent = "დონე " + (i+1) + " / " + LV.length;
+  $("lt").textContent = L.title;
+  $("dots").innerHTML = LV.map(function(_,j){ return '<i class="'+(j<i?"d":j===i?"c":"")+'"></i>'; }).join("");
+  $("rules").innerHTML = L.rules.map(function(r,j){ return '<div class="rule" id="r'+j+'"><span class="m">'+(j+1)+'</span><span>'+ruleText(r)+'</span></div>'; }).join("");
+  render();
+}
+function render(){
+  var n = seats.length, tb = $("table"); tb.innerHTML = "";
+  seats.forEach(function(k, j){
+    var s = document.createElement("div"); s.className = "seat" + (sel && !k ? " target" : ""); s.dataset.i = j;
+    var ch = document.createElement("div"); ch.className = "chair"; if (k) ch.appendChild(card(k, n >= 5 && innerWidth < 700)); s.appendChild(ch);
+    var no = document.createElement("div"); no.className = "no"; no.textContent = (n%2 && j===(n-1)/2) ? "★ ცენტრი" : (n >= 6 ? "" : "სკამი ") + (j+1); s.appendChild(no);
+    tb.appendChild(s);
+  });
+  var tr = $("tray"); tr.innerHTML = "";
+  tray.forEach(function(k){ var c = card(k); if (sel === k) c.classList.add("sel"); tr.appendChild(c); });
+  if (!tray.length) tr.innerHTML = '<div class="empty">ყველა სტუმარი დასხდა — შეამოწმე! 👇</div>';
+  $("check").disabled = tray.length > 0;
+  $("hint").textContent = sel ? "ახლა აირჩიე სკამი " + G[sel][1] + "-სთვის" : tray.length ? "შეეხე სტუმარს, შემდეგ — თავისუფალ სკამს" : "";
+  document.querySelectorAll(".rule").forEach(function(r){ r.classList.remove("ok","no"); });
+}
+function place(k, j){
+  if (seats[j]) tray.push(seats[j]);           // დაკავებულ სკამზე — წინა სტუმარი უკან ბრუნდება
+  var from = seats.indexOf(k);
+  if (from >= 0) seats[from] = null; else tray.splice(tray.indexOf(k), 1);
+  seats[j] = k; sel = null; render();
+}
+function unseat(j){ if (seats[j]) { tray.push(seats[j]); seats[j] = null; sel = null; render(); } }
+
+/* შეხება / დაწკაპუნება */
+document.addEventListener("click", function(e){
+  if (dragMoved) return;
+  var g = e.target.closest(".g"), seat = e.target.closest(".seat");
+  if (!$("s1").classList.contains("on")) return;
+  if (g && g.parentNode.id === "tray"){ sel = sel === g.dataset.k ? null : g.dataset.k; render(); return; }
+  if (seat){ var j = +seat.dataset.i; if (sel) place(sel, j); else unseat(j); }
+});
+
+/* გადათრევა (მაუსი და თითი) */
+var drag = null, ghost = null, dragMoved = false, sx = 0, sy = 0;
+document.addEventListener("pointerdown", function(e){
+  var g = e.target.closest(".g"); if (!g || !$("s1").classList.contains("on")) return;
+  drag = g.dataset.k; sx = e.clientX; sy = e.clientY; dragMoved = false;
+});
+document.addEventListener("pointermove", function(e){
+  if (!drag) return;
+  if (!dragMoved && Math.hypot(e.clientX-sx, e.clientY-sy) < 8) return;
+  if (!dragMoved){ dragMoved = true; ghost = card(drag); ghost.style.cssText = "position:fixed;width:92px;z-index:60;pointer-events:none;transform:rotate(-4deg) scale(1.08);opacity:.95"; document.body.appendChild(ghost); }
+  ghost.style.left = (e.clientX-46) + "px"; ghost.style.top = (e.clientY-48) + "px";
+});
+document.addEventListener("pointerup", function(e){
+  if (!drag) return;
+  if (dragMoved){
+    if (ghost) ghost.remove();
+    var el = document.elementFromPoint(e.clientX, e.clientY), seat = el && el.closest(".seat"), tr = el && el.closest("#tray");
+    if (seat) place(drag, +seat.dataset.i);
+    else if (tr){ var from = seats.indexOf(drag); if (from >= 0) unseat(from); }
+    setTimeout(function(){ dragMoved = false; }, 0);
+  }
+  drag = null; ghost = null;
+});
+
+/* შემოწმება */
+$("check").onclick = function(){
+  var L = LV[li], pos = {}; seats.forEach(function(k,j){ pos[k] = j; });
+  tries++; totalChecks++;
+  var all = true;
+  L.rules.forEach(function(r,j){ var ok = test(r, pos, seats.length), el = $("r"+j); el.classList.remove("ok","no"); void el.offsetWidth; el.classList.add(ok ? "ok" : "no"); if (!ok) all = false; });
+  if (navigator.vibrate) try{ navigator.vibrate(all ? [20,40,20] : 60); }catch(_){}
+  if (all){
+    var st = tries === 1 ? 3 : tries <= 3 ? 2 : 1; stars[li] = st; score = stars.reduce(function(a,b){ return a+b; }, 0);
+    $("sc").textContent = "★ " + score;
+    $("wst").innerHTML = [1,2,3].map(function(i){ return '<span class="'+(i<=st?"":"off")+'">★</span>'; }).join("");
+    $("wt").textContent = st === 3 ? "უნაკლოდ!" : st === 2 ? "ძალიან კარგი!" : "გამოვიდა!";
+    $("wf").innerHTML = L.fact;
+    $("next").textContent = li < LV.length-1 ? "შემდეგი დონე →" : "შედეგის ნახვა 🏆";
+    setTimeout(function(){ $("win").classList.add("on"); confetti(); }, 450);
+  } else {
+    $("hint").textContent = "ზოგიერთი წესი დარღვეულია — წითლად მონიშნულებს გადახედე";
+  }
+};
+$("reset").onclick = function(){ tray = tray.concat(seats.filter(Boolean)); seats = seats.map(function(){ return null; }); sel = null; render(); };
+$("next").onclick = function(){ $("win").classList.remove("on"); if (li < LV.length-1) load(li+1); else finish(); };
+$("start").onclick = function(){ stars = []; score = 0; totalChecks = 0; t0 = Date.now(); clearInterval(timer); timer = setInterval(tick, 1000); tick();
+  $("hud").hidden = false; $("sc").textContent = "★ 0"; show("s1"); load(0); };
+$("again").onclick = function(){ $("start").onclick(); };
+
+/* ფინალი */
+var RANKS = [[15,"🏆","პროტოკოლის მაესტრო","უნაკლო შედეგი — ყველა სტუმარი პირველივე ცდაზე დასხდა. სახელმწიფო მიღებაც შეგიძლია ჩაატარო!"],
+             [12,"♛","პროტოკოლის უფროსი","შესანიშნავი შედეგი — კიდევ ერთი ცდა და მაესტრო ხარ."],
+             [8,"🎖️","დიპლომატი","კარგი ინსტინქტი! ვინ ვის მარჯვნივ ზის — უკვე იცი."],
+             [0,"🎩","პრაქტიკანტი","პროტოკოლი რთულია — ამიტომაა ჩვენი სამსახური 😉"]];
+function finish(){
+  clearInterval(timer);
+  var secs = Math.floor((Date.now()-t0)/1000), R = RANKS.filter(function(r){ return score >= r[0]; })[0];
+  $("fb").textContent = R[1]; $("rank").textContent = R[2]; $("ftx").textContent = R[3];
+  $("fs").textContent = "★ " + score + " / 15"; $("ft").textContent = "⏱ " + fmt(secs); $("fc").textContent = "✓ " + totalChecks + " შემოწმება";
+  $("post").textContent = "♛ პროტოკოლის თავსატეხი — ჩემი შედეგი: " + R[2] + " (" + score + "/15 ★, " + fmt(secs) + ")\n\n" +
+    "5 დონე: პრეზიდენტი, ელჩები, მინისტრები — და ერთი მთავარი წესი: ყველა თავის ადგილზე.\n" +
+    "იცი, ვინ ზის მასპინძლის მარჯვნივ? 😉\n\nსცადე შენც 👉 https://events.com.ge/game/\n\n#პროტოკოლი #ღონისძიებები #ლოგიკა";
+  show("s2"); confetti(); setTimeout(confetti, 700);
+}
+$("li").onclick = function(){
+  var u = "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent("https://events.com.ge/game/");
+  copyPost(true); window.open(u, "_blank", "noopener");
+};
+function copyPost(silent){
+  var t = $("post").textContent;
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function(){
+    var el = $("toast"); el.textContent = silent ? "ტექსტი დაკოპირდა — ჩასვი პოსტში ✓" : "დაკოპირდა ✓"; el.classList.add("on"); setTimeout(function(){ el.classList.remove("on"); }, 2400);
+  }).catch(function(){});
+}
+$("copy").onclick = function(){ copyPost(false); };
+
+/* კონფეტი */
+var cv = $("cf"), cx = cv.getContext("2d"), parts = [], running = false;
+function confetti(){
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  cv.width = innerWidth; cv.height = innerHeight;
+  var cols = ["#d4af6a","#f5dfa8","#f43f5e","#8b5cf6","#22d3ee","#fff"];
+  for (var i=0;i<140;i++) parts.push({ x:innerWidth/2, y:innerHeight*.35, vx:(Math.random()-.5)*16, vy:Math.random()*-14-4, r:Math.random()*6+3, c:cols[i%cols.length], a:Math.random()*6, va:(Math.random()-.5)*.3, life:0 });
+  if (!running){ running = true; requestAnimationFrame(cfLoop); }
+}
+function cfLoop(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  parts = parts.filter(function(p){ return p.life < 160 && p.y < cv.height+20; });
+  parts.forEach(function(p){ p.life++; p.vy += .35; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.a += p.va;
+    cx.save(); cx.translate(p.x,p.y); cx.rotate(p.a); cx.fillStyle = p.c; cx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); cx.restore(); });
+  if (parts.length) requestAnimationFrame(cfLoop); else { running = false; cx.clearRect(0,0,cv.width,cv.height); }
+}
+})();
+</script>
+</body>
+</html>
