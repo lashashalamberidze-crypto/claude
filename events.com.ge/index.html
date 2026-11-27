@@ -45,7 +45,10 @@ nav.scr .lk{color:var(--muted)}
 nav .lk a:hover{color:#fff}nav.scr .lk a:hover{color:var(--navy)}
 .ph{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;font-weight:600;font-size:14.5px;white-space:nowrap;background:#fff;color:var(--navy);transition:.25s}
 nav.scr .ph{background:var(--navy);color:#fff}
-@media(max-width:860px){nav .lk{display:none}.ph{margin-left:auto}.brand small{display:none}}
+.lng{padding:9px 13px;border-radius:999px;font-weight:700;font-size:13.5px;border:1px solid rgba(255,255,255,.4);color:#fff;transition:.25s}
+nav.scr .lng{border-color:var(--line);color:var(--navy)}
+.lng:hover{background:rgba(255,255,255,.12)}
+@media(max-width:860px){nav .lk{display:none}.lng{margin-left:auto}.brand small{display:none}}
 
 /* hero */
 .hero{position:relative;overflow:hidden;color:#fff;padding:150px 0 110px;
@@ -223,7 +226,7 @@ footer .brand{color:#fff}
 <nav id="nav"><div class="wrap">
   <a class="brand" href="#"><svg><use href="#mark"/></svg><span><b>events<i>.com.ge</i></b><small>პროტოკოლის სამსახური</small></span></a>
   <div class="lk"><a href="#services">სერვისები</a><a href="#why">რატომ ჩვენ</a><a href="#process">პროცესი</a><a href="#faq">კითხვები</a><a href="/game/">თამაში</a></div>
-  <a class="ph" href="tel:+995595533500"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>595 53 35 00</a>
+  <button class="lng" id="lng" aria-label="Language">EN</button><a class="ph" href="tel:+995595533500"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>595 53 35 00</a>
 </div></nav>
 
 <header class="hero"><div class="wrap">
@@ -232,7 +235,7 @@ footer .brand{color:#fff}
     <h1 class="rv">პროტოკოლი და ღონისძიებები —<br><em>უნაკლო შესრულებით</em></h1>
     <p class="rv">პროტოკოლის სპეციალისტები ოფიციალური ვიზიტებისთვის, სამთავრობო და კორპორატიული ღონისძიებებისთვის — დაგეგმვიდან ბოლო სტუმრის გაცილებამდე.</p>
     <div class="cta rv"><a class="b1" href="tel:+995595533500">დაგვიკავშირდით</a><a class="b2" href="#services">სერვისები →</a></div>
-    <div class="facts rv"><div><b>ქართ · ENG</b>ორენოვანი მომსახურება</div><div><b>A — Z</b>სრული ორგანიზება</div><div><b>ადგილზე</b>ჩვენი გუნდი</div></div>
+    <div class="facts rv"><div><b>ქართ · ENG</b>ორენოვანი მომსახურება</div><div><b>ა — ჰ</b>სრული ორგანიზება</div><div><b>ადგილზე</b>ჩვენი გუნდი</div></div>
   </div>
   <div class="art rv" aria-hidden="true">
     <svg viewBox="0 0 420 380">
@@ -255,24 +258,24 @@ footer .brand{color:#fff}
 <section id="services"><div class="wrap">
   <div class="ey rv">სერვისები</div>
   <h2 class="rv">ყველაფერი, რაც ოფიციალურ ღონისძიებას სჭირდება</h2>
-  <p class="lead rv">დააჭირეთ სერვისს — ნახავთ ვიდეო-ვიზუალს და დეტალებს.</p>
+  <p class="lead rv">დააჭირეთ სერვისს — ნახავთ ვიდეოს და დეტალებს.</p>
   <div class="svc" id="svc"></div>
 </div></section>
 
 <section class="types"><div class="wrap">
   <div class="ey rv">ღონისძიებები</div>
   <h2 class="rv">რას ვაწყობთ</h2>
-  <div class="tg rv"><span>ოფიციალური ვიზიტები</span><span>საერთაშორისო ფორუმები</span><span>კონფერენციები</span><span>ხელშეკრულებების ხელმოწერა</span><span>დიპლომატიური მიღებები</span><span>გალა ვახშმები</span><span>პრესკონფერენციები</span><span>დაჯილდოების ცერემონიები</span><span>გახსნის ცერემონიები</span><span>კორპორატიული ღონისძიებები</span><span>გამოფენები</span><span>ბიზნეს-შეხვედრები</span></div>
+  <div class="tg rv"><span>ოფიციალური ვიზიტები</span><span>საერთაშორისო ფორუმები</span><span>კონფერენციები</span><span>ხელშეკრულებების ხელმოწერა</span><span>დიპლომატიური მიღებები</span><span>გალა ვახშმები</span><span>პრესკონფერენციები</span><span>დაჯილდოების ცერემონიები</span><span>გახსნის ცერემონიები</span><span>კორპორატიული ღონისძიებები</span><span>გამოფენები</span><span>საქმიანი შეხვედრები</span></div>
 </div></section>
 
 <section id="why"><div class="wrap">
   <div class="ey rv">რატომ ჩვენ</div>
   <h2 class="rv">დეტალებზე ფიქრი — ჩვენი საქმეა</h2>
   <div class="why">
-    <div class="rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span><b>კონფიდენციალურობა</b><small>მაღალი რანგის სტუმრების ინფორმაცია დაცულია.</small></div>
+    <div class="rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span><b>საიდუმლოების დაცვა</b><small>მაღალი რანგის სტუმრების ინფორმაცია დაცულია.</small></div>
     <div class="rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span><b>საერთაშორისო სტანდარტი</b><small>დიპლომატიური პროტოკოლის წესებით.</small></div>
-    <div class="rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14h3"/></svg></span><b>ერთი კოორდინატორი</b><small>ერთი პასუხისმგებელი პირი — ყველა საკითხზე.</small></div>
-    <div class="rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M10 18h4"/></svg></span><b>ციფრული ინსტრუმენტები</b><small>აკრედიტაცია, QR და ონლაინ მოსაწვევები.</small></div>
+    <div class="rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14h3"/></svg></span><b>ერთი პასუხისმგებელი პირი</b><small>ერთი ადამიანი — ყველა საკითხზე.</small></div>
+    <div class="rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M10 18h4"/></svg></span><b>ციფრული საშუალებები</b><small>აკრედიტაცია, QR კოდი და ელექტრონული მოსაწვევები.</small></div>
   </div>
 </div></section>
 
@@ -280,9 +283,9 @@ footer .brand{color:#fff}
   <div class="ey rv">პროცესი</div>
   <h2 class="rv">როგორ ვმუშაობთ</h2>
   <div class="steps">
-    <div class="st rv"><span class="n">1</span><h3>ბრიფი</h3><p>გვესაუბრებით მიზანზე, თარიღზე და სტუმრებზე.</p></div>
+    <div class="st rv"><span class="n">1</span><h3>გასაუბრება</h3><p>გვესაუბრებით მიზანზე, თარიღზე და სტუმრებზე.</p></div>
     <div class="st rv"><span class="n">2</span><h3>გეგმა</h3><p>პროტოკოლის სცენარი, განრიგი და დარბაზის გეგმა.</p></div>
-    <div class="st rv"><span class="n">3</span><h3>მომზადება</h3><p>მოსაწვევები, აკრედიტაცია, ცერემონია, ლოგისტიკა.</p></div>
+    <div class="st rv"><span class="n">3</span><h3>მომზადება</h3><p>მოსაწვევები, აკრედიტაცია, ცერემონია, გადაადგილება.</p></div>
     <div class="st rv"><span class="n">4</span><h3>შესრულება</h3><p>ჩვენი გუნდი ადგილზეა — დასაწყისიდან ბოლომდე.</p></div>
   </div>
 </div></section>
@@ -324,6 +327,24 @@ footer .brand{color:#fff}
 
 <script>
 (function(){
+var EN = {"კერძო პროტოკოლის სამსახური": "Private Protocol Service", "პროტოკოლის სამსახური": "Protocol Service", "სერვისები": "Services", "რატომ ჩვენ": "Why us", "პროცესი": "Process", "კითხვები": "FAQ", "თამაში": "Game", "პროტოკოლი და ღონისძიებები —": "Protocol and events —", "უნაკლო შესრულებით": "flawlessly delivered", "პროტოკოლის სპეციალისტები ოფიციალური ვიზიტებისთვის, სამთავრობო და კორპორატიული ღონისძიებებისთვის — დაგეგმვიდან ბოლო სტუმრის გაცილებამდე.": "Protocol specialists for official visits, government and corporate events — from planning to seeing off the last guest.", "დაგვიკავშირდით": "Contact us", "სერვისები →": "Services →", "ქართ · ENG": "KA · EN", "ორენოვანი მომსახურება": "Bilingual service", "ა — ჰ": "A — Z", "სრული ორგანიზება": "Full organisation", "ადგილზე": "On site", "ჩვენი გუნდი": "Our team", "ყველაფერი, რაც ოფიციალურ ღონისძიებას სჭირდება": "Everything an official event needs", "დააჭირეთ სერვისს — ნახავთ ვიდეოს და დეტალებს.": "Click a service to watch the video and see the details.", "ღონისძიებები": "Events", "რას ვაწყობთ": "What we organise", "ოფიციალური ვიზიტები": "Official visits", "საერთაშორისო ფორუმები": "International forums", "კონფერენციები": "Conferences", "ხელშეკრულებების ხელმოწერა": "Agreement signings", "დიპლომატიური მიღებები": "Diplomatic receptions", "გალა ვახშმები": "Gala dinners", "პრესკონფერენციები": "Press conferences", "დაჯილდოების ცერემონიები": "Award ceremonies", "გახსნის ცერემონიები": "Opening ceremonies", "კორპორატიული ღონისძიებები": "Corporate events", "გამოფენები": "Exhibitions", "საქმიანი შეხვედრები": "Business meetings", "დეტალებზე ფიქრი — ჩვენი საქმეა": "Details are our business", "საიდუმლოების დაცვა": "Confidentiality", "მაღალი რანგის სტუმრების ინფორმაცია დაცულია.": "Information about high-level guests stays protected.", "საერთაშორისო სტანდარტი": "International standard", "დიპლომატიური პროტოკოლის წესებით.": "Following the rules of diplomatic protocol.", "ერთი პასუხისმგებელი პირი": "One point of contact", "ერთი ადამიანი — ყველა საკითხზე.": "One person for every question.", "ციფრული საშუალებები": "Digital tools", "აკრედიტაცია, QR კოდი და ელექტრონული მოსაწვევები.": "Accreditation, QR codes and e-invitations.", "როგორ ვმუშაობთ": "How we work", "გასაუბრება": "Briefing", "გვესაუბრებით მიზანზე, თარიღზე და სტუმრებზე.": "Tell us about the goal, the date and the guests.", "გეგმა": "Plan", "პროტოკოლის სცენარი, განრიგი და დარბაზის გეგმა.": "Protocol scenario, schedule and floor plan.", "მომზადება": "Preparation", "მოსაწვევები, აკრედიტაცია, ცერემონია, გადაადგილება.": "Invitations, accreditation, ceremony, transport.", "შესრულება": "Delivery", "ჩვენი გუნდი ადგილზეა — დასაწყისიდან ბოლომდე.": "Our team is on site — from start to finish.", "ხშირად დასმული კითხვები": "Frequently asked questions", "რამდენი ხნით ადრე უნდა დაგიკავშირდეთ?": "How far in advance should we contact you?", "რაც უფრო ადრე, მით უკეთესი — ოფიციალური ვიზიტისთვის სასურველია 3–4 კვირით ადრე. სასწრაფო შემთხვევებშიც შეგვიძლია დახმარება.": "The earlier the better — for an official visit, ideally 3–4 weeks ahead. We can also help at short notice.", "შეიძლება მხოლოდ პროტოკოლის სპეციალისტის ქირაობა?": "Can we hire only a protocol specialist?", "დიახ. შეგიძლიათ აიყვანოთ სპეციალისტი ერთი დღით, კონკრეტული ღონისძიებისთვის ან გრძელვადიან თანამშრომლობაზე.": "Yes. You can hire a specialist for one day, for a specific event or on a long-term basis.", "მუშაობთ უცხოურ დელეგაციებთან?": "Do you work with foreign delegations?", "დიახ — ვამზადებთ ორენოვან მასალებს, ვუზრუნველყოფთ თარჯიმნებს და ვითვალისწინებთ სტუმარი ქვეყნის პროტოკოლურ ტრადიციებს.": "Yes — we prepare bilingual materials, provide interpreters and respect the protocol traditions of the visiting country.", "როგორ ყალიბდება ღირებულება?": "How is the price determined?", "ღირებულება დამოკიდებულია ღონისძიების მასშტაბზე, ხანგრძლივობასა და სერვისებზე. დაგვირეკეთ და მოგიმზადებთ ინდივიდუალურ შეთავაზებას.": "The price depends on the scale, duration and services. Call us and we will prepare a tailored offer.", "ინტერაქტიული გამოცდა": "Interactive quiz", "რამდენად კარგად იცით პროტოკოლი?": "How well do you know protocol?", "დროშები, ცერემონიები, განთავსება — 6 მოკლე თავსატეხი.": "Flags, ceremonies, seating — 6 short puzzles.", "თამაშის დაწყება →": "Start the game →", "კონტაქტი": "Contact", "დავგეგმოთ თქვენი შემდეგი ღონისძიება": "Let's plan your next event", "დარეკვა": "Call", "მოგვწერეთ": "Message us", "დეტალურად": "Details", "დაგვიკავშირდით — 595 53 35 00": "Contact us — 595 53 35 00", "იდეალურია:": "Ideal for:", "სპეციალისტის ქირაობა": "Specialist hire", "პროტოკოლის სპეციალისტი": "Protocol specialist", "ერთი ღონისძიებისთვის ან მუდმივ თანამშრომლობაზე.": "For a single event or ongoing cooperation.", "გამოცდილი პროტოკოლის ოფიცერი, რომელიც თქვენი ორგანიზაციის სახელით მართავს ოფიციალურ ურთიერთობებს და ღონისძიებებს — საკუთარი შტატის გარეშე.": "An experienced protocol officer who manages official relations and events on behalf of your organisation — without adding to your staff.", "პროტოკოლის გეგმა და სცენარი": "Protocol plan and scenario", "სტუმრების სია, რანჟირება და განთავსება": "Guest list, order of precedence and seating", "მაღალი რანგის სტუმრების მიღება და თანხლება": "Welcoming and accompanying high-level guests", "ადგილზე ხელმძღვანელობა ღონისძიების დღეს": "On-site management on the day", "გრძელვადიანი თანამშრომლობა — თქვენზე მიმაგრებული პროტოკოლის ოფიცერი": "Long-term cooperation — a protocol officer assigned to you", "კომპანიებისთვის, საელჩოებისთვის, სახელმწიფო უწყებებისთვის, ფონდებისთვის.": "companies, embassies, public agencies and foundations.", "დელეგაციების მიღება": "Receiving delegations", "დელეგაციების მიღება, განრიგი და თანხლება.": "Receiving delegations, schedules and escort.", "მაღალი რანგის სტუმრებისა და დელეგაციების ვიზიტის სრული ორგანიზება — აეროპორტიდან გაცილებამდე.": "Full organisation of visits by high-level guests and delegations — from arrival to departure.", "მიღება აეროპორტში, ოფიციალურ დარბაზში": "Airport welcome in the official lounge", "გადაადგილება და თანხლება": "Transport and escort", "შეხვედრების განრიგი და მარშრუტი": "Meeting schedule and route", "თარჯიმნები და კულტურული პროგრამა": "Interpreters and cultural programme", "საჩუქრების და დროშების პროტოკოლი": "Gift and flag protocol", "უცხოური დელეგაციებისთვის, საქმიანი მისიებისთვის, საერთაშორისო პარტნიორებისთვის.": "foreign delegations, business missions and international partners.", "სამთავრობო და კორპორატიული ღონისძიებები": "Government and corporate events", "ფორუმები, მიღებები და ოფიციალური ცერემონიები.": "Forums, receptions and official ceremonies.", "ფორუმები, კონფერენციები და მიღებები, სადაც ყველა დეტალი — სცენიდან სიტყვით გამოსვლის რიგამდე — პროტოკოლის წესებს მიჰყვება.": "Forums, conferences and receptions where every detail — from the stage to the order of speakers — follows protocol.", "ადგილის შერჩევა და დარბაზის გეგმა": "Venue selection and floor plan", "პრეზიდიუმი და მომხსენებელთა რიგი": "Head table and order of speakers", "სცენა, ხმა, ეკრანები, სინქრონული თარგმანი": "Stage, sound, screens, simultaneous interpretation", "რეგისტრაცია და მედიის აკრედიტაცია": "Registration and media accreditation", "კვება და ბანკეტი": "Catering and banquet", "სამინისტროებისთვის, საერთაშორისო ორგანიზაციებისთვის, კორპორაციებისთვის.": "ministries, international organisations and corporations.", "ცერემონიები": "Ceremonies", "ცერემონიის დიზაინი და ხელმოწერა": "Ceremony design and signings", "დროშები, სცენა, განთავსება და ხელმოწერის ცერემონია.": "Flags, stage, seating and signing ceremonies.", "ხელშეკრულებების ხელმოწერის, გახსნისა და დაჯილდოების ცერემონიები — სწორი დროშებით, განლაგებითა და ვიზუალით.": "Signing, opening and award ceremonies — with the right flags, arrangement and visuals.", "დროშების შერჩევა და სწორი განლაგება": "Choosing flags and arranging them correctly", "ხელმოწერის მაგიდა, საქაღალდეები, კალმები": "Signing table, folders and pens", "ცერემონიის სცენარი და წამყვანი": "Ceremony script and host", "ფოტოკუთხე და მედიის განთავსება": "Photo corner and media positions", "გაფორმება და ფირმული სტილი": "Decoration and branding", "მემორანდუმებისთვის, ინვესტიციური შეთანხმებებისთვის, ოფიციალური გახსნებისთვის.": "memoranda, investment agreements and official openings.", "ციფრული": "Digital", "ციფრული გადაწყვეტები": "Digital solutions", "აკრედიტაცია, მოსაწვევები და QR რეგისტრაცია.": "Accreditation, invitations and QR registration.", "თანამედროვე საშუალებები, რომლებიც სტუმრების მართვას მარტივს და სწრაფს ხდის — აპლიკაციის გარეშე.": "Modern tools that make guest management simple and fast — no app needed.", "ელექტრონული მოსაწვევები დასწრების დადასტურებით": "E-invitations with attendance confirmation", "QR აკრედიტაცია და შესასვლელის კონტროლი": "QR accreditation and entry control", "„იპოვე შენი მაგიდა“ — სტუმრის განთავსება ტელეფონით": "“Find your table” — guest seating by phone", "ციფრული ეკრანები და პროგრამა": "Digital screens and programme", "დასწრების ანგარიში": "Attendance report", "50+ სტუმრიანი ღონისძიებებისთვის, სადაც სიზუსტე და სიჩქარე მნიშვნელოვანია.": "events with 50+ guests where accuracy and speed matter.", "სწავლება": "Training", "კონსულტაცია და სწავლება": "Consulting and training", "საქმიანი ეტიკეტი და ოფიციალური მიმოწერა.": "Business etiquette and official correspondence.", "სწავლება და კონსულტაციები თქვენი გუნდისთვის — რომ ყოველი ოფიციალური შეხვედრა უნაკლოდ ჩატარდეს.": "Training and advice for your team — so every official meeting runs flawlessly.", "საქმიანი და დიპლომატიური ეტიკეტი": "Business and diplomatic etiquette", "ოფიციალური მიმოწერა და ტიტულები": "Official correspondence and titles", "დროშების და სიმბოლოების წესები": "Rules for flags and symbols", "საჩუქრების პროტოკოლი": "Gift protocol", "ასისტენტებისა და ხელმძღვანელების მომზადება": "Preparing assistants and executives", "ხელმძღვანელებისთვის, ასისტენტებისთვის, საზოგადოებასთან ურთიერთობისა და კადრების სამსახურებისთვის.": "executives, assistants, PR and HR teams.", "პროტოკოლის გეგმა და შესამოწმებელი სია": "Protocol plan and checklist", "გასაუბრება დამკვეთთან": "Briefing with the client", "ღონისძიების დღე — სტუმრის თანხლება": "Event day — escorting the guest", "მიღება აეროპორტში": "Airport welcome", "კორტეჟი და თანხლება": "Motorcade and escort", "ორმხრივი შეხვედრა": "Bilateral meeting", "დარბაზი და სტუმრების განთავსება": "Hall and guest seating", "სცენა და მომხსენებელი": "Stage and speaker", "რეგისტრაცია და აკრედიტაცია": "Registration and accreditation", "ხელმოწერის ცერემონია": "Signing ceremony", "ხელის ჩამორთმევა და მედია": "Handshake and media", "გახსნის ცერემონია": "Opening ceremony", "QR აკრედიტაცია": "QR accreditation", "ელექტრონული მოსაწვევი და დასწრების დადასტურება": "E-invitation and attendance confirmation", "ეკრანი: „იპოვე შენი მაგიდა“": "Screen: “Find your table”", "სწავლება გუნდისთვის": "Team training", "ოფიციალური სუფრის ეტიკეტი": "Formal dining etiquette", "სერტიფიკატი": "Certificate", "ფორუმი 2026": "Forum 2026", "ეთერი": "LIVE", "გახსნა": "Opening", "მოსაწვევი": "Invitation", "მოვალ": "Attending", "კეთილი იყოს თქვენი მობრძანება": "Welcome"};
+var LANG = new URLSearchParams(location.search).get("lang") || (function(){ try { return localStorage.getItem("lang"); } catch(e){ return null; } })() || "ka";
+var KA_TITLE = document.title;
+function tr(root){
+  var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function(n){ var p = n.parentNode && n.parentNode.nodeName; return p === "SCRIPT" || p === "STYLE" ? 2 : 1; } }), n;
+  while ((n = w.nextNode())){
+    if (n.__ka === undefined) n.__ka = n.nodeValue;
+    var k = n.__ka.trim(); if (!k) continue;
+    n.nodeValue = LANG === "en" && EN[k] ? n.__ka.replace(k, EN[k]) : n.__ka;
+  }
+}
+function setLang(l){
+  LANG = l; try { localStorage.setItem("lang", l); } catch(e){}
+  document.documentElement.lang = l === "en" ? "en" : "ka";
+  document.title = l === "en" ? "events.com.ge — Private Protocol Service" : KA_TITLE;
+  document.getElementById("lng").textContent = l === "en" ? "ქარ" : "EN";
+  tr(document.body);
+}
 /* ═══ სცენები: პატარა (ბარათი) და ანიმირებული (პოპაპი) ═══ */
 var P = '<circle cx="0" cy="-14" r="7" fill="#fff"/><path d="M-11 12a11 11 0 0 1 22 0v8h-22z" fill="#fff"/>';   // ადამიანის სილუეტი
 function man(x,y,c,s){ var g = '<g transform="translate('+x+' '+y+') scale('+(s||1)+')">'+P+'</g>'; return c ? '<g class="tb" style="'+c+'">'+g+'</g>' : g; }
@@ -360,28 +381,28 @@ var S = {
 var SV = [
   { id:"spec", k:"სპეციალისტის ქირაობა", t:"პროტოკოლის სპეციალისტი", s:"ერთი ღონისძიებისთვის ან მუდმივ თანამშრომლობაზე.",
     p:"გამოცდილი პროტოკოლის ოფიცერი, რომელიც თქვენი ორგანიზაციის სახელით მართავს ოფიციალურ ურთიერთობებს და ღონისძიებებს — საკუთარი შტატის გარეშე.",
-    l:["პროტოკოლის გეგმა და სცენარი","სტუმრების სია, რანჟირება და განთავსება","VIP სტუმრების მიღება და თანხლება","ადგილზე კოორდინაცია ღონისძიების დღეს","გრძელვადიანი აუთსორსინგი — დედიკირებული ოფიცერი"],
+    l:["პროტოკოლის გეგმა და სცენარი","სტუმრების სია, რანჟირება და განთავსება","მაღალი რანგის სტუმრების მიღება და თანხლება","ადგილზე ხელმძღვანელობა ღონისძიების დღეს","გრძელვადიანი თანამშრომლობა — თქვენზე მიმაგრებული პროტოკოლის ოფიცერი"],
     i:"<b>იდეალურია:</b> კომპანიებისთვის, საელჩოებისთვის, სახელმწიფო უწყებებისთვის, ფონდებისთვის." },
-  { id:"visit", k:"ოფიციალური ვიზიტები", t:"დელეგაციების მიღება", s:"დელეგაციების მიღება, განრიგი და ესკორტი.",
+  { id:"visit", k:"ოფიციალური ვიზიტები", t:"დელეგაციების მიღება", s:"დელეგაციების მიღება, განრიგი და თანხლება.",
     p:"მაღალი რანგის სტუმრებისა და დელეგაციების ვიზიტის სრული ორგანიზება — აეროპორტიდან გაცილებამდე.",
-    l:["მიღება აეროპორტში და VIP დარბაზი","ტრანსფერები და ესკორტი","შეხვედრების განრიგი და მარშრუტი","თარჯიმნები და კულტურული პროგრამა","საჩუქრების და დროშების პროტოკოლი"],
-    i:"<b>იდეალურია:</b> უცხოური დელეგაციებისთვის, ბიზნეს-მისიებისთვის, საერთაშორისო პარტნიორებისთვის." },
+    l:["მიღება აეროპორტში, ოფიციალურ დარბაზში","გადაადგილება და თანხლება","შეხვედრების განრიგი და მარშრუტი","თარჯიმნები და კულტურული პროგრამა","საჩუქრების და დროშების პროტოკოლი"],
+    i:"<b>იდეალურია:</b> უცხოური დელეგაციებისთვის, საქმიანი მისიებისთვის, საერთაშორისო პარტნიორებისთვის." },
   { id:"gov", k:"ღონისძიებები", t:"სამთავრობო და კორპორატიული ღონისძიებები", s:"ფორუმები, მიღებები და ოფიციალური ცერემონიები.",
     p:"ფორუმები, კონფერენციები და მიღებები, სადაც ყველა დეტალი — სცენიდან სიტყვით გამოსვლის რიგამდე — პროტოკოლის წესებს მიჰყვება.",
-    l:["ადგილის შერჩევა და დარბაზის გეგმა","პრეზიდიუმი და სპიკერების თანმიმდევრობა","სცენა, ხმა, ეკრანები, სინქრონული თარგმანი","რეგისტრაცია და მედიის აკრედიტაცია","კეითერინგი და ბანკეტი"],
+    l:["ადგილის შერჩევა და დარბაზის გეგმა","პრეზიდიუმი და მომხსენებელთა რიგი","სცენა, ხმა, ეკრანები, სინქრონული თარგმანი","რეგისტრაცია და მედიის აკრედიტაცია","კვება და ბანკეტი"],
     i:"<b>იდეალურია:</b> სამინისტროებისთვის, საერთაშორისო ორგანიზაციებისთვის, კორპორაციებისთვის." },
   { id:"cer", k:"ცერემონიები", t:"ცერემონიის დიზაინი და ხელმოწერა", s:"დროშები, სცენა, განთავსება და ხელმოწერის ცერემონია.",
     p:"ხელშეკრულებების ხელმოწერის, გახსნისა და დაჯილდოების ცერემონიები — სწორი დროშებით, განლაგებითა და ვიზუალით.",
-    l:["დროშების შერჩევა და სწორი განლაგება","ხელმოწერის მაგიდა, საქაღალდეები, კალმები","ცერემონიის სცენარი და წამყვანი","ფოტო-ზონა და მედიის განთავსება","ბრენდინგი და დეკორი"],
+    l:["დროშების შერჩევა და სწორი განლაგება","ხელმოწერის მაგიდა, საქაღალდეები, კალმები","ცერემონიის სცენარი და წამყვანი","ფოტოკუთხე და მედიის განთავსება","გაფორმება და ფირმული სტილი"],
     i:"<b>იდეალურია:</b> მემორანდუმებისთვის, ინვესტიციური შეთანხმებებისთვის, ოფიციალური გახსნებისთვის." },
   { id:"dig", k:"ციფრული", t:"ციფრული გადაწყვეტები", s:"აკრედიტაცია, მოსაწვევები და QR რეგისტრაცია.",
-    p:"თანამედროვე ინსტრუმენტები, რომლებიც სტუმრების მართვას მარტივს და სწრაფს ხდის — აპლიკაციის გარეშე.",
-    l:["ელექტრონული მოსაწვევები RSVP-ით","QR აკრედიტაცია და შესასვლელის კონტროლი","„იპოვე შენი მაგიდა“ — სტუმრის განთავსება ტელეფონით","ციფრული ეკრანები და პროგრამა","დასწრების ანგარიში"],
+    p:"თანამედროვე საშუალებები, რომლებიც სტუმრების მართვას მარტივს და სწრაფს ხდის — აპლიკაციის გარეშე.",
+    l:["ელექტრონული მოსაწვევები დასწრების დადასტურებით","QR აკრედიტაცია და შესასვლელის კონტროლი","„იპოვე შენი მაგიდა“ — სტუმრის განთავსება ტელეფონით","ციფრული ეკრანები და პროგრამა","დასწრების ანგარიში"],
     i:"<b>იდეალურია:</b> 50+ სტუმრიანი ღონისძიებებისთვის, სადაც სიზუსტე და სიჩქარე მნიშვნელოვანია." },
-  { id:"cons", k:"ტრენინგი", t:"კონსულტაცია და ტრენინგი", s:"ბიზნეს ეტიკეტი და ოფიციალური მიმოწერა.",
-    p:"ტრენინგები და კონსულტაციები თქვენი გუნდისთვის — რომ ყოველი ოფიციალური შეხვედრა უნაკლოდ ჩატარდეს.",
-    l:["ბიზნეს და დიპლომატიური ეტიკეტი","ოფიციალური მიმოწერა და ტიტულები","დროშების და სიმბოლოების წესები","საჩუქრების პროტოკოლი","ასისტენტებისა და ხელმძღვანელების მომზადება"],
-    i:"<b>იდეალურია:</b> ხელმძღვანელებისთვის, ასისტენტებისთვის, PR და HR გუნდებისთვის." }
+  { id:"cons", k:"სწავლება", t:"კონსულტაცია და სწავლება", s:"საქმიანი ეტიკეტი და ოფიციალური მიმოწერა.",
+    p:"სწავლება და კონსულტაციები თქვენი გუნდისთვის — რომ ყოველი ოფიციალური შეხვედრა უნაკლოდ ჩატარდეს.",
+    l:["საქმიანი და დიპლომატიური ეტიკეტი","ოფიციალური მიმოწერა და ტიტულები","დროშების და სიმბოლოების წესები","საჩუქრების პროტოკოლი","ასისტენტებისა და ხელმძღვანელების მომზადება"],
+    i:"<b>იდეალურია:</b> ხელმძღვანელებისთვის, ასისტენტებისთვის, საზოგადოებასთან ურთიერთობისა და კადრების სამსახურებისთვის." }
 ];
 document.getElementById("svc").innerHTML = SV.map(function(x,i){
   return '<button class="sc rv" data-i="'+i+'"><div class="pic"><svg viewBox="0 0 400 320" preserveAspectRatio="xMidYMid slice"><rect width="400" height="320" fill="url(#bgc)"/>'+S[x.id](false)+'</svg><span class="play"></span></div>'+
@@ -396,23 +417,23 @@ function car(x,y,flag){ return '<g transform="translate('+x+' '+y+')"><rect x="0
 function bub(x,y,w,d){ return '<g class="tb loop" style="animation-name:bub;--d:'+d+'"><rect x="'+x+'" y="'+y+'" width="'+w+'" height="26" rx="10" fill="#fff"/><rect x="'+(x+10)+'" y="'+(y+11)+'" width="'+(w-20)+'" height="4" rx="2" fill="#9cc3ff"/></g>'; }
 var X = {
   spec:[
-    ["პროტოკოლის გეგმა და ჩეკლისტი", function(){ return S.spec(true); }],
-    ["ბრიფინგი კლიენტთან", function(){ return '<rect x="90" y="200" width="220" height="10" rx="3" fill="#fff"/><rect x="170" y="176" width="60" height="26" rx="3" fill="#0a2350" stroke="#9cc3ff"/>'+man(120,196,'',1.6)+man(280,196,'',1.6)+bub(70,90,110,'20%')+bub(220,120,110,'45%')+bub(90,150,80,'70%'); }],
+    ["პროტოკოლის გეგმა და შესამოწმებელი სია", function(){ return S.spec(true); }],
+    ["გასაუბრება დამკვეთთან", function(){ return '<rect x="90" y="200" width="220" height="10" rx="3" fill="#fff"/><rect x="170" y="176" width="60" height="26" rx="3" fill="#0a2350" stroke="#9cc3ff"/>'+man(120,196,'',1.6)+man(280,196,'',1.6)+bub(70,90,110,'20%')+bub(220,120,110,'45%')+bub(90,150,80,'70%'); }],
     ["ღონისძიების დღე — სტუმრის თანხლება", function(){ return '<rect x="40" y="236" width="320" height="18" fill="#c62f3b"/><rect x="330" y="120" width="46" height="120" rx="4" fill="rgba(255,255,255,.2)" stroke="#fff"/><circle cx="366" cy="182" r="3" fill="#c9a45c"/>'+
       '<g class="loop" style="animation-name:walk;animation-timing-function:linear">'+man(60,226,'',1.4)+man(92,226,'',1.4)+'<rect x="82" y="200" width="20" height="4" rx="2" fill="#c9a45c"/></g>'; }]],
   visit:[
     ["მიღება აეროპორტში", function(){ return S.visit(true); }],
-    ["კორტეჟი და ესკორტი", function(){ return '<rect y="210" width="400" height="60" fill="rgba(0,0,0,.25)"/><rect y="238" width="400" height="4" fill="#fff" stroke-dasharray="20 14" opacity=".5"/>'+
+    ["კორტეჟი და თანხლება", function(){ return '<rect y="210" width="400" height="60" fill="rgba(0,0,0,.25)"/><rect y="238" width="400" height="4" fill="#fff" stroke-dasharray="20 14" opacity=".5"/>'+
       '<g class="loop" style="animation-name:drive;animation-timing-function:linear">'+car(150,230,true)+car(50,230)+car(-50,230)+'</g>'+'<g fill="rgba(255,255,255,.15)"><rect x="30" y="90" width="50" height="120"/><rect x="100" y="60" width="70" height="150"/><rect x="200" y="100" width="50" height="110"/><rect x="280" y="70" width="80" height="140"/></g>'; }],
     ["ორმხრივი შეხვედრა", function(){ return '<rect x="60" y="180" width="280" height="12" rx="3" fill="#fff"/><g transform="translate(192 120)"><rect width="2" height="60" fill="#fff"/><use href="#ge" x="2" y="0" width="24" height="16"/></g><g transform="translate(206 120)"><rect width="2" height="60" fill="#fff"/><use href="#eu" x="2" y="0" width="24" height="16"/></g>'+
       [90,130,170].map(function(x,i){ return man(x,176,'animation:fadein 6s infinite;animation-delay:'+(i*.2)+'s',1.2); }).join("")+[230,270,310].map(function(x,i){ return man(x,176,'animation:fadein 6s infinite;animation-delay:'+(i*.2+.3)+'s',1.2); }).join("")+
       '<g fill="#c9a45c">'+[90,130,170,230,270,310].map(function(x){ return '<rect x="'+(x-10)+'" y="186" width="20" height="5" rx="1"/>'; }).join("")+'</g>'; }]],
   gov:[
     ["დარბაზი და სტუმრების განთავსება", function(){ return S.gov(true); }],
-    ["სცენა და სპიკერი", function(){ return '<g class="tb loop" style="transform-origin:50% 0;animation-name:sweep"><path d="M200 0L140 260h120z" fill="rgba(255,255,255,.12)"/></g>'+
+    ["სცენა და მომხსენებელი", function(){ return '<g class="tb loop" style="transform-origin:50% 0;animation-name:sweep"><path d="M200 0L140 260h120z" fill="rgba(255,255,255,.12)"/></g>'+
       '<rect x="40" y="40" width="130" height="80" rx="6" fill="#0a2350" stroke="#9cc3ff"/><rect x="230" y="40" width="130" height="80" rx="6" fill="#0a2350" stroke="#9cc3ff"/>'+
       [0,1,2,3,4,5,6].map(function(i){ return '<rect x="'+(58+i*14)+'" y="60" width="8" height="44" fill="#5b9bff" class="tb loop" style="transform-origin:bottom;animation-name:eq;animation-duration:1.'+(i+2)+'s"/>'; }).join("")+
-      '<text x="295" y="88" fill="#fff" font-size="16" text-anchor="middle" font-family="Noto Serif Georgian">LIVE</text>'+
+      '<text x="295" y="88" fill="#fff" font-size="16" text-anchor="middle" font-family="Noto Serif Georgian">ეთერი</text>'+
       man(200,200,'',1.6)+'<rect x="176" y="208" width="48" height="60" rx="4" fill="#fff"/><use href="#ge" x="188" y="222" width="24" height="16"/>'; }],
     ["რეგისტრაცია და აკრედიტაცია", function(){ return '<rect x="250" y="190" width="120" height="16" rx="3" fill="#fff"/><rect x="262" y="206" width="96" height="40" fill="#dfe8f7"/>'+man(310,182,'',1.4)+
       '<g class="loop" style="animation-name:q">'+[120,160,200,240].map(function(x){ return man(x,240,'',1.3); }).join("")+'</g>'+
@@ -427,14 +448,14 @@ var X = {
       '<g class="loop" style="animation-name:scis"><g transform="translate(200 186)"><circle cx="-10" cy="16" r="7" fill="none" stroke="#fff" stroke-width="3"/><circle cx="10" cy="16" r="7" fill="none" stroke="#fff" stroke-width="3"/><path d="M-6 10L8-22M6 10L-8-22" stroke="#dfe8f7" stroke-width="4" stroke-linecap="round"/></g></g>'; }]],
   dig:[
     ["QR აკრედიტაცია", function(){ return S.dig(true); }],
-    ["ელექტრონული მოსაწვევი + RSVP", function(){ return '<g transform="translate(110 90)"><g class="tb loop" style="animation-name:slideup"><rect x="20" y="-20" width="140" height="110" rx="6" fill="#fff"/><text x="90" y="14" text-anchor="middle" font-size="14" fill="#0a2350" font-family="Noto Serif Georgian">მოსაწვევი</text><rect x="44" y="26" width="92" height="5" rx="2" fill="#9cc3ff"/><rect x="54" y="38" width="72" height="5" rx="2" fill="#c4d3ea"/>'+
+    ["ელექტრონული მოსაწვევი და დასწრების დადასტურება", function(){ return '<g transform="translate(110 90)"><g class="tb loop" style="animation-name:slideup"><rect x="20" y="-20" width="140" height="110" rx="6" fill="#fff"/><text x="90" y="14" text-anchor="middle" font-size="14" fill="#0a2350" font-family="Noto Serif Georgian">მოსაწვევი</text><rect x="44" y="26" width="92" height="5" rx="2" fill="#9cc3ff"/><rect x="54" y="38" width="72" height="5" rx="2" fill="#c4d3ea"/>'+
       '<rect x="40" y="56" width="46" height="20" rx="10" fill="#22c55e"/><text x="63" y="70" text-anchor="middle" font-size="10" fill="#fff" font-family="Noto Sans Georgian">მოვალ</text><rect x="94" y="56" width="46" height="20" rx="10" fill="#e3edfb"/></g>'+
       '<path d="M0 60h180v100H0z" fill="#dfe8f7"/><path d="M0 60l90 60 90-60" fill="#c4d3ea"/></g>'; }],
     ["ეკრანი: „იპოვე შენი მაგიდა“", function(){ return '<rect x="30" y="40" width="240" height="150" rx="8" fill="#0e3b32" stroke="#c9a45c"/><text x="150" y="90" fill="#f2efe8" font-size="11.5" text-anchor="middle" font-family="Noto Serif Georgian">კეთილი იყოს თქვენი მობრძანება</text>'+
       '<g class="tb loop" style="animation-name:stamp"><rect x="110" y="104" width="80" height="66" rx="12" fill="none" stroke="#c9a45c" stroke-width="3"/><text x="150" y="155" fill="#c9a45c" font-size="44" text-anchor="middle" font-family="Noto Serif Georgian">7</text></g>'+
       '<rect x="146" y="190" width="8" height="40" fill="#9fb6dc"/><g transform="translate(300 120)"><rect width="70" height="130" rx="12" fill="#0a2350" stroke="#fff" stroke-width="3"/><rect x="8" y="14" width="54" height="22" rx="4" fill="#fff"/><rect x="8" y="44" width="54" height="10" rx="3" fill="#c9a45c" class="loop" style="animation-name:fadein"/></g>'; }]],
   cons:[
-    ["ტრენინგი გუნდისთვის", function(){ return S.cons(true); }],
+    ["სწავლება გუნდისთვის", function(){ return S.cons(true); }],
     ["ოფიციალური სუფრის ეტიკეტი", function(){ return '<ellipse cx="200" cy="200" rx="170" ry="60" fill="#fff" opacity=".15"/><circle cx="200" cy="190" r="50" fill="#fff"/><circle cx="200" cy="190" r="36" fill="none" stroke="#c4d3ea" stroke-width="3"/>'+
       ['<rect x="120" y="150" width="6" height="80" rx="3" fill="#dfe8f7"/>','<rect x="274" y="150" width="6" height="80" rx="3" fill="#dfe8f7"/>','<rect x="286" y="150" width="6" height="80" rx="3" fill="#dfe8f7"/>','<path d="M300 110h24l-4 30h-16z" fill="none" stroke="#fff" stroke-width="3"/>','<path d="M330 120h18l-3 22h-12z" fill="none" stroke="#fff" stroke-width="3"/>'].map(function(x,i){ return '<g class="loop" style="animation-name:fadein;animation-delay:'+(i*.4)+'s">'+x+'</g>'; }).join(""); }],
     ["სერტიფიკატი", function(){ return '<rect x="80" y="50" width="240" height="190" rx="6" fill="#fff"/><rect x="92" y="62" width="216" height="166" fill="none" stroke="#c9a45c" stroke-width="2"/><text x="200" y="104" text-anchor="middle" font-size="18" fill="#0a2350" font-family="Noto Serif Georgian">სერტიფიკატი</text>'+
@@ -446,6 +467,7 @@ function playShot(){
   var shots = X[cur], n = shots.length;
   document.getElementById("mvs").innerHTML = '<g class="shot">'+shots[vi][1]()+'</g>';
   document.getElementById("cap").textContent = shots[vi][0];
+  tr(document.getElementById("mv"));
   document.getElementById("prog").innerHTML = shots.map(function(_,j){ return '<i class="'+(j<vi?"d":j===vi?"c":"")+'" style="--t:'+SHOT_MS+'ms"><b></b></i>'; }).join("");
   clearTimeout(vt); vt = setTimeout(function(){ vi = (vi+1) % n; playShot(); }, SHOT_MS);
 }
@@ -457,6 +479,7 @@ function open(i){
   document.getElementById("mk").textContent = x.k; document.getElementById("mh").textContent = x.t; document.getElementById("mp").textContent = x.p;
   document.getElementById("ml").innerHTML = x.l.map(function(t){ return "<li>"+t+"</li>"; }).join("");
   document.getElementById("mi").innerHTML = x.i;
+  tr(document.querySelector(".mt"));
   M.classList.add("on"); document.body.style.overflow = "hidden";
 }
 function close(){ clearTimeout(vt); M.classList.remove("on"); document.body.style.overflow = ""; }
@@ -466,6 +489,8 @@ M.addEventListener("click", function(e){ if (e.target === M) close(); });
 addEventListener("keydown", function(e){ if (e.key === "Escape") close(); });
 
 document.getElementById("yr").textContent = new Date().getFullYear();
+document.getElementById("lng").onclick = function(){ setLang(LANG === "en" ? "ka" : "en"); };
+setLang(LANG);
 var nav = document.getElementById("nav");
 function ns(){ nav.classList.toggle("scr", scrollY > 30); } addEventListener("scroll", ns, { passive:true }); ns();
 var io = new IntersectionObserver(function(es){ es.forEach(function(e){ if (e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } }); }, { threshold:.12 });
